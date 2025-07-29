@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -9,6 +8,14 @@
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  
+  <!-- LZ-String for Compression (if needed for sharing) -->
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+
   <style>
     /* Tema chiaro (default) */
     :root {
@@ -42,6 +49,18 @@
       background: var(--bg-color);
       color: var(--text-color);
       transition: background 0.3s, color 0.3s;
+    }
+
+    /* Auth Container */
+    #authContainer {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    #userEmail {
+      color: var(--primary);
+      font-weight: bold;
     }
 
     /* Card Media */
@@ -309,25 +328,6 @@
       gap: 0.75rem;
       margin-bottom: 1rem;
       flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .search-filter-container {
-      display: flex;
-      gap: 0.75rem;
-      flex-grow: 1;
-      min-width: 300px;
-      flex-wrap: wrap;
-    }
-
-    .search-box {
-      flex: 2;
-      min-width: 200px;
-    }
-
-    .filter-select {
-      flex: 1;
-      min-width: 150px;
     }
 
     /* Action buttons on cards */
@@ -360,6 +360,25 @@
       color: white;
       border: none;
       cursor: pointer;
+    }
+
+    /* Search and filter */
+    .filter-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      flex: 2;
+      min-width: 200px;
+    }
+
+    .filter-select {
+      flex: 1;
+      min-width: 150px;
     }
 
     /* OMDb results */
@@ -396,6 +415,11 @@
       border-radius: 4px;
     }
 
+    /* Add category modal */
+    .add-category-modal {
+      max-width: 300px;
+    }
+
     /* Category management modal */
     .category-management-modal {
       max-width: 400px;
@@ -411,38 +435,12 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.75rem;
+      padding: 0.5rem;
       border-bottom: 1px solid var(--border-color);
-      cursor: move;
-      background: var(--card-bg);
-      margin-bottom: 0.5rem;
-      border-radius: 8px;
     }
 
     .category-item:last-child {
       border-bottom: none;
-    }
-
-    .category-item.dragging {
-      opacity: 0.5;
-      border: 1px dashed var(--primary);
-    }
-
-    .drag-handle {
-      cursor: move;
-      padding: 0.5rem;
-      color: var(--text-secondary);
-    }
-
-    /* Bulk actions */
-    .bulk-actions {
-      display: none;
-      gap: 0.5rem;
-      margin: 1rem 0;
-    }
-
-    .bulk-actions.active {
-      display: flex;
     }
 
     /* Notification */
@@ -467,30 +465,42 @@
       background: var(--warning);
       color: #333;
     }
-
-    /* Checkbox for bulk selection */
-    .bulk-checkbox {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 2;
-      display: none;
-    }
-
-    .bulk-mode .bulk-checkbox {
-      display: block;
-    }
-
-    .bulk-mode .card-actions {
-      display: none !important;
-    }
   </style>
 </head>
 <body class="light">
+  <!-- Auth Toolbar -->
+  <div id="authContainer">
+    <button id="loginBtn" class="btn btn-primary">
+      <i class="fas fa-sign-in-alt"></i> Login
+    </button>
+    <button id="logoutBtn" class="btn btn-danger" style="display:none">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </button>
+    <span id="userEmail"></span>
+  </div>
+
   <!-- Main App -->
   <div id="appContent">
-    <div class="header">
-      <div class="toolbar">
+    <div class="top-bar" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+      <!-- LEFT: Search and filters -->
+      <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
+        <select id="categoryFilter" class="filter-select">
+          <option value="all">Tutte le categorie</option>
+        </select>
+        <select id="sortFilter" class="filter-select">
+          <option value="added">Ultimi aggiunti</option>
+          <option value="alpha" selected>Alfabetico</option>
+          <option value="rating">Valutazione</option>
+          <option value="year">Anno di uscita</option>
+        </select>
+      </div>
+
+      <!-- FLEX SPACE -->
+      <div style="flex: 1 1 auto;"></div>
+
+      <!-- RIGHT: Action buttons -->
+      <div class="toolbar" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
         <button id="addMediaBtn" class="btn btn-primary">
           <i class="fas fa-plus"></i> Aggiungi Film
         </button>
@@ -510,60 +520,32 @@
         <button id="themeToggle" class="btn">
           <i class="fas fa-moon"></i> Tema
         </button>
-        <button id="bulkActionBtn" class="btn btn-secondary" style="display: none;">
-          <i class="fas fa-tasks"></i> Azioni Multiple
-        </button>
-
-        <div class="search-filter-container">
-          <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
-          <select id="categoryFilter" class="filter-select">
-            <option value="all">Tutte le categorie</option>
-          </select>
-          <select id="sortFilter" class="filter-select">
-            <option value="added">Ultimi aggiunti</option>
-            <option value="alpha">Alfabetico</option>
-            <option value="rating">Valutazione</option>
-            <option value="year">Anno di uscita</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="bulk-actions" id="bulkActions">
-        <select id="bulkCategorySelect" class="filter-select">
-          <option value="">Sposta in...</option>
-        </select>
-        <button id="bulkMoveBtn" class="btn btn-secondary">
-          <i class="fas fa-folder"></i> Applica
-        </button>
-        <button id="bulkDeleteBtn" class="btn btn-danger">
-          <i class="fas fa-trash"></i> Elimina
-        </button>
-        <button id="cancelBulkBtn" class="btn btn-reset">
-          <i class="fas fa-times"></i> Annulla
+        <button id="shareBtn" class="btn btn-secondary" style="display:none">
+          <i class="fas fa-share"></i> Condividi
         </button>
       </div>
+    </div>
       
-      <div class="stats-container">
-        <div class="stat-item">
-          <div class="stat-value" id="statTotal">0</div>
-          <div>Totale</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value" id="statWatchlist">0</div>
-          <div>Da Vedere</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value" id="statWatched">0</div>
-          <div>Visti</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value" id="statRewatched">0</div>
-          <div>Rewatch</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value" id="statHours">0h 0m</div>
-          <div>Tempo Totale</div>
-        </div>
+    <div class="stats-container">
+      <div class="stat-item">
+        <div class="stat-value" id="statTotal">0</div>
+        <div>Totale</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statWatchlist">0</div>
+        <div>Da Vedere</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statWatched">0</div>
+        <div>Visti</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statRewatched">0</div>
+        <div>Rewatch</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statHours">0h 0m</div>
+        <div>Tempo Totale</div>
       </div>
     </div>
 
@@ -597,13 +579,8 @@
           <i class="fas fa-plus"></i> Aggiungi
         </button>
       </div>
-      <div class="categories-list" id="categoriesList">
-        <!-- Categorie verranno aggiunte dinamicamente -->
-      </div>
+      <div class="categories-list" id="categoriesList"></div>
       <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-        <button id="saveCategoriesOrderBtn" class="btn btn-primary">
-          <i class="fas fa-save"></i> Salva Ordine
-        </button>
         <button id="closeCategoryManagementBtn" class="btn btn-danger">Chiudi</button>
       </div>
     </div>
@@ -626,18 +603,13 @@
   <div class="context-menu" id="contextMenu">
     <div class="context-menu-item context-submenu">
       <i class="fas fa-folder"></i> Sposta in
-      <div class="context-submenu-items" id="categorySubmenu">
-        <!-- Categorie verranno aggiunte dinamicamente -->
-      </div>
+      <div class="context-submenu-items" id="categorySubmenu"></div>
     </div>
     <div class="context-menu-item" id="cmRewatch">
       <i class="fas fa-redo"></i> Segna Rewatch
     </div>
     <div class="context-menu-item" id="cmDelete">
       <i class="fas fa-trash"></i> Elimina Film
-    </div>
-    <div class="context-menu-item" id="cmBulkSelect">
-      <i class="fas fa-tasks"></i> Seleziona Multipli
     </div>
   </div>
 
@@ -647,20 +619,29 @@
   </div>
 
   <script>
-    // Configurazione
+    // Firebase Configuration (replace with your actual Firebase config)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk",
+      authDomain: "gametrackerdb.firebaseapp.com",
+      databaseURL: "https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "gametrackerdb",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Configurazione OMDb
     const OMDb_API_KEY = "2526ef70";
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
 
     // Stato
-    let mediaList = JSON.parse(localStorage.getItem("mediaList")) || [];
+    let mediaList = [];
     let categories = JSON.parse(localStorage.getItem("categories")) || DEFAULT_CATEGORIES;
     let currentContextMedia = null;
     let currentRewatchMedia = null;
     let currentOMDbSelection = null;
-    let selectedMediaIds = [];
-    let isBulkMode = false;
-    let draggedCategory = null;
+    let currentUser = null;
+    let isViewMode = false;
 
     // Elementi DOM
     const elements = {
@@ -677,7 +658,6 @@
       cancelMediaBtn: document.getElementById("cancelMediaBtn"),
       addCategoryBtn: document.getElementById("addCategoryBtn"),
       closeCategoryManagementBtn: document.getElementById("closeCategoryManagementBtn"),
-      saveCategoriesOrderBtn: document.getElementById("saveCategoriesOrderBtn"),
       categoriesList: document.getElementById("categoriesList"),
       mediaSectionsContainer: document.getElementById("mediaSectionsContainer"),
       statTotal: document.getElementById("statTotal"),
@@ -688,7 +668,6 @@
       contextMenu: document.getElementById("contextMenu"),
       cmRewatch: document.getElementById("cmRewatch"),
       cmDelete: document.getElementById("cmDelete"),
-      cmBulkSelect: document.getElementById("cmBulkSelect"),
       categorySubmenu: document.getElementById("categorySubmenu"),
       exportBtn: document.getElementById("exportBtn"),
       importBtn: document.getElementById("importBtn"),
@@ -704,25 +683,46 @@
       searchInput: document.getElementById("searchInput"),
       categoryFilter: document.getElementById("categoryFilter"),
       sortFilter: document.getElementById("sortFilter"),
-      bulkActionBtn: document.getElementById("bulkActionBtn"),
-      bulkActions: document.getElementById("bulkActions"),
-      bulkCategorySelect: document.getElementById("bulkCategorySelect"),
-      bulkMoveBtn: document.getElementById("bulkMoveBtn"),
-      bulkDeleteBtn: document.getElementById("bulkDeleteBtn"),
-      cancelBulkBtn: document.getElementById("cancelBulkBtn")
+      loginBtn: document.getElementById("loginBtn"),
+      logoutBtn: document.getElementById("logoutBtn"),
+      userEmail: document.getElementById("userEmail"),
+      shareBtn: document.getElementById("shareBtn")
     };
+
+    // Firebase Authentication
+    firebase.auth().onAuthStateChanged((user) => {
+      currentUser = user;
+      elements.loginBtn.style.display = user ? 'none' : 'block';
+      elements.logoutBtn.style.display = user ? 'block' : 'none';
+      elements.userEmail.textContent = user ? user.email : '';
+      elements.shareBtn.style.display = user ? 'block' : 'none';
+      if (user && !isViewMode) {
+        loadMediaFromFirebase();
+      }
+    });
+
+    elements.loginBtn.addEventListener('click', () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider).catch(error => {
+        showNotification(`Errore di login: ${error.message}`, "error");
+      });
+    });
+
+    elements.logoutBtn.addEventListener('click', () => {
+      firebase.auth().signOut().catch(error => {
+        showNotification(`Errore di logout: ${error.message}`, "error");
+      });
+    });
 
     // Inizializzazione
     function init() {
       loadTheme();
-      loadMedia();
       loadCategories();
       setupEventListeners();
       renderCategorySections();
-      renderMedia();
       updateCategoryFilter();
       updateCategorySubmenu();
-      setupDragAndDrop();
+      checkSharedProfile();
     }
 
     // Carica tema
@@ -734,19 +734,30 @@
       `;
     }
 
-    // Carica i media
-    function loadMedia() {
-      try {
-        const saved = localStorage.getItem("mediaList");
-        mediaList = saved ? JSON.parse(saved) : [];
-        if (!Array.isArray(mediaList)) {
-          console.error("Dati mediaList corrotti, reinizializzo");
-          mediaList = [];
-        }
-      } catch (e) {
-        console.error("Error loading media:", e);
-        mediaList = [];
+    // Carica i media da Firebase o localStorage
+    function loadMediaFromFirebase() {
+      if (!currentUser) {
+        mediaList = JSON.parse(localStorage.getItem("mediaList")) || [];
+        renderMedia();
+        return;
       }
+
+      db.ref(`mediaTracker/users/${currentUser.uid}/mediaList`).once('value')
+        .then(snapshot => {
+          mediaList = snapshot.val() || [];
+          if (!Array.isArray(mediaList)) {
+            console.error("Dati mediaList corrotti, reinizializzo");
+            mediaList = [];
+          }
+          localStorage.setItem("mediaList", JSON.stringify(mediaList));
+          renderMedia();
+        })
+        .catch(error => {
+          console.error("Error loading media from Firebase:", error);
+          showNotification("Errore nel caricamento dei dati", "error");
+          mediaList = JSON.parse(localStorage.getItem("mediaList")) || [];
+          renderMedia();
+        });
     }
 
     // Carica le categorie
@@ -768,8 +779,16 @@
 
     // Salva i media
     function saveMedia() {
+      if (isViewMode) return; // Non salvare in modalità visualizzazione
       try {
         localStorage.setItem("mediaList", JSON.stringify(mediaList));
+        if (currentUser) {
+          db.ref(`mediaTracker/users/${currentUser.uid}/mediaList`).set(mediaList)
+            .catch(error => {
+              console.error("Error saving media to Firebase:", error);
+              showNotification("Errore nel salvataggio su Firebase", "error");
+            });
+        }
         console.log("Dati salvati:", mediaList.length, "film");
       } catch (e) {
         console.error("Error saving media:", e);
@@ -779,17 +798,95 @@
 
     // Salva le categorie
     function saveCategories() {
+      if (isViewMode) return; // Non salvare in modalità visualizzazione
       try {
         localStorage.setItem("categories", JSON.stringify(categories));
         renderCategorySections();
         updateCategoryFilter();
         updateCategorySubmenu();
         renderCategoriesList();
-        updateBulkCategorySelect();
       } catch (e) {
         console.error("Error saving categories:", e);
         showNotification("Errore nel salvataggio delle categorie", "error");
       }
+    }
+
+    // Genera ID per condivisione
+    function generateId() {
+      return Math.random().toString(36).substr(2, 9);
+    }
+
+    // Condivisione del profilo
+    async function shareProfile() {
+      if (!currentUser) {
+        showNotification("Devi fare login per condividere!", "warning");
+        return;
+      }
+
+      const shareId = generateId();
+      const data = {
+        mediaList: mediaList,
+        owner: currentUser.uid,
+        createdAt: Date.now(),
+        expiry: 7 // giorni di validità
+      };
+
+      try {
+        await db.ref(`mediaTracker_public/sharedProfiles/${shareId}`).set(data);
+        const link = `${window.location.href.split('?')[0]}?share=${shareId}`;
+        navigator.clipboard.writeText(link);
+        showNotification("✅ Link copiato! Valido per 7 giorni", "success");
+      } catch (error) {
+        console.error("Errore nella condivisione:", error);
+        showNotification("❌ Errore nel salvataggio della condivisione", "error");
+      }
+    }
+
+    // Carica profilo condiviso
+    function checkSharedProfile() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const shareId = urlParams.get('share');
+
+      if (shareId) {
+        db.ref(`mediaTracker_public/sharedProfiles/${shareId}`).once('value')
+          .then(snapshot => {
+            const data = snapshot.val();
+            if (data) {
+              enableViewMode(data);
+            } else {
+              showNotification("Profilo condiviso non trovato o scaduto", "error");
+              loadMediaFromFirebase();
+            }
+          })
+          .catch(error => {
+            console.error("Errore nel caricamento del profilo condiviso:", error);
+            showNotification("Errore nel caricamento del profilo condiviso", "error");
+            loadMediaFromFirebase();
+          });
+      } else {
+        loadMediaFromFirebase();
+      }
+    }
+
+    // Abilita modalità visualizzazione
+    function enableViewMode(data) {
+      isViewMode = true;
+      mediaList = data.mediaList || [];
+      renderMedia();
+      showNotification("Visualizzazione profilo condiviso", "success");
+
+      // Disabilita pulsanti di modifica
+      elements.addMediaBtn.disabled = true;
+      elements.manageCategoriesBtn.disabled = true;
+      elements.importBtn.disabled = true;
+      elements.resetBtn.disabled = true;
+      elements.shareBtn.disabled = true;
+
+      // Nascondi azioni sulle card
+      document.querySelectorAll('.card-actions').forEach(action => {
+        action.style.display = 'none';
+      });
+      elements.contextMenu.style.display = 'none';
     }
 
     // Renderizza le sezioni delle categorie
@@ -807,18 +904,26 @@
 
     // Renderizza la lista delle categorie nella modal
     function renderCategoriesList() {
-      elements.categoriesList.innerHTML = categories.map(category => `
-        <div class="category-item" data-category="${category}" draggable="true">
-          <span>${getCategoryName(category)}</span>
-          ${!DEFAULT_CATEGORIES.includes(category) ? `
-            <button class="btn btn-danger delete-category-btn" data-category="${category}">
-              <i class="fas fa-trash"></i>
-            </button>
-          ` : '<i class="fas fa-grip-lines drag-handle"></i>'}
-        </div>
-      `).join("");
-
-      // Aggiungi event listener per i pulsanti di eliminazione
+      elements.categoriesList.innerHTML = categories
+        .map((category, idx) => `
+          <div class="category-item">
+            <span>${getCategoryName(category)}</span>
+            <div style="display: flex; gap: 0.2rem;">
+              ${!DEFAULT_CATEGORIES.includes(category) ?
+                `<button class="btn btn-danger delete-category-btn" data-category="${category}">
+                  <i class="fas fa-trash"></i>
+                </button>` : ''}
+              <button class="btn btn-secondary move-up-btn" data-category="${category}" ${idx === 0 ? 'disabled' : ''}>
+                <i class="fas fa-arrow-up"></i>
+              </button>
+              <button class="btn btn-secondary move-down-btn" data-category="${category}" ${idx === categories.length - 1 ? 'disabled' : ''}>
+                <i class="fas fa-arrow-down"></i>
+              </button>
+            </div>
+          </div>
+        `).join("");
+      
+      // Aggiungi event listeners
       document.querySelectorAll(".delete-category-btn").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -826,81 +931,34 @@
           deleteCategory(category);
         });
       });
-    }
-
-    // Setup drag and drop per categorie
-    function setupDragAndDrop() {
-      const container = elements.categoriesList;
-
-      container.querySelectorAll('.category-item').forEach(item => {
-        item.addEventListener('dragstart', (e) => {
-          draggedCategory = item;
-          item.classList.add('dragging');
-          e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('text/html', item.innerHTML);
-        });
-
-        item.addEventListener('dragend', () => {
-          item.classList.remove('dragging');
-          draggedCategory = null;
+      document.querySelectorAll(".move-up-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          moveCategory(btn.dataset.category, -1);
         });
       });
-
-      container.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        const afterElement = getDragAfterElement(container, e.clientY);
-        const draggable = draggedCategory;
-        
-        if (afterElement == null) {
-          container.appendChild(draggable);
-        } else {
-          container.insertBefore(draggable, afterElement);
-        }
+      document.querySelectorAll(".move-down-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          moveCategory(btn.dataset.category, 1);
+        });
       });
     }
 
-    function getDragAfterElement(container, y) {
-      const draggableElements = [...container.querySelectorAll('.category-item:not(.dragging)')];
+    // Sposta categoria
+    function moveCategory(category, direction) {
+      const idx = categories.indexOf(category);
+      const newIndex = idx + direction;
+      if (newIndex < 0 || newIndex >= categories.length) return;
 
-      return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        
-        if (offset < 0 && offset > closest.offset) {
-          return { offset: offset, element: child };
-        } else {
-          return closest;
-        }
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-
-    // Salva l'ordine delle categorie
-    function saveCategoriesOrder() {
-      const newOrder = [...elements.categoriesList.querySelectorAll('.category-item')]
-        .map(item => item.dataset.category)
-        .filter(cat => cat); // Rimuovi eventuali valori null
-
-      categories = newOrder;
+      // Swap
+      [categories[idx], categories[newIndex]] = [categories[newIndex], categories[idx]];
       saveCategories();
-      showNotification("Ordine categorie salvato", "success");
+      renderMedia();
     }
 
     // Aggiorna il filtro categorie
     function updateCategoryFilter() {
       elements.categoryFilter.innerHTML = `
         <option value="all">Tutte le categorie</option>
-        ${categories.map(cat => `
-          <option value="${cat}">${getCategoryName(cat)}</option>
-        `).join("")}
-      `;
-
-      // Aggiorna anche il select per le azioni multiple
-      updateBulkCategorySelect();
-    }
-
-    function updateBulkCategorySelect() {
-      elements.bulkCategorySelect.innerHTML = `
-        <option value="">Sposta in...</option>
         ${categories.map(cat => `
           <option value="${cat}">${getCategoryName(cat)}</option>
         `).join("")}
@@ -976,7 +1034,6 @@
       });
 
       updateCounts();
-      updateBulkModeUI();
     }
 
     // Svuota le griglie
@@ -1044,7 +1101,7 @@
     // Crea una card media
     function createMediaCard(media) {
       const card = document.createElement("div");
-      card.className = `media-card ${isBulkMode ? 'bulk-selectable' : ''}`;
+      card.className = "media-card";
       card.dataset.id = media.id;
       
       const ratingsHTML = media.imdbRating || media.rottenTomatoes ? `
@@ -1066,24 +1123,24 @@
         </span>
       ` : '';
 
-      const isSelected = selectedMediaIds.includes(media.id);
+      const actionsHTML = isViewMode ? '' : `
+        <div class="card-actions">
+          <button class="card-btn" data-action="edit">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="card-btn" data-action="delete">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      `;
 
       card.innerHTML = `
         <div style="position:relative;">
-          <input type="checkbox" class="bulk-checkbox" ${isSelected ? 'checked' : ''} 
-                 data-id="${media.id}" style="display: ${isBulkMode ? 'block' : 'none'};">
           <img src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster" 
                onerror="this.src='${DEFAULT_POSTER}'">
           ${rewatchHTML}
           ${categoryHTML}
-          <div class="card-actions">
-            <button class="card-btn" data-action="edit">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="card-btn" data-action="delete">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
+          ${actionsHTML}
         </div>
         <div class="media-info">
           <h3 class="media-title" title="${media.title}">${media.title}</h3>
@@ -1095,115 +1152,32 @@
         </div>
       `;
 
-      // Aggiungi event listeners
-      card.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        showContextMenu(media, e.clientX, e.clientY);
-      });
-
-      card.addEventListener("click", (e) => {
-        if (isBulkMode && !e.target.closest('.card-actions') && !e.target.classList.contains('bulk-checkbox')) {
-          const checkbox = card.querySelector('.bulk-checkbox');
-          checkbox.checked = !checkbox.checked;
-          toggleMediaSelection(media.id, checkbox.checked);
+      if (!isViewMode) {
+        // Aggiungi event listeners
+        card.addEventListener("contextmenu", (e) => {
           e.preventDefault();
-        }
-      });
-
-      card.querySelector("[data-action='edit']").addEventListener("click", (e) => {
-        e.stopPropagation();
-        editMedia(media.id);
-      });
-
-      card.querySelector("[data-action='delete']").addEventListener("click", (e) => {
-        e.stopPropagation();
-        deleteMedia(media.id);
-      });
-
-      const checkbox = card.querySelector('.bulk-checkbox');
-      if (checkbox) {
-        checkbox.addEventListener("click", (e) => {
-          e.stopPropagation();
-          toggleMediaSelection(media.id, checkbox.checked);
+          showContextMenu(media, e.clientX, e.clientY);
         });
+
+        const editBtn = card.querySelector("[data-action='edit']");
+        const deleteBtn = card.querySelector("[data-action='delete']");
+        
+        if (editBtn) {
+          editBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            editMedia(media.id);
+          });
+        }
+
+        if (deleteBtn) {
+          deleteBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            deleteMedia(media.id);
+          });
+        }
       }
 
       return card;
-    }
-
-    // Toggle selezione media per azioni multiple
-    function toggleMediaSelection(mediaId, isSelected) {
-      if (isSelected) {
-        if (!selectedMediaIds.includes(mediaId)) {
-          selectedMediaIds.push(mediaId);
-        }
-      } else {
-        selectedMediaIds = selectedMediaIds.filter(id => id !== mediaId);
-      }
-      updateBulkModeUI();
-    }
-
-    // Aggiorna UI per modalità bulk
-    function updateBulkModeUI() {
-      if (selectedMediaIds.length > 0 || isBulkMode) {
-        elements.bulkActionBtn.style.display = 'inline-flex';
-        elements.bulkActions.classList.add('active');
-      } else {
-        elements.bulkActionBtn.style.display = 'none';
-        elements.bulkActions.classList.remove('active');
-      }
-    }
-
-    // Attiva/disattiva modalità bulk
-    function toggleBulkMode() {
-      isBulkMode = !isBulkMode;
-      if (!isBulkMode) {
-        selectedMediaIds = [];
-      }
-      document.body.classList.toggle('bulk-mode', isBulkMode);
-      renderMedia();
-      updateBulkModeUI();
-    }
-
-    // Esegui azione bulk
-    function performBulkAction(action, value) {
-      if (selectedMediaIds.length === 0) {
-        showNotification("Nessun film selezionato", "warning");
-        return;
-      }
-
-      if (action === 'move' && !value) {
-        showNotification("Seleziona una categoria", "warning");
-        return;
-      }
-
-      if (action === 'delete' && !confirm(`Eliminare ${selectedMediaIds.length} film selezionati?`)) {
-        return;
-      }
-
-      selectedMediaIds.forEach(id => {
-        const media = mediaList.find(m => m.id === id);
-        if (!media) return;
-
-        if (action === 'move') {
-          media.category = value;
-        } else if (action === 'delete') {
-          mediaList = mediaList.filter(m => m.id !== id);
-        }
-      });
-
-      saveMedia();
-      renderMedia();
-      
-      const actionText = action === 'move' ? 'spostati' : 'eliminati';
-      showNotification(`${selectedMediaIds.length} film ${actionText}`, "success");
-      
-      if (action === 'delete') {
-        toggleBulkMode();
-      } else {
-        selectedMediaIds = [];
-        updateBulkModeUI();
-      }
     }
 
     // Corregge l'URL del poster
@@ -1220,12 +1194,13 @@
 
     // Mostra context menu
     function showContextMenu(media, x, y) {
+      if (isViewMode) return;
       currentContextMedia = media;
       
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       const menuWidth = 200;
-      const menuHeight = 150;
+      const menuHeight = 120;
       
       const adjustedX = x + menuWidth > viewportWidth ? viewportWidth - menuWidth : x;
       const adjustedY = y + menuHeight > viewportHeight ? viewportHeight - menuHeight : y;
@@ -1238,10 +1213,12 @@
     // Chiudi context menu
     function closeContextMenu() {
       elements.contextMenu.style.display = "none";
+      currentContextMedia = null;
     }
 
     // Aggiungi una nuova categoria
     function addCategory(name) {
+      if (isViewMode) return false;
       if (!name) {
         showNotification("Inserisci un nome per la categoria", "warning");
         return false;
@@ -1263,6 +1240,7 @@
 
     // Elimina una categoria
     function deleteCategory(category) {
+      if (isViewMode) return;
       if (DEFAULT_CATEGORIES.includes(category)) {
         showNotification("Non puoi eliminare questa categoria predefinita", "warning");
         return;
@@ -1285,6 +1263,7 @@
 
     // Sposta media tra categorie
     function moveMediaToCategory(mediaId, category) {
+      if (isViewMode) return;
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
 
@@ -1331,6 +1310,7 @@
 
     // Segna rewatch
     function markRewatch(mediaId, count) {
+      if (isViewMode) return;
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
 
@@ -1339,7 +1319,7 @@
         media.category = "watched";
       }
 
-      media.rewatchCount = count; // Sovrascriviamo il conteggio anziché incrementarlo
+      media.rewatchCount = count;
       saveMedia();
       
       refreshSingleMedia(mediaId);
@@ -1370,6 +1350,7 @@
 
     // Modifica media
     function editMedia(mediaId) {
+      if (isViewMode) return;
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
 
@@ -1389,6 +1370,7 @@
 
     // Elimina media
     function deleteMedia(id) {
+      if (isViewMode) return;
       if (!confirm("Eliminare questo film dalla lista?")) return;
       
       mediaList = mediaList.filter(m => m.id !== id);
@@ -1484,6 +1466,7 @@
 
     // Aggiungi nuovo media
     function addNewMedia() {
+      if (isViewMode) return;
       const title = elements.mediaTitle.value.trim();
 
       if (!title) {
@@ -1531,6 +1514,7 @@
 
     // Reset app
     function resetApp() {
+      if (isViewMode) return;
       if (confirm("Resettare completamente l'applicazione? Tutti i dati verranno persi.")) {
         mediaList = [];
         categories = [...DEFAULT_CATEGORIES];
@@ -1538,7 +1522,7 @@
         saveCategories();
         elements.searchInput.value = "";
         elements.categoryFilter.value = "all";
-        elements.sortFilter.value = "added";
+        elements.sortFilter.value = "alpha";
         renderMedia();
         showNotification("Applicazione resettata", "success");
       }
@@ -1565,6 +1549,7 @@
 
     // Importa dati
     function importData(file) {
+      if (isViewMode) return;
       if (!file) return;
 
       const reader = new FileReader();
@@ -1605,26 +1590,14 @@
       const isDark = document.body.classList.contains("dark");
       localStorage.setItem("theme", isDark ? "dark" : "light");
       
-      // Aggiorna l'icona e il testo del pulsante
-      const icon = isDark ? "sun" : "moon";
-      elements.themeToggle.innerHTML = `<i class="fas fa-${icon}"></i> Tema`;
-      
-      // Aggiorna eventuali altri elementi che dipendono dal tema
-      updateThemeDependentElements();
+      elements.themeToggle.innerHTML = `
+        <i class="fas fa-${isDark ? "sun" : "moon"}"></i> Tema
+      `;
     }
 
-    // Aggiorna elementi che dipendono dal tema
-    function updateThemeDependentElements() {
-      const isDark = document.body.classList.contains("dark");
-      
-      // Esempio: cambia il colore di alcuni elementi specifici
-      const specialElements = document.querySelectorAll('.theme-sensitive');
-      specialElements.forEach(el => {
-        el.style.color = isDark ? '#f0f0f0' : '#333';
-      });
-    }
     // Apri modal gestione categorie
     function openCategoryManagement() {
+      if (isViewMode) return;
       renderCategoriesList();
       elements.categoryManagementModal.style.display = "flex";
       document.body.classList.add("modal-open");
@@ -1634,6 +1607,7 @@
     function setupEventListeners() {
       // Aggiungi media
       elements.addMediaBtn.addEventListener("click", () => {
+        if (isViewMode) return;
         elements.mediaTitle.value = "";
         elements.omdbResults.innerHTML = "";
         elements.saveMediaBtn.textContent = "Salva";
@@ -1651,8 +1625,6 @@
         }
       });
 
-      elements.saveCategoriesOrderBtn.addEventListener("click", saveCategoriesOrder);
-
       elements.closeCategoryManagementBtn.addEventListener("click", () => {
         closeModal(elements.categoryManagementModal);
       });
@@ -1666,17 +1638,27 @@
 
       // Context menu - Sposta in categoria
       document.addEventListener("click", (e) => {
-        if (e.target.closest("[data-category]") && !e.target.closest("#categoriesList")) {
+        if (isViewMode) {
+          closeContextMenu();
+          return;
+        }
+        if (
+          elements.contextMenu.style.display === "block" &&
+          e.target.closest("#categorySubmenu") &&
+          e.target.closest("[data-category]")
+        ) {
           const category = e.target.closest("[data-category]").dataset.category;
           if (currentContextMedia) {
             moveMediaToCategory(currentContextMedia.id, category);
           }
           closeContextMenu();
+        } else {
+          closeContextMenu();
         }
       });
 
       elements.cmRewatch.addEventListener("click", () => {
-        if (!currentContextMedia) return;
+        if (!currentContextMedia || isViewMode) return;
         currentRewatchMedia = currentContextMedia;
         elements.rewatchCount.value = currentRewatchMedia.rewatchCount || 1;
         elements.rewatchModal.style.display = "flex";
@@ -1685,30 +1667,10 @@
       });
 
       elements.cmDelete.addEventListener("click", () => {
-        if (!currentContextMedia) return;
+        if (!currentContextMedia || isViewMode) return;
         deleteMedia(currentContextMedia.id);
         closeContextMenu();
       });
-
-      elements.cmBulkSelect.addEventListener("click", () => {
-        if (!currentContextMedia) return;
-        toggleBulkMode();
-        if (!selectedMediaIds.includes(currentContextMedia.id)) {
-          selectedMediaIds.push(currentContextMedia.id);
-        }
-        renderMedia();
-        closeContextMenu();
-      });
-
-      // Bulk actions
-      elements.bulkActionBtn.addEventListener("click", toggleBulkMode);
-      elements.bulkMoveBtn.addEventListener("click", () => {
-        performBulkAction('move', elements.bulkCategorySelect.value);
-      });
-      elements.bulkDeleteBtn.addEventListener("click", () => {
-        performBulkAction('delete');
-      });
-      elements.cancelBulkBtn.addEventListener("click", toggleBulkMode);
 
       // Rewatch modal
       elements.confirmRewatchBtn.addEventListener("click", () => {
@@ -1724,9 +1686,6 @@
       elements.cancelRewatchBtn.addEventListener("click", () => {
         closeModal(elements.rewatchModal);
       });
-
-      // Chiudi context menu cliccando altrove
-      document.addEventListener("click", closeContextMenu);
 
       // Chiudi modal cliccando fuori
       elements.addMediaModal.addEventListener("click", (e) => {
@@ -1762,6 +1721,9 @@
       elements.searchInput.addEventListener("input", renderMedia);
       elements.categoryFilter.addEventListener("change", renderMedia);
       elements.sortFilter.addEventListener("change", renderMedia);
+
+      // Condivisione
+      elements.shareBtn.addEventListener("click", shareProfile);
     }
 
     // Avvia l'app
