@@ -12,10 +12,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
   
   <style>
-    /* Tema chiaro (default) */
     :root {
       --primary: #3A86FF;
       --secondary: #00B4D8;
@@ -30,7 +28,6 @@
       --border-color: #e0e0e0;
     }
 
-    /* Tema scuro */
     body.dark {
       --bg-color: #1a1a1a;
       --card-bg: #2d2d2d;
@@ -49,7 +46,6 @@
       transition: background 0.3s, color 0.3s;
     }
 
-    /* Card Media */
     .media-card {
       background: var(--card-bg);
       border-radius: 8px;
@@ -131,7 +127,6 @@
       font-weight: bold;
     }
 
-    /* Sezioni */
     .media-section {
       transition: all 0.3s ease;
     }
@@ -170,7 +165,6 @@
       margin-left: 0.5rem;
     }
 
-    /* Pulsanti */
     .btn {
       padding: 0.5rem 1rem;
       border-radius: 8px;
@@ -203,7 +197,6 @@
       color: white;
     }
 
-    /* Stats */
     .stats-container {
       display: flex;
       gap: 1rem;
@@ -226,7 +219,6 @@
       color: var(--primary);
     }
 
-    /* Modal */
     .modal {
       position: fixed;
       top: 0;
@@ -253,7 +245,6 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
 
-    /* Context Menu */
     .context-menu {
       position: fixed;
       background: var(--card-bg);
@@ -297,7 +288,6 @@
       display: block;
     }
 
-    /* Form elementi */
     input, select {
       width: 100%;
       padding: 0.5rem;
@@ -308,7 +298,6 @@
       color: var(--text-color);
     }
 
-    /* Toolbar */
     .toolbar {
       display: flex;
       gap: 0.75rem;
@@ -316,7 +305,6 @@
       flex-wrap: wrap;
     }
 
-    /* Action buttons on cards */
     .card-actions {
       position: absolute;
       top: 10px;
@@ -348,7 +336,6 @@
       cursor: pointer;
     }
 
-    /* Search and filter */
     .filter-row {
       display: flex;
       gap: 1rem;
@@ -367,7 +354,6 @@
       min-width: 150px;
     }
 
-    /* OMDb results */
     .omdb-results-container {
       max-height: 300px;
       overflow-y: auto;
@@ -401,12 +387,10 @@
       border-radius: 4px;
     }
 
-    /* Add category modal */
     .add-category-modal {
       max-width: 300px;
     }
 
-    /* Category management modal */
     .category-management-modal {
       max-width: 400px;
     }
@@ -429,7 +413,6 @@
       border-bottom: none;
     }
 
-    /* Notification */
     .notification {
       position: fixed;
       bottom: 20px;
@@ -452,7 +435,6 @@
       color: #333;
     }
 
-    /* Auth Container */
     #authContainer {
       display: flex;
       gap: 1rem;
@@ -467,12 +449,6 @@
       margin-left: auto;
     }
 
-    /* Share button */
-    #shareBtn {
-      margin-left: 0.5rem;
-    }
-
-    /* Auth Form */
     .auth-form {
       display: flex;
       flex-direction: column;
@@ -523,10 +499,51 @@
     .auth-form-container.active {
       display: block;
     }
+
+    .share-panel {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      border: 1px solid var(--border-color);
+      display: none;
+    }
+
+    .share-link {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .share-link input {
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    .share-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .view-mode-banner {
+      background: var(--primary);
+      color: white;
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
   </style>
 </head>
 <body class="light">
-  <!-- Auth Toolbar -->
+  <!-- Auth Container -->
   <div id="authContainer">
     <div id="authForms" class="auth-form" style="display:none;">
       <div class="auth-tabs">
@@ -559,16 +576,13 @@
     <button id="logoutBtn" class="btn btn-danger" style="display:none">
       <i class="fas fa-sign-out-alt"></i> Logout
     </button>
-    <button id="shareBtn" class="btn btn-secondary" style="display:none">
-      <i class="fas fa-share-alt"></i> Condividi
-    </button>
     <span id="userEmail"></span>
   </div>
 
   <!-- Main App -->
   <div id="appContent">
     <div class="top-bar" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
-      <!-- LEFT: Search and filters -->
+      <!-- Search and filters -->
       <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
         <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
         <select id="categoryFilter" class="filter-select">
@@ -582,16 +596,16 @@
         </select>
       </div>
 
-      <!-- FLEX SPACE -->
-      <div style="flex: 1 1 auto;"></div>
-
-      <!-- RIGHT: Action buttons -->
+      <!-- Action buttons -->
       <div class="toolbar" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
         <button id="addMediaBtn" class="btn btn-primary">
           <i class="fas fa-plus"></i> Aggiungi Film
         </button>
         <button id="manageCategoriesBtn" class="btn btn-secondary">
           <i class="fas fa-folder"></i> Gestione Categorie
+        </button>
+        <button id="shareBtn" class="btn btn-secondary">
+          <i class="fas fa-share-alt"></i> Condividi
         </button>
         <button id="exportBtn" class="btn btn-secondary">
           <i class="fas fa-download"></i> Esporta
@@ -609,6 +623,24 @@
       </div>
     </div>
     
+    <!-- Share Panel -->
+    <div id="sharePanel" class="share-panel">
+      <h3>Condivisione attiva</h3>
+      <p>Chiunque abbia questo link può vedere la tua lista in tempo reale:</p>
+      <div class="share-link">
+        <input type="text" id="shareLink" readonly>
+        <button id="copyLinkBtn" class="btn btn-primary">
+          <i class="fas fa-copy"></i> Copia
+        </button>
+      </div>
+      <div class="share-actions">
+        <button id="disableShareBtn" class="btn btn-danger">
+          <i class="fas fa-ban"></i> Disattiva
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
     <div class="stats-container">
       <div class="stat-item">
         <div class="stat-value" id="statTotal">0</div>
@@ -632,11 +664,20 @@
       </div>
     </div>
 
-    <!-- Sezioni Media verranno generate dinamicamente -->
+    <!-- Media Sections -->
     <div id="mediaSectionsContainer"></div>
   </div>
 
-  <!-- Add Media Modal -->
+  <!-- View Mode Banner -->
+  <div id="viewModeBanner" class="view-mode-banner" style="display:none">
+    <i class="fas fa-eye"></i>
+    <span>Stai visualizzando una lista condivisa</span>
+    <button id="closeViewBtn" class="btn btn-danger" style="margin-left:auto">
+      <i class="fas fa-times"></i> Chiudi
+    </button>
+  </div>
+
+  <!-- Modals -->
   <div class="modal" id="addMediaModal">
     <div class="modal-content">
       <h2>Aggiungi Film</h2>
@@ -652,7 +693,6 @@
     </div>
   </div>
 
-  <!-- Category Management Modal -->
   <div class="modal" id="categoryManagementModal">
     <div class="modal-content category-management-modal">
       <h2>Gestione Categorie</h2>
@@ -662,16 +702,13 @@
           <i class="fas fa-plus"></i> Aggiungi
         </button>
       </div>
-      <div class="categories-list" id="categoriesList">
-        <!-- Categorie verranno aggiunte dinamicamente -->
-      </div>
+      <div class="categories-list" id="categoriesList"></div>
       <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
         <button id="closeCategoryManagementBtn" class="btn btn-danger">Chiudi</button>
       </div>
     </div>
   </div>
 
-  <!-- Rewatch Modal -->
   <div class="modal" id="rewatchModal">
     <div class="modal-content">
       <h2>Segna Rewatch</h2>
@@ -688,9 +725,7 @@
   <div class="context-menu" id="contextMenu">
     <div class="context-menu-item context-submenu">
       <i class="fas fa-folder"></i> Sposta in
-      <div class="context-submenu-items" id="categorySubmenu">
-        <!-- Categorie verranno aggiunte dinamicamente -->
-      </div>
+      <div class="context-submenu-items" id="categorySubmenu"></div>
     </div>
     <div class="context-menu-item" id="cmRewatch">
       <i class="fas fa-redo"></i> Segna Rewatch
@@ -712,15 +747,16 @@
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
 
     // Stato
-    let mediaList = JSON.parse(localStorage.getItem("mediaList")) || [];
-    let categories = JSON.parse(localStorage.getItem("categories")) || DEFAULT_CATEGORIES;
+    let mediaList = [];
+    let categories = [...DEFAULT_CATEGORIES];
     let currentContextMedia = null;
     let currentRewatchMedia = null;
     let currentOMDbSelection = null;
     let currentUser = null;
     let isViewMode = false;
+    let activeShareId = null;
 
-    // 1. INIZIALIZZA FIREBASE (sostituisci con la tua configurazione)
+    // Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk",
       authDomain: "gametrackerdb.firebaseapp.com",
@@ -732,44 +768,7 @@
 
     // Elementi DOM
     const elements = {
-      appContent: document.getElementById("appContent"),
-      addMediaBtn: document.getElementById("addMediaBtn"),
-      manageCategoriesBtn: document.getElementById("manageCategoriesBtn"),
-      addMediaModal: document.getElementById("addMediaModal"),
-      categoryManagementModal: document.getElementById("categoryManagementModal"),
-      mediaTitle: document.getElementById("mediaTitle"),
-      newCategoryName: document.getElementById("newCategoryName"),
-      searchOMDbBtn: document.getElementById("searchOMDbBtn"),
-      omdbResults: document.getElementById("omdbResults"),
-      saveMediaBtn: document.getElementById("saveMediaBtn"),
-      cancelMediaBtn: document.getElementById("cancelMediaBtn"),
-      addCategoryBtn: document.getElementById("addCategoryBtn"),
-      closeCategoryManagementBtn: document.getElementById("closeCategoryManagementBtn"),
-      categoriesList: document.getElementById("categoriesList"),
-      mediaSectionsContainer: document.getElementById("mediaSectionsContainer"),
-      statTotal: document.getElementById("statTotal"),
-      statWatchlist: document.getElementById("statWatchlist"),
-      statWatched: document.getElementById("statWatched"),
-      statRewatched: document.getElementById("statRewatched"),
-      statHours: document.getElementById("statHours"),
-      contextMenu: document.getElementById("contextMenu"),
-      cmRewatch: document.getElementById("cmRewatch"),
-      cmDelete: document.getElementById("cmDelete"),
-      categorySubmenu: document.getElementById("categorySubmenu"),
-      exportBtn: document.getElementById("exportBtn"),
-      importBtn: document.getElementById("importBtn"),
-      importFile: document.getElementById("importFile"),
-      resetBtn: document.getElementById("resetBtn"),
-      themeToggle: document.getElementById("themeToggle"),
-      notification: document.getElementById("notification"),
-      notificationText: document.getElementById("notificationText"),
-      rewatchModal: document.getElementById("rewatchModal"),
-      rewatchCount: document.getElementById("rewatchCount"),
-      confirmRewatchBtn: document.getElementById("confirmRewatchBtn"),
-      cancelRewatchBtn: document.getElementById("cancelRewatchBtn"),
-      searchInput: document.getElementById("searchInput"),
-      categoryFilter: document.getElementById("categoryFilter"),
-      sortFilter: document.getElementById("sortFilter"),
+      authContainer: document.getElementById("authContainer"),
       authForms: document.getElementById("authForms"),
       loginBtn: document.getElementById("loginBtn"),
       loginEmail: document.getElementById("loginEmail"),
@@ -779,44 +778,77 @@
       registerPassword: document.getElementById("registerPassword"),
       registerConfirmPassword: document.getElementById("registerConfirmPassword"),
       logoutBtn: document.getElementById("logoutBtn"),
-      shareBtn: document.getElementById("shareBtn"),
       userEmail: document.getElementById("userEmail"),
       loginForm: document.getElementById("loginForm"),
-      registerForm: document.getElementById("registerForm")
+      registerForm: document.getElementById("registerForm"),
+      appContent: document.getElementById("appContent"),
+      addMediaBtn: document.getElementById("addMediaBtn"),
+      manageCategoriesBtn: document.getElementById("manageCategoriesBtn"),
+      shareBtn: document.getElementById("shareBtn"),
+      exportBtn: document.getElementById("exportBtn"),
+      importBtn: document.getElementById("importBtn"),
+      importFile: document.getElementById("importFile"),
+      resetBtn: document.getElementById("resetBtn"),
+      themeToggle: document.getElementById("themeToggle"),
+      searchInput: document.getElementById("searchInput"),
+      categoryFilter: document.getElementById("categoryFilter"),
+      sortFilter: document.getElementById("sortFilter"),
+      statTotal: document.getElementById("statTotal"),
+      statWatchlist: document.getElementById("statWatchlist"),
+      statWatched: document.getElementById("statWatched"),
+      statRewatched: document.getElementById("statRewatched"),
+      statHours: document.getElementById("statHours"),
+      mediaSectionsContainer: document.getElementById("mediaSectionsContainer"),
+      addMediaModal: document.getElementById("addMediaModal"),
+      mediaTitle: document.getElementById("mediaTitle"),
+      searchOMDbBtn: document.getElementById("searchOMDbBtn"),
+      omdbResults: document.getElementById("omdbResults"),
+      saveMediaBtn: document.getElementById("saveMediaBtn"),
+      cancelMediaBtn: document.getElementById("cancelMediaBtn"),
+      categoryManagementModal: document.getElementById("categoryManagementModal"),
+      newCategoryName: document.getElementById("newCategoryName"),
+      addCategoryBtn: document.getElementById("addCategoryBtn"),
+      categoriesList: document.getElementById("categoriesList"),
+      closeCategoryManagementBtn: document.getElementById("closeCategoryManagementBtn"),
+      rewatchModal: document.getElementById("rewatchModal"),
+      rewatchCount: document.getElementById("rewatchCount"),
+      confirmRewatchBtn: document.getElementById("confirmRewatchBtn"),
+      cancelRewatchBtn: document.getElementById("cancelRewatchBtn"),
+      contextMenu: document.getElementById("contextMenu"),
+      cmRewatch: document.getElementById("cmRewatch"),
+      cmDelete: document.getElementById("cmDelete"),
+      categorySubmenu: document.getElementById("categorySubmenu"),
+      notification: document.getElementById("notification"),
+      notificationText: document.getElementById("notificationText"),
+      sharePanel: document.getElementById("sharePanel"),
+      shareLink: document.getElementById("shareLink"),
+      copyLinkBtn: document.getElementById("copyLinkBtn"),
+      disableShareBtn: document.getElementById("disableShareBtn"),
+      viewModeBanner: document.getElementById("viewModeBanner"),
+      closeViewBtn: document.getElementById("closeViewBtn")
     };
 
     // Inizializzazione
     function init() {
-      loadTheme();
-      loadMedia();
-      loadCategories();
-      setupEventListeners();
       setupAuthListeners();
-      renderCategorySections();
-      renderMedia();
-      updateCategoryFilter();
-      updateCategorySubmenu();
-      checkSharedProfile();
-      updateAuthUI();
+      setupEventListeners();
+      checkSharedView();
+      loadTheme();
     }
 
-    // Imposta listener per autenticazione
+    // Autenticazione
     function setupAuthListeners() {
-      // Listener per i tab login/registrazione
       document.querySelectorAll('.auth-tab').forEach(tab => {
         tab.addEventListener('click', () => {
           document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
-          
           document.querySelectorAll('.auth-form-container').forEach(form => {
             form.classList.remove('active');
           });
-          
           document.getElementById(`${tab.dataset.tab}Form`).classList.add('active');
         });
       });
       
-      // Listener per login
       elements.loginBtn.addEventListener('click', () => {
         const email = elements.loginEmail.value;
         const password = elements.loginPassword.value;
@@ -827,15 +859,10 @@
         }
         
         firebase.auth().signInWithEmailAndPassword(email, password)
-          .then(() => {
-            showNotification("Login effettuato con successo", "success");
-          })
-          .catch(error => {
-            showNotification(getAuthErrorMessage(error), "error");
-          });
+          .then(() => showNotification("Login effettuato", "success"))
+          .catch(error => showNotification(getAuthErrorMessage(error), "error"));
       });
       
-      // Listener per registrazione
       elements.registerBtn.addEventListener('click', () => {
         const email = elements.registerEmail.value;
         const password = elements.registerPassword.value;
@@ -857,282 +884,193 @@
         }
         
         firebase.auth().createUserWithEmailAndPassword(email, password)
-          .then(() => {
-            showNotification("Registrazione completata!", "success");
-          })
-          .catch(error => {
-            showNotification(getAuthErrorMessage(error), "error");
-          });
+          .then(() => showNotification("Registrazione completata!", "success"))
+          .catch(error => showNotification(getAuthErrorMessage(error), "error"));
       });
       
-      // Listener per logout
-      elements.logoutBtn.addEventListener('click', () => {
-        firebase.auth().signOut();
-      });
+      elements.logoutBtn.addEventListener('click', () => firebase.auth().signOut());
       
-      // Observer stato autenticazione
       firebase.auth().onAuthStateChanged((user) => {
         currentUser = user;
         updateAuthUI();
         
         if (user) {
-          // Carica i dati da Firebase se loggato
-          loadMediaFromFirebase();
+          loadData();
+          checkActiveShare();
         } else {
-          // Carica i dati locali se non loggato
-          loadMedia();
-          renderMedia();
+          loadLocalData();
         }
       });
     }
-    
-    // Ottieni messaggio di errore autenticazione
+
     function getAuthErrorMessage(error) {
       switch(error.code) {
-        case 'auth/email-already-in-use':
-          return "Email già registrata";
-        case 'auth/invalid-email':
-          return "Email non valida";
-        case 'auth/weak-password':
-          return "Password troppo debole";
-        case 'auth/user-not-found':
-          return "Utente non trovato";
-        case 'auth/wrong-password':
-          return "Password errata";
-        default:
-          return "Errore: " + error.message;
+        case 'auth/email-already-in-use': return "Email già registrata";
+        case 'auth/invalid-email': return "Email non valida";
+        case 'auth/weak-password': return "Password troppo debole";
+        case 'auth/user-not-found': return "Utente non trovato";
+        case 'auth/wrong-password': return "Password errata";
+        default: return "Errore: " + error.message;
       }
     }
-    
-    // Aggiorna UI in base allo stato di autenticazione
+
     function updateAuthUI() {
       if (currentUser) {
-        // Utente loggato
         elements.authForms.style.display = 'none';
         elements.logoutBtn.style.display = 'block';
-        elements.shareBtn.style.display = 'block';
         elements.userEmail.textContent = currentUser.email;
-        
-        // Abilita tutte le funzionalità
-        document.querySelectorAll('.btn:not(#logoutBtn):not(#shareBtn)').forEach(btn => {
-          btn.disabled = false;
-        });
+        document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
       } else {
-        // Utente non loggato
         elements.authForms.style.display = 'block';
         elements.logoutBtn.style.display = 'none';
-        elements.shareBtn.style.display = 'none';
         elements.userEmail.textContent = '';
-        
-        // Disabilita alcune funzionalità
         document.querySelectorAll('#addMediaBtn, #manageCategoriesBtn, #exportBtn, #importBtn, #resetBtn, #shareBtn').forEach(btn => {
           btn.disabled = true;
         });
       }
     }
 
-    // Carica tema
-    function loadTheme() {
-      const savedTheme = localStorage.getItem("theme") || "light";
-      document.body.classList.toggle("dark", savedTheme === "dark");
-      elements.themeToggle.innerHTML = `
-        <i class="fas fa-${savedTheme === "dark" ? "sun" : "moon"}"></i> Tema
-      `;
-    }
-
-    // Carica i media
-    function loadMedia() {
-      try {
-        const saved = localStorage.getItem("mediaList");
-        mediaList = saved ? JSON.parse(saved) : [];
-        if (!Array.isArray(mediaList)) {
-          console.error("Dati mediaList corrotti, reinizializzo");
-          mediaList = [];
-        }
-      } catch (e) {
-        console.error("Error loading media:", e);
-        mediaList = [];
-      }
-    }
-
-    // Carica i media da Firebase
-    function loadMediaFromFirebase() {
+    // Caricamento dati
+    function loadData() {
       if (!currentUser) return;
       
-      db.ref(`users/${currentUser.uid}/mediaList`).once('value')
-        .then(snapshot => {
-          const data = snapshot.val();
-          if (data) {
-            mediaList = data;
-            saveMediaToLocal(); // Salva anche localmente per offline
-            renderMedia();
-            showNotification("Dati caricati da Firebase", "success");
-          } else {
-            // Nessun dato su Firebase, carica da locale
-            loadMedia();
-            renderMedia();
-          }
-        })
-        .catch(error => {
-          console.error("Error loading from Firebase:", error);
-          loadMedia(); // Fallback al locale
-          renderMedia();
-        });
-    }
-
-    // Salva i media su Firebase
-    function saveMediaToFirebase() {
-      if (!currentUser) return;
+      db.ref(`users/${currentUser.uid}/mediaList`).on('value', snapshot => {
+        mediaList = snapshot.val() || [];
+        renderMedia();
+        updateStats();
+      });
       
-      try {
-        db.ref(`users/${currentUser.uid}/mediaList`).set(mediaList)
-          .then(() => console.log("Dati salvati su Firebase"))
-          .catch(error => console.error("Error saving to Firebase:", error));
-      } catch (e) {
-        console.error("Error saving to Firebase:", e);
-      }
-    }
-
-    // Salva i media localmente
-    function saveMediaToLocal() {
-      try {
-        localStorage.setItem("mediaList", JSON.stringify(mediaList));
-        console.log("Dati salvati localmente:", mediaList.length, "film");
-      } catch (e) {
-        console.error("Error saving media locally:", e);
-        showNotification("Errore nel salvataggio locale dei dati", "error");
-      }
-    }
-
-    // Salva i media (locale + Firebase)
-    function saveMedia() {
-      saveMediaToLocal();
-      saveMediaToFirebase();
-    }
-
-    // Carica le categorie
-    function loadCategories() {
-      try {
-        const saved = localStorage.getItem("categories");
-        if (saved) {
-          categories = JSON.parse(saved);
-          if (!categories.includes("watchlist")) categories.unshift("watchlist");
-          if (!categories.includes("watched")) categories.push("watched");
-        } else {
-          categories = [...DEFAULT_CATEGORIES];
-        }
-      } catch (e) {
-        console.error("Error loading categories:", e);
-        categories = [...DEFAULT_CATEGORIES];
-      }
-    }
-
-    // Salva le categorie
-    function saveCategories() {
-      try {
-        localStorage.setItem("categories", JSON.stringify(categories));
-        renderCategorySections();
+      db.ref(`users/${currentUser.uid}/categories`).once('value').then(snapshot => {
+        categories = snapshot.val() || [...DEFAULT_CATEGORIES];
         updateCategoryFilter();
         updateCategorySubmenu();
-        renderCategoriesList();
+        renderCategorySections();
+      });
+    }
+
+    function loadLocalData() {
+      try {
+        mediaList = JSON.parse(localStorage.getItem("mediaList")) || [];
+        categories = JSON.parse(localStorage.getItem("categories")) || [...DEFAULT_CATEGORIES];
+        renderMedia();
+        updateStats();
+        updateCategoryFilter();
+        updateCategorySubmenu();
+        renderCategorySections();
       } catch (e) {
-        console.error("Error saving categories:", e);
-        showNotification("Errore nel salvataggio delle categorie", "error");
+        console.error("Error loading local data:", e);
       }
     }
 
-    // Renderizza le sezioni delle categorie
-    function renderCategorySections() {
-      elements.mediaSectionsContainer.innerHTML = categories.map(category => `
-        <div class="media-section" id="${category}Section" data-category="${category}">
-          <div class="section-header">
-            <h2 class="section-title">${getCategoryName(category)}</h2>
-            <span id="${category}Count" class="category-count">0</span>
-          </div>
-          <div class="media-grid" id="${category}Grid"></div>
-        </div>
-      `).join("");
-    }
-
-    // Renderizza la lista delle categorie nella modal
-    function renderCategoriesList() {
-      elements.categoriesList.innerHTML = categories
-        .map((category, idx) => `
-          <div class="category-item">
-            <span>${getCategoryName(category)}</span>
-            <div style="display: flex; gap: 0.2rem;">
-              ${!DEFAULT_CATEGORIES.includes(category) ?
-                `<button class="btn btn-danger delete-category-btn" data-category="${category}">
-                  <i class="fas fa-trash"></i>
-                </button>` : ''}
-              <button class="btn btn-secondary move-up-btn" data-category="${category}" ${idx === 0 ? 'disabled' : ''}>
-                <i class="fas fa-arrow-up"></i>
-              </button>
-              <button class="btn btn-secondary move-down-btn" data-category="${category}" ${idx === categories.length - 1 ? 'disabled' : ''}>
-                <i class="fas fa-arrow-down"></i>
-              </button>
-            </div>
-          </div>
-        `).join("");
+    function saveData() {
+      if (!currentUser) {
+        saveToLocal();
+        return;
+      }
       
-      // listener: come prima (non cambiano)
-      document.querySelectorAll(".delete-category-btn").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const category = btn.dataset.category;
-          deleteCategory(category);
+      db.ref(`users/${currentUser.uid}/mediaList`).set(mediaList)
+        .then(() => db.ref(`users/${currentUser.uid}/categories`).set(categories))
+        .then(() => saveToLocal())
+        .catch(error => {
+          console.error("Error saving to Firebase:", error);
+          saveToLocal();
         });
+    }
+
+    function saveToLocal() {
+      try {
+        localStorage.setItem("mediaList", JSON.stringify(mediaList));
+        localStorage.setItem("categories", JSON.stringify(categories));
+      } catch (e) {
+        console.error("Error saving locally:", e);
+      }
+    }
+
+    // Condivisione
+    function checkSharedView() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const uid = urlParams.get('uid');
+      const share = urlParams.get('share');
+
+      if (uid && share) {
+        enableViewMode(uid, share);
+      }
+    }
+
+    function enableViewMode(uid, shareKey) {
+      isViewMode = true;
+      
+      // Nascondi elementi di modifica
+      document.querySelectorAll('.btn').forEach(btn => btn.style.display = 'none');
+      elements.authContainer.style.display = 'none';
+      elements.viewModeBanner.style.display = 'flex';
+      
+      // Carica i media condivisi
+      db.ref(`users/${uid}/mediaList`).on('value', snapshot => {
+        mediaList = snapshot.val() || [];
+        renderMedia();
+        updateStats();
       });
-      document.querySelectorAll(".move-up-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          moveCategory(btn.dataset.category, -1);
+    }
+
+    function closeViewMode() {
+      window.location.href = window.location.pathname;
+    }
+
+    function checkActiveShare() {
+      if (!currentUser) return;
+      
+      db.ref(`users/${currentUser.uid}/activeShare`).once('value', snapshot => {
+        const shareId = snapshot.val();
+        if (shareId) {
+          activeShareId = shareId;
+          showSharePanel(shareId);
+        }
+      });
+    }
+
+    function activateSharing() {
+      if (!currentUser) return;
+      
+      const shareId = generateId();
+      db.ref(`users/${currentUser.uid}/activeShare`).set(shareId)
+        .then(() => {
+          activeShareId = shareId;
+          showSharePanel(shareId);
+          showNotification("Condivisione attivata", "success");
+        })
+        .catch(error => {
+          showNotification("Errore nell'attivazione della condivisione", "error");
+          console.error("Sharing error:", error);
         });
-      });
-      document.querySelectorAll(".move-down-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          moveCategory(btn.dataset.category, 1);
+    }
+
+    function deactivateSharing() {
+      if (!currentUser || !activeShareId) return;
+      
+      db.ref(`users/${currentUser.uid}/activeShare`).remove()
+        .then(() => {
+          activeShareId = null;
+          elements.sharePanel.style.display = 'none';
+          showNotification("Condivisione disattivata", "success");
+        })
+        .catch(error => {
+          showNotification("Errore nella disattivazione della condivisione", "error");
+          console.error("Sharing disable error:", error);
         });
-      });
     }
 
-    function moveCategory(category, direction) {
-      const idx = categories.indexOf(category);
-      const newIndex = idx + direction;
-      if (newIndex < 0 || newIndex >= categories.length) return; // Fuori dai limiti
-
-      // Swap
-      [categories[idx], categories[newIndex]] = [categories[newIndex], categories[idx]];
-      saveCategories();
-      renderMedia(); // Le categorie cambiano ordine anche nella vista principale!
+    function showSharePanel(shareId) {
+      const shareLink = `${window.location.origin}${window.location.pathname}?uid=${currentUser.uid}&share=${shareId}`;
+      elements.shareLink.value = shareLink;
+      elements.sharePanel.style.display = 'block';
     }
 
-    // Aggiorna il filtro categorie
-    function updateCategoryFilter() {
-      elements.categoryFilter.innerHTML = `
-        <option value="all">Tutte le categorie</option>
-        ${categories.map(cat => `
-          <option value="${cat}">${getCategoryName(cat)}</option>
-        `).join("")}
-      `;
+    function generateId() {
+      return Math.random().toString(36).substring(2, 15);
     }
 
-    // Aggiorna il submenu categorie
-    function updateCategorySubmenu() {
-      elements.categorySubmenu.innerHTML = categories.map(cat => `
-        <div class="context-menu-item" data-category="${cat}">${getCategoryName(cat)}</div>
-      `).join("");
-    }
-
-    // Ottieni nome categoria
-    function getCategoryName(category) {
-      const names = {
-        watchlist: "Da Vedere",
-        watched: "Visti"
-      };
-      return names[category] || category;
-    }
-
-    // Renderizza i media
+    // Media functions
     function renderMedia() {
       clearMediaGrids();
       updateStats();
@@ -1141,7 +1079,7 @@
       const filterCategory = elements.categoryFilter.value;
       const sortBy = elements.sortFilter.value;
 
-      // Nascondi tutte le sezioni prima di filtrare
+      // Hide all sections before filtering
       document.querySelectorAll('.media-section').forEach(section => {
         section.style.display = 'none';
       });
@@ -1159,11 +1097,11 @@
           media.category === filterCategory
         );
         
-        // Mostra solo la sezione filtrata
+        // Show only filtered section
         const section = document.getElementById(`${filterCategory}Section`);
         if (section) section.style.display = 'block';
       } else {
-        // Mostra tutte le sezioni
+        // Show all sections
         document.querySelectorAll('.media-section').forEach(section => {
           section.style.display = 'block';
         });
@@ -1187,7 +1125,6 @@
       updateCounts();
     }
 
-    // Svuota le griglie
     function clearMediaGrids() {
       categories.forEach(category => {
         const grid = document.getElementById(`${category}Grid`);
@@ -1195,7 +1132,6 @@
       });
     }
 
-    // Aggiorna statistiche
     function updateStats() {
       let stats = {
         total: mediaList.length,
@@ -1211,18 +1147,15 @@
         if (media.category === "watched") stats.watched++;
         if (media.rewatchCount > 1) stats.rewatched++;
 
-        // Calcola solo per i film visti
         if (media.category === "watched") {
           const runtime = media.runtime ? parseInt(media.runtime.toString().replace(/\D/g, '')) : 0;
           if (runtime > 0) {
-            // Tempo totale = runtime * rewatchCount
             const totalMinutes = runtime * (media.rewatchCount || 1);
             stats.minutes += totalMinutes;
           }
         }
       });
 
-      // Converti minuti in ore e minuti
       stats.hours = Math.floor(stats.minutes / 60);
       stats.minutes = stats.minutes % 60;
 
@@ -1233,7 +1166,6 @@
       elements.statHours.textContent = `${stats.hours}h ${stats.minutes}m`;
     }
 
-    // Aggiorna contatori
     function updateCounts() {
       categories.forEach(category => {
         const countElement = document.getElementById(`${category}Count`);
@@ -1249,7 +1181,6 @@
       });
     }
 
-    // Crea una card media
     function createMediaCard(media) {
       const card = document.createElement("div");
       card.className = "media-card";
@@ -1299,7 +1230,6 @@
         </div>
       `;
 
-      // Aggiungi event listeners
       card.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         showContextMenu(media, e.clientX, e.clientY);
@@ -1318,7 +1248,6 @@
       return card;
     }
 
-    // Corregge l'URL del poster
     function fixPosterUrl(url) {
       if (!url || url === "N/A") return null;
       if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -1330,9 +1259,135 @@
       return `https://${url}`;
     }
 
-    // Mostra context menu
+    // Categories
+    function renderCategorySections() {
+      elements.mediaSectionsContainer.innerHTML = categories.map(category => `
+        <div class="media-section" id="${category}Section" data-category="${category}">
+          <div class="section-header">
+            <h2 class="section-title">${getCategoryName(category)}</h2>
+            <span id="${category}Count" class="category-count">0</span>
+          </div>
+          <div class="media-grid" id="${category}Grid"></div>
+        </div>
+      `).join("");
+    }
+
+    function renderCategoriesList() {
+      elements.categoriesList.innerHTML = categories
+        .map((category, idx) => `
+          <div class="category-item">
+            <span>${getCategoryName(category)}</span>
+            <div style="display: flex; gap: 0.2rem;">
+              ${!DEFAULT_CATEGORIES.includes(category) ?
+                `<button class="btn btn-danger delete-category-btn" data-category="${category}">
+                  <i class="fas fa-trash"></i>
+                </button>` : ''}
+              <button class="btn btn-secondary move-up-btn" data-category="${category}" ${idx === 0 ? 'disabled' : ''}>
+                <i class="fas fa-arrow-up"></i>
+              </button>
+              <button class="btn btn-secondary move-down-btn" data-category="${category}" ${idx === categories.length - 1 ? 'disabled' : ''}>
+                <i class="fas fa-arrow-down"></i>
+              </button>
+            </div>
+          </div>
+        `).join("");
+      
+      document.querySelectorAll(".delete-category-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const category = btn.dataset.category;
+          deleteCategory(category);
+        });
+      });
+      
+      document.querySelectorAll(".move-up-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          moveCategory(btn.dataset.category, -1);
+        });
+      });
+      
+      document.querySelectorAll(".move-down-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          moveCategory(btn.dataset.category, 1);
+        });
+      });
+    }
+
+    function moveCategory(category, direction) {
+      const idx = categories.indexOf(category);
+      const newIndex = idx + direction;
+      if (newIndex < 0 || newIndex >= categories.length) return;
+
+      [categories[idx], categories[newIndex]] = [categories[newIndex], categories[idx]];
+      saveData();
+      renderMedia();
+    }
+
+    function updateCategoryFilter() {
+      elements.categoryFilter.innerHTML = `
+        <option value="all">Tutte le categorie</option>
+        ${categories.map(cat => `
+          <option value="${cat}">${getCategoryName(cat)}</option>
+        `).join("")}
+      `;
+    }
+
+    function updateCategorySubmenu() {
+      elements.categorySubmenu.innerHTML = categories.map(cat => `
+        <div class="context-menu-item" data-category="${cat}">${getCategoryName(cat)}</div>
+      `).join("");
+    }
+
+    function getCategoryName(category) {
+      const names = {
+        watchlist: "Da Vedere",
+        watched: "Visti"
+      };
+      return names[category] || category;
+    }
+
+    function addCategory(name) {
+      if (!name) {
+        showNotification("Inserisci un nome per la categoria", "warning");
+        return false;
+      }
+
+      const normalizedName = name.trim();
+      
+      if (categories.some(cat => cat.toLowerCase() === normalizedName.toLowerCase())) {
+        showNotification("Questa categoria esiste già", "warning");
+        return false;
+      }
+
+      categories.push(normalizedName);
+      saveData();
+      renderMedia();
+      showNotification(`Categoria "${normalizedName}" creata`, "success");
+      return true;
+    }
+
+    function deleteCategory(category) {
+      if (DEFAULT_CATEGORIES.includes(category)) {
+        showNotification("Non puoi eliminare questa categoria predefinita", "warning");
+        return;
+      }
+
+      if (!confirm(`Eliminare la categoria "${category}"? Tutti i film verranno spostati in "Da Vedere".`)) return;
+      
+      mediaList.forEach(media => {
+        if (media.category === category) {
+          media.category = "watchlist";
+        }
+      });
+      
+      categories = categories.filter(c => c !== category);
+      saveData();
+      showNotification(`Categoria "${category}" eliminata`, "success");
+    }
+
+    // Media actions
     function showContextMenu(media, x, y) {
-      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      if (isViewMode) return;
       
       currentContextMedia = media;
       
@@ -1349,61 +1404,15 @@
       elements.contextMenu.style.display = "block";
     }
 
-    // Chiudi context menu
     function closeContextMenu() {
       elements.contextMenu.style.display = "none";
       currentContextMedia = null;
     }
 
-    // Aggiungi una nuova categoria
-    function addCategory(name) {
-      if (!name) {
-        showNotification("Inserisci un nome per la categoria", "warning");
-        return false;
-      }
-
-      const normalizedName = name.trim();
-      
-      if (categories.some(cat => cat.toLowerCase() === normalizedName.toLowerCase())) {
-        showNotification("Questa categoria esiste già", "warning");
-        return false;
-      }
-
-      categories.push(normalizedName);
-      saveCategories();
-      renderMedia();
-      showNotification(`Categoria "${normalizedName}" creata`, "success");
-      return true;
-    }
-
-    // Elimina una categoria
-    function deleteCategory(category) {
-      if (DEFAULT_CATEGORIES.includes(category)) {
-        showNotification("Non puoi eliminare questa categoria predefinita", "warning");
-        return;
-      }
-
-      if (!confirm(`Eliminare la categoria "${category}"? Tutti i film verranno spostati in "Da Vedere".`)) return;
-      
-      mediaList.forEach(media => {
-        if (media.category === category) {
-          media.category = "watchlist";
-        }
-      });
-      
-      categories = categories.filter(c => c !== category);
-      saveMedia();
-      saveCategories();
-      
-      showNotification(`Categoria "${category}" eliminata`, "success");
-    }
-
-    // Sposta media tra categorie
     function moveMediaToCategory(mediaId, category) {
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
 
-      // Animazione
       const card = document.querySelector(`.media-card[data-id="${mediaId}"]`);
       if (card) {
         card.style.transition = "all 0.3s";
@@ -1412,25 +1421,21 @@
       }
 
       setTimeout(() => {
-        // 1. Rimuovi dalla vecchia categoria
         const oldGrid = document.getElementById(`${media.category}Grid`);
         if (oldGrid) {
           const cardToRemove = oldGrid.querySelector(`.media-card[data-id="${mediaId}"]`);
           if (cardToRemove) cardToRemove.remove();
         }
 
-        // 2. Aggiorna la categoria
         media.category = category;
-        saveMedia();
+        saveData();
 
-        // 3. Aggiungi alla nuova categoria
         const newGrid = document.getElementById(`${category}Grid`);
         if (newGrid) {
           const newCard = createMediaCard(media);
           newCard.style.opacity = "0";
           newGrid.appendChild(newCard);
           
-          // Animazione di entrata
           setTimeout(() => {
             newCard.style.opacity = "1";
           }, 10);
@@ -1442,34 +1447,29 @@
       }, 300);
     }
 
-    // Segna rewatch
     function markRewatch(mediaId, count) {
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
 
-      // Se non è nella categoria "watched", lo spostiamo
       if (media.category !== "watched") {
         media.category = "watched";
       }
 
       media.rewatchCount = count;
-      saveMedia();
+      saveData();
       
       refreshSingleMedia(mediaId);
       updateStats();
       showNotification(`Film visto ${count} ${count === 1 ? 'volta' : 'volte'}`, "success");
     }
 
-    // Aggiorna singolo media
     function refreshSingleMedia(mediaId) {
-      // Rimuovi da tutte le categorie
       document.querySelectorAll('.media-card').forEach(card => {
         if (card.dataset.id === mediaId) {
           card.remove();
         }
       });
 
-      // Aggiungi nella categoria corretta
       const media = mediaList.find(m => m.id === mediaId);
       if (media) {
         const grid = document.getElementById(`${media.category}Grid`);
@@ -1481,9 +1481,8 @@
       updateCounts();
     }
 
-    // Modifica media
     function editMedia(mediaId) {
-      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      if (isViewMode) return;
       
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
@@ -1495,26 +1494,25 @@
       elements.saveMediaBtn.textContent = "Aggiorna";
       elements.saveMediaBtn.onclick = () => {
         media.title = elements.mediaTitle.value.trim();
-        saveMedia();
+        saveData();
         closeModal(elements.addMediaModal);
         refreshSingleMedia(mediaId);
         showNotification("Film aggiornato", "success");
       };
     }
 
-    // Elimina media
     function deleteMedia(id) {
-      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      if (isViewMode) return;
       
       if (!confirm("Eliminare questo film dalla lista?")) return;
       
       mediaList = mediaList.filter(m => m.id !== id);
-      saveMedia();
+      saveData();
       renderMedia();
       showNotification("Film eliminato", "success");
     }
 
-    // Chiudi modal
+    // Modals
     function closeModal(modal) {
       modal.style.display = "none";
       document.body.classList.remove("modal-open");
@@ -1523,7 +1521,7 @@
       currentOMDbSelection = null;
     }
 
-    // Cerca su OMDb
+    // OMDb
     async function searchOMDb() {
       const title = elements.mediaTitle.value.trim();
 
@@ -1552,7 +1550,6 @@
       }
     }
 
-    // Mostra risultati OMDb
     function displayOMDbResults(results) {
       elements.omdbResults.innerHTML = results.map(movie => `
         <div class="omdb-result-item" data-id="${movie.imdbID}">
@@ -1579,7 +1576,6 @@
       });
     }
 
-    // Ottieni dettagli film da OMDb
     async function getOMDbMovieDetails(imdbID) {
       try {
         const response = await fetch(
@@ -1599,9 +1595,8 @@
       }
     }
 
-    // Aggiungi nuovo media
     function addNewMedia() {
-      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      if (isViewMode) return;
       
       const title = elements.mediaTitle.value.trim();
 
@@ -1642,32 +1637,15 @@
       }
 
       mediaList.push(mediaData);
-      saveMedia();
+      saveData();
       closeModal(elements.addMediaModal);
       renderMedia();
       showNotification(`Film "${mediaData.title}" aggiunto!`, "success");
     }
 
-    // Reset app
-    function resetApp() {
-      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
-      
-      if (confirm("Resettare completamente l'applicazione? Tutti i dati verranno persi.")) {
-        mediaList = [];
-        categories = [...DEFAULT_CATEGORIES];
-        saveMedia();
-        saveCategories();
-        elements.searchInput.value = "";
-        elements.categoryFilter.value = "all";
-        elements.sortFilter.value = "alpha";
-        renderMedia();
-        showNotification("Applicazione resettata", "success");
-      }
-    }
-
-    // Esporta dati
+    // Import/Export
     function exportData() {
-      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      if (isViewMode) return;
       
       const data = {
         mediaList,
@@ -1686,7 +1664,6 @@
       showNotification("Dati esportati", "success");
     }
 
-    // Importa dati
     function importData(file) {
       if (isViewMode || !file) return;
 
@@ -1699,8 +1676,7 @@
           if (confirm(`Importare ${data.mediaList.length} media? I dati attuali verranno sovrascritti.`)) {
             mediaList = data.mediaList;
             categories = data.categories || [...DEFAULT_CATEGORIES];
-            saveMedia();
-            saveCategories();
+            saveData();
             renderMedia();
             showNotification("Dati importati con successo", "success");
           }
@@ -1711,18 +1687,31 @@
       reader.readAsText(file);
     }
 
-    // Mostra notifica
-    function showNotification(message, type = "success") {
-      elements.notificationText.textContent = message;
-      elements.notification.className = `notification ${type}`;
-      elements.notification.style.display = "block";
-
-      setTimeout(() => {
-        elements.notification.style.display = "none";
-      }, 3000);
+    // Reset
+    function resetApp() {
+      if (isViewMode) return;
+      
+      if (confirm("Resettare completamente l'applicazione? Tutti i dati verranno persi.")) {
+        mediaList = [];
+        categories = [...DEFAULT_CATEGORIES];
+        saveData();
+        elements.searchInput.value = "";
+        elements.categoryFilter.value = "all";
+        elements.sortFilter.value = "alpha";
+        renderMedia();
+        showNotification("Applicazione resettata", "success");
+      }
     }
 
-    // Toggle tema
+    // Theme
+    function loadTheme() {
+      const savedTheme = localStorage.getItem("theme") || "light";
+      document.body.classList.toggle("dark", savedTheme === "dark");
+      elements.themeToggle.innerHTML = `
+        <i class="fas fa-${savedTheme === "dark" ? "sun" : "moon"}"></i> Tema
+      `;
+    }
+
     function toggleTheme() {
       document.body.classList.toggle("dark");
       const isDark = document.body.classList.contains("dark");
@@ -1733,98 +1722,41 @@
       `;
     }
 
-    // Apri modal gestione categorie
+    // Category management
     function openCategoryManagement() {
-      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      if (isViewMode) return;
       
       renderCategoriesList();
       elements.categoryManagementModal.style.display = "flex";
       document.body.classList.add("modal-open");
     }
 
-    // Funzione di condivisione profilo
-    async function shareProfile() {
-      if (!currentUser) {
-        alert("Devi fare login per condividere!");
-        return;
-      }
+    // Notification
+    function showNotification(message, type = "success") {
+      elements.notificationText.textContent = message;
+      elements.notification.className = `notification ${type}`;
+      elements.notification.style.display = "block";
 
-      const shareId = generateId();
-      const data = {
-        mediaList: mediaList,
-        owner: currentUser.uid,
-        createdAt: Date.now(),
-        expiry: 7
-      };
-
-      try {
-        await db.ref(`mediaTracker_public/sharedProfiles/${shareId}`).set(data);
-        const link = `${window.location.href.split('?')[0]}?share=${shareId}`;
-        navigator.clipboard.writeText(link);
-        showNotification("✅ Link copiato! Valido per 7 giorni", "success");
-      } catch (error) {
-        showNotification("❌ Errore nel salvataggio", "error");
-      }
-    }
-
-    // Genera ID casuale
-    function generateId() {
-      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    }
-
-    // Controlla profilo condiviso
-    function checkSharedProfile() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const shareId = urlParams.get('share');
-
-      if (shareId) {
-        db.ref(`mediaTracker_public/sharedProfiles/${shareId}`).once('value')
-          .then(snapshot => {
-            const data = snapshot.val();
-            if (data) {
-              enableViewMode(data);
-            }
-          });
-      }
-    }
-
-    // Abilita modalità visualizzazione
-    function enableViewMode(sharedData) {
-      isViewMode = true;
-      mediaList = sharedData.mediaList;
-      
-      // Disabilita tutti i pulsanti di modifica
-      document.querySelectorAll('.btn').forEach(btn => {
-        btn.disabled = true;
-      });
-      
-      // Nascondi i pulsanti di azione
-      elements.addMediaBtn.style.display = 'none';
-      elements.manageCategoriesBtn.style.display = 'none';
-      elements.exportBtn.style.display = 'none';
-      elements.importBtn.style.display = 'none';
-      elements.resetBtn.style.display = 'none';
-      elements.shareBtn.style.display = 'none';
-      
-      // Mostra messaggio di visualizzazione
-      const viewModeBanner = document.createElement('div');
-      viewModeBanner.style.background = 'var(--primary)';
-      viewModeBanner.style.color = 'white';
-      viewModeBanner.style.padding = '0.5rem';
-      viewModeBanner.style.textAlign = 'center';
-      viewModeBanner.style.marginBottom = '1rem';
-      viewModeBanner.style.borderRadius = '8px';
-      viewModeBanner.textContent = 'Modalità Visualizzazione - Puoi solo vedere questa lista';
-      
-      document.querySelector('#appContent').prepend(viewModeBanner);
-      
-      // Renderizza i media
-      renderMedia();
+      setTimeout(() => {
+        elements.notification.style.display = "none";
+      }, 3000);
     }
 
     // Setup event listeners
     function setupEventListeners() {
-      // Aggiungi media
+      // Auth
+      document.querySelectorAll('.auth-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          document.querySelectorAll('.auth-form-container').forEach(form => {
+            form.classList.remove('active');
+          });
+          document.getElementById(`${tab.dataset.tab}Form`).classList.add('active');
+        });
+      });
+
+      // Media actions
       elements.addMediaBtn.addEventListener("click", () => {
         elements.mediaTitle.value = "";
         elements.omdbResults.innerHTML = "";
@@ -1834,7 +1766,6 @@
         document.body.classList.add("modal-open");
       });
 
-      // Gestione categorie
       elements.manageCategoriesBtn.addEventListener("click", openCategoryManagement);
 
       elements.addCategoryBtn.addEventListener("click", () => {
@@ -1851,10 +1782,9 @@
         closeModal(elements.addMediaModal);
       });
 
-      // Cerca su OMDb
       elements.searchOMDbBtn.addEventListener("click", searchOMDb);
 
-      // Context menu - Sposta in categoria
+      // Context menu
       document.addEventListener("click", (e) => {
         if (
           elements.contextMenu.style.display === "block" &&
@@ -1901,10 +1831,7 @@
         closeModal(elements.rewatchModal);
       });
 
-      // Chiudi context menu cliccando altrove
-      document.addEventListener("click", closeContextMenu);
-
-      // Chiudi modal cliccando fuori
+      // Close modals when clicking outside
       elements.addMediaModal.addEventListener("click", (e) => {
         if (e.target === elements.addMediaModal) {
           closeModal(elements.addMediaModal);
@@ -1923,7 +1850,7 @@
         }
       });
 
-      // Esporta/importa
+      // Import/Export
       elements.exportBtn.addEventListener("click", exportData);
       elements.importBtn.addEventListener("click", () => elements.importFile.click());
       elements.importFile.addEventListener("change", (e) => importData(e.target.files[0]));
@@ -1931,19 +1858,25 @@
       // Reset
       elements.resetBtn.addEventListener("click", resetApp);
 
-      // Toggle tema
+      // Theme
       elements.themeToggle.addEventListener("click", toggleTheme);
 
-      // Filtri e ricerca
+      // Filters and search
       elements.searchInput.addEventListener("input", renderMedia);
       elements.categoryFilter.addEventListener("change", renderMedia);
       elements.sortFilter.addEventListener("change", renderMedia);
 
-      // Condivisione
-      elements.shareBtn.addEventListener("click", shareProfile);
+      // Sharing
+      elements.shareBtn.addEventListener("click", activateSharing);
+      elements.copyLinkBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(elements.shareLink.value);
+        showNotification("Link copiato!", "success");
+      });
+      elements.disableShareBtn.addEventListener("click", deactivateSharing);
+      elements.closeViewBtn.addEventListener("click", closeViewMode);
     }
 
-    // Avvia l'app
+    // Start the app
     document.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
