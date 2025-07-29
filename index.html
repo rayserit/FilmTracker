@@ -1084,15 +1084,48 @@ function loadData() {
     }
 
     // Condivisione
-    function checkSharedView() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const uid = urlParams.get('uid');
-      const share = urlParams.get('share');
+function checkSharedView() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const uid = urlParams.get('uid');
+  const share = urlParams.get('share');
 
-      if (uid && share) {
-        enableViewMode(uid, share);
+  if (uid && share) {
+    isViewMode = true;
+    // Verifica che la condivisione sia ancora valida
+    db.ref(`users/${uid}/activeShare`).once('value').then(snap => {
+      if (snap.val() === share) {
+        // Carica i dati in modalità view
+        db.ref(`users/${uid}/mediaList`).once('value').then(snap => {
+          mediaList = snap.val() || [];
+          renderMedia();
+        });
+        
+        db.ref(`users/${uid}/categories`).once('value').then(snap => {
+          categories = snap.val() || [...DEFAULT_CATEGORIES];
+          renderCategorySections();
+          renderMedia();
+        });
+      } else {
+        showNotification("Link di condivisione non valido o scaduto", "error");
       }
-    }
+    });
+  }
+}
+
+// In activateSharing()
+function activateSharing() {
+  if (!currentUser) return;
+  const shareId = generateId();
+  db.ref(`users/${currentUser.uid}/activeShare`).set(shareId)
+    .then(() => {
+      activeShareId = shareId;
+      updateShareLink(shareId);
+      showNotification("Condivisione attivata", "success");
+    })
+    .catch(error => {
+      showNotification("Errore nell'attivazione della condivisione", "error");
+    });
+}
 
     function enableViewMode(uid, shareKey) {
       isViewMode = true;
@@ -1133,19 +1166,6 @@ function updateShareLink(shareId) {
   elements.shareDropdown.classList.add('active'); // Apri il dropdown automaticamente
 }
 
-function activateSharing() {
-  if (!currentUser) return;
-
-  // Se esiste già un activeShareId, riutilizzalo invece di crearne uno nuovo
-  const shareId = activeShareId || generateId();
-  
-  db.ref(`users/${currentUser.uid}/activeShare`).set(shareId)
-    .then(() => {
-      activeShareId = shareId;
-      updateShareLink(shareId);
-      showNotification("Condivisione attivata", "success");
-    });
-}
 
 function deactivateSharing() {
   if (!currentUser || !activeShareId) return;
