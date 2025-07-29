@@ -644,12 +644,12 @@
         <i class="fas fa-plus"></i> Aggiungi Film
       </button>
       <button id="manageCategoriesBtn" class="btn btn-secondary">
-        <i class="fas fa-folder"></i> Categorie
+        <i class="fas fa-folder"></i>
       </button>
       
       <div class="share-dropdown" id="shareDropdown">
         <button id="shareBtn" class="btn btn-secondary dropdown-toggle">
-          <i class="fas fa-share-alt"></i> Condividi
+          <i class="fas fa-share-alt"></i> 
         </button>
         <div class="share-dropdown-content">
           <h3>Condivisione attiva</h3>
@@ -669,17 +669,17 @@
       </div>
       
       <button id="exportBtn" class="btn btn-secondary">
-        <i class="fas fa-download"></i> Esporta
+        <i class="fas fa-download"></i> 
       </button>
       <input type="file" id="importFile" accept=".json" style="display: none;">
       <button id="importBtn" class="btn btn-secondary">
-        <i class="fas fa-upload"></i> Importa
+        <i class="fas fa-upload"></i> 
       </button>
       <button id="resetBtn" class="btn btn-reset">
-        <i class="fas fa-undo"></i> Reset
+        <i class="fas fa-undo"></i> 
       </button>
       <button id="themeToggle" class="btn">
-        <i class="fas fa-moon"></i> Tema
+        <i class="fas fa-moon"></i> 
       </button>
     </div>
     
@@ -1027,22 +1027,23 @@
     }
 
     // Caricamento dati
-    function loadData() {
-      if (!currentUser) return;
-      
-      db.ref(`users/${currentUser.uid}/mediaList`).on('value', snapshot => {
-        mediaList = snapshot.val() || [];
-        renderMedia();
-        updateStats();
-      });
-      
-      db.ref(`users/${currentUser.uid}/categories`).once('value').then(snapshot => {
-        categories = snapshot.val() || [...DEFAULT_CATEGORIES];
-        updateCategoryFilter();
-        updateCategorySubmenu();
-        renderCategorySections();
-      });
-    }
+function loadData() {
+  if (!currentUser) return;
+  
+  db.ref(`users/${currentUser.uid}/mediaList`).on('value', snapshot => {
+    mediaList = snapshot.val() || [];
+    renderMedia(); // Chiamata aggiuntiva per forzare il rendering
+    updateStats();
+  });
+  
+  db.ref(`users/${currentUser.uid}/categories`).once('value').then(snapshot => {
+    categories = snapshot.val() || [...DEFAULT_CATEGORIES];
+    updateCategoryFilter();
+    updateCategorySubmenu();
+    renderCategorySections();
+    renderMedia(); // Aggiungi questa linea
+  });
+}
 
     function loadLocalData() {
       try {
@@ -1124,37 +1125,41 @@
         }
       });
     }
+    
+function updateShareLink(shareId) {
+  if (!shareId) return;
+  const shareLink = `${window.location.origin}${window.location.pathname}?uid=${currentUser.uid}&share=${shareId}`;
+  elements.shareLink.value = shareLink;
+  elements.shareDropdown.classList.add('active'); // Apri il dropdown automaticamente
+}
 
-    function activateSharing() {
-      if (!currentUser) return;
-      
-      const shareId = generateId();
-      db.ref(`users/${currentUser.uid}/activeShare`).set(shareId)
-        .then(() => {
-          activeShareId = shareId;
-          updateShareLink(shareId);
-          showNotification("Condivisione attivata", "success");
-        })
-        .catch(error => {
-          showNotification("Errore nell'attivazione della condivisione", "error");
-          console.error("Sharing error:", error);
-        });
-    }
+function activateSharing() {
+  if (!currentUser) return;
 
-    function deactivateSharing() {
-      if (!currentUser || !activeShareId) return;
-      
-      db.ref(`users/${currentUser.uid}/activeShare`).remove()
-        .then(() => {
-          activeShareId = null;
-          elements.shareLink.value = '';
-          showNotification("Condivisione disattivata", "success");
-        })
-        .catch(error => {
-          showNotification("Errore nella disattivazione della condivisione", "error");
-          console.error("Sharing disable error:", error);
-        });
-    }
+  // Se esiste già un activeShareId, riutilizzalo invece di crearne uno nuovo
+  const shareId = activeShareId || generateId();
+  
+  db.ref(`users/${currentUser.uid}/activeShare`).set(shareId)
+    .then(() => {
+      activeShareId = shareId;
+      updateShareLink(shareId);
+      showNotification("Condivisione attivata", "success");
+    });
+}
+
+function deactivateSharing() {
+  if (!currentUser || !activeShareId) return;
+  
+  db.ref(`users/${currentUser.uid}/activeShare`).remove()
+    .then(() => {
+      activeShareId = null;
+      // Non svuotare più il campo, ma mantieni l'ultimo link (solo visualizzazione)
+      showNotification("Condivisione disattivata", "success");
+    })
+    .catch(error => {
+      showNotification("Errore nella disattivazione", "error");
+    });
+}
 
     function updateShareLink(shareId) {
       const shareLink = `${window.location.origin}${window.location.pathname}?uid=${currentUser.uid}&share=${shareId}`;
@@ -1166,64 +1171,62 @@
     }
 
     // Media functions
-    function renderMedia() {
-      clearMediaGrids();
-      updateStats();
+function renderMedia() {
+  clearMediaGrids();
+  updateStats();
 
-      const searchTerm = elements.searchInput.value.toLowerCase();
-      const filterCategory = elements.categoryFilter.value;
-      const sortBy = elements.sortFilter.value;
+  const searchTerm = elements.searchInput.value.toLowerCase();
+  const filterCategory = elements.categoryFilter.value;
+  const sortBy = elements.sortFilter.value;
 
-      // Hide all sections before filtering
-      document.querySelectorAll('.media-section').forEach(section => {
+  // Mostra TUTTE le sezioni inizialmente (rimosso il nascondi iniziale)
+  document.querySelectorAll('.media-section').forEach(section => {
+    section.style.display = 'block'; // Mostra sempre le sezioni
+  });
+
+  let filteredMedia = [...mediaList];
+  
+  if (searchTerm) {
+    filteredMedia = filteredMedia.filter(media => 
+      media.title.toLowerCase().includes(searchTerm)
+    );
+  }
+  
+  if (filterCategory !== "all") {
+    filteredMedia = filteredMedia.filter(media => 
+      media.category === filterCategory
+    );
+    
+    // Nascondi solo le sezioni non filtrate
+    document.querySelectorAll('.media-section').forEach(section => {
+      if (section.dataset.category !== filterCategory) {
         section.style.display = 'none';
-      });
-
-      let filteredMedia = [...mediaList];
-      
-      if (searchTerm) {
-        filteredMedia = filteredMedia.filter(media => 
-          media.title.toLowerCase().includes(searchTerm)
-        );
       }
-      
-      if (filterCategory !== "all") {
-        filteredMedia = filteredMedia.filter(media => 
-          media.category === filterCategory
-        );
-        
-        // Show only filtered section
-        const section = document.getElementById(`${filterCategory}Section`);
-        if (section) section.style.display = 'block';
-      } else {
-        // Show all sections
-        document.querySelectorAll('.media-section').forEach(section => {
-          section.style.display = 'block';
-        });
-      }
-      
-      filteredMedia.sort((a, b) => {
-        switch(sortBy) {
-          case "alpha": return a.title.localeCompare(b.title);
-          case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
-          case "year": return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
-          case "added":
-          default: return new Date(b.addedAt) - new Date(a.addedAt);
-        }
-      });
-
-      filteredMedia.forEach(media => {
-        const grid = document.getElementById(`${media.category}Grid`);
-        if (grid) {
-          const existingCard = grid.querySelector(`.media-card[data-id="${media.id}"]`);
-          if (!existingCard) {
-            grid.appendChild(createMediaCard(media));
-          }
-        }
-      });
-
-      updateCounts();
+    });
+  }
+  
+  filteredMedia.sort((a, b) => {
+    switch(sortBy) {
+      case "alpha": return a.title.localeCompare(b.title);
+      case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
+      case "year": return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+      case "added":
+      default: return new Date(b.addedAt) - new Date(a.addedAt);
     }
+  });
+
+  filteredMedia.forEach(media => {
+    const grid = document.getElementById(`${media.category}Grid`);
+    if (grid) {
+      const existingCard = grid.querySelector(`.media-card[data-id="${media.id}"]`);
+      if (!existingCard) {
+        grid.appendChild(createMediaCard(media));
+      }
+    }
+  });
+
+  updateCounts();
+}
 
     function clearMediaGrids() {
       categories.forEach(category => {
@@ -1360,18 +1363,17 @@
     }
 
     // Categories
-    function renderCategorySections() {
-      elements.mediaSectionsContainer.innerHTML = categories.map(category => `
-        <div class="media-section" id="${category}Section" data-category="${category}">
-          <div class="section-header">
-            <h2 class="section-title">${getCategoryName(category)}</h2>
-            <span id="${category}Count" class="category-count">0</span>
-          </div>
-          <div class="media-grid" id="${category}Grid"></div>
-        </div>
-      `).join("");
-    }
-
+function renderCategorySections() {
+  elements.mediaSectionsContainer.innerHTML = categories.map(category => `
+    <div class="media-section" id="${category}Section" data-category="${category}" style="display:block">
+      <div class="section-header">
+        <h2 class="section-title">${getCategoryName(category)}</h2>
+        <span id="${category}Count" class="category-count">0</span>
+      </div>
+      <div class="media-grid" id="${category}Grid"></div>
+    </div>
+  `).join("");
+}
     function renderCategoriesList() {
       elements.categoriesList.innerHTML = categories
         .map((category, idx) => `
@@ -1940,10 +1942,18 @@
       elements.sortFilter.addEventListener("change", renderMedia);
 
       // Sharing
-      elements.shareBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        elements.shareDropdown.classList.toggle('active');
-      });
+elements.shareBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  
+  if (activeShareId) {
+    // Se la condivisione è già attiva, mostra semplicemente il dropdown
+    elements.shareDropdown.classList.toggle('active');
+  } else {
+    // Se non attiva, riattivala
+    activateSharing();
+    showNotification(activeShareId ? "Condivisione riattivata" : "Condivisione attivata", "success");
+  }
+});
 
       document.addEventListener('click', (e) => {
         if (!elements.shareDropdown.contains(e.target)) {
