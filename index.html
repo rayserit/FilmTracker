@@ -471,14 +471,91 @@
     #shareBtn {
       margin-left: 0.5rem;
     }
+
+    /* Auth Form */
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      background: var(--card-bg);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 1rem;
+    }
+
+    .auth-form input {
+      margin: 0;
+    }
+
+    .auth-form-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .auth-form-buttons button {
+      flex: 1;
+    }
+
+    .auth-tabs {
+      display: flex;
+      margin-bottom: 0.5rem;
+    }
+
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.5rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+    .auth-tab.active {
+      border-bottom: 2px solid var(--primary);
+      font-weight: bold;
+    }
+
+    .auth-form-container {
+      display: none;
+    }
+
+    .auth-form-container.active {
+      display: block;
+    }
   </style>
 </head>
 <body class="light">
   <!-- Auth Toolbar -->
   <div id="authContainer">
-    <button id="loginBtn" class="btn btn-primary">
-      <i class="fas fa-sign-in-alt"></i> Login
-    </button>
+    <div id="authForms" class="auth-form" style="display:none;">
+      <div class="auth-tabs">
+        <div class="auth-tab active" data-tab="login">Login</div>
+        <div class="auth-tab" data-tab="register">Registrati</div>
+      </div>
+      
+      <div id="loginForm" class="auth-form-container active">
+        <input type="email" id="loginEmail" placeholder="Email">
+        <input type="password" id="loginPassword" placeholder="Password">
+        <div class="auth-form-buttons">
+          <button id="loginBtn" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt"></i> Login
+          </button>
+        </div>
+      </div>
+      
+      <div id="registerForm" class="auth-form-container">
+        <input type="email" id="registerEmail" placeholder="Email">
+        <input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)">
+        <input type="password" id="registerConfirmPassword" placeholder="Conferma Password">
+        <div class="auth-form-buttons">
+          <button id="registerBtn" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Registrati
+          </button>
+        </div>
+      </div>
+    </div>
+    
     <button id="logoutBtn" class="btn btn-danger" style="display:none">
       <i class="fas fa-sign-out-alt"></i> Logout
     </button>
@@ -693,10 +770,19 @@
       searchInput: document.getElementById("searchInput"),
       categoryFilter: document.getElementById("categoryFilter"),
       sortFilter: document.getElementById("sortFilter"),
+      authForms: document.getElementById("authForms"),
       loginBtn: document.getElementById("loginBtn"),
+      loginEmail: document.getElementById("loginEmail"),
+      loginPassword: document.getElementById("loginPassword"),
+      registerBtn: document.getElementById("registerBtn"),
+      registerEmail: document.getElementById("registerEmail"),
+      registerPassword: document.getElementById("registerPassword"),
+      registerConfirmPassword: document.getElementById("registerConfirmPassword"),
       logoutBtn: document.getElementById("logoutBtn"),
       shareBtn: document.getElementById("shareBtn"),
-      userEmail: document.getElementById("userEmail")
+      userEmail: document.getElementById("userEmail"),
+      loginForm: document.getElementById("loginForm"),
+      registerForm: document.getElementById("registerForm")
     };
 
     // Inizializzazione
@@ -705,19 +791,89 @@
       loadMedia();
       loadCategories();
       setupEventListeners();
+      setupAuthListeners();
       renderCategorySections();
       renderMedia();
       updateCategoryFilter();
       updateCategorySubmenu();
       checkSharedProfile();
+      updateAuthUI();
+    }
+
+    // Imposta listener per autenticazione
+    function setupAuthListeners() {
+      // Listener per i tab login/registrazione
+      document.querySelectorAll('.auth-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          
+          document.querySelectorAll('.auth-form-container').forEach(form => {
+            form.classList.remove('active');
+          });
+          
+          document.getElementById(`${tab.dataset.tab}Form`).classList.add('active');
+        });
+      });
       
-      // Firebase Auth State Observer
+      // Listener per login
+      elements.loginBtn.addEventListener('click', () => {
+        const email = elements.loginEmail.value;
+        const password = elements.loginPassword.value;
+        
+        if (!email || !password) {
+          showNotification("Inserisci email e password", "warning");
+          return;
+        }
+        
+        firebase.auth().signInWithEmailAndPassword(email, password)
+          .then(() => {
+            showNotification("Login effettuato con successo", "success");
+          })
+          .catch(error => {
+            showNotification(getAuthErrorMessage(error), "error");
+          });
+      });
+      
+      // Listener per registrazione
+      elements.registerBtn.addEventListener('click', () => {
+        const email = elements.registerEmail.value;
+        const password = elements.registerPassword.value;
+        const confirmPassword = elements.registerConfirmPassword.value;
+        
+        if (!email || !password || !confirmPassword) {
+          showNotification("Compila tutti i campi", "warning");
+          return;
+        }
+        
+        if (password !== confirmPassword) {
+          showNotification("Le password non corrispondono", "warning");
+          return;
+        }
+        
+        if (password.length < 6) {
+          showNotification("La password deve avere almeno 6 caratteri", "warning");
+          return;
+        }
+        
+        firebase.auth().createUserWithEmailAndPassword(email, password)
+          .then(() => {
+            showNotification("Registrazione completata!", "success");
+          })
+          .catch(error => {
+            showNotification(getAuthErrorMessage(error), "error");
+          });
+      });
+      
+      // Listener per logout
+      elements.logoutBtn.addEventListener('click', () => {
+        firebase.auth().signOut();
+      });
+      
+      // Observer stato autenticazione
       firebase.auth().onAuthStateChanged((user) => {
         currentUser = user;
-        elements.loginBtn.style.display = user ? 'none' : 'block';
-        elements.logoutBtn.style.display = user ? 'block' : 'none';
-        elements.shareBtn.style.display = user ? 'block' : 'none';
-        elements.userEmail.textContent = user ? user.email : '';
+        updateAuthUI();
         
         if (user) {
           // Carica i dati da Firebase se loggato
@@ -728,6 +884,51 @@
           renderMedia();
         }
       });
+    }
+    
+    // Ottieni messaggio di errore autenticazione
+    function getAuthErrorMessage(error) {
+      switch(error.code) {
+        case 'auth/email-already-in-use':
+          return "Email già registrata";
+        case 'auth/invalid-email':
+          return "Email non valida";
+        case 'auth/weak-password':
+          return "Password troppo debole";
+        case 'auth/user-not-found':
+          return "Utente non trovato";
+        case 'auth/wrong-password':
+          return "Password errata";
+        default:
+          return "Errore: " + error.message;
+      }
+    }
+    
+    // Aggiorna UI in base allo stato di autenticazione
+    function updateAuthUI() {
+      if (currentUser) {
+        // Utente loggato
+        elements.authForms.style.display = 'none';
+        elements.logoutBtn.style.display = 'block';
+        elements.shareBtn.style.display = 'block';
+        elements.userEmail.textContent = currentUser.email;
+        
+        // Abilita tutte le funzionalità
+        document.querySelectorAll('.btn:not(#logoutBtn):not(#shareBtn)').forEach(btn => {
+          btn.disabled = false;
+        });
+      } else {
+        // Utente non loggato
+        elements.authForms.style.display = 'block';
+        elements.logoutBtn.style.display = 'none';
+        elements.shareBtn.style.display = 'none';
+        elements.userEmail.textContent = '';
+        
+        // Disabilita alcune funzionalità
+        document.querySelectorAll('#addMediaBtn, #manageCategoriesBtn, #exportBtn, #importBtn, #resetBtn, #shareBtn').forEach(btn => {
+          btn.disabled = true;
+        });
+      }
     }
 
     // Carica tema
@@ -1737,16 +1938,6 @@
       elements.searchInput.addEventListener("input", renderMedia);
       elements.categoryFilter.addEventListener("change", renderMedia);
       elements.sortFilter.addEventListener("change", renderMedia);
-
-      // Firebase Auth
-      elements.loginBtn.addEventListener("click", () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        firebase.auth().signInWithPopup(provider);
-      });
-
-      elements.logoutBtn.addEventListener("click", () => {
-        firebase.auth().signOut();
-      });
 
       // Condivisione
       elements.shareBtn.addEventListener("click", shareProfile);
