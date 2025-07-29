@@ -8,14 +8,12 @@
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   
-  <!-- Firebase Scripts -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  
-  <!-- LZ-String for Compression (if needed for sharing) -->
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
-
+  
   <style>
     /* Tema chiaro (default) */
     :root {
@@ -49,18 +47,6 @@
       background: var(--bg-color);
       color: var(--text-color);
       transition: background 0.3s, color 0.3s;
-    }
-
-    /* Auth Container */
-    #authContainer {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    #userEmail {
-      color: var(--primary);
-      font-weight: bold;
     }
 
     /* Card Media */
@@ -465,6 +451,26 @@
       background: var(--warning);
       color: #333;
     }
+
+    /* Auth Container */
+    #authContainer {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    #userEmail {
+      color: var(--primary);
+      font-weight: bold;
+      margin-left: auto;
+    }
+
+    /* Share button */
+    #shareBtn {
+      margin-left: 0.5rem;
+    }
   </style>
 </head>
 <body class="light">
@@ -475,6 +481,9 @@
     </button>
     <button id="logoutBtn" class="btn btn-danger" style="display:none">
       <i class="fas fa-sign-out-alt"></i> Logout
+    </button>
+    <button id="shareBtn" class="btn btn-secondary" style="display:none">
+      <i class="fas fa-share-alt"></i> Condividi
     </button>
     <span id="userEmail"></span>
   </div>
@@ -520,12 +529,9 @@
         <button id="themeToggle" class="btn">
           <i class="fas fa-moon"></i> Tema
         </button>
-        <button id="shareBtn" class="btn btn-secondary" style="display:none">
-          <i class="fas fa-share"></i> Condividi
-        </button>
       </div>
     </div>
-      
+    
     <div class="stats-container">
       <div class="stat-item">
         <div class="stat-value" id="statTotal">0</div>
@@ -579,7 +585,9 @@
           <i class="fas fa-plus"></i> Aggiungi
         </button>
       </div>
-      <div class="categories-list" id="categoriesList"></div>
+      <div class="categories-list" id="categoriesList">
+        <!-- Categorie verranno aggiunte dinamicamente -->
+      </div>
       <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
         <button id="closeCategoryManagementBtn" class="btn btn-danger">Chiudi</button>
       </div>
@@ -603,7 +611,9 @@
   <div class="context-menu" id="contextMenu">
     <div class="context-menu-item context-submenu">
       <i class="fas fa-folder"></i> Sposta in
-      <div class="context-submenu-items" id="categorySubmenu"></div>
+      <div class="context-submenu-items" id="categorySubmenu">
+        <!-- Categorie verranno aggiunte dinamicamente -->
+      </div>
     </div>
     <div class="context-menu-item" id="cmRewatch">
       <i class="fas fa-redo"></i> Segna Rewatch
@@ -619,7 +629,21 @@
   </div>
 
   <script>
-    // Firebase Configuration (replace with your actual Firebase config)
+    // Configurazione
+    const OMDb_API_KEY = "2526ef70";
+    const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
+    const DEFAULT_CATEGORIES = ["watchlist", "watched"];
+
+    // Stato
+    let mediaList = JSON.parse(localStorage.getItem("mediaList")) || [];
+    let categories = JSON.parse(localStorage.getItem("categories")) || DEFAULT_CATEGORIES;
+    let currentContextMedia = null;
+    let currentRewatchMedia = null;
+    let currentOMDbSelection = null;
+    let currentUser = null;
+    let isViewMode = false;
+
+    // 1. INIZIALIZZA FIREBASE (sostituisci con la tua configurazione)
     const firebaseConfig = {
       apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk",
       authDomain: "gametrackerdb.firebaseapp.com",
@@ -628,20 +652,6 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
-    // Configurazione OMDb
-    const OMDb_API_KEY = "2526ef70";
-    const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
-    const DEFAULT_CATEGORIES = ["watchlist", "watched"];
-
-    // Stato
-    let mediaList = [];
-    let categories = JSON.parse(localStorage.getItem("categories")) || DEFAULT_CATEGORIES;
-    let currentContextMedia = null;
-    let currentRewatchMedia = null;
-    let currentOMDbSelection = null;
-    let currentUser = null;
-    let isViewMode = false;
 
     // Elementi DOM
     const elements = {
@@ -685,44 +695,39 @@
       sortFilter: document.getElementById("sortFilter"),
       loginBtn: document.getElementById("loginBtn"),
       logoutBtn: document.getElementById("logoutBtn"),
-      userEmail: document.getElementById("userEmail"),
-      shareBtn: document.getElementById("shareBtn")
+      shareBtn: document.getElementById("shareBtn"),
+      userEmail: document.getElementById("userEmail")
     };
-
-    // Firebase Authentication
-    firebase.auth().onAuthStateChanged((user) => {
-      currentUser = user;
-      elements.loginBtn.style.display = user ? 'none' : 'block';
-      elements.logoutBtn.style.display = user ? 'block' : 'none';
-      elements.userEmail.textContent = user ? user.email : '';
-      elements.shareBtn.style.display = user ? 'block' : 'none';
-      if (user && !isViewMode) {
-        loadMediaFromFirebase();
-      }
-    });
-
-    elements.loginBtn.addEventListener('click', () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithPopup(provider).catch(error => {
-        showNotification(`Errore di login: ${error.message}`, "error");
-      });
-    });
-
-    elements.logoutBtn.addEventListener('click', () => {
-      firebase.auth().signOut().catch(error => {
-        showNotification(`Errore di logout: ${error.message}`, "error");
-      });
-    });
 
     // Inizializzazione
     function init() {
       loadTheme();
+      loadMedia();
       loadCategories();
       setupEventListeners();
       renderCategorySections();
+      renderMedia();
       updateCategoryFilter();
       updateCategorySubmenu();
       checkSharedProfile();
+      
+      // Firebase Auth State Observer
+      firebase.auth().onAuthStateChanged((user) => {
+        currentUser = user;
+        elements.loginBtn.style.display = user ? 'none' : 'block';
+        elements.logoutBtn.style.display = user ? 'block' : 'none';
+        elements.shareBtn.style.display = user ? 'block' : 'none';
+        elements.userEmail.textContent = user ? user.email : '';
+        
+        if (user) {
+          // Carica i dati da Firebase se loggato
+          loadMediaFromFirebase();
+        } else {
+          // Carica i dati locali se non loggato
+          loadMedia();
+          renderMedia();
+        }
+      });
     }
 
     // Carica tema
@@ -734,30 +739,74 @@
       `;
     }
 
-    // Carica i media da Firebase o localStorage
-    function loadMediaFromFirebase() {
-      if (!currentUser) {
-        mediaList = JSON.parse(localStorage.getItem("mediaList")) || [];
-        renderMedia();
-        return;
+    // Carica i media
+    function loadMedia() {
+      try {
+        const saved = localStorage.getItem("mediaList");
+        mediaList = saved ? JSON.parse(saved) : [];
+        if (!Array.isArray(mediaList)) {
+          console.error("Dati mediaList corrotti, reinizializzo");
+          mediaList = [];
+        }
+      } catch (e) {
+        console.error("Error loading media:", e);
+        mediaList = [];
       }
+    }
 
-      db.ref(`mediaTracker/users/${currentUser.uid}/mediaList`).once('value')
+    // Carica i media da Firebase
+    function loadMediaFromFirebase() {
+      if (!currentUser) return;
+      
+      db.ref(`users/${currentUser.uid}/mediaList`).once('value')
         .then(snapshot => {
-          mediaList = snapshot.val() || [];
-          if (!Array.isArray(mediaList)) {
-            console.error("Dati mediaList corrotti, reinizializzo");
-            mediaList = [];
+          const data = snapshot.val();
+          if (data) {
+            mediaList = data;
+            saveMediaToLocal(); // Salva anche localmente per offline
+            renderMedia();
+            showNotification("Dati caricati da Firebase", "success");
+          } else {
+            // Nessun dato su Firebase, carica da locale
+            loadMedia();
+            renderMedia();
           }
-          localStorage.setItem("mediaList", JSON.stringify(mediaList));
-          renderMedia();
         })
         .catch(error => {
-          console.error("Error loading media from Firebase:", error);
-          showNotification("Errore nel caricamento dei dati", "error");
-          mediaList = JSON.parse(localStorage.getItem("mediaList")) || [];
+          console.error("Error loading from Firebase:", error);
+          loadMedia(); // Fallback al locale
           renderMedia();
         });
+    }
+
+    // Salva i media su Firebase
+    function saveMediaToFirebase() {
+      if (!currentUser) return;
+      
+      try {
+        db.ref(`users/${currentUser.uid}/mediaList`).set(mediaList)
+          .then(() => console.log("Dati salvati su Firebase"))
+          .catch(error => console.error("Error saving to Firebase:", error));
+      } catch (e) {
+        console.error("Error saving to Firebase:", e);
+      }
+    }
+
+    // Salva i media localmente
+    function saveMediaToLocal() {
+      try {
+        localStorage.setItem("mediaList", JSON.stringify(mediaList));
+        console.log("Dati salvati localmente:", mediaList.length, "film");
+      } catch (e) {
+        console.error("Error saving media locally:", e);
+        showNotification("Errore nel salvataggio locale dei dati", "error");
+      }
+    }
+
+    // Salva i media (locale + Firebase)
+    function saveMedia() {
+      saveMediaToLocal();
+      saveMediaToFirebase();
     }
 
     // Carica le categorie
@@ -777,28 +826,8 @@
       }
     }
 
-    // Salva i media
-    function saveMedia() {
-      if (isViewMode) return; // Non salvare in modalità visualizzazione
-      try {
-        localStorage.setItem("mediaList", JSON.stringify(mediaList));
-        if (currentUser) {
-          db.ref(`mediaTracker/users/${currentUser.uid}/mediaList`).set(mediaList)
-            .catch(error => {
-              console.error("Error saving media to Firebase:", error);
-              showNotification("Errore nel salvataggio su Firebase", "error");
-            });
-        }
-        console.log("Dati salvati:", mediaList.length, "film");
-      } catch (e) {
-        console.error("Error saving media:", e);
-        showNotification("Errore nel salvataggio dei dati", "error");
-      }
-    }
-
     // Salva le categorie
     function saveCategories() {
-      if (isViewMode) return; // Non salvare in modalità visualizzazione
       try {
         localStorage.setItem("categories", JSON.stringify(categories));
         renderCategorySections();
@@ -809,84 +838,6 @@
         console.error("Error saving categories:", e);
         showNotification("Errore nel salvataggio delle categorie", "error");
       }
-    }
-
-    // Genera ID per condivisione
-    function generateId() {
-      return Math.random().toString(36).substr(2, 9);
-    }
-
-    // Condivisione del profilo
-    async function shareProfile() {
-      if (!currentUser) {
-        showNotification("Devi fare login per condividere!", "warning");
-        return;
-      }
-
-      const shareId = generateId();
-      const data = {
-        mediaList: mediaList,
-        owner: currentUser.uid,
-        createdAt: Date.now(),
-        expiry: 7 // giorni di validità
-      };
-
-      try {
-        await db.ref(`mediaTracker_public/sharedProfiles/${shareId}`).set(data);
-        const link = `${window.location.href.split('?')[0]}?share=${shareId}`;
-        navigator.clipboard.writeText(link);
-        showNotification("✅ Link copiato! Valido per 7 giorni", "success");
-      } catch (error) {
-        console.error("Errore nella condivisione:", error);
-        showNotification("❌ Errore nel salvataggio della condivisione", "error");
-      }
-    }
-
-    // Carica profilo condiviso
-    function checkSharedProfile() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const shareId = urlParams.get('share');
-
-      if (shareId) {
-        db.ref(`mediaTracker_public/sharedProfiles/${shareId}`).once('value')
-          .then(snapshot => {
-            const data = snapshot.val();
-            if (data) {
-              enableViewMode(data);
-            } else {
-              showNotification("Profilo condiviso non trovato o scaduto", "error");
-              loadMediaFromFirebase();
-            }
-          })
-          .catch(error => {
-            console.error("Errore nel caricamento del profilo condiviso:", error);
-            showNotification("Errore nel caricamento del profilo condiviso", "error");
-            loadMediaFromFirebase();
-          });
-      } else {
-        loadMediaFromFirebase();
-      }
-    }
-
-    // Abilita modalità visualizzazione
-    function enableViewMode(data) {
-      isViewMode = true;
-      mediaList = data.mediaList || [];
-      renderMedia();
-      showNotification("Visualizzazione profilo condiviso", "success");
-
-      // Disabilita pulsanti di modifica
-      elements.addMediaBtn.disabled = true;
-      elements.manageCategoriesBtn.disabled = true;
-      elements.importBtn.disabled = true;
-      elements.resetBtn.disabled = true;
-      elements.shareBtn.disabled = true;
-
-      // Nascondi azioni sulle card
-      document.querySelectorAll('.card-actions').forEach(action => {
-        action.style.display = 'none';
-      });
-      elements.contextMenu.style.display = 'none';
     }
 
     // Renderizza le sezioni delle categorie
@@ -923,7 +874,7 @@
           </div>
         `).join("");
       
-      // Aggiungi event listeners
+      // listener: come prima (non cambiano)
       document.querySelectorAll(".delete-category-btn").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -943,16 +894,15 @@
       });
     }
 
-    // Sposta categoria
     function moveCategory(category, direction) {
       const idx = categories.indexOf(category);
       const newIndex = idx + direction;
-      if (newIndex < 0 || newIndex >= categories.length) return;
+      if (newIndex < 0 || newIndex >= categories.length) return; // Fuori dai limiti
 
       // Swap
       [categories[idx], categories[newIndex]] = [categories[newIndex], categories[idx]];
       saveCategories();
-      renderMedia();
+      renderMedia(); // Le categorie cambiano ordine anche nella vista principale!
     }
 
     // Aggiorna il filtro categorie
@@ -1123,24 +1073,20 @@
         </span>
       ` : '';
 
-      const actionsHTML = isViewMode ? '' : `
-        <div class="card-actions">
-          <button class="card-btn" data-action="edit">
-            <i class="fas fa-edit"></i>
-          </button>
-          <button class="card-btn" data-action="delete">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-      `;
-
       card.innerHTML = `
         <div style="position:relative;">
           <img src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster" 
                onerror="this.src='${DEFAULT_POSTER}'">
           ${rewatchHTML}
           ${categoryHTML}
-          ${actionsHTML}
+          <div class="card-actions">
+            <button class="card-btn" data-action="edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="card-btn" data-action="delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
         </div>
         <div class="media-info">
           <h3 class="media-title" title="${media.title}">${media.title}</h3>
@@ -1152,30 +1098,21 @@
         </div>
       `;
 
-      if (!isViewMode) {
-        // Aggiungi event listeners
-        card.addEventListener("contextmenu", (e) => {
-          e.preventDefault();
-          showContextMenu(media, e.clientX, e.clientY);
-        });
+      // Aggiungi event listeners
+      card.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        showContextMenu(media, e.clientX, e.clientY);
+      });
 
-        const editBtn = card.querySelector("[data-action='edit']");
-        const deleteBtn = card.querySelector("[data-action='delete']");
-        
-        if (editBtn) {
-          editBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            editMedia(media.id);
-          });
-        }
+      card.querySelector("[data-action='edit']").addEventListener("click", (e) => {
+        e.stopPropagation();
+        editMedia(media.id);
+      });
 
-        if (deleteBtn) {
-          deleteBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            deleteMedia(media.id);
-          });
-        }
-      }
+      card.querySelector("[data-action='delete']").addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteMedia(media.id);
+      });
 
       return card;
     }
@@ -1194,7 +1131,8 @@
 
     // Mostra context menu
     function showContextMenu(media, x, y) {
-      if (isViewMode) return;
+      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      
       currentContextMedia = media;
       
       const viewportWidth = window.innerWidth;
@@ -1218,7 +1156,6 @@
 
     // Aggiungi una nuova categoria
     function addCategory(name) {
-      if (isViewMode) return false;
       if (!name) {
         showNotification("Inserisci un nome per la categoria", "warning");
         return false;
@@ -1240,7 +1177,6 @@
 
     // Elimina una categoria
     function deleteCategory(category) {
-      if (isViewMode) return;
       if (DEFAULT_CATEGORIES.includes(category)) {
         showNotification("Non puoi eliminare questa categoria predefinita", "warning");
         return;
@@ -1263,7 +1199,6 @@
 
     // Sposta media tra categorie
     function moveMediaToCategory(mediaId, category) {
-      if (isViewMode) return;
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
 
@@ -1292,13 +1227,11 @@
         if (newGrid) {
           const newCard = createMediaCard(media);
           newCard.style.opacity = "0";
-          newCard.style.transform = "scale(0.8)";
           newGrid.appendChild(newCard);
           
           // Animazione di entrata
           setTimeout(() => {
             newCard.style.opacity = "1";
-            newCard.style.transform = "scale(1)";
           }, 10);
         }
 
@@ -1310,7 +1243,6 @@
 
     // Segna rewatch
     function markRewatch(mediaId, count) {
-      if (isViewMode) return;
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
 
@@ -1350,7 +1282,8 @@
 
     // Modifica media
     function editMedia(mediaId) {
-      if (isViewMode) return;
+      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
 
@@ -1370,7 +1303,8 @@
 
     // Elimina media
     function deleteMedia(id) {
-      if (isViewMode) return;
+      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      
       if (!confirm("Eliminare questo film dalla lista?")) return;
       
       mediaList = mediaList.filter(m => m.id !== id);
@@ -1466,7 +1400,8 @@
 
     // Aggiungi nuovo media
     function addNewMedia() {
-      if (isViewMode) return;
+      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      
       const title = elements.mediaTitle.value.trim();
 
       if (!title) {
@@ -1514,7 +1449,8 @@
 
     // Reset app
     function resetApp() {
-      if (isViewMode) return;
+      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      
       if (confirm("Resettare completamente l'applicazione? Tutti i dati verranno persi.")) {
         mediaList = [];
         categories = [...DEFAULT_CATEGORIES];
@@ -1530,6 +1466,8 @@
 
     // Esporta dati
     function exportData() {
+      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      
       const data = {
         mediaList,
         categories,
@@ -1549,8 +1487,7 @@
 
     // Importa dati
     function importData(file) {
-      if (isViewMode) return;
-      if (!file) return;
+      if (isViewMode || !file) return;
 
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -1597,17 +1534,97 @@
 
     // Apri modal gestione categorie
     function openCategoryManagement() {
-      if (isViewMode) return;
+      if (isViewMode) return; // Disabilita in modalità visualizzazione condivisa
+      
       renderCategoriesList();
       elements.categoryManagementModal.style.display = "flex";
       document.body.classList.add("modal-open");
+    }
+
+    // Funzione di condivisione profilo
+    async function shareProfile() {
+      if (!currentUser) {
+        alert("Devi fare login per condividere!");
+        return;
+      }
+
+      const shareId = generateId();
+      const data = {
+        mediaList: mediaList,
+        owner: currentUser.uid,
+        createdAt: Date.now(),
+        expiry: 7
+      };
+
+      try {
+        await db.ref(`mediaTracker_public/sharedProfiles/${shareId}`).set(data);
+        const link = `${window.location.href.split('?')[0]}?share=${shareId}`;
+        navigator.clipboard.writeText(link);
+        showNotification("✅ Link copiato! Valido per 7 giorni", "success");
+      } catch (error) {
+        showNotification("❌ Errore nel salvataggio", "error");
+      }
+    }
+
+    // Genera ID casuale
+    function generateId() {
+      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    }
+
+    // Controlla profilo condiviso
+    function checkSharedProfile() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const shareId = urlParams.get('share');
+
+      if (shareId) {
+        db.ref(`mediaTracker_public/sharedProfiles/${shareId}`).once('value')
+          .then(snapshot => {
+            const data = snapshot.val();
+            if (data) {
+              enableViewMode(data);
+            }
+          });
+      }
+    }
+
+    // Abilita modalità visualizzazione
+    function enableViewMode(sharedData) {
+      isViewMode = true;
+      mediaList = sharedData.mediaList;
+      
+      // Disabilita tutti i pulsanti di modifica
+      document.querySelectorAll('.btn').forEach(btn => {
+        btn.disabled = true;
+      });
+      
+      // Nascondi i pulsanti di azione
+      elements.addMediaBtn.style.display = 'none';
+      elements.manageCategoriesBtn.style.display = 'none';
+      elements.exportBtn.style.display = 'none';
+      elements.importBtn.style.display = 'none';
+      elements.resetBtn.style.display = 'none';
+      elements.shareBtn.style.display = 'none';
+      
+      // Mostra messaggio di visualizzazione
+      const viewModeBanner = document.createElement('div');
+      viewModeBanner.style.background = 'var(--primary)';
+      viewModeBanner.style.color = 'white';
+      viewModeBanner.style.padding = '0.5rem';
+      viewModeBanner.style.textAlign = 'center';
+      viewModeBanner.style.marginBottom = '1rem';
+      viewModeBanner.style.borderRadius = '8px';
+      viewModeBanner.textContent = 'Modalità Visualizzazione - Puoi solo vedere questa lista';
+      
+      document.querySelector('#appContent').prepend(viewModeBanner);
+      
+      // Renderizza i media
+      renderMedia();
     }
 
     // Setup event listeners
     function setupEventListeners() {
       // Aggiungi media
       elements.addMediaBtn.addEventListener("click", () => {
-        if (isViewMode) return;
         elements.mediaTitle.value = "";
         elements.omdbResults.innerHTML = "";
         elements.saveMediaBtn.textContent = "Salva";
@@ -1638,10 +1655,6 @@
 
       // Context menu - Sposta in categoria
       document.addEventListener("click", (e) => {
-        if (isViewMode) {
-          closeContextMenu();
-          return;
-        }
         if (
           elements.contextMenu.style.display === "block" &&
           e.target.closest("#categorySubmenu") &&
@@ -1687,6 +1700,9 @@
         closeModal(elements.rewatchModal);
       });
 
+      // Chiudi context menu cliccando altrove
+      document.addEventListener("click", closeContextMenu);
+
       // Chiudi modal cliccando fuori
       elements.addMediaModal.addEventListener("click", (e) => {
         if (e.target === elements.addMediaModal) {
@@ -1721,6 +1737,16 @@
       elements.searchInput.addEventListener("input", renderMedia);
       elements.categoryFilter.addEventListener("change", renderMedia);
       elements.sortFilter.addEventListener("change", renderMedia);
+
+      // Firebase Auth
+      elements.loginBtn.addEventListener("click", () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider);
+      });
+
+      elements.logoutBtn.addEventListener("click", () => {
+        firebase.auth().signOut();
+      });
 
       // Condivisione
       elements.shareBtn.addEventListener("click", shareProfile);
