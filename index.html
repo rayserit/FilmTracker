@@ -18,7 +18,7 @@
       --primary: #3A86FF;
       --secondary: #00B4D8;
       --danger: #ff4444;
-      --reset: #ff6b6b;
+      --reset: #e74c3c;
       --success: #228b22;
       --warning: #ffcc00;
       --bg-color: #f5f5f5;
@@ -34,7 +34,7 @@
       --text-color: #f5f5f5;
       --text-secondary: #aaa;
       --border-color: #444;
-      --reset: #ff8e8e;
+      --reset: #ff6b6b;
     }
 
     body {
@@ -197,13 +197,6 @@
       color: white;
     }
 
-    .stats-container {
-      display: flex;
-      gap: 1rem;
-      margin: 1rem 0;
-      flex-wrap: wrap;
-    }
-
     .stat-item {
       background: var(--card-bg);
       padding: 0.75rem;
@@ -303,6 +296,7 @@
       gap: 0.75rem;
       margin-bottom: 1rem;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .card-actions {
@@ -441,12 +435,20 @@
       margin-bottom: 1rem;
       align-items: center;
       flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-left: auto;
+    }
+
+    #userInfo {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
     }
 
     #userEmail {
       color: var(--primary);
       font-weight: bold;
-      margin-left: auto;
     }
 
     .auth-form {
@@ -457,7 +459,16 @@
       padding: 1rem;
       border-radius: 8px;
       border: 1px solid var(--border-color);
-      margin-bottom: 1rem;
+      position: absolute;
+      right: 1rem;
+      top: 4rem;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: none;
+    }
+
+    .auth-form.active {
+      display: flex;
     }
 
     .auth-form input {
@@ -500,13 +511,26 @@
       display: block;
     }
 
-    .share-panel {
+    .share-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .share-dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
       background: var(--card-bg);
       border-radius: 8px;
       padding: 1rem;
-      margin: 1rem 0;
       border: 1px solid var(--border-color);
-      display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 100;
+      width: 300px;
+    }
+
+    .share-dropdown.active .share-dropdown-content {
+      display: block;
     }
 
     .share-link {
@@ -540,12 +564,165 @@
       align-items: center;
       gap: 0.5rem;
     }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    
+    .main-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-grow: 1;
+      flex-wrap: wrap;
+    }
+    
+    .user-section {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-left: auto;
+    }
+    
+    .stats-container {
+      display: flex;
+      gap: 1rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .search-filters {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      flex-grow: 1;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .dropdown-toggle {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body class="light">
-  <!-- Auth Container -->
-  <div id="authContainer">
-    <div id="authForms" class="auth-form" style="display:none;">
+  <!-- View Mode Banner -->
+  <div id="viewModeBanner" class="view-mode-banner" style="display:none">
+    <i class="fas fa-eye"></i>
+    <span>Stai visualizzando una lista condivisa</span>
+    <button id="closeViewBtn" class="btn btn-danger" style="margin-left:auto">
+      <i class="fas fa-times"></i> Chiudi
+    </button>
+  </div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="main-controls">
+      <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
+      <select id="categoryFilter" class="filter-select">
+        <option value="all">Tutte le categorie</option>
+      </select>
+      <select id="sortFilter" class="filter-select">
+        <option value="alpha" selected>Alfabetico</option>
+        <option value="added">Ultimi aggiunti</option>
+        <option value="rating">Valutazione</option>
+        <option value="year">Anno di uscita</option>
+      </select>
+      
+      <button id="addMediaBtn" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Aggiungi Film
+      </button>
+      <button id="manageCategoriesBtn" class="btn btn-secondary">
+        <i class="fas fa-folder"></i> Categorie
+      </button>
+      
+      <div class="share-dropdown" id="shareDropdown">
+        <button id="shareBtn" class="btn btn-secondary dropdown-toggle">
+          <i class="fas fa-share-alt"></i> Condividi
+        </button>
+        <div class="share-dropdown-content">
+          <h3>Condivisione attiva</h3>
+          <p>Chiunque abbia questo link può vedere la tua lista in tempo reale:</p>
+          <div class="share-link">
+            <input type="text" id="shareLink" readonly>
+            <button id="copyLinkBtn" class="btn btn-primary">
+              <i class="fas fa-copy"></i> Copia
+            </button>
+          </div>
+          <div class="share-actions">
+            <button id="disableShareBtn" class="btn btn-danger">
+              <i class="fas fa-ban"></i> Disattiva
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <button id="exportBtn" class="btn btn-secondary">
+        <i class="fas fa-download"></i> Esporta
+      </button>
+      <input type="file" id="importFile" accept=".json" style="display: none;">
+      <button id="importBtn" class="btn btn-secondary">
+        <i class="fas fa-upload"></i> Importa
+      </button>
+      <button id="resetBtn" class="btn btn-reset">
+        <i class="fas fa-undo"></i> Reset
+      </button>
+      <button id="themeToggle" class="btn">
+        <i class="fas fa-moon"></i> Tema
+      </button>
+    </div>
+    
+    <!-- Auth Container -->
+    <div id="authContainer" class="user-section">
+      <div id="userInfo" style="display:none">
+        <span id="userEmail"></span>
+        <button id="logoutBtn" class="btn btn-danger">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+      <button id="authToggle" class="btn btn-secondary">
+        <i class="fas fa-user"></i> Login
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-container">
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <div class="stat-item">
+        <div class="stat-value" id="statTotal">0</div>
+        <div>Totale</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statWatchlist">0</div>
+        <div>Da Vedere</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statWatched">0</div>
+        <div>Visti</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statRewatched">0</div>
+        <div>Rewatch</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statHours">0h 0m</div>
+        <div>Tempo Totale</div>
+      </div>
+    </div>
+    
+    <div id="authForms" class="auth-form">
       <div class="auth-tabs">
         <div class="auth-tab active" data-tab="login">Login</div>
         <div class="auth-tab" data-tab="register">Registrati</div>
@@ -572,110 +749,10 @@
         </div>
       </div>
     </div>
-    
-    <button id="logoutBtn" class="btn btn-danger" style="display:none">
-      <i class="fas fa-sign-out-alt"></i> Logout
-    </button>
-    <span id="userEmail"></span>
   </div>
 
-  <!-- Main App -->
-  <div id="appContent">
-    <div class="top-bar" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
-      <!-- Search and filters -->
-      <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-        <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
-        <select id="categoryFilter" class="filter-select">
-          <option value="all">Tutte le categorie</option>
-        </select>
-        <select id="sortFilter" class="filter-select">
-          <option value="added">Ultimi aggiunti</option>
-          <option value="alpha" selected>Alfabetico</option>
-          <option value="rating">Valutazione</option>
-          <option value="year">Anno di uscita</option>
-        </select>
-      </div>
-
-      <!-- Action buttons -->
-      <div class="toolbar" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-        <button id="addMediaBtn" class="btn btn-primary">
-          <i class="fas fa-plus"></i> Aggiungi Film
-        </button>
-        <button id="manageCategoriesBtn" class="btn btn-secondary">
-          <i class="fas fa-folder"></i> Gestione Categorie
-        </button>
-        <button id="shareBtn" class="btn btn-secondary">
-          <i class="fas fa-share-alt"></i> Condividi
-        </button>
-        <button id="exportBtn" class="btn btn-secondary">
-          <i class="fas fa-download"></i> Esporta
-        </button>
-        <input type="file" id="importFile" accept=".json" style="display: none;">
-        <button id="importBtn" class="btn btn-secondary">
-          <i class="fas fa-upload"></i> Importa
-        </button>
-        <button id="resetBtn" class="btn btn-reset">
-          <i class="fas fa-undo"></i> Reset
-        </button>
-        <button id="themeToggle" class="btn">
-          <i class="fas fa-moon"></i> Tema
-        </button>
-      </div>
-    </div>
-    
-    <!-- Share Panel -->
-    <div id="sharePanel" class="share-panel">
-      <h3>Condivisione attiva</h3>
-      <p>Chiunque abbia questo link può vedere la tua lista in tempo reale:</p>
-      <div class="share-link">
-        <input type="text" id="shareLink" readonly>
-        <button id="copyLinkBtn" class="btn btn-primary">
-          <i class="fas fa-copy"></i> Copia
-        </button>
-      </div>
-      <div class="share-actions">
-        <button id="disableShareBtn" class="btn btn-danger">
-          <i class="fas fa-ban"></i> Disattiva
-        </button>
-      </div>
-    </div>
-
-    <!-- Stats -->
-    <div class="stats-container">
-      <div class="stat-item">
-        <div class="stat-value" id="statTotal">0</div>
-        <div>Totale</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="statWatchlist">0</div>
-        <div>Da Vedere</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="statWatched">0</div>
-        <div>Visti</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="statRewatched">0</div>
-        <div>Rewatch</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="statHours">0h 0m</div>
-        <div>Tempo Totale</div>
-      </div>
-    </div>
-
-    <!-- Media Sections -->
-    <div id="mediaSectionsContainer"></div>
-  </div>
-
-  <!-- View Mode Banner -->
-  <div id="viewModeBanner" class="view-mode-banner" style="display:none">
-    <i class="fas fa-eye"></i>
-    <span>Stai visualizzando una lista condivisa</span>
-    <button id="closeViewBtn" class="btn btn-danger" style="margin-left:auto">
-      <i class="fas fa-times"></i> Chiudi
-    </button>
-  </div>
+  <!-- Media Sections -->
+  <div id="mediaSectionsContainer"></div>
 
   <!-- Modals -->
   <div class="modal" id="addMediaModal">
@@ -770,6 +847,8 @@
     const elements = {
       authContainer: document.getElementById("authContainer"),
       authForms: document.getElementById("authForms"),
+      authToggle: document.getElementById("authToggle"),
+      userInfo: document.getElementById("userInfo"),
       loginBtn: document.getElementById("loginBtn"),
       loginEmail: document.getElementById("loginEmail"),
       loginPassword: document.getElementById("loginPassword"),
@@ -785,6 +864,7 @@
       addMediaBtn: document.getElementById("addMediaBtn"),
       manageCategoriesBtn: document.getElementById("manageCategoriesBtn"),
       shareBtn: document.getElementById("shareBtn"),
+      shareDropdown: document.getElementById("shareDropdown"),
       exportBtn: document.getElementById("exportBtn"),
       importBtn: document.getElementById("importBtn"),
       importFile: document.getElementById("importFile"),
@@ -820,7 +900,6 @@
       categorySubmenu: document.getElementById("categorySubmenu"),
       notification: document.getElementById("notification"),
       notificationText: document.getElementById("notificationText"),
-      sharePanel: document.getElementById("sharePanel"),
       shareLink: document.getElementById("shareLink"),
       copyLinkBtn: document.getElementById("copyLinkBtn"),
       disableShareBtn: document.getElementById("disableShareBtn"),
@@ -838,6 +917,17 @@
 
     // Autenticazione
     function setupAuthListeners() {
+      elements.authToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        elements.authForms.classList.toggle('active');
+      });
+      
+      document.addEventListener('click', (e) => {
+        if (!elements.authForms.contains(e.target) && e.target !== elements.authToggle) {
+          elements.authForms.classList.remove('active');
+        }
+      });
+      
       document.querySelectorAll('.auth-tab').forEach(tab => {
         tab.addEventListener('click', () => {
           document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -859,7 +949,10 @@
         }
         
         firebase.auth().signInWithEmailAndPassword(email, password)
-          .then(() => showNotification("Login effettuato", "success"))
+          .then(() => {
+            showNotification("Login effettuato", "success");
+            elements.authForms.classList.remove('active');
+          })
           .catch(error => showNotification(getAuthErrorMessage(error), "error"));
       });
       
@@ -884,7 +977,10 @@
         }
         
         firebase.auth().createUserWithEmailAndPassword(email, password)
-          .then(() => showNotification("Registrazione completata!", "success"))
+          .then(() => {
+            showNotification("Registrazione completata!", "success");
+            elements.authForms.classList.remove('active');
+          })
           .catch(error => showNotification(getAuthErrorMessage(error), "error"));
       });
       
@@ -916,13 +1012,13 @@
 
     function updateAuthUI() {
       if (currentUser) {
-        elements.authForms.style.display = 'none';
-        elements.logoutBtn.style.display = 'block';
+        elements.userInfo.style.display = 'flex';
+        elements.authToggle.style.display = 'none';
         elements.userEmail.textContent = currentUser.email;
         document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
       } else {
-        elements.authForms.style.display = 'block';
-        elements.logoutBtn.style.display = 'none';
+        elements.userInfo.style.display = 'none';
+        elements.authToggle.style.display = 'block';
         elements.userEmail.textContent = '';
         document.querySelectorAll('#addMediaBtn, #manageCategoriesBtn, #exportBtn, #importBtn, #resetBtn, #shareBtn').forEach(btn => {
           btn.disabled = true;
@@ -1020,11 +1116,11 @@
     function checkActiveShare() {
       if (!currentUser) return;
       
-      db.ref(`users/${currentUser.uid}/activeShare`).once('value', snapshot => {
+      db.ref(`users/${currentUser.uid}/activeShare`).once('value').then(snapshot => {
         const shareId = snapshot.val();
         if (shareId) {
           activeShareId = shareId;
-          showSharePanel(shareId);
+          updateShareLink(shareId);
         }
       });
     }
@@ -1036,7 +1132,7 @@
       db.ref(`users/${currentUser.uid}/activeShare`).set(shareId)
         .then(() => {
           activeShareId = shareId;
-          showSharePanel(shareId);
+          updateShareLink(shareId);
           showNotification("Condivisione attivata", "success");
         })
         .catch(error => {
@@ -1051,7 +1147,7 @@
       db.ref(`users/${currentUser.uid}/activeShare`).remove()
         .then(() => {
           activeShareId = null;
-          elements.sharePanel.style.display = 'none';
+          elements.shareLink.value = '';
           showNotification("Condivisione disattivata", "success");
         })
         .catch(error => {
@@ -1060,10 +1156,9 @@
         });
     }
 
-    function showSharePanel(shareId) {
+    function updateShareLink(shareId) {
       const shareLink = `${window.location.origin}${window.location.pathname}?uid=${currentUser.uid}&share=${shareId}`;
       elements.shareLink.value = shareLink;
-      elements.sharePanel.style.display = 'block';
     }
 
     function generateId() {
@@ -1119,7 +1214,12 @@
 
       filteredMedia.forEach(media => {
         const grid = document.getElementById(`${media.category}Grid`);
-        if (grid) grid.appendChild(createMediaCard(media));
+        if (grid) {
+          const existingCard = grid.querySelector(`.media-card[data-id="${media.id}"]`);
+          if (!existingCard) {
+            grid.appendChild(createMediaCard(media));
+          }
+        }
       });
 
       updateCounts();
@@ -1320,6 +1420,8 @@
 
       [categories[idx], categories[newIndex]] = [categories[newIndex], categories[idx]];
       saveData();
+      renderCategoriesList();
+      renderCategorySections();
       renderMedia();
     }
 
@@ -1362,6 +1464,7 @@
       categories.push(normalizedName);
       saveData();
       renderMedia();
+      renderCategoriesList();
       showNotification(`Categoria "${normalizedName}" creata`, "success");
       return true;
     }
@@ -1382,6 +1485,8 @@
       
       categories = categories.filter(c => c !== category);
       saveData();
+      renderCategoriesList();
+      renderMedia();
       showNotification(`Categoria "${category}" eliminata`, "success");
     }
 
@@ -1415,34 +1520,13 @@
 
       const card = document.querySelector(`.media-card[data-id="${mediaId}"]`);
       if (card) {
-        card.style.transition = "all 0.3s";
-        card.style.opacity = "0";
-        card.style.transform = "scale(0.8)";
+        card.classList.add('moving');
       }
 
       setTimeout(() => {
-        const oldGrid = document.getElementById(`${media.category}Grid`);
-        if (oldGrid) {
-          const cardToRemove = oldGrid.querySelector(`.media-card[data-id="${mediaId}"]`);
-          if (cardToRemove) cardToRemove.remove();
-        }
-
         media.category = category;
         saveData();
-
-        const newGrid = document.getElementById(`${category}Grid`);
-        if (newGrid) {
-          const newCard = createMediaCard(media);
-          newCard.style.opacity = "0";
-          newGrid.appendChild(newCard);
-          
-          setTimeout(() => {
-            newCard.style.opacity = "1";
-          }, 10);
-        }
-
-        updateCounts();
-        updateStats();
+        renderMedia();
         showNotification(`Film spostato in "${category}"`, "success");
       }, 300);
     }
@@ -1464,18 +1548,19 @@
     }
 
     function refreshSingleMedia(mediaId) {
-      document.querySelectorAll('.media-card').forEach(card => {
-        if (card.dataset.id === mediaId) {
-          card.remove();
-        }
+      const media = mediaList.find(m => m.id === mediaId);
+      if (!media) return;
+
+      // Remove from all grids
+      document.querySelectorAll('.media-grid').forEach(grid => {
+        const card = grid.querySelector(`.media-card[data-id="${mediaId}"]`);
+        if (card) card.remove();
       });
 
-      const media = mediaList.find(m => m.id === mediaId);
-      if (media) {
-        const grid = document.getElementById(`${media.category}Grid`);
-        if (grid) {
-          grid.appendChild(createMediaCard(media));
-        }
+      // Add to correct grid
+      const grid = document.getElementById(`${media.category}Grid`);
+      if (grid) {
+        grid.appendChild(createMediaCard(media));
       }
       
       updateCounts();
@@ -1744,18 +1829,6 @@
 
     // Setup event listeners
     function setupEventListeners() {
-      // Auth
-      document.querySelectorAll('.auth-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-          document.querySelectorAll('.auth-form-container').forEach(form => {
-            form.classList.remove('active');
-          });
-          document.getElementById(`${tab.dataset.tab}Form`).classList.add('active');
-        });
-      });
-
       // Media actions
       elements.addMediaBtn.addEventListener("click", () => {
         elements.mediaTitle.value = "";
@@ -1867,12 +1940,27 @@
       elements.sortFilter.addEventListener("change", renderMedia);
 
       // Sharing
-      elements.shareBtn.addEventListener("click", activateSharing);
+      elements.shareBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        elements.shareDropdown.classList.toggle('active');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!elements.shareDropdown.contains(e.target)) {
+          elements.shareDropdown.classList.remove('active');
+        }
+      });
+
       elements.copyLinkBtn.addEventListener("click", () => {
         navigator.clipboard.writeText(elements.shareLink.value);
         showNotification("Link copiato!", "success");
       });
-      elements.disableShareBtn.addEventListener("click", deactivateSharing);
+      
+      elements.disableShareBtn.addEventListener("click", () => {
+        deactivateSharing();
+        elements.shareDropdown.classList.remove('active');
+      });
+      
       elements.closeViewBtn.addEventListener("click", closeViewMode);
     }
 
