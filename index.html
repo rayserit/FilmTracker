@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF--8" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Film Tracker</title>
+  <title>MediaTracker Pro</title>
   
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
   
@@ -82,7 +82,7 @@
       object-fit: cover;
       object-position: center top;
       cursor: pointer;
-      background-color: var(--border-color); /* Placeholder color */
+      background-color: var(--border-color);
     }
 
     .media-info {
@@ -694,7 +694,17 @@
   <div class="modal" id="addMediaModal">
     <div class="modal-content">
       <h2>Aggiungi Film</h2>
-      <input type="text" id="mediaTitle" placeholder="Titolo">
+      <div style="display: flex; gap: 1rem; align-items: flex-start;">
+        <div style="flex-grow: 1;">
+          <label for="mediaTitle">Titolo</label>
+          <input type="text" id="mediaTitle" style="margin-top: 0;">
+        </div>
+        <div style="width: 100px;">
+          <label for="mediaYear">Anno (Opz.)</label>
+          <input type="number" id="mediaYear" style="margin-top: 0;">
+        </div>
+      </div>
+
       <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
         <button id="searchOMDbBtn" class="btn btn-secondary" style="flex-shrink: 0;">
             <i class="fas fa-search"></i> Cerca su OMDb
@@ -763,8 +773,8 @@
     let currentUser = null;
     let isViewMode = false;
     let activeShareId = null;
-    let debounceTimeout; // NUOVO: Per la ricerca
-    let lazyLoadObserver; // NUOVO: Per le immagini
+    let debounceTimeout;
+    let lazyLoadObserver;
 
     // Firebase
     const firebaseConfig = {
@@ -811,6 +821,7 @@
       mediaSectionsContainer: document.getElementById("mediaSectionsContainer"),
       addMediaModal: document.getElementById("addMediaModal"),
       mediaTitle: document.getElementById("mediaTitle"),
+      mediaYear: document.getElementById("mediaYear"),
       searchOMDbBtn: document.getElementById("searchOMDbBtn"),
       omdbResults: document.getElementById("omdbResults"),
       saveMediaBtn: document.getElementById("saveMediaBtn"),
@@ -1175,7 +1186,7 @@
         }
       });
       
-      setupLazyLoading(); // NUOVO: Attiva il lazy loading per le immagini visibili
+      setupLazyLoading();
       updateCounts();
     }
 
@@ -1597,7 +1608,6 @@
       if (oldCard && grid) {
           const newCard = createMediaCard(media);
           grid.replaceChild(newCard, oldCard);
-          // Riassegna l'observer alla nuova immagine
           lazyLoadObserver.observe(newCard.querySelector('.lazy'));
       } else if (grid) {
           const newCard = createMediaCard(media);
@@ -1626,32 +1636,50 @@
     }
     
     async function searchOMDb() {
-      const title = elements.mediaTitle.value.trim();
+        const title = elements.mediaTitle.value.trim();
+        const year = elements.mediaYear.value.trim();
 
-      if (!title) {
-        showNotification("Inserisci un titolo", "warning");
-        return;
-      }
-
-      try {
-        elements.omdbResults.innerHTML = "<p>Ricerca in corso...</p>";
-        const response = await fetch(
-          `https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&s=${encodeURIComponent(title)}&type=movie`
-        );
-        const data = await response.json();
-
-        if (data.Response === "False") {
-          elements.omdbResults.innerHTML = `<p>${data.Error || "Nessun risultato trovato"}</p>`;
-          return;
+        if (!title) {
+            showNotification("Inserisci un titolo", "warning");
+            return;
         }
 
-        displayOMDbResults(data.Search);
-      } catch (error) {
-        showNotification("Errore nella ricerca", "error");
-        console.error("OMDb error:", error);
-        elements.omdbResults.innerHTML = "<p>Errore durante la ricerca</p>";
-      }
+        elements.omdbResults.innerHTML = "<p>Ricerca in corso...</p>";
+        
+        try {
+            let searchUrl = `https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&s=${encodeURIComponent(title)}&type=movie`;
+            if (year) {
+                searchUrl += `&y=${encodeURIComponent(year)}`;
+            }
+
+            const searchResponse = await fetch(searchUrl);
+            const searchData = await searchResponse.json();
+
+            if (searchData.Response === "True") {
+                displayOMDbResults(searchData.Search);
+            } else if (searchData.Error === "Too many results.") {
+                showNotification("Ricerca troppo generica. Tento una ricerca esatta...", "warning");
+                let exactMatchUrl = `https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&t=${encodeURIComponent(title)}&type=movie`;
+                if (year) exactMatchUrl += `&y=${year}`;
+
+                const exactResponse = await fetch(exactMatchUrl);
+                const exactData = await exactResponse.json();
+
+                if (exactData.Response === "True") {
+                    displayOMDbResults([exactData]);
+                } else {
+                    elements.omdbResults.innerHTML = `<p>${exactData.Error || "Nessun risultato trovato"}</p>`;
+                }
+            } else {
+                elements.omdbResults.innerHTML = `<p>${searchData.Error || "Nessun risultato trovato"}</p>`;
+            }
+        } catch (error) {
+            showNotification("Errore nella ricerca", "error");
+            console.error("OMDb error:", error);
+            elements.omdbResults.innerHTML = "<p>Errore durante la ricerca</p>";
+        }
     }
+
 
     function displayOMDbResults(results) {
       elements.omdbResults.innerHTML = results.map(movie => `
@@ -1673,6 +1701,7 @@
           if (movie) {
             currentOMDbSelection = movie;
             elements.mediaTitle.value = movie.Title;
+            elements.mediaYear.value = movie.Year;
             showNotification(`Dettagli di "${movie.Title}" pronti per il salvataggio`, "success");
           }
         });
@@ -1717,7 +1746,7 @@
         poster: "",
         rewatchCount: 0,
         isCountedAsWatched: false,
-        year: "",
+        year: elements.mediaYear.value.trim(),
         imdbRating: "",
         rottenTomatoes: "",
         runtime: ""
@@ -1844,7 +1873,6 @@
       }, 3000);
     }
 
-    // NUOVO: Funzione per il lazy loading
     function setupLazyLoading() {
         if (lazyLoadObserver) lazyLoadObserver.disconnect();
 
@@ -1866,6 +1894,7 @@
     function setupEventListeners() {
       elements.addMediaBtn.addEventListener("click", () => {
         elements.mediaTitle.value = "";
+        elements.mediaYear.value = "";
         elements.omdbResults.innerHTML = "";
         currentOMDbSelection = null;
         elements.saveMediaBtn.textContent = "Salva";
@@ -1902,7 +1931,6 @@
       elements.cancelMediaBtn.addEventListener("click", () => closeModal(elements.addMediaModal));
       elements.searchOMDbBtn.addEventListener("click", searchOMDb);
       
-      // Rimozione listener click destro, e aggiunta chiusura dropdown card
       document.addEventListener("click", (e) => {
         if (!e.target.closest('.card-move-dropdown')) {
             closeCardMoveDropdowns();
@@ -1924,7 +1952,6 @@
       elements.resetBtn.addEventListener("click", resetApp);
       elements.themeToggle.addEventListener("click", toggleTheme);
       
-      // NUOVO: Debouncing per la ricerca
       elements.searchInput.addEventListener("input", () => {
           clearTimeout(debounceTimeout);
           debounceTimeout = setTimeout(() => {
