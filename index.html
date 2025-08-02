@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF--8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MediaTracker Pro</title>
+  <title>Film Tracker</title>
   
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
   
@@ -82,6 +82,7 @@
       object-fit: cover;
       object-position: center top;
       cursor: pointer;
+      background-color: var(--border-color); /* Placeholder color */
     }
 
     .media-info {
@@ -762,6 +763,8 @@
     let currentUser = null;
     let isViewMode = false;
     let activeShareId = null;
+    let debounceTimeout; // NUOVO: Per la ricerca
+    let lazyLoadObserver; // NUOVO: Per le immagini
 
     // Firebase
     const firebaseConfig = {
@@ -1171,7 +1174,8 @@
           }
         }
       });
-
+      
+      setupLazyLoading(); // NUOVO: Attiva il lazy loading per le immagini visibili
       updateCounts();
     }
 
@@ -1257,7 +1261,7 @@
 
       card.innerHTML = `
         <div style="position:relative;">
-          <img src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster" 
+          <img data-src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster lazy" 
                onerror="this.src='${DEFAULT_POSTER}'">
           ${rewatchHTML}
           ${countedAsWatchedHTML}
@@ -1281,7 +1285,7 @@
           ${ratingsHTML}
         </div>
       `;
-
+      
       card.addEventListener("dblclick", () => {
         openQuickEditModal(media);
       });
@@ -1591,9 +1595,14 @@
       const grid = oldCard ? oldCard.parentElement : document.getElementById(`${media.category}Grid`);
       
       if (oldCard && grid) {
-          grid.replaceChild(createMediaCard(media), oldCard);
+          const newCard = createMediaCard(media);
+          grid.replaceChild(newCard, oldCard);
+          // Riassegna l'observer alla nuova immagine
+          lazyLoadObserver.observe(newCard.querySelector('.lazy'));
       } else if (grid) {
-          grid.appendChild(createMediaCard(media));
+          const newCard = createMediaCard(media);
+          grid.appendChild(newCard);
+          lazyLoadObserver.observe(newCard.querySelector('.lazy'));
       }
       
       updateCounts();
@@ -1770,7 +1779,7 @@
             mediaList = data.mediaList;
             categories = data.categories || [...DEFAULT_CATEGORIES];
             saveData();
-            renderFullUI(); // FIX: Usa la funzione di rendering completo
+            renderFullUI();
             showNotification("Dati importati con successo", "success");
           }
         } catch (error) {
@@ -1835,6 +1844,25 @@
       }, 3000);
     }
 
+    // NUOVO: Funzione per il lazy loading
+    function setupLazyLoading() {
+        if (lazyLoadObserver) lazyLoadObserver.disconnect();
+
+        lazyLoadObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy');
+                    observer.unobserve(img);
+                }
+            });
+        });
+
+        const lazyImages = document.querySelectorAll('.lazy');
+        lazyImages.forEach(img => lazyLoadObserver.observe(img));
+    }
+
     function setupEventListeners() {
       elements.addMediaBtn.addEventListener("click", () => {
         elements.mediaTitle.value = "";
@@ -1873,11 +1901,14 @@
       elements.closeCategoryManagementBtn.addEventListener("click", () => closeModal(elements.categoryManagementModal));
       elements.cancelMediaBtn.addEventListener("click", () => closeModal(elements.addMediaModal));
       elements.searchOMDbBtn.addEventListener("click", searchOMDb);
+      
+      // Rimozione listener click destro, e aggiunta chiusura dropdown card
       document.addEventListener("click", (e) => {
         if (!e.target.closest('.card-move-dropdown')) {
             closeCardMoveDropdowns();
         }
       });
+
       elements.addMediaModal.addEventListener("click", (e) => {
         if (e.target === elements.addMediaModal) closeModal(elements.addMediaModal);
       });
@@ -1892,7 +1923,15 @@
       elements.importFile.addEventListener("change", (e) => importData(e.target.files[0]));
       elements.resetBtn.addEventListener("click", resetApp);
       elements.themeToggle.addEventListener("click", toggleTheme);
-      elements.searchInput.addEventListener("input", renderMedia);
+      
+      // NUOVO: Debouncing per la ricerca
+      elements.searchInput.addEventListener("input", () => {
+          clearTimeout(debounceTimeout);
+          debounceTimeout = setTimeout(() => {
+              renderMedia();
+          }, 300);
+      });
+
       elements.categoryFilter.addEventListener("change", renderMedia);
       elements.sortFilter.addEventListener("change", () => {
           localStorage.setItem('mediaTrackerSortOrder', elements.sortFilter.value);
