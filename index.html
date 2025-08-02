@@ -1091,23 +1091,20 @@ function checkSharedView() {
 
   if (uid && share) {
     isViewMode = true;
-    // Verifica che la condivisione sia ancora valida
+
     db.ref(`users/${uid}/activeShare`).once('value').then(snap => {
-      if (snap.val() === share) {
-        // Carica i dati in modalità view
-        db.ref(`users/${uid}/mediaList`).once('value').then(snap => {
-          mediaList = snap.val() || [];
-          renderMedia();
-        });
-        
-        db.ref(`users/${uid}/categories`).once('value').then(snap => {
-          categories = snap.val() || [...DEFAULT_CATEGORIES];
-          renderCategorySections();
-          renderMedia();
-        });
+      const data = snap.val();
+      if (data && data.shareId === share && data.expiresAt > Date.now()) {
+        // Condivisione valida
+        enableViewMode(uid);
       } else {
-        showNotification("Link di condivisione non valido o scaduto", "error");
+        showNotification("Link non valido o scaduto", "error");
+        setTimeout(() => {
+          window.location.href = window.location.pathname;
+        }, 2000);
       }
+    }).catch(() => {
+      showNotification("Errore nel caricamento", "error");
     });
   }
 }
@@ -1116,17 +1113,19 @@ function checkSharedView() {
 function activateSharing() {
   if (!currentUser) return;
   const shareId = generateId();
-  db.ref(`users/${currentUser.uid}/activeShare`).set(shareId)
-    .then(() => {
-      activeShareId = shareId;
-      updateShareLink(shareId);
-      showNotification("Condivisione attivata", "success");
-    })
-    .catch(error => {
-      showNotification("Errore nell'attivazione della condivisione", "error");
-    });
-}
+  const expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 giorni
 
+  db.ref(`users/${currentUser.uid}/activeShare`).set({
+    shareId: shareId,
+    expiresAt: expiresAt
+  }).then(() => {
+    activeShareId = shareId;
+    updateShareLink(shareId);
+    showNotification("Condivisione attivata (valida 7 giorni)", "success");
+  }).catch(error => {
+    showNotification("Errore nell'attivazione della condivisione", "error");
+  });
+}
     function enableViewMode(uid, shareKey) {
       isViewMode = true;
       
@@ -1168,12 +1167,11 @@ function updateShareLink(shareId) {
 
 
 function deactivateSharing() {
-  if (!currentUser || !activeShareId) return;
-  
+  if (!currentUser) return;
   db.ref(`users/${currentUser.uid}/activeShare`).remove()
     .then(() => {
       activeShareId = null;
-      // Non svuotare più il campo, ma mantieni l'ultimo link (solo visualizzazione)
+      elements.shareDropdown.classList.remove('active');
       showNotification("Condivisione disattivata", "success");
     })
     .catch(error => {
