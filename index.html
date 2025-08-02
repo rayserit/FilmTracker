@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MediaTracker Pro</title>
   
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+  
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   
@@ -37,8 +39,7 @@
       --reset: #ff6b6b;
     }
 
-    /* FIX: Impedisce la selezione del testo su elementi non editabili */
-    .btn, .context-menu-item, .auth-tab, .card-btn, .dropdown-toggle {
+    .user-select-none {
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
@@ -80,6 +81,7 @@
       height: 240px;
       object-fit: cover;
       object-position: center top;
+      cursor: pointer;
     }
 
     .media-info {
@@ -110,11 +112,11 @@
       margin-top: 0.5rem;
       font-size: 0.75rem;
     }
-
+    
     .rewatch-badge {
       position: absolute;
       bottom: 10px;
-      right: 10px;
+      left: 10px;
       background: rgba(0,0,0,0.7);
       color: white;
       padding: 3px 8px;
@@ -122,17 +124,14 @@
       font-size: 0.7rem;
       font-weight: bold;
     }
-
-    .category-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      font-weight: bold;
+    
+    .counted-as-watched-badge {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        color: var(--success);
+        font-size: 1.2rem;
+        text-shadow: 0 0 3px rgba(0,0,0,0.7);
     }
 
     .media-section {
@@ -194,6 +193,11 @@
       background: var(--secondary);
       color: white;
     }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
 
     .btn-danger {
       background: var(--danger);
@@ -246,49 +250,6 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
 
-    .context-menu {
-      position: fixed;
-      background: var(--card-bg);
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 1100;
-      width: 200px;
-      display: none;
-      border: 1px solid var(--border-color);
-    }
-
-    .context-menu-item {
-      padding: 0.75rem 1rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .context-menu-item:hover {
-      background: rgba(0,0,0,0.1);
-    }
-
-    .context-submenu {
-      position: relative;
-    }
-
-    .context-submenu-items {
-      display: none;
-      position: absolute;
-      left: 100%;
-      top: 0;
-      background: var(--card-bg);
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      width: 200px;
-      border: 1px solid var(--border-color);
-    }
-
-    .context-submenu:hover .context-submenu-items {
-      display: block;
-    }
-
     input, select {
       width: 100%;
       padding: 0.5rem;
@@ -299,24 +260,39 @@
       color: var(--text-color);
     }
 
-    .toolbar {
-      display: flex;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-      align-items: center;
+    .card-move-dropdown {
+        position: absolute;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        z-index: 1001;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
+    .card-move-dropdown-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+    .card-move-dropdown-item:hover {
+        background: var(--primary);
+        color: white;
     }
 
     .card-actions {
       position: absolute;
       top: 10px;
-      left: 10px;
       display: flex;
       gap: 0.5rem;
       opacity: 0;
       transition: opacity 0.2s;
     }
-
+    .card-actions-left {
+        left: 10px;
+    }
+    .card-actions-right {
+        right: 10px;
+    }
     .media-card:hover .card-actions {
       opacity: 1;
     }
@@ -347,13 +323,15 @@
     }
 
     .search-box {
-      flex: 2;
-      min-width: 200px;
+      flex: 1 1 auto;
+      min-width: 150px;
+      max-width: 300px; 
     }
 
     .filter-select {
-      flex: 1;
+      flex: 1 1 auto;
       min-width: 150px;
+      max-width: 180px; 
     }
 
     .omdb-results-container {
@@ -388,11 +366,7 @@
       object-fit: cover;
       border-radius: 4px;
     }
-
-    .add-category-modal {
-      max-width: 300px;
-    }
-
+    
     .category-management-modal {
       max-width: 400px;
     }
@@ -436,29 +410,7 @@
       background: var(--warning);
       color: #333;
     }
-
-    #authContainer {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      margin-left: auto;
-    }
-
-    #userInfo {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 0.5rem;
-    }
-
-    #userEmail {
-      color: var(--primary);
-      font-weight: bold;
-    }
-
+    
     .auth-form {
       display: flex;
       flex-direction: column;
@@ -469,7 +421,7 @@
       border: 1px solid var(--border-color);
       position: absolute;
       right: 1rem;
-      top: 4rem;
+      top: 5rem;
       z-index: 100;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       display: none;
@@ -589,13 +541,6 @@
       flex-wrap: wrap;
     }
     
-    .user-section {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-left: auto;
-    }
-    
     .stats-container {
       display: flex;
       gap: 1rem;
@@ -605,26 +550,12 @@
       align-items: center;
     }
 
-    .search-filters {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-      flex-grow: 1;
-    }
-
-    .actions {
-      display: flex;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-
     .dropdown-toggle {
       cursor: pointer;
     }
   </style>
 </head>
-<body class="dark">
+<body class="dark user-select-none">
   <!-- View Mode Banner -->
   <div id="viewModeBanner" class="view-mode-banner" style="display:none">
     <i class="fas fa-eye"></i>
@@ -689,17 +620,13 @@
       <button id="themeToggle" class="btn">
         <i class="fas fa-moon"></i> 
       </button>
-    </div>
-    
-    <!-- Auth Container -->
-    <div id="authContainer" class="user-section">
-      <div id="userInfo" style="display:none">
-        <span id="userEmail"></span>
+
+      <div id="userInfo" style="display:none; margin-left: auto;">
         <button id="logoutBtn" class="btn btn-danger">
           <i class="fas fa-sign-out-alt"></i> Logout
         </button>
       </div>
-      <button id="authToggle" class="btn btn-secondary">
+      <button id="authToggle" class="btn btn-secondary" style="margin-left: auto;">
         <i class="fas fa-user"></i> Login
       </button>
     </div>
@@ -767,14 +694,36 @@
     <div class="modal-content">
       <h2>Aggiungi Film</h2>
       <input type="text" id="mediaTitle" placeholder="Titolo">
-      <button id="searchOMDbBtn" class="btn btn-secondary">
-        <i class="fas fa-search"></i> Cerca su OMDb
-      </button>
+      <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
+        <button id="searchOMDbBtn" class="btn btn-secondary" style="flex-shrink: 0;">
+            <i class="fas fa-search"></i> Cerca su OMDb
+        </button>
+        <select id="addMediaCategorySelect" class="filter-select" style="margin: 0;"></select>
+      </div>
       <div id="omdbResults" class="omdb-results-container"></div>
       <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
         <button id="saveMediaBtn" class="btn btn-primary">Salva</button>
         <button id="cancelMediaBtn" class="btn btn-danger">Annulla</button>
       </div>
+    </div>
+  </div>
+
+  <div class="modal" id="quickEditModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <h2 id="quickEditTitle">Modifica Rapida</h2>
+        <div id="quickEditWatchedButtonContainer" style="margin-bottom: 1rem;">
+            <button class="btn btn-success" id="quickEditMarkWatchedBtn" style="width: 100%;">
+                <i class="fas fa-check-double"></i> Segna come visto qui
+            </button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <label for="quickEditRewatchCount">Rewatch:</label>
+            <input type="number" id="quickEditRewatchCount" min="0" value="1" style="width: 80px; text-align: center; margin: 0;">
+        </div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+            <button id="confirmQuickEditBtn" class="btn btn-primary">Salva</button>
+            <button id="cancelQuickEditBtn" class="btn btn-danger">Annulla</button>
+        </div>
     </div>
   </div>
 
@@ -793,33 +742,7 @@
       </div>
     </div>
   </div>
-
-  <div class="modal" id="rewatchModal">
-    <div class="modal-content">
-      <h2>Segna Rewatch</h2>
-      <p>Quante volte hai visto questo film in totale?</p>
-      <input type="number" id="rewatchCount" min="1" value="1" style="width: 60px; text-align: center;">
-      <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-        <button id="confirmRewatchBtn" class="btn btn-primary">Conferma</button>
-        <button id="cancelRewatchBtn" class="btn btn-danger">Annulla</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Context Menu -->
-  <div class="context-menu" id="contextMenu">
-    <div class="context-menu-item context-submenu">
-      <i class="fas fa-folder"></i> Sposta in
-      <div class="context-submenu-items" id="categorySubmenu"></div>
-    </div>
-    <div class="context-menu-item" id="cmRewatch">
-      <i class="fas fa-redo"></i> Segna Rewatch
-    </div>
-    <div class="context-menu-item" id="cmDelete">
-      <i class="fas fa-trash"></i> Elimina Film
-    </div>
-  </div>
-
+  
   <!-- Notification -->
   <div id="notification" class="notification">
     <span id="notificationText"></span>
@@ -834,8 +757,7 @@
     // Stato
     let mediaList = [];
     let categories = [...DEFAULT_CATEGORIES];
-    let currentContextMedia = null;
-    let currentRewatchMedia = null;
+    let currentQuickEditMedia = null;
     let currentOMDbSelection = null;
     let currentUser = null;
     let isViewMode = false;
@@ -853,7 +775,6 @@
 
     // Elementi DOM
     const elements = {
-      authContainer: document.getElementById("authContainer"),
       authForms: document.getElementById("authForms"),
       authToggle: document.getElementById("authToggle"),
       userInfo: document.getElementById("userInfo"),
@@ -865,10 +786,8 @@
       registerPassword: document.getElementById("registerPassword"),
       registerConfirmPassword: document.getElementById("registerConfirmPassword"),
       logoutBtn: document.getElementById("logoutBtn"),
-      userEmail: document.getElementById("userEmail"),
       loginForm: document.getElementById("loginForm"),
       registerForm: document.getElementById("registerForm"),
-      appContent: document.getElementById("appContent"),
       addMediaBtn: document.getElementById("addMediaBtn"),
       manageCategoriesBtn: document.getElementById("manageCategoriesBtn"),
       shareBtn: document.getElementById("shareBtn"),
@@ -893,19 +812,19 @@
       omdbResults: document.getElementById("omdbResults"),
       saveMediaBtn: document.getElementById("saveMediaBtn"),
       cancelMediaBtn: document.getElementById("cancelMediaBtn"),
+      addMediaCategorySelect: document.getElementById("addMediaCategorySelect"),
       categoryManagementModal: document.getElementById("categoryManagementModal"),
       newCategoryName: document.getElementById("newCategoryName"),
       addCategoryBtn: document.getElementById("addCategoryBtn"),
       categoriesList: document.getElementById("categoriesList"),
       closeCategoryManagementBtn: document.getElementById("closeCategoryManagementBtn"),
-      rewatchModal: document.getElementById("rewatchModal"),
-      rewatchCount: document.getElementById("rewatchCount"),
-      confirmRewatchBtn: document.getElementById("confirmRewatchBtn"),
-      cancelRewatchBtn: document.getElementById("cancelRewatchBtn"),
-      contextMenu: document.getElementById("contextMenu"),
-      cmRewatch: document.getElementById("cmRewatch"),
-      cmDelete: document.getElementById("cmDelete"),
-      categorySubmenu: document.getElementById("categorySubmenu"),
+      quickEditModal: document.getElementById("quickEditModal"),
+      quickEditTitle: document.getElementById("quickEditTitle"),
+      quickEditWatchedButtonContainer: document.getElementById("quickEditWatchedButtonContainer"),
+      quickEditMarkWatchedBtn: document.getElementById("quickEditMarkWatchedBtn"),
+      quickEditRewatchCount: document.getElementById("quickEditRewatchCount"),
+      confirmQuickEditBtn: document.getElementById("confirmQuickEditBtn"),
+      cancelQuickEditBtn: document.getElementById("cancelQuickEditBtn"),
       notification: document.getElementById("notification"),
       notificationText: document.getElementById("notificationText"),
       shareLink: document.getElementById("shareLink"),
@@ -921,7 +840,6 @@
       setupEventListeners();
       checkSharedView();
       loadTheme();
-      // FIX: Carica l'ordinamento salvato all'avvio
       loadSortOrder();
     }
 
@@ -933,8 +851,8 @@
       });
       
       document.addEventListener('click', (e) => {
-        if (!elements.authForms.contains(e.target) && e.target !== elements.authToggle) {
-          elements.authForms.classList.remove('active');
+        if (!elements.authForms.contains(e.target) && !e.target.closest('#authToggle')) {
+            elements.authForms.classList.remove('active');
         }
       });
       
@@ -1024,12 +942,10 @@
       if (currentUser) {
         elements.userInfo.style.display = 'flex';
         elements.authToggle.style.display = 'none';
-        elements.userEmail.textContent = currentUser.email;
         document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
       } else {
         elements.userInfo.style.display = 'none';
         elements.authToggle.style.display = 'block';
-        elements.userEmail.textContent = '';
         document.querySelectorAll('#addMediaBtn, #manageCategoriesBtn, #exportBtn, #importBtn, #resetBtn, #shareBtn').forEach(btn => {
           btn.disabled = true;
         });
@@ -1048,10 +964,7 @@
       
       db.ref(`users/${currentUser.uid}/categories`).once('value').then(snapshot => {
         categories = snapshot.val() || [...DEFAULT_CATEGORIES];
-        updateCategoryFilter();
-        updateCategorySubmenu();
-        renderCategorySections();
-        renderMedia();
+        renderFullUI();
       });
     }
 
@@ -1059,10 +972,7 @@
       try {
         mediaList = JSON.parse(localStorage.getItem("mediaList")) || [];
         categories = JSON.parse(localStorage.getItem("categories")) || [...DEFAULT_CATEGORIES];
-        renderCategorySections();
-        updateCategoryFilter();
-        updateCategorySubmenu();
-        renderMedia();
+        renderFullUI();
         updateStats();
       } catch (e) {
         console.error("Error loading local data:", e);
@@ -1112,11 +1022,7 @@
               mediaList = mediaSnap.val() || [];
               categories = categoriesSnap.val() || [...DEFAULT_CATEGORIES];
               
-              // FIX: Assicura che l'interfaccia sia completamente renderizzata
-              renderCategorySections();
-              updateCategoryFilter();
-              updateCategorySubmenu();
-              renderMedia();
+              renderFullUI();
               updateStats();
             });
 
@@ -1150,11 +1056,10 @@
       });
     }
 
-    function enableViewMode(uid, shareKey) {
+    function enableViewMode(uid) {
       isViewMode = true;
       
-      document.querySelectorAll('.btn').forEach(btn => btn.style.display = 'none');
-      elements.authContainer.style.display = 'none';
+      document.querySelector('.main-controls').style.display = 'none';
       elements.viewModeBanner.style.display = 'flex';
       
       db.ref(`users/${uid}/mediaList`).on('value', snapshot => {
@@ -1204,7 +1109,15 @@
       return Math.random().toString(36).substring(2, 15);
     }
 
-    // Media functions
+    // Funzioni di Rendering
+    function renderFullUI() {
+        renderCategorySections();
+        updateCategoryFilter();
+        populateAddMediaCategorySelect();
+        renderCategoriesList();
+        renderMedia();
+    }
+    
     function renderMedia() {
       clearMediaGrids();
       updateStats();
@@ -1253,6 +1166,8 @@
           const existingCard = grid.querySelector(`.media-card[data-id="${media.id}"]`);
           if (!existingCard) {
             grid.appendChild(createMediaCard(media));
+          } else {
+              grid.replaceChild(createMediaCard(media), existingCard);
           }
         }
       });
@@ -1282,7 +1197,7 @@
         if (media.category === "watched") stats.watched++;
         if (media.rewatchCount > 1) stats.rewatched++;
 
-        if (media.category === "watched") {
+        if (media.category === "watched" || media.isCountedAsWatched) {
           const runtime = media.runtime ? parseInt(media.runtime.toString().replace(/\D/g, '')) : 0;
           if (runtime > 0) {
             const totalMinutes = runtime * (media.rewatchCount || 1);
@@ -1333,10 +1248,10 @@
           🔄×${media.rewatchCount}
         </span>
       ` : '';
-
-      const categoryHTML = !DEFAULT_CATEGORIES.includes(media.category) ? `
-        <span class="category-badge">
-          ${media.category}
+      
+      const countedAsWatchedHTML = (media.isCountedAsWatched && media.category !== 'watched') ? `
+        <span class="counted-as-watched-badge">
+            <i class="fas fa-check-circle"></i>
         </span>
       ` : '';
 
@@ -1345,12 +1260,14 @@
           <img src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster" 
                onerror="this.src='${DEFAULT_POSTER}'">
           ${rewatchHTML}
-          ${categoryHTML}
-          <div class="card-actions">
-            <button class="card-btn" data-action="edit">
-              <i class="fas fa-edit"></i>
+          ${countedAsWatchedHTML}
+          <div class="card-actions card-actions-left">
+            <button class="card-btn" data-action="toggle-move-dropdown" title="Sposta in...">
+              <i class="fas fa-folder-open"></i>
             </button>
-            <button class="card-btn" data-action="delete">
+          </div>
+          <div class="card-actions card-actions-right">
+            <button class="card-btn" data-action="delete" title="Elimina">
               <i class="fas fa-trash"></i>
             </button>
           </div>
@@ -1365,14 +1282,13 @@
         </div>
       `;
 
-      card.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        showContextMenu(media, e.clientX, e.clientY);
+      card.addEventListener("dblclick", () => {
+        openQuickEditModal(media);
       });
 
-      card.querySelector("[data-action='edit']").addEventListener("click", (e) => {
+      card.querySelector("[data-action='toggle-move-dropdown']").addEventListener("click", (e) => {
         e.stopPropagation();
-        editMedia(media.id);
+        showCardMoveDropdown(media, e.currentTarget);
       });
 
       card.querySelector("[data-action='delete']").addEventListener("click", (e) => {
@@ -1399,7 +1315,7 @@
       elements.mediaSectionsContainer.innerHTML = categories.map(category => `
         <div class="media-section" id="${category}Section" data-category="${category}" style="display:block">
           <div class="section-header">
-            <h2 class="section-title">${getCategoryName(category)}</h2>
+            <h2 class="section-title user-select-none">${getCategoryName(category)}</h2>
             <span id="${category}Count" class="category-count">0</span>
           </div>
           <div class="media-grid" id="${category}Grid"></div>
@@ -1411,7 +1327,7 @@
       elements.categoriesList.innerHTML = categories
         .map((category, idx) => `
           <div class="category-item" data-category-name="${category}">
-            <span class="category-name-span">${getCategoryName(category)}</span>
+            <span class="category-name-span user-select-none">${getCategoryName(category)}</span>
             <div style="display: flex; gap: 0.2rem;">
               ${!DEFAULT_CATEGORIES.includes(category) ?
                 `
@@ -1431,7 +1347,6 @@
           </div>
         `).join("");
       
-      // NUOVO: Aggiungi listener per i nuovi pulsanti
       document.querySelectorAll(".rename-category-btn").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -1463,13 +1378,12 @@
       });
     }
 
-    // NUOVO: Funzione per rinominare una categoria
     function renameCategory(oldName, spanElement) {
         const originalText = spanElement.textContent;
         const input = document.createElement('input');
         input.type = 'text';
         input.value = originalText;
-        input.className = 'filter-select'; // Riusa uno stile esistente
+        input.className = 'filter-select';
         
         spanElement.replaceWith(input);
         input.focus();
@@ -1489,11 +1403,7 @@
                 });
                 
                 saveData();
-                renderCategoriesList();
-                renderCategorySections();
-                updateCategoryFilter();
-                updateCategorySubmenu();
-                renderMedia();
+                renderFullUI();
                 showNotification(`Categoria rinominata in "${newName}"`, "success");
             } else {
                 const newSpan = document.createElement('span');
@@ -1525,9 +1435,7 @@
 
       [categories[idx], categories[newIndex]] = [categories[newIndex], categories[idx]];
       saveData();
-      renderCategoriesList();
-      renderCategorySections();
-      renderMedia();
+      renderFullUI();
     }
 
     function updateCategoryFilter() {
@@ -1540,11 +1448,11 @@
       `;
       elements.categoryFilter.value = currentSelection;
     }
-
-    function updateCategorySubmenu() {
-      elements.categorySubmenu.innerHTML = categories.map(cat => `
-        <div class="context-menu-item" data-category="${cat}">${getCategoryName(cat)}</div>
-      `).join("");
+    
+    function populateAddMediaCategorySelect() {
+        elements.addMediaCategorySelect.innerHTML = categories.map(cat => `
+          <option value="${cat}">${getCategoryName(cat)}</option>
+        `).join("");
     }
 
     function getCategoryName(category) {
@@ -1570,14 +1478,7 @@
 
       categories.push(normalizedName);
       saveData();
-      
-      // FIX: Aggiorna tutta l'interfaccia
-      renderCategoriesList();
-      renderCategorySections();
-      updateCategoryFilter();
-      updateCategorySubmenu();
-      renderMedia();
-      
+      renderFullUI();
       showNotification(`Categoria "${normalizedName}" creata`, "success");
       return true;
     }
@@ -1598,39 +1499,42 @@
       
       categories = categories.filter(c => c !== category);
       saveData();
-
-      // FIX: Aggiorna tutta l'interfaccia
-      renderCategoriesList();
-      renderCategorySections();
-      updateCategoryFilter();
-      updateCategorySubmenu();
-      renderMedia();
-
+      renderFullUI();
       showNotification(`Categoria "${category}" eliminata`, "success");
     }
 
     // Media actions
-    function showContextMenu(media, x, y) {
-      if (isViewMode) return;
-      
-      currentContextMedia = media;
-      
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const menuWidth = 200;
-      const menuHeight = 120;
-      
-      const adjustedX = x + menuWidth > viewportWidth ? viewportWidth - menuWidth : x;
-      const adjustedY = y + menuHeight > viewportHeight ? viewportHeight - menuHeight : y;
-      
-      elements.contextMenu.style.left = `${adjustedX}px`;
-      elements.contextMenu.style.top = `${adjustedY}px`;
-      elements.contextMenu.style.display = "block";
-    }
+    function showCardMoveDropdown(media, button) {
+        closeCardMoveDropdowns();
+        
+        const dropdown = document.createElement('div');
+        dropdown.className = 'card-move-dropdown';
 
-    function closeContextMenu() {
-      elements.contextMenu.style.display = "none";
-      currentContextMedia = null;
+        categories.filter(c => c !== media.category).forEach(cat => {
+            const item = document.createElement('div');
+            item.className = 'card-move-dropdown-item user-select-none';
+            item.textContent = getCategoryName(cat);
+            item.onclick = (e) => {
+                e.stopPropagation();
+                moveMediaToCategory(media.id, cat);
+                closeCardMoveDropdowns();
+            };
+            dropdown.appendChild(item);
+        });
+
+        const rect = button.getBoundingClientRect();
+        dropdown.style.left = `${rect.left}px`;
+        dropdown.style.top = `${rect.bottom + 5}px`;
+
+        document.body.appendChild(dropdown);
+
+        setTimeout(() => {
+            document.addEventListener('click', closeCardMoveDropdowns, { once: true });
+        }, 0);
+    }
+    
+    function closeCardMoveDropdowns() {
+        document.querySelectorAll('.card-move-dropdown').forEach(d => d.remove());
     }
 
     function moveMediaToCategory(mediaId, category) {
@@ -1638,9 +1542,9 @@
       if (!media) return;
 
       const card = document.querySelector(`.media-card[data-id="${mediaId}"]`);
-      if (card) {
-        card.classList.add('moving');
-      }
+      if (card) card.classList.add('moving');
+      
+      if (category === 'watched') media.isCountedAsWatched = false;
 
       setTimeout(() => {
         media.category = category;
@@ -1649,58 +1553,50 @@
         showNotification(`Film spostato in "${getCategoryName(category)}"`, "success");
       }, 300);
     }
+    
+    function toggleCountedAsWatched(mediaId) {
+        const media = mediaList.find(m => m.id === mediaId);
+        if (!media) return;
+        
+        media.isCountedAsWatched = !media.isCountedAsWatched;
+
+        if (media.isCountedAsWatched && (!media.rewatchCount || media.rewatchCount < 1)) {
+            media.rewatchCount = 1;
+        }
+
+        saveData();
+        updateStats();
+        refreshSingleMedia(mediaId);
+        const message = media.isCountedAsWatched ? "conteggiato nel tempo totale." : "rimosso dal conteggio del tempo totale.";
+        showNotification(`"${media.title}" ${message}`, "success");
+    }
 
     function markRewatch(mediaId, count) {
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
-
-      if (media.category !== "watched") {
-        media.category = "watched";
-      }
-
+      
       media.rewatchCount = count;
       saveData();
       
       refreshSingleMedia(mediaId);
       updateStats();
-      showNotification(`Film visto ${count} ${count === 1 ? 'volta' : 'volte'}`, "success");
+      showNotification(`Rewatch di "${media.title}" aggiornati a ${count}`, "success");
     }
 
     function refreshSingleMedia(mediaId) {
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
 
-      document.querySelectorAll('.media-grid').forEach(grid => {
-        const card = grid.querySelector(`.media-card[data-id="${mediaId}"]`);
-        if (card) card.remove();
-      });
-
-      const grid = document.getElementById(`${media.category}Grid`);
-      if (grid) {
-        grid.appendChild(createMediaCard(media));
+      const oldCard = document.querySelector(`.media-card[data-id="${mediaId}"]`);
+      const grid = oldCard ? oldCard.parentElement : document.getElementById(`${media.category}Grid`);
+      
+      if (oldCard && grid) {
+          grid.replaceChild(createMediaCard(media), oldCard);
+      } else if (grid) {
+          grid.appendChild(createMediaCard(media));
       }
       
       updateCounts();
-    }
-
-    function editMedia(mediaId) {
-      if (isViewMode) return;
-      
-      const media = mediaList.find(m => m.id === mediaId);
-      if (!media) return;
-
-      elements.mediaTitle.value = media.title;
-      elements.addMediaModal.style.display = "flex";
-      document.body.classList.add("modal-open");
-
-      elements.saveMediaBtn.textContent = "Aggiorna";
-      elements.saveMediaBtn.onclick = () => {
-        media.title = elements.mediaTitle.value.trim();
-        saveData();
-        closeModal(elements.addMediaModal);
-        refreshSingleMedia(mediaId);
-        showNotification("Film aggiornato", "success");
-      };
     }
 
     function deleteMedia(id) {
@@ -1718,12 +1614,8 @@
     function closeModal(modal) {
       modal.style.display = "none";
       document.body.classList.remove("modal-open");
-      elements.mediaTitle.value = "";
-      elements.omdbResults.innerHTML = "";
-      currentOMDbSelection = null;
     }
-
-    // OMDb
+    
     async function searchOMDb() {
       const title = elements.mediaTitle.value.trim();
 
@@ -1754,7 +1646,7 @@
 
     function displayOMDbResults(results) {
       elements.omdbResults.innerHTML = results.map(movie => `
-        <div class="omdb-result-item" data-id="${movie.imdbID}">
+        <div class="omdb-result-item user-select-none" data-id="${movie.imdbID}">
           <img src="${fixPosterUrl(movie.Poster)}" 
                class="omdb-poster-small"
                onerror="this.src='${DEFAULT_POSTER}'">
@@ -1801,19 +1693,21 @@
       if (isViewMode) return;
       
       const title = elements.mediaTitle.value.trim();
-
       if (!title) {
         showNotification("Inserisci un titolo", "warning");
         return;
       }
+      
+      const selectedCategory = elements.addMediaCategorySelect.value;
 
       let mediaData = {
         id: Date.now().toString(),
         title,
-        category: "watchlist",
+        category: selectedCategory,
         addedAt: new Date().toISOString(),
         poster: "",
         rewatchCount: 0,
+        isCountedAsWatched: false,
         year: "",
         imdbRating: "",
         rottenTomatoes: "",
@@ -1832,9 +1726,7 @@
 
         if (currentOMDbSelection.Ratings) {
           const rtRating = currentOMDbSelection.Ratings.find(r => r.Source === "Rotten Tomatoes");
-          if (rtRating) {
-            mediaData.rottenTomatoes = rtRating.Value;
-          }
+          if (rtRating) mediaData.rottenTomatoes = rtRating.Value;
         }
       }
 
@@ -1844,8 +1736,7 @@
       renderMedia();
       showNotification(`Film "${mediaData.title}" aggiunto!`, "success");
     }
-
-    // Import/Export
+    
     function exportData() {
       if (isViewMode) return;
       
@@ -1861,7 +1752,7 @@
       a.href = url;
       a.download = `mediatracker_export_${new Date().toISOString().split("T")[0]}.json`;
       a.click();
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(a);
       
       showNotification("Dati esportati", "success");
     }
@@ -1879,7 +1770,7 @@
             mediaList = data.mediaList;
             categories = data.categories || [...DEFAULT_CATEGORIES];
             saveData();
-            renderMedia();
+            renderFullUI(); // FIX: Usa la funzione di rendering completo
             showNotification("Dati importati con successo", "success");
           }
         } catch (error) {
@@ -1889,7 +1780,6 @@
       reader.readAsText(file);
     }
 
-    // Reset
     function resetApp() {
       if (isViewMode) return;
       
@@ -1901,36 +1791,25 @@
         elements.categoryFilter.value = "all";
         elements.sortFilter.value = "alpha";
         
-        // FIX: Aggiorna tutta l'interfaccia
-        renderCategorySections();
-        updateCategoryFilter();
-        updateCategorySubmenu();
-        renderMedia();
+        renderFullUI();
         
         showNotification("Applicazione resettata", "success");
       }
     }
 
-    // Theme
     function loadTheme() {
       const savedTheme = localStorage.getItem("theme") || "dark";
       document.body.classList.toggle("dark", savedTheme === "dark");
-      elements.themeToggle.innerHTML = `
-        <i class="fas fa-${savedTheme === "dark" ? "sun" : "moon"}"></i>
-      `;
+      elements.themeToggle.innerHTML = `<i class="fas fa-${savedTheme === "dark" ? "sun" : "moon"}"></i>`;
     }
 
     function toggleTheme() {
       document.body.classList.toggle("dark");
       const isDark = document.body.classList.contains("dark");
       localStorage.setItem("theme", isDark ? "dark" : "light");
-      
-      elements.themeToggle.innerHTML = `
-        <i class="fas fa-${isDark ? "sun" : "moon"}"></i>
-      `;
+      elements.themeToggle.innerHTML = `<i class="fas fa-${isDark ? "sun" : "moon"}"></i>`;
     }
 
-    // NUOVO: Funzione per caricare l'ordinamento salvato
     function loadSortOrder() {
         const savedSortOrder = localStorage.getItem('mediaTrackerSortOrder');
         if (savedSortOrder) {
@@ -1938,7 +1817,6 @@
         }
     }
 
-    // Category management
     function openCategoryManagement() {
       if (isViewMode) return;
       
@@ -1947,7 +1825,6 @@
       document.body.classList.add("modal-open");
     }
 
-    // Notification
     function showNotification(message, type = "success") {
       elements.notificationText.textContent = message;
       elements.notification.className = `notification ${type}`;
@@ -1958,153 +1835,120 @@
       }, 3000);
     }
 
-    // Setup event listeners
     function setupEventListeners() {
-      // Media actions
       elements.addMediaBtn.addEventListener("click", () => {
         elements.mediaTitle.value = "";
         elements.omdbResults.innerHTML = "";
+        currentOMDbSelection = null;
         elements.saveMediaBtn.textContent = "Salva";
         elements.saveMediaBtn.onclick = addNewMedia;
+        populateAddMediaCategorySelect(); 
         elements.addMediaModal.style.display = "flex";
         document.body.classList.add("modal-open");
       });
+      
+      elements.confirmQuickEditBtn.addEventListener("click", () => {
+          const count = parseInt(elements.quickEditRewatchCount.value) || 0;
+          if (count < 0) {
+              showNotification("Inserisci un numero valido", "warning");
+              return;
+          }
+          markRewatch(currentQuickEditMedia.id, count);
+          closeModal(elements.quickEditModal);
+      });
+      
+      elements.quickEditMarkWatchedBtn.addEventListener("click", () => {
+          toggleCountedAsWatched(currentQuickEditMedia.id);
+          closeModal(elements.quickEditModal);
+      });
+      
+      elements.cancelQuickEditBtn.addEventListener("click", () => closeModal(elements.quickEditModal));
 
       elements.manageCategoriesBtn.addEventListener("click", openCategoryManagement);
-
       elements.addCategoryBtn.addEventListener("click", () => {
         if (addCategory(elements.newCategoryName.value)) {
           elements.newCategoryName.value = "";
         }
       });
-
-      elements.closeCategoryManagementBtn.addEventListener("click", () => {
-        closeModal(elements.categoryManagementModal);
-      });
-
-      elements.cancelMediaBtn.addEventListener("click", () => {
-        closeModal(elements.addMediaModal);
-      });
-
+      elements.closeCategoryManagementBtn.addEventListener("click", () => closeModal(elements.categoryManagementModal));
+      elements.cancelMediaBtn.addEventListener("click", () => closeModal(elements.addMediaModal));
       elements.searchOMDbBtn.addEventListener("click", searchOMDb);
-
-      // Context menu
       document.addEventListener("click", (e) => {
-        if (
-          elements.contextMenu.style.display === "block" &&
-          e.target.closest("#categorySubmenu") &&
-          e.target.closest("[data-category]")
-        ) {
-          const category = e.target.closest("[data-category]").dataset.category;
-          if (currentContextMedia) {
-            moveMediaToCategory(currentContextMedia.id, category);
-          }
-          closeContextMenu();
-        } else {
-          closeContextMenu();
+        if (!e.target.closest('.card-move-dropdown')) {
+            closeCardMoveDropdowns();
         }
       });
-
-      elements.cmRewatch.addEventListener("click", () => {
-        if (!currentContextMedia || isViewMode) return;
-        currentRewatchMedia = currentContextMedia;
-        elements.rewatchCount.value = currentRewatchMedia.rewatchCount || 1;
-        elements.rewatchModal.style.display = "flex";
-        document.body.classList.add("modal-open");
-        closeContextMenu();
-      });
-
-      elements.cmDelete.addEventListener("click", () => {
-        if (!currentContextMedia || isViewMode) return;
-        deleteMedia(currentContextMedia.id);
-        closeContextMenu();
-      });
-
-      // Rewatch modal
-      elements.confirmRewatchBtn.addEventListener("click", () => {
-        const count = parseInt(elements.rewatchCount.value) || 1;
-        if (count <= 0) {
-          showNotification("Inserisci un numero valido (almeno 1)", "warning");
-          return;
-        }
-        markRewatch(currentRewatchMedia.id, count);
-        closeModal(elements.rewatchModal);
-      });
-
-      elements.cancelRewatchBtn.addEventListener("click", () => {
-        closeModal(elements.rewatchModal);
-      });
-
-      // Close modals when clicking outside
       elements.addMediaModal.addEventListener("click", (e) => {
-        if (e.target === elements.addMediaModal) {
-          closeModal(elements.addMediaModal);
-        }
+        if (e.target === elements.addMediaModal) closeModal(elements.addMediaModal);
       });
-
       elements.categoryManagementModal.addEventListener("click", (e) => {
-        if (e.target === elements.categoryManagementModal) {
-          closeModal(elements.categoryManagementModal);
-        }
+        if (e.target === elements.categoryManagementModal) closeModal(elements.categoryManagementModal);
       });
-
-      elements.rewatchModal.addEventListener("click", (e) => {
-        if (e.target === elements.rewatchModal) {
-          closeModal(elements.rewatchModal);
-        }
+      elements.quickEditModal.addEventListener("click", (e) => {
+        if (e.target === elements.quickEditModal) closeModal(elements.quickEditModal);
       });
-
-      // Import/Export
       elements.exportBtn.addEventListener("click", exportData);
       elements.importBtn.addEventListener("click", () => elements.importFile.click());
       elements.importFile.addEventListener("change", (e) => importData(e.target.files[0]));
-
-      // Reset
       elements.resetBtn.addEventListener("click", resetApp);
-
-      // Theme
       elements.themeToggle.addEventListener("click", toggleTheme);
-
-      // Filters and search
       elements.searchInput.addEventListener("input", renderMedia);
       elements.categoryFilter.addEventListener("change", renderMedia);
       elements.sortFilter.addEventListener("change", () => {
-          // FIX: Salva l'ordinamento quando viene cambiato
           localStorage.setItem('mediaTrackerSortOrder', elements.sortFilter.value);
           renderMedia();
       });
-
-      // Sharing
       elements.shareBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        
         if (activeShareId) {
           elements.shareDropdown.classList.toggle('active');
         } else {
           activateSharing();
         }
       });
-
       document.addEventListener('click', (e) => {
         if (!elements.shareDropdown.contains(e.target)) {
           elements.shareDropdown.classList.remove('active');
         }
       });
-
       elements.copyLinkBtn.addEventListener("click", () => {
         navigator.clipboard.writeText(elements.shareLink.value);
         showNotification("Link copiato!", "success");
       });
-      
       elements.disableShareBtn.addEventListener("click", () => {
         deactivateSharing();
         elements.shareDropdown.classList.remove('active');
       });
-      
       elements.closeViewBtn.addEventListener("click", closeViewMode);
     }
-
-    // Start the app
+    
+    function openQuickEditModal(media) {
+        if (isViewMode) return;
+        currentQuickEditMedia = media;
+        
+        elements.quickEditTitle.textContent = `Modifica: ${media.title}`;
+        elements.quickEditRewatchCount.value = media.rewatchCount || 0;
+        
+        if (media.category === 'watched') {
+            elements.quickEditWatchedButtonContainer.style.display = 'none';
+        } else {
+            elements.quickEditWatchedButtonContainer.style.display = 'block';
+            const btn = elements.quickEditMarkWatchedBtn;
+            if (media.isCountedAsWatched) {
+                btn.innerHTML = `<i class="fas fa-times"></i> Rimuovi come visto qui`;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-danger');
+            } else {
+                btn.innerHTML = `<i class="fas fa-check-double"></i> Segna come visto qui`;
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-success');
+            }
+        }
+        
+        elements.quickEditModal.style.display = "flex";
+        document.body.classList.add("modal-open");
+    }
+    
     document.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
