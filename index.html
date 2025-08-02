@@ -37,6 +37,14 @@
       --reset: #ff6b6b;
     }
 
+    /* FIX: Impedisce la selezione del testo su elementi non editabili */
+    .btn, .context-menu-item, .auth-tab, .card-btn, .dropdown-toggle {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
       margin: 0;
@@ -616,7 +624,7 @@
     }
   </style>
 </head>
-<body class="light">
+<body class="dark">
   <!-- View Mode Banner -->
   <div id="viewModeBanner" class="view-mode-banner" style="display:none">
     <i class="fas fa-eye"></i>
@@ -913,6 +921,8 @@
       setupEventListeners();
       checkSharedView();
       loadTheme();
+      // FIX: Carica l'ordinamento salvato all'avvio
+      loadSortOrder();
     }
 
     // Autenticazione
@@ -1027,33 +1037,33 @@
     }
 
     // Caricamento dati
-function loadData() {
-  if (!currentUser) return;
-  
-  db.ref(`users/${currentUser.uid}/mediaList`).on('value', snapshot => {
-    mediaList = snapshot.val() || [];
-    renderMedia(); // Chiamata aggiuntiva per forzare il rendering
-    updateStats();
-  });
-  
-  db.ref(`users/${currentUser.uid}/categories`).once('value').then(snapshot => {
-    categories = snapshot.val() || [...DEFAULT_CATEGORIES];
-    updateCategoryFilter();
-    updateCategorySubmenu();
-    renderCategorySections();
-    renderMedia(); // Aggiungi questa linea
-  });
-}
+    function loadData() {
+      if (!currentUser) return;
+      
+      db.ref(`users/${currentUser.uid}/mediaList`).on('value', snapshot => {
+        mediaList = snapshot.val() || [];
+        renderMedia();
+        updateStats();
+      });
+      
+      db.ref(`users/${currentUser.uid}/categories`).once('value').then(snapshot => {
+        categories = snapshot.val() || [...DEFAULT_CATEGORIES];
+        updateCategoryFilter();
+        updateCategorySubmenu();
+        renderCategorySections();
+        renderMedia();
+      });
+    }
 
     function loadLocalData() {
       try {
         mediaList = JSON.parse(localStorage.getItem("mediaList")) || [];
         categories = JSON.parse(localStorage.getItem("categories")) || [...DEFAULT_CATEGORIES];
-        renderMedia();
-        updateStats();
+        renderCategorySections();
         updateCategoryFilter();
         updateCategorySubmenu();
-        renderCategorySections();
+        renderMedia();
+        updateStats();
       } catch (e) {
         console.error("Error loading local data:", e);
       }
@@ -1084,70 +1094,69 @@ function loadData() {
     }
 
     // Condivisione
-function checkSharedView() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const uid = urlParams.get('uid');
-  const share = urlParams.get('share');
+    function checkSharedView() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const uid = urlParams.get('uid');
+      const share = urlParams.get('share');
 
-  if (uid && share) {
-    isViewMode = true;
+      if (uid && share) {
+        isViewMode = true;
 
-    db.ref(`users/${uid}/activeShare`).once('value').then(snap => {
-      const data = snap.val();
-      if (data && data.shareId === share && data.expiresAt > Date.now()) {
-        // Carica mediaList e categorie
-        db.ref(`users/${uid}/mediaList`).once('value').then(mediaSnap => {
-          mediaList = mediaSnap.val() || [];
-          renderMedia();
+        db.ref(`users/${uid}/activeShare`).once('value').then(snap => {
+          const data = snap.val();
+          if (data && data.shareId === share && data.expiresAt > Date.now()) {
+            Promise.all([
+              db.ref(`users/${uid}/mediaList`).once('value'),
+              db.ref(`users/${uid}/categories`).once('value')
+            ]).then(([mediaSnap, categoriesSnap]) => {
+              mediaList = mediaSnap.val() || [];
+              categories = categoriesSnap.val() || [...DEFAULT_CATEGORIES];
+              
+              // FIX: Assicura che l'interfaccia sia completamente renderizzata
+              renderCategorySections();
+              updateCategoryFilter();
+              updateCategorySubmenu();
+              renderMedia();
+              updateStats();
+            });
+
+            enableViewMode(uid);
+          } else {
+            showNotification("Link non valido o scaduto", "error");
+            setTimeout(() => {
+              window.location.href = window.location.pathname;
+            }, 2000);
+          }
+        }).catch(() => {
+          showNotification("Errore nel caricamento", "error");
         });
-
-        db.ref(`users/${uid}/categories`).once('value').then(categoriesSnap => {
-          categories = categoriesSnap.val() || [...DEFAULT_CATEGORIES];
-          renderCategorySections();
-          updateCategoryFilter();
-          updateCategorySubmenu();
-          renderMedia();
-        });
-
-        enableViewMode(uid);
-      } else {
-        showNotification("Link non valido o scaduto", "error");
-        setTimeout(() => {
-          window.location.href = window.location.pathname;
-        }, 2000);
       }
-    }).catch(() => {
-      showNotification("Errore nel caricamento", "error");
-    });
-  }
-}
+    }
 
-// In activateSharing()
-function activateSharing() {
-  if (!currentUser) return;
-  const shareId = generateId();
-  const expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 giorni
+    function activateSharing() {
+      if (!currentUser) return;
+      const shareId = generateId();
+      const expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 giorni
 
-  db.ref(`users/${currentUser.uid}/activeShare`).set({
-    shareId: shareId,
-    expiresAt: expiresAt
-  }).then(() => {
-    activeShareId = shareId;
-    updateShareLink(shareId);
-    showNotification("Condivisione attivata (valida 7 giorni)", "success");
-  }).catch(error => {
-    showNotification("Errore nell'attivazione della condivisione", "error");
-  });
-}
+      db.ref(`users/${currentUser.uid}/activeShare`).set({
+        shareId: shareId,
+        expiresAt: expiresAt
+      }).then(() => {
+        activeShareId = shareId;
+        updateShareLink(shareId);
+        showNotification("Condivisione attivata (valida 7 giorni)", "success");
+      }).catch(error => {
+        showNotification("Errore nell'attivazione della condivisione", "error");
+      });
+    }
+
     function enableViewMode(uid, shareKey) {
       isViewMode = true;
       
-      // Nascondi elementi di modifica
       document.querySelectorAll('.btn').forEach(btn => btn.style.display = 'none');
       elements.authContainer.style.display = 'none';
       elements.viewModeBanner.style.display = 'flex';
       
-      // Carica i media condivisi
       db.ref(`users/${uid}/mediaList`).on('value', snapshot => {
         mediaList = snapshot.val() || [];
         renderMedia();
@@ -1163,38 +1172,32 @@ function activateSharing() {
       if (!currentUser) return;
       
       db.ref(`users/${currentUser.uid}/activeShare`).once('value').then(snapshot => {
-        const shareId = snapshot.val();
-        if (shareId) {
-          activeShareId = shareId;
-          updateShareLink(shareId);
+        const shareData = snapshot.val();
+        if (shareData && shareData.shareId) {
+          activeShareId = shareData.shareId;
+          updateShareLink(activeShareId);
         }
       });
     }
     
-function updateShareLink(shareId) {
-  if (!shareId) return;
-  const shareLink = `${window.location.origin}${window.location.pathname}?uid=${currentUser.uid}&share=${shareId}`;
-  elements.shareLink.value = shareLink;
-  elements.shareDropdown.classList.add('active'); // Apri il dropdown automaticamente
-}
-
-
-function deactivateSharing() {
-  if (!currentUser) return;
-  db.ref(`users/${currentUser.uid}/activeShare`).remove()
-    .then(() => {
-      activeShareId = null;
-      elements.shareDropdown.classList.remove('active');
-      showNotification("Condivisione disattivata", "success");
-    })
-    .catch(error => {
-      showNotification("Errore nella disattivazione", "error");
-    });
-}
-
     function updateShareLink(shareId) {
+      if (!shareId) return;
       const shareLink = `${window.location.origin}${window.location.pathname}?uid=${currentUser.uid}&share=${shareId}`;
       elements.shareLink.value = shareLink;
+      elements.shareDropdown.classList.add('active');
+    }
+
+    function deactivateSharing() {
+      if (!currentUser) return;
+      db.ref(`users/${currentUser.uid}/activeShare`).remove()
+        .then(() => {
+          activeShareId = null;
+          elements.shareDropdown.classList.remove('active');
+          showNotification("Condivisione disattivata", "success");
+        })
+        .catch(error => {
+          showNotification("Errore nella disattivazione", "error");
+        });
     }
 
     function generateId() {
@@ -1202,62 +1205,60 @@ function deactivateSharing() {
     }
 
     // Media functions
-function renderMedia() {
-  clearMediaGrids();
-  updateStats();
+    function renderMedia() {
+      clearMediaGrids();
+      updateStats();
 
-  const searchTerm = elements.searchInput.value.toLowerCase();
-  const filterCategory = elements.categoryFilter.value;
-  const sortBy = elements.sortFilter.value;
+      const searchTerm = elements.searchInput.value.toLowerCase();
+      const filterCategory = elements.categoryFilter.value;
+      const sortBy = elements.sortFilter.value;
 
-  // Mostra TUTTE le sezioni inizialmente (rimosso il nascondi iniziale)
-  document.querySelectorAll('.media-section').forEach(section => {
-    section.style.display = 'block'; // Mostra sempre le sezioni
-  });
+      document.querySelectorAll('.media-section').forEach(section => {
+        section.style.display = 'block';
+      });
 
-  let filteredMedia = [...mediaList];
-  
-  if (searchTerm) {
-    filteredMedia = filteredMedia.filter(media => 
-      media.title.toLowerCase().includes(searchTerm)
-    );
-  }
-  
-  if (filterCategory !== "all") {
-    filteredMedia = filteredMedia.filter(media => 
-      media.category === filterCategory
-    );
-    
-    // Nascondi solo le sezioni non filtrate
-    document.querySelectorAll('.media-section').forEach(section => {
-      if (section.dataset.category !== filterCategory) {
-        section.style.display = 'none';
+      let filteredMedia = [...mediaList];
+      
+      if (searchTerm) {
+        filteredMedia = filteredMedia.filter(media => 
+          media.title.toLowerCase().includes(searchTerm)
+        );
       }
-    });
-  }
-  
-  filteredMedia.sort((a, b) => {
-    switch(sortBy) {
-      case "alpha": return a.title.localeCompare(b.title);
-      case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
-      case "year": return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
-      case "added":
-      default: return new Date(b.addedAt) - new Date(a.addedAt);
-    }
-  });
-
-  filteredMedia.forEach(media => {
-    const grid = document.getElementById(`${media.category}Grid`);
-    if (grid) {
-      const existingCard = grid.querySelector(`.media-card[data-id="${media.id}"]`);
-      if (!existingCard) {
-        grid.appendChild(createMediaCard(media));
+      
+      if (filterCategory !== "all") {
+        filteredMedia = filteredMedia.filter(media => 
+          media.category === filterCategory
+        );
+        
+        document.querySelectorAll('.media-section').forEach(section => {
+          if (section.dataset.category !== filterCategory) {
+            section.style.display = 'none';
+          }
+        });
       }
-    }
-  });
+      
+      filteredMedia.sort((a, b) => {
+        switch(sortBy) {
+          case "alpha": return a.title.localeCompare(b.title);
+          case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
+          case "year": return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+          case "added":
+          default: return new Date(b.addedAt) - new Date(a.addedAt);
+        }
+      });
 
-  updateCounts();
-}
+      filteredMedia.forEach(media => {
+        const grid = document.getElementById(`${media.category}Grid`);
+        if (grid) {
+          const existingCard = grid.querySelector(`.media-card[data-id="${media.id}"]`);
+          if (!existingCard) {
+            grid.appendChild(createMediaCard(media));
+          }
+        }
+      });
+
+      updateCounts();
+    }
 
     function clearMediaGrids() {
       categories.forEach(category => {
@@ -1394,25 +1395,30 @@ function renderMedia() {
     }
 
     // Categories
-function renderCategorySections() {
-  elements.mediaSectionsContainer.innerHTML = categories.map(category => `
-    <div class="media-section" id="${category}Section" data-category="${category}" style="display:block">
-      <div class="section-header">
-        <h2 class="section-title">${getCategoryName(category)}</h2>
-        <span id="${category}Count" class="category-count">0</span>
-      </div>
-      <div class="media-grid" id="${category}Grid"></div>
-    </div>
-  `).join("");
-}
+    function renderCategorySections() {
+      elements.mediaSectionsContainer.innerHTML = categories.map(category => `
+        <div class="media-section" id="${category}Section" data-category="${category}" style="display:block">
+          <div class="section-header">
+            <h2 class="section-title">${getCategoryName(category)}</h2>
+            <span id="${category}Count" class="category-count">0</span>
+          </div>
+          <div class="media-grid" id="${category}Grid"></div>
+        </div>
+      `).join("");
+    }
+
     function renderCategoriesList() {
       elements.categoriesList.innerHTML = categories
         .map((category, idx) => `
-          <div class="category-item">
-            <span>${getCategoryName(category)}</span>
+          <div class="category-item" data-category-name="${category}">
+            <span class="category-name-span">${getCategoryName(category)}</span>
             <div style="display: flex; gap: 0.2rem;">
               ${!DEFAULT_CATEGORIES.includes(category) ?
-                `<button class="btn btn-danger delete-category-btn" data-category="${category}">
+                `
+                <button class="btn btn-secondary rename-category-btn" data-category="${category}">
+                  <i class="fas fa-pencil-alt"></i>
+                </button>
+                <button class="btn btn-danger delete-category-btn" data-category="${category}">
                   <i class="fas fa-trash"></i>
                 </button>` : ''}
               <button class="btn btn-secondary move-up-btn" data-category="${category}" ${idx === 0 ? 'disabled' : ''}>
@@ -1425,6 +1431,17 @@ function renderCategorySections() {
           </div>
         `).join("");
       
+      // NUOVO: Aggiungi listener per i nuovi pulsanti
+      document.querySelectorAll(".rename-category-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const categoryItem = btn.closest('.category-item');
+          const categoryName = categoryItem.dataset.categoryName;
+          const span = categoryItem.querySelector('.category-name-span');
+          renameCategory(categoryName, span);
+        });
+      });
+
       document.querySelectorAll(".delete-category-btn").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -1446,6 +1463,61 @@ function renderCategorySections() {
       });
     }
 
+    // NUOVO: Funzione per rinominare una categoria
+    function renameCategory(oldName, spanElement) {
+        const originalText = spanElement.textContent;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = originalText;
+        input.className = 'filter-select'; // Riusa uno stile esistente
+        
+        spanElement.replaceWith(input);
+        input.focus();
+        
+        const saveRename = () => {
+            const newName = input.value.trim();
+            if (newName && newName !== oldName && !categories.includes(newName)) {
+                const catIndex = categories.indexOf(oldName);
+                if (catIndex > -1) {
+                    categories[catIndex] = newName;
+                }
+                
+                mediaList.forEach(media => {
+                    if (media.category === oldName) {
+                        media.category = newName;
+                    }
+                });
+                
+                saveData();
+                renderCategoriesList();
+                renderCategorySections();
+                updateCategoryFilter();
+                updateCategorySubmenu();
+                renderMedia();
+                showNotification(`Categoria rinominata in "${newName}"`, "success");
+            } else {
+                const newSpan = document.createElement('span');
+                newSpan.className = 'category-name-span';
+                newSpan.textContent = originalText;
+                input.replaceWith(newSpan);
+                if (categories.includes(newName) && newName !== oldName) {
+                    showNotification("Nome categoria già esistente.", "warning");
+                }
+            }
+        };
+        
+        input.addEventListener('blur', saveRename);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') {
+                const newSpan = document.createElement('span');
+                newSpan.className = 'category-name-span';
+                newSpan.textContent = originalText;
+                input.replaceWith(newSpan);
+            }
+        });
+    }
+
     function moveCategory(category, direction) {
       const idx = categories.indexOf(category);
       const newIndex = idx + direction;
@@ -1459,12 +1531,14 @@ function renderCategorySections() {
     }
 
     function updateCategoryFilter() {
+      const currentSelection = elements.categoryFilter.value;
       elements.categoryFilter.innerHTML = `
         <option value="all">Tutte le categorie</option>
         ${categories.map(cat => `
           <option value="${cat}">${getCategoryName(cat)}</option>
         `).join("")}
       `;
+      elements.categoryFilter.value = currentSelection;
     }
 
     function updateCategorySubmenu() {
@@ -1496,8 +1570,14 @@ function renderCategorySections() {
 
       categories.push(normalizedName);
       saveData();
-      renderMedia();
+      
+      // FIX: Aggiorna tutta l'interfaccia
       renderCategoriesList();
+      renderCategorySections();
+      updateCategoryFilter();
+      updateCategorySubmenu();
+      renderMedia();
+      
       showNotification(`Categoria "${normalizedName}" creata`, "success");
       return true;
     }
@@ -1518,8 +1598,14 @@ function renderCategorySections() {
       
       categories = categories.filter(c => c !== category);
       saveData();
+
+      // FIX: Aggiorna tutta l'interfaccia
       renderCategoriesList();
+      renderCategorySections();
+      updateCategoryFilter();
+      updateCategorySubmenu();
       renderMedia();
+
       showNotification(`Categoria "${category}" eliminata`, "success");
     }
 
@@ -1560,7 +1646,7 @@ function renderCategorySections() {
         media.category = category;
         saveData();
         renderMedia();
-        showNotification(`Film spostato in "${category}"`, "success");
+        showNotification(`Film spostato in "${getCategoryName(category)}"`, "success");
       }, 300);
     }
 
@@ -1584,13 +1670,11 @@ function renderCategorySections() {
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
 
-      // Remove from all grids
       document.querySelectorAll('.media-grid').forEach(grid => {
         const card = grid.querySelector(`.media-card[data-id="${mediaId}"]`);
         if (card) card.remove();
       });
 
-      // Add to correct grid
       const grid = document.getElementById(`${media.category}Grid`);
       if (grid) {
         grid.appendChild(createMediaCard(media));
@@ -1816,19 +1900,25 @@ function renderCategorySections() {
         elements.searchInput.value = "";
         elements.categoryFilter.value = "all";
         elements.sortFilter.value = "alpha";
+        
+        // FIX: Aggiorna tutta l'interfaccia
+        renderCategorySections();
+        updateCategoryFilter();
+        updateCategorySubmenu();
         renderMedia();
+        
         showNotification("Applicazione resettata", "success");
       }
     }
 
     // Theme
-function loadTheme() {
-  const savedTheme = localStorage.getItem("theme") || "dark"; // Cambia a "dark" di default
-  document.body.classList.toggle("dark", savedTheme === "dark");
-  elements.themeToggle.innerHTML = `
-    <i class="fas fa-${savedTheme === "dark" ? "sun" : "moon"}"></i> Tema
-  `;
-}
+    function loadTheme() {
+      const savedTheme = localStorage.getItem("theme") || "dark";
+      document.body.classList.toggle("dark", savedTheme === "dark");
+      elements.themeToggle.innerHTML = `
+        <i class="fas fa-${savedTheme === "dark" ? "sun" : "moon"}"></i>
+      `;
+    }
 
     function toggleTheme() {
       document.body.classList.toggle("dark");
@@ -1836,8 +1926,16 @@ function loadTheme() {
       localStorage.setItem("theme", isDark ? "dark" : "light");
       
       elements.themeToggle.innerHTML = `
-        <i class="fas fa-${isDark ? "sun" : "moon"}"></i> Tema
+        <i class="fas fa-${isDark ? "sun" : "moon"}"></i>
       `;
+    }
+
+    // NUOVO: Funzione per caricare l'ordinamento salvato
+    function loadSortOrder() {
+        const savedSortOrder = localStorage.getItem('mediaTrackerSortOrder');
+        if (savedSortOrder) {
+            elements.sortFilter.value = savedSortOrder;
+        }
     }
 
     // Category management
@@ -1970,21 +2068,22 @@ function loadTheme() {
       // Filters and search
       elements.searchInput.addEventListener("input", renderMedia);
       elements.categoryFilter.addEventListener("change", renderMedia);
-      elements.sortFilter.addEventListener("change", renderMedia);
+      elements.sortFilter.addEventListener("change", () => {
+          // FIX: Salva l'ordinamento quando viene cambiato
+          localStorage.setItem('mediaTrackerSortOrder', elements.sortFilter.value);
+          renderMedia();
+      });
 
       // Sharing
-elements.shareBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  
-  if (activeShareId) {
-    // Se la condivisione è già attiva, mostra semplicemente il dropdown
-    elements.shareDropdown.classList.toggle('active');
-  } else {
-    // Se non attiva, riattivala
-    activateSharing();
-    showNotification(activeShareId ? "Condivisione riattivata" : "Condivisione attivata", "success");
-  }
-});
+      elements.shareBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        
+        if (activeShareId) {
+          elements.shareDropdown.classList.toggle('active');
+        } else {
+          activateSharing();
+        }
+      });
 
       document.addEventListener('click', (e) => {
         if (!elements.shareDropdown.contains(e.target)) {
