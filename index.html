@@ -1095,7 +1095,20 @@ function checkSharedView() {
     db.ref(`users/${uid}/activeShare`).once('value').then(snap => {
       const data = snap.val();
       if (data && data.shareId === share && data.expiresAt > Date.now()) {
-        // Condivisione valida
+        // Carica mediaList e categorie
+        db.ref(`users/${uid}/mediaList`).once('value').then(mediaSnap => {
+          mediaList = mediaSnap.val() || [];
+          renderMedia();
+        });
+
+        db.ref(`users/${uid}/categories`).once('value').then(categoriesSnap => {
+          categories = categoriesSnap.val() || [...DEFAULT_CATEGORIES];
+          renderCategorySections();
+          updateCategoryFilter();
+          updateCategorySubmenu();
+          renderMedia();
+        });
+
         enableViewMode(uid);
       } else {
         showNotification("Link non valido o scaduto", "error");
@@ -1809,13 +1822,13 @@ function renderCategorySections() {
     }
 
     // Theme
-    function loadTheme() {
-      const savedTheme = localStorage.getItem("theme") || "light";
-      document.body.classList.toggle("dark", savedTheme === "dark");
-      elements.themeToggle.innerHTML = `
-        <i class="fas fa-${savedTheme === "dark" ? "sun" : "moon"}"></i> Tema
-      `;
-    }
+function loadTheme() {
+  const savedTheme = localStorage.getItem("theme") || "dark"; // Cambia a "dark" di default
+  document.body.classList.toggle("dark", savedTheme === "dark");
+  elements.themeToggle.innerHTML = `
+    <i class="fas fa-${savedTheme === "dark" ? "sun" : "moon"}"></i> Tema
+  `;
+}
 
     function toggleTheme() {
       document.body.classList.toggle("dark");
