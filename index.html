@@ -888,7 +888,6 @@
       closeViewBtn: document.getElementById("closeViewBtn")
     };
 
-    // Inizializzazione
     function init() {
       setupAuthListeners();
       setupEventListeners();
@@ -897,57 +896,14 @@
       loadSortOrder();
     }
 
-    // Autenticazione... (invariato)
     function setupAuthListeners(){elements.authToggle.addEventListener("click",e=>{e.stopPropagation(),elements.authForms.classList.toggle("active")}),document.addEventListener("click",e=>{elements.authForms.contains(e.target)||e.target.closest("#authToggle")||elements.authForms.classList.remove("active")}),document.querySelectorAll(".auth-tab").forEach(e=>{e.addEventListener("click",()=>{document.querySelectorAll(".auth-tab").forEach(e=>e.classList.remove("active")),e.classList.add("active"),document.querySelectorAll(".auth-form-container").forEach(t=>t.classList.remove("active")),document.getElementById(`${e.dataset.tab}Form`).classList.add("active")})}),elements.loginBtn.addEventListener("click",()=>{const e=elements.loginEmail.value,t=elements.loginPassword.value;e&&t?firebase.auth().signInWithEmailAndPassword(e,t).then(()=>{showNotification("Login effettuato","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Inserisci email e password","warning")}),elements.registerBtn.addEventListener("click",()=>{const e=elements.registerEmail.value,t=elements.registerPassword.value,a=elements.registerConfirmPassword.value;e&&t&&a?t!==a?showNotification("Le password non corrispondono","warning"):t.length<6?showNotification("La password deve avere almeno 6 caratteri","warning"):firebase.auth().createUserWithEmailAndPassword(e,t).then(()=>{showNotification("Registrazione completata!","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Compila tutti i campi","warning")}),elements.logoutBtn.addEventListener("click",()=>firebase.auth().signOut()),firebase.auth().onAuthStateChanged(e=>{currentUser=e,updateAuthUI(),e?(loadData(),checkActiveShare()):loadLocalData()})}
     function getAuthErrorMessage(e){switch(e.code){case"auth/email-already-in-use":return"Email già registrata";case"auth/invalid-email":return"Email non valida";case"auth/weak-password":return"Password troppo debole";case"auth/user-not-found":return"Utente non trovato";case"auth/wrong-password":return"Password errata";default:return"Errore: "+e.message}}
     function updateAuthUI(){currentUser?(elements.userInfo.style.display="flex",elements.authToggle.style.display="none",document.querySelectorAll(".btn").forEach(e=>e.disabled=!1)):(elements.userInfo.style.display="none",elements.authToggle.style.display="block",document.querySelectorAll("#addMediaBtn, #manageCategoriesBtn, #exportBtn, #importBtn, #resetBtn, #shareBtn").forEach(e=>e.disabled=!0))}
-
-    // Caricamento dati
     function loadData(){currentUser&&(db.ref(`users/${currentUser.uid}/mediaList`).on("value",e=>{let t=e.val()||[];mediaList=t.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),renderMedia(),updateStats()}),db.ref(`users/${currentUser.uid}/categories`).once("value").then(e=>{categories=e.val()||[...DEFAULT_CATEGORIES],renderFullUI()}))}
     function loadLocalData(){try{let e=JSON.parse(localStorage.getItem("mediaList"))||[];mediaList=e.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),categories=JSON.parse(localStorage.getItem("categories"))||[...DEFAULT_CATEGORIES],renderFullUI(),updateStats()}catch(e){console.error("Error loading local data:",e)}}
     function saveData(){currentUser?db.ref(`users/${currentUser.uid}/mediaList`).set(mediaList).then(()=>db.ref(`users/${currentUser.uid}/categories`).set(categories)).then(()=>saveToLocal()).catch(e=>{console.error("Error saving to Firebase:",e),saveToLocal()}):saveToLocal()}
     function saveToLocal(){try{localStorage.setItem("mediaList",JSON.stringify(mediaList)),localStorage.setItem("categories",JSON.stringify(categories))}catch(e){console.error("Error saving locally:",e)}}
-
-    // Condivisione
-    function checkSharedView() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const uid = urlParams.get('uid');
-        const share = urlParams.get('share');
-
-        if (uid && share) {
-            isViewMode = true;
-
-            db.ref(`users/${uid}/activeShare`).once('value').then(snap => {
-                const data = snap.val();
-                if (data && data.shareId === share && data.expiresAt > Date.now()) {
-                    Promise.all([
-                        db.ref(`users/${uid}/mediaList`).once('value'),
-                        db.ref(`users/${uid}/categories`).once('value')
-                    ]).then(([mediaSnap, categoriesSnap]) => {
-                        let remoteMediaList = mediaSnap.val() || [];
-                        // FIX: Assicura che i dati remoti abbiano le nuove proprietà
-                        mediaList = remoteMediaList.map(media => ({
-                            ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 },
-                            ...media
-                        }));
-                        categories = categoriesSnap.val() || [...DEFAULT_CATEGORIES];
-                        
-                        renderFullUI();
-                        updateStats();
-                        // FIX: Abilita la view mode solo DOPO il caricamento
-                        enableViewMode(uid);
-                    });
-                } else {
-                    showNotification("Link non valido o scaduto", "error");
-                    setTimeout(() => {
-                        window.location.href = window.location.pathname;
-                    }, 2000);
-                }
-            }).catch(() => {
-                showNotification("Errore nel caricamento della libreria condivisa", "error");
-            });
-        }
-    }
+    function checkSharedView(){const e=new URLSearchParams(window.location.search),t=e.get("uid"),a=e.get("share");t&&a&&(isViewMode=!0,db.ref(`users/${t}/activeShare`).once("value").then(e=>{const o=e.val();o&&o.shareId===a&&o.expiresAt>Date.now()?Promise.all([db.ref(`users/${t}/mediaList`).once("value"),db.ref(`users/${t}/categories`).once("value")]).then(([e,t])=>{let a=e.val()||[];mediaList=a.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),categories=t.val()||[...DEFAULT_CATEGORIES],renderFullUI(),updateStats(),enableViewMode(uid)}):showNotification("Link non valido o scaduto","error")}).catch(()=>showNotification("Errore nel caricamento della libreria condivisa","error")))}
     function activateSharing(){if(!currentUser)return;const e=generateId(),t=Date.now()+6048e5;db.ref(`users/${currentUser.uid}/activeShare`).set({shareId:e,expiresAt:t}).then(()=>{activeShareId=e,updateShareLink(e),showNotification("Condivisione attivata (valida 7 giorni)","success")}).catch(e=>showNotification("Errore nell'attivazione della condivisione","error"))}
     function enableViewMode(e){isViewMode=!0,document.querySelector(".main-controls").style.display="none",elements.viewModeBanner.style.display="flex",db.ref(`users/${e}/mediaList`).on("value",e=>{mediaList=e.val()||[],renderMedia(),updateStats()})}
     function closeViewMode(){window.location.href=window.location.pathname}
@@ -956,7 +912,6 @@
     function deactivateSharing(){currentUser&&db.ref(`users/${currentUser.uid}/activeShare`).remove().then(()=>{activeShareId=null,elements.shareDropdown.classList.remove("active"),showNotification("Condivisione disattivata","success")}).catch(e=>showNotification("Errore nella disattivazione","error"))}
     function generateId(){return Math.random().toString(36).substring(2,15)}
 
-    // Funzioni di Rendering
     function renderFullUI() {
         renderCategorySections();
         updateCategoryFilter();
@@ -968,57 +923,36 @@
     function renderMedia() {
       clearMediaGrids();
       updateStats();
-
       const searchTerm = elements.searchInput.value.toLowerCase();
       const filterCategory = elements.categoryFilter.value;
       const sortBy = elements.sortFilter.value;
-
-      document.querySelectorAll('.media-section').forEach(section => {
-        section.style.display = 'block';
-      });
-
+      document.querySelectorAll('.media-section').forEach(section => { section.style.display = 'block'; });
       let filteredMedia = [...mediaList];
-      
       if (searchTerm) {
-        filteredMedia = filteredMedia.filter(media => 
-          media.title.toLowerCase().includes(searchTerm)
-        );
+        filteredMedia = filteredMedia.filter(media => media.title.toLowerCase().includes(searchTerm));
       }
-      
       if (filterCategory !== "all") {
-        filteredMedia = filteredMedia.filter(media => 
-          media.category === filterCategory
-        );
-        
+        filteredMedia = filteredMedia.filter(media => media.category === filterCategory);
         document.querySelectorAll('.media-section').forEach(section => {
-          if (section.dataset.category !== filterCategory) {
-            section.style.display = 'none';
-          }
+          if (section.dataset.category !== filterCategory) section.style.display = 'none';
         });
       }
-      
       filteredMedia.sort((a, b) => {
         switch(sortBy) {
           case "alpha": return a.title.localeCompare(b.title);
           case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
           case "year": return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
-          case "added":
-          default: return new Date(b.addedAt) - new Date(a.addedAt);
+          case "added": default: return new Date(b.addedAt) - new Date(a.addedAt);
         }
       });
-
       filteredMedia.forEach(media => {
         const grid = document.getElementById(`${media.category}Grid`);
         if (grid) {
           const existingCard = grid.querySelector(`.media-card[data-id="${media.id}"]`);
-          if (!existingCard) {
-            grid.appendChild(createMediaCard(media));
-          } else {
-              grid.replaceChild(createMediaCard(media), existingCard);
-          }
+          if (!existingCard) grid.appendChild(createMediaCard(media));
+          else grid.replaceChild(createMediaCard(media), existingCard);
         }
       });
-      
       setupLazyLoading();
       updateCounts();
     }
@@ -1031,33 +965,21 @@
     }
 
     function updateStats() {
-      let stats = {
-        total: mediaList.length,
-        watchlist: 0,
-        watched: 0,
-        rewatched: 0,
-        hours: 0,
-        minutes: 0
-      };
-
+      let stats = { total: mediaList.length, watchlist: 0, watched: 0, rewatched: 0, hours: 0, minutes: 0 };
       mediaList.forEach(media => {
         if (media.category === "watchlist" || media.isCountedAsWatchlist) stats.watchlist++;
         if (media.category === "watched") stats.watched++;
         if (media.rewatchCount > 0) stats.rewatched += media.rewatchCount;
-
         if (media.category === "watched" || media.isCountedAsWatched) {
           const runtime = media.runtime ? parseInt(media.runtime.toString().replace(/\D/g, '')) : 0;
           if (runtime > 0) {
             const totalViews = (media.rewatchCount || 0) + 1;
-            const totalMinutes = runtime * totalViews;
-            stats.minutes += totalMinutes;
+            stats.minutes += runtime * totalViews;
           }
         }
       });
-
       stats.hours = Math.floor(stats.minutes / 60);
-      stats.minutes = stats.minutes % 60;
-
+      stats.minutes %= 60;
       elements.statTotal.textContent = stats.total;
       elements.statWatchlist.textContent = stats.watchlist;
       elements.statWatched.textContent = stats.watched;
@@ -1071,7 +993,6 @@
         if (countElement) {
           const count = mediaList.filter(m => m.category === category).length;
           countElement.textContent = count;
-          
           const section = document.getElementById(`${category}Section`);
           if (section && elements.categoryFilter.value !== 'all' && count === 0) {
             section.style.display = 'none';
@@ -1084,14 +1005,7 @@
       const card = document.createElement("div");
       card.className = "media-card";
       card.dataset.id = media.id;
-      
-      const ratingsHTML = media.imdbRating || media.rottenTomatoes ? `
-        <div class="media-ratings">
-          ${media.imdbRating ? `<span>⭐ ${media.imdbRating}</span>` : ''}
-          ${media.rottenTomatoes ? `<span>🍅 ${media.rottenTomatoes}</span>` : ''}
-        </div>
-      ` : '';
-      
+      const ratingsHTML = media.imdbRating || media.rottenTomatoes ? `<div class="media-ratings">${media.imdbRating ? `<span>⭐ ${media.imdbRating}</span>` : ''}${media.rottenTomatoes ? `<span>🍅 ${media.rottenTomatoes}</span>` : ''}</div>` : '';
       let watchStatusHTML = '';
       if (media.isCountedAsWatched) {
           const totalViews = (media.rewatchCount || 0) + 1;
@@ -1100,100 +1014,48 @@
       } else if (media.isCountedAsWatchlist && media.category !== 'watchlist') {
           watchStatusHTML = `<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`;
       }
-
-      card.innerHTML = `
-        <div style="position:relative;">
-          <img data-src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster lazy" 
-               onerror="this.src='${DEFAULT_POSTER}'">
-          <div class="card-actions card-actions-left">
-            <button class="card-btn" data-action="toggle-move-dropdown" title="Sposta in...">
-              <i class="fas fa-folder-open"></i>
-            </button>
-          </div>
-          <div class="card-actions card-actions-right">
-            <button class="card-btn" data-action="delete" title="Elimina">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-        <div class="media-info">
-          <h3 class="media-title" title="${media.title}">${media.title}</h3>
-          <div class="media-meta">
-            ${media.year ? `<span>${media.year}</span>` : ''}
-            ${media.runtime ? `<span>⏱️ ${formatRuntime(media.runtime)}</span>` : ''}
-            ${watchStatusHTML}
-          </div>
-          ${ratingsHTML}
-        </div>
-      `;
-      
-      card.addEventListener("dblclick", () => {
-        openQuickEditModal(media);
-      });
-
-      card.querySelector("[data-action='toggle-move-dropdown']").addEventListener("click", (e) => {
-        e.stopPropagation();
-        showCardMoveDropdown(media, e.currentTarget);
-      });
-
-      card.querySelector("[data-action='delete']").addEventListener("click", (e) => {
-        e.stopPropagation();
-        deleteMedia(media.id);
-      });
-
+      card.innerHTML = `<div style="position:relative;"><img data-src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'"><div class="card-actions card-actions-left"><button class="card-btn" data-action="toggle-move-dropdown" title="Sposta in..."><i class="fas fa-folder-open"></i></button></div><div class="card-actions card-actions-right"><button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button></div></div><div class="media-info"><h3 class="media-title" title="${media.title}">${media.title}</h3><div class="media-meta">${media.year ? `<span>${media.year}</span>` : ''}${media.runtime ? `<span>⏱️ ${formatRuntime(media.runtime)}</span>` : ''}${watchStatusHTML}</div>${ratingsHTML}</div>`;
+      if (media.category !== 'watchlist') {
+          card.addEventListener("dblclick", () => openQuickEditModal(media));
+      }
+      card.querySelector("[data-action='toggle-move-dropdown']").addEventListener("click", e => { e.stopPropagation(); showCardMoveDropdown(media, e.currentTarget); });
+      card.querySelector("[data-action='delete']").addEventListener("click", e => { e.stopPropagation(); deleteMedia(media.id); });
       return card;
     }
 
     function fixPosterUrl(url) {
       if (!url || url === "N/A") return null;
-      if (url.startsWith("http://") || url.startsWith("https://")) {
-        return url;
-      }
-      if (url.startsWith("//")) {
-        return `https:${url}`;
-      }
+      if (url.startsWith("http://") || url.startsWith("https://")) return url;
+      if (url.startsWith("//")) return `https:${url}`;
       return `https://${url}`;
     }
 
-    // Categories... (invariato)
     function renderCategorySections(){elements.mediaSectionsContainer.innerHTML=categories.map(e=>`<div class="media-section" id="${e}Section" data-category="${e}" style="display:block"><div class="section-header"><h2 class="section-title user-select-none">${getCategoryName(e)}</h2><span id="${e}Count" class="category-count">0</span></div><div class="media-grid" id="${e}Grid"></div></div>`).join("")}
-    function renderCategoriesList(){elements.categoriesList.innerHTML=categories.map((e,t)=>`<div class="category-item" data-category-name="${e}"><span class="category-name-span user-select-none">${getCategoryName(e)}</span><div style="display: flex; gap: 0.2rem;">${DEFAULT_CATEGORIES.includes(e)?"":`\n                <button class="btn btn-secondary rename-category-btn" data-category="${e}">\n                  <i class="fas fa-pencil-alt"></i>\n                </button>\n                <button class="btn btn-danger delete-category-btn" data-category="${e}">\n                  <i class="fas fa-trash"></i>\n                </button>`}<button class="btn btn-secondary move-up-btn" data-category="${e}" ${0===t?"disabled":""}>\n                <i class="fas fa-arrow-up"></i>\n              </button><button class="btn btn-secondary move-down-btn" data-category="${e}" ${t===categories.length-1?"disabled":""}>\n                <i class="fas fa-arrow-down"></i>\n              </button></div></div>`).join(""),document.querySelectorAll(".rename-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation();const a=e.closest(".category-item"),o=a.dataset.categoryName,n=a.querySelector(".category-name-span");renameCategory(o,n)})}),document.querySelectorAll(".delete-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation(),deleteCategory(e.dataset.category)})}),document.querySelectorAll(".move-up-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,-1))}),document.querySelectorAll(".move-down-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,1))})}
+    function renderCategoriesList(){elements.categoriesList.innerHTML=categories.map((e,t)=>`<div class="category-item" data-category-name="${e}"><span class="category-name-span user-select-none">${getCategoryName(e)}</span><div style="display: flex; gap: 0.2rem;">${DEFAULT_CATEGORIES.includes(e)?"":`<button class="btn btn-secondary rename-category-btn" data-category="${e}"><i class="fas fa-pencil-alt"></i></button><button class="btn btn-danger delete-category-btn" data-category="${e}"><i class="fas fa-trash"></i></button>`}<button class="btn btn-secondary move-up-btn" data-category="${e}" ${0===t?"disabled":""}><i class="fas fa-arrow-up"></i></button><button class="btn btn-secondary move-down-btn" data-category="${e}" ${t===categories.length-1?"disabled":""}><i class="fas fa-arrow-down"></i></button></div></div>`).join(""),document.querySelectorAll(".rename-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation();const a=e.closest(".category-item"),o=a.dataset.categoryName,n=a.querySelector(".category-name-span");renameCategory(o,n)})}),document.querySelectorAll(".delete-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation(),deleteCategory(e.dataset.category)})}),document.querySelectorAll(".move-up-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,-1))}),document.querySelectorAll(".move-down-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,1))})}
     function renameCategory(e,t){const a=t.textContent,o=document.createElement("input");o.type="text",o.value=a,o.className="filter-select",t.replaceWith(o),o.focus();const n=()=>{const t=o.value.trim();if(t&&t!==e&&!categories.includes(t)){const a=categories.indexOf(e);a>-1&&(categories[a]=t),mediaList.forEach(a=>{a.category===e&&(a.category=t)}),saveData(),renderFullUI(),showNotification(`Categoria rinominata in "${t}"`,"success")}else{const e=document.createElement("span");e.className="category-name-span",e.textContent=a,o.replaceWith(e),categories.includes(t)&&t!==oldName&&showNotification("Nome categoria già esistente.","warning")}};o.addEventListener("blur",n),o.addEventListener("keydown",e=>{"Enter"===e.key&&o.blur(),"Escape"===e.key&&(()=>{const e=document.createElement("span");e.className="category-name-span",e.textContent=a,o.replaceWith(e)})()})}
     function moveCategory(e,t){const a=categories.indexOf(e),o=a+t;o<0||o>=categories.length||([categories[a],categories[o]]=[categories[o],categories[a]],saveData(),renderFullUI())}
-    function updateCategoryFilter(){const e=elements.categoryFilter.value;elements.categoryFilter.innerHTML=`\n        <option value="all">Tutte le categorie</option>\n        ${categories.map(e=>`\n          <option value="${e}">${getCategoryName(e)}</option>\n        `).join("")}\n      `,elements.categoryFilter.value=e}
-    function populateAddMediaCategorySelect(){const e=localStorage.getItem("lastUsedCategory");elements.addMediaCategorySelect.innerHTML=categories.map(e=>`\n          <option value="${e}">${getCategoryName(e)}</option>\n        `).join(""),e&&categories.includes(e)&&(elements.addMediaCategorySelect.value=e)}
+    function updateCategoryFilter(){const e=elements.categoryFilter.value;elements.categoryFilter.innerHTML=`<option value="all">Tutte le categorie</option>${categories.map(e=>`<option value="${e}">${getCategoryName(e)}</option>`).join("")}`,elements.categoryFilter.value=e}
+    function populateAddMediaCategorySelect(){const e=localStorage.getItem("lastUsedCategory");elements.addMediaCategorySelect.innerHTML=categories.map(e=>`<option value="${e}">${getCategoryName(e)}</option>`).join(""),e&&categories.includes(e)&&(elements.addMediaCategorySelect.value=e)}
     function getCategoryName(e){return{watchlist:"Da Vedere",watched:"Visti"}[e]||e}
     function addCategory(e){if(!e)return showNotification("Inserisci un nome per la categoria","warning"),!1;const t=e.trim();return categories.some(e=>e.toLowerCase()===t.toLowerCase())?(showNotification("Questa categoria esiste già","warning"),!1):(categories.push(t),saveData(),renderFullUI(),showNotification(`Categoria "${t}" creata`,"success"),!0)}
     function deleteCategory(e){DEFAULT_CATEGORIES.includes(e)?showNotification("Non puoi eliminare questa categoria predefinita","warning"):confirm(`Eliminare la categoria "${e}"? Tutti i film verranno spostati in "Da Vedere".`)&&(mediaList.forEach(t=>{t.category===e&&(t.category="watchlist")}),categories=categories.filter(t=>t!==e),saveData(),renderFullUI(),showNotification(`Categoria "${e}" eliminata`,"success"))}
 
-    // Media actions
     function showCardMoveDropdown(media, button) {
         closeCardMoveDropdowns();
-        
         const dropdown = document.createElement('div');
         dropdown.className = 'card-move-dropdown';
-
         categories.filter(c => c !== media.category).forEach(cat => {
             const item = document.createElement('div');
             item.className = 'card-move-dropdown-item user-select-none';
             item.textContent = getCategoryName(cat);
-            item.onclick = (e) => {
-                e.stopPropagation();
-                moveMediaToCategory(media.id, cat);
-                closeCardMoveDropdowns();
-            };
+            item.onclick = (e) => { e.stopPropagation(); moveMediaToCategory(media.id, cat); closeCardMoveDropdowns(); };
             dropdown.appendChild(item);
         });
-
         const rect = button.getBoundingClientRect();
         dropdown.style.left = `${rect.left}px`;
         dropdown.style.top = `${rect.bottom + 5}px`;
-
         document.body.appendChild(dropdown);
-
-        setTimeout(() => {
-            document.addEventListener('click', closeCardMoveDropdowns, { once: true });
-        }, 0);
+        setTimeout(() => { document.addEventListener('click', closeCardMoveDropdowns, { once: true }); }, 0);
     }
     
     function closeCardMoveDropdowns() {
@@ -1203,12 +1065,18 @@
     function moveMediaToCategory(mediaId, category) {
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
-
       const card = document.querySelector(`.media-card[data-id="${mediaId}"]`);
       if (card) card.classList.add('moving');
       
-      if (category === 'watched') media.isCountedAsWatched = false;
-      if (category === 'watchlist') media.isCountedAsWatchlist = false;
+      const wasWatched = media.category === 'watched';
+      if (category === 'watchlist') {
+          media.isCountedAsWatched = false;
+          media.rewatchCount = 0;
+      }
+      if (wasWatched && category !== 'watched') {
+          media.isCountedAsWatched = false;
+          media.rewatchCount = 0;
+      }
 
       setTimeout(() => {
         media.category = category;
@@ -1221,16 +1089,13 @@
     function toggleCountedAsWatched(mediaId) {
         const media = mediaList.find(m => m.id === mediaId);
         if (!media) return;
-        
         media.isCountedAsWatched = !media.isCountedAsWatched;
-
         if (media.isCountedAsWatched) {
             media.isCountedAsWatchlist = false;
             if (media.rewatchCount < 0) media.rewatchCount = 0;
         } else {
             media.rewatchCount = 0;
         }
-
         updateStats();
         refreshSingleMedia(mediaId);
         openQuickEditModal(media);
@@ -1239,13 +1104,10 @@
     function toggleCountedAsWatchlist(mediaId) {
         const media = mediaList.find(m => m.id === mediaId);
         if (!media) return;
-        
         media.isCountedAsWatchlist = !media.isCountedAsWatchlist;
-
         if (media.isCountedAsWatchlist) {
             media.isCountedAsWatched = false;
         }
-
         updateStats();
         refreshSingleMedia(mediaId);
         openQuickEditModal(media);
@@ -1254,28 +1116,22 @@
     function markRewatch(mediaId, count) {
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
-      
       media.rewatchCount = count;
-
-      if (count > 0 && media.category !== 'watched' && !media.isCountedAsWatched) {
+      if (count >= 1 && media.category !== 'watched' && !media.isCountedAsWatched) {
           media.isCountedAsWatched = true;
           media.isCountedAsWatchlist = false;
       }
-      
       saveData();
-      
       refreshSingleMedia(mediaId);
       updateStats();
-      showNotification(`Rewatch di "${media.title}" aggiornati a ${count + 1}`, "success");
+      showNotification(`Rewatch di "${media.title}" aggiornati`, "success");
     }
 
     function refreshSingleMedia(mediaId) {
       const media = mediaList.find(m => m.id === mediaId);
       if (!media) return;
-
       const oldCard = document.querySelector(`.media-card[data-id="${mediaId}"]`);
       const grid = oldCard ? oldCard.parentElement : document.getElementById(`${media.category}Grid`);
-      
       if (oldCard && grid) {
           const newCard = createMediaCard(media);
           grid.replaceChild(newCard, oldCard);
@@ -1285,22 +1141,17 @@
           grid.appendChild(newCard);
           if (lazyLoadObserver) lazyLoadObserver.observe(newCard.querySelector('.lazy'));
       }
-      
       updateCounts();
     }
 
     function deleteMedia(id) {
-      if (isViewMode) return;
-      
-      if (!confirm("Eliminare questo film dalla lista?")) return;
-      
+      if (isViewMode || !confirm("Eliminare questo film dalla lista?")) return;
       mediaList = mediaList.filter(m => m.id !== id);
       saveData();
       renderMedia();
       showNotification("Film eliminato", "success");
     }
 
-    // Modals
     function closeModal(modal) {
       modal.style.display = "none";
       document.body.classList.remove("modal-open");
@@ -1308,29 +1159,22 @@
     
     async function searchOMDb() {
         const title = elements.mediaTitle.value.trim();
-        
         if (!title) {
             showNotification("Inserisci un titolo", "warning");
             return;
         }
-
         elements.omdbResults.innerHTML = "<p>Ricerca in corso...</p>";
-        
         try {
             let searchUrl = `https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&s=${encodeURIComponent(title)}&type=movie`;
-            
             const searchResponse = await fetch(searchUrl);
             const searchData = await searchResponse.json();
-
             if (searchData.Response === "True") {
                 displayOMDbResults(searchData.Search);
             } else if (searchData.Error === "Too many results.") {
                 showNotification("Troppi risultati. Tento una ricerca esatta...", "warning");
                 let exactMatchUrl = `https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&t=${encodeURIComponent(title)}&type=movie`;
-                
                 const exactResponse = await fetch(exactMatchUrl);
                 const exactData = await exactResponse.json();
-
                 if (exactData.Response === "True") {
                     displayOMDbResults([exactData]);
                 } else {
@@ -1347,18 +1191,7 @@
     }
 
     function displayOMDbResults(results) {
-      elements.omdbResults.innerHTML = results.map(movie => `
-        <div class="omdb-result-item user-select-none" data-id="${movie.imdbID}">
-          <img src="${fixPosterUrl(movie.Poster)}" 
-               class="omdb-poster-small"
-               onerror="this.src='${DEFAULT_POSTER}'">
-          <div>
-            <div><strong>${movie.Title}</strong></div>
-            <div>${movie.Year}</div>
-          </div>
-        </div>
-      `).join("");
-
+      elements.omdbResults.innerHTML = results.map(movie => `<div class="omdb-result-item user-select-none" data-id="${movie.imdbID}"><img src="${fixPosterUrl(movie.Poster)}" class="omdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'"><div><div><strong>${movie.Title}</strong></div><div>${movie.Year}</div></div></div>`).join("");
       document.querySelectorAll(".omdb-result-item").forEach(item => {
         item.addEventListener("click", async () => {
           const imdbID = item.dataset.id;
@@ -1374,15 +1207,9 @@
 
     async function getOMDbMovieDetails(imdbID) {
       try {
-        const response = await fetch(
-          `https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&i=${imdbID}`
-        );
+        const response = await fetch(`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&i=${imdbID}`);
         const data = await response.json();
-        
-        if (data.Response === "False") {
-          throw new Error(data.Error || "Dettagli non disponibili");
-        }
-        
+        if (data.Response === "False") throw new Error(data.Error || "Dettagli non disponibili");
         return data;
       } catch (error) {
         console.error("Error fetching movie details:", error);
@@ -1393,47 +1220,26 @@
 
     function addNewMedia() {
       if (isViewMode) return;
-      
       const title = elements.mediaTitle.value.trim();
       if (!title) {
         showNotification("Inserisci un titolo", "warning");
         return;
       }
-      
       const selectedCategory = elements.addMediaCategorySelect.value;
       localStorage.setItem('lastUsedCategory', selectedCategory);
-
       let mediaData = {
-        id: Date.now().toString(),
-        title,
-        category: selectedCategory,
-        addedAt: new Date().toISOString(),
-        poster: "",
-        rewatchCount: 0,
+        id: Date.now().toString(), title, category: selectedCategory, addedAt: new Date().toISOString(), poster: "", rewatchCount: 0,
         isCountedAsWatched: selectedCategory === 'watched',
         isCountedAsWatchlist: selectedCategory === 'watchlist',
-        year: "",
-        imdbRating: "",
-        rottenTomatoes: "",
-        runtime: ""
+        year: "", imdbRating: "", rottenTomatoes: "", runtime: ""
       };
-
       if (currentOMDbSelection) {
-        mediaData = {
-          ...mediaData,
-          title: currentOMDbSelection.Title,
-          year: currentOMDbSelection.Year,
-          poster: fixPosterUrl(currentOMDbSelection.Poster),
-          imdbRating: currentOMDbSelection.imdbRating,
-          runtime: currentOMDbSelection.Runtime || "",
-        };
-
+        mediaData = { ...mediaData, title: currentOMDbSelection.Title, year: currentOMDbSelection.Year, poster: fixPosterUrl(currentOMDbSelection.Poster), imdbRating: currentOMDbSelection.imdbRating, runtime: currentOMDbSelection.Runtime || "" };
         if (currentOMDbSelection.Ratings) {
           const rtRating = currentOMDbSelection.Ratings.find(r => r.Source === "Rotten Tomatoes");
           if (rtRating) mediaData.rottenTomatoes = rtRating.Value;
         }
       }
-
       mediaList.push(mediaData);
       saveData();
       closeModal(elements.addMediaModal);
@@ -1610,7 +1416,7 @@
         elements.quickEditRewatchCount.value = media.rewatchCount || 0;
         
         const watchlistBtn = elements.quickEditWatchlistBtn;
-        if (media.category === 'watchlist') {
+        if (media.category === 'watched') {
             watchlistBtn.style.display = 'none';
         } else {
             watchlistBtn.style.display = 'inline-flex';
