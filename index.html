@@ -182,13 +182,15 @@
     }
     
     .btn:disabled {
-        background-color: #ccc;
+        background-color: #ccc !important;
         cursor: not-allowed;
         opacity: 0.7;
+        box-shadow: none;
+        transform: none;
     }
 
     body.dark .btn:disabled {
-        background-color: #555;
+        background-color: #555 !important;
     }
 
     .btn-primary {
@@ -612,7 +614,6 @@
   </style>
 </head>
 <body class="dark user-select-none">
-  <!-- View Mode Banner -->
   <div id="viewModeBanner" class="view-mode-banner" style="display:none">
     <i class="fas fa-eye"></i>
     <span>Stai visualizzando una lista condivisa</span>
@@ -621,7 +622,6 @@
     </button>
   </div>
 
-  <!-- Top Bar -->
   <div class="top-bar">
     <div class="main-controls">
       <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
@@ -634,127 +634,66 @@
         <option value="rating">Valutazione</option>
         <option value="year">Anno di uscita</option>
       </select>
-      
-      <button id="addMediaBtn" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Aggiungi Film
-      </button>
-      <button id="manageCategoriesBtn" class="btn btn-secondary">
-        <i class="fas fa-folder"></i>
-      </button>
-      
+      <button id="addMediaBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi Film</button>
+      <button id="manageCategoriesBtn" class="btn btn-secondary"><i class="fas fa-folder"></i></button>
       <div class="share-dropdown" id="shareDropdown">
-        <button id="shareBtn" class="btn btn-secondary dropdown-toggle">
-          <i class="fas fa-share-alt"></i> 
-        </button>
+        <button id="shareBtn" class="btn btn-secondary dropdown-toggle"><i class="fas fa-share-alt"></i></button>
         <div class="share-dropdown-content">
           <h3>Condivisione attiva</h3>
           <p>Chiunque abbia questo link può vedere la tua lista in tempo reale:</p>
           <div class="share-link">
             <input type="text" id="shareLink" readonly>
-            <button id="copyLinkBtn" class="btn btn-primary">
-              <i class="fas fa-copy"></i> Copia
-            </button>
+            <button id="copyLinkBtn" class="btn btn-primary"><i class="fas fa-copy"></i> Copia</button>
           </div>
           <div class="share-actions">
-            <button id="disableShareBtn" class="btn btn-danger">
-              <i class="fas fa-ban"></i> Disattiva
-            </button>
+            <button id="disableShareBtn" class="btn btn-danger"><i class="fas fa-ban"></i> Disattiva</button>
           </div>
         </div>
       </div>
-      
-      <button id="exportBtn" class="btn btn-secondary">
-        <i class="fas fa-download"></i> 
-      </button>
+      <button id="exportBtn" class="btn btn-secondary"><i class="fas fa-download"></i></button>
       <input type="file" id="importFile" accept=".json" style="display: none;">
-      <button id="importBtn" class="btn btn-secondary">
-        <i class="fas fa-upload"></i> 
-      </button>
-      <button id="resetBtn" class="btn btn-reset">
-        <i class="fas fa-undo"></i> 
-      </button>
-      <button id="themeToggle" class="btn">
-        <i class="fas fa-moon"></i> 
-      </button>
-
+      <button id="importBtn" class="btn btn-secondary"><i class="fas fa-upload"></i></button>
+      <button id="resetBtn" class="btn btn-reset"><i class="fas fa-undo"></i></button>
+      <button id="themeToggle" class="btn"><i class="fas fa-moon"></i></button>
       <div id="userInfo" style="display:none; margin-left: auto;">
-        <button id="logoutBtn" class="btn btn-danger">
-          <i class="fas fa-sign-out-alt"></i> Logout
-        </button>
+        <button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
       </div>
-      <button id="authToggle" class="btn btn-secondary" style="margin-left: auto;">
-        <i class="fas fa-user"></i> Login
-      </button>
+      <button id="authToggle" class="btn btn-secondary" style="margin-left: auto;"><i class="fas fa-user"></i> Login</button>
     </div>
   </div>
 
-  <!-- Stats -->
   <div class="stats-container">
     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-      <div class="stat-item">
-        <div class="stat-value" id="statTotal">0</div>
-        <div>Totale</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="statWatchlist">0</div>
-        <div>Da Vedere</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="statWatched">0</div>
-        <div>Visti</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="statRewatched">0</div>
-        <div>Rewatch</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="statHours">0h 0m</div>
-        <div>Tempo Totale</div>
-      </div>
+      <div class="stat-item"><div class="stat-value" id="statTotal">0</div><div>Totale</div></div>
+      <div class="stat-item"><div class="stat-value" id="statWatchlist">0</div><div>Da Vedere</div></div>
+      <div class="stat-item"><div class="stat-value" id="statWatched">0</div><div>Visti</div></div>
+      <div class="stat-item"><div class="stat-value" id="statRewatched">0</div><div>Rewatch</div></div>
+      <div class="stat-item"><div class="stat-value" id="statHours">0h 0m</div><div>Tempo Totale</div></div>
     </div>
-    
     <div id="authForms" class="auth-form">
-      <div class="auth-tabs">
-        <div class="auth-tab active" data-tab="login">Login</div>
-        <div class="auth-tab" data-tab="register">Registrati</div>
-      </div>
-      
+      <div class="auth-tabs"><div class="auth-tab active" data-tab="login">Login</div><div class="auth-tab" data-tab="register">Registrati</div></div>
       <div id="loginForm" class="auth-form-container active">
         <input type="email" id="loginEmail" placeholder="Email">
         <input type="password" id="loginPassword" placeholder="Password">
-        <div class="auth-form-buttons">
-          <button id="loginBtn" class="btn btn-primary">
-            <i class="fas fa-sign-in-alt"></i> Login
-          </button>
-        </div>
+        <div class="auth-form-buttons"><button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button></div>
       </div>
-      
       <div id="registerForm" class="auth-form-container">
         <input type="email" id="registerEmail" placeholder="Email">
         <input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)">
         <input type="password" id="registerConfirmPassword" placeholder="Conferma Password">
-        <div class="auth-form-buttons">
-          <button id="registerBtn" class="btn btn-primary">
-            <i class="fas fa-user-plus"></i> Registrati
-          </button>
-        </div>
+        <div class="auth-form-buttons"><button id="registerBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati</button></div>
       </div>
     </div>
   </div>
 
-  <!-- Media Sections -->
   <div id="mediaSectionsContainer"></div>
 
-  <!-- Modals -->
   <div class="modal" id="addMediaModal">
     <div class="modal-content">
       <h2>Aggiungi Film</h2>
       <input type="text" id="mediaTitle" placeholder="Titolo" style="margin-bottom: 1rem;">
-
       <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
-        <button id="searchOMDbBtn" class="btn btn-secondary" style="flex-shrink: 0;">
-            <i class="fas fa-search"></i> Cerca su OMDb
-        </button>
+        <button id="searchOMDbBtn" class="btn btn-secondary" style="flex-shrink: 0;"><i class="fas fa-search"></i> Cerca su OMDb</button>
         <select id="addMediaCategorySelect" class="filter-select" style="margin: 0;"></select>
       </div>
       <div id="omdbResults" class="omdb-results-container"></div>
@@ -794,9 +733,7 @@
       <h2>Gestione Categorie</h2>
       <div class="filter-row">
         <input type="text" id="newCategoryName" placeholder="Nome categoria">
-        <button id="addCategoryBtn" class="btn btn-primary">
-          <i class="fas fa-plus"></i> Aggiungi
-        </button>
+        <button id="addCategoryBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi</button>
       </div>
       <div class="categories-list" id="categoriesList"></div>
       <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
@@ -805,12 +742,12 @@
     </div>
   </div>
   
-  <!-- Notification -->
   <div id="notification" class="notification">
     <span id="notificationText"></span>
   </div>
 
   <script>
+    // Configurazione e Stato
     const OMDb_API_KEY = "2526ef70";
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
@@ -820,9 +757,11 @@
     let currentOMDbSelection = null;
     let currentUser = null;
     let isViewMode = false;
+    let activeShareId = null;
     let debounceTimeout;
     let lazyLoadObserver;
 
+    // Connessione a Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk",
       authDomain: "gametrackerdb.firebaseapp.com",
@@ -833,6 +772,7 @@
     const auth = firebase.auth();
     const database = firebase.database();
 
+    // Elementi DOM
     const elements = {
       authForms: document.getElementById("authForms"), authToggle: document.getElementById("authToggle"), userInfo: document.getElementById("userInfo"), loginBtn: document.getElementById("loginBtn"), loginEmail: document.getElementById("loginEmail"), loginPassword: document.getElementById("loginPassword"), registerBtn: document.getElementById("registerBtn"), registerEmail: document.getElementById("registerEmail"), registerPassword: document.getElementById("registerPassword"), registerConfirmPassword: document.getElementById("registerConfirmPassword"), logoutBtn: document.getElementById("logoutBtn"), loginForm: document.getElementById("loginForm"), registerForm: document.getElementById("registerForm"), addMediaBtn: document.getElementById("addMediaBtn"), manageCategoriesBtn: document.getElementById("manageCategoriesBtn"), shareBtn: document.getElementById("shareBtn"), shareDropdown: document.getElementById("shareDropdown"), exportBtn: document.getElementById("exportBtn"), importBtn: document.getElementById("importBtn"), importFile: document.getElementById("importFile"), resetBtn: document.getElementById("resetBtn"), themeToggle: document.getElementById("themeToggle"), searchInput: document.getElementById("searchInput"), categoryFilter: document.getElementById("categoryFilter"), sortFilter: document.getElementById("sortFilter"), statTotal: document.getElementById("statTotal"), statWatchlist: document.getElementById("statWatchlist"), statWatched: document.getElementById("statWatched"), statRewatched: document.getElementById("statRewatched"), statHours: document.getElementById("statHours"), mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), addMediaModal: document.getElementById("addMediaModal"), mediaTitle: document.getElementById("mediaTitle"), searchOMDbBtn: document.getElementById("searchOMDbBtn"), omdbResults: document.getElementById("omdbResults"), saveMediaBtn: document.getElementById("saveMediaBtn"), cancelMediaBtn: document.getElementById("cancelMediaBtn"), addMediaCategorySelect: document.getElementById("addMediaCategorySelect"), categoryManagementModal: document.getElementById("categoryManagementModal"), newCategoryName: document.getElementById("newCategoryName"), addCategoryBtn: document.getElementById("addCategoryBtn"), categoriesList: document.getElementById("categoriesList"), closeCategoryManagementBtn: document.getElementById("closeCategoryManagementBtn"), quickEditModal: document.getElementById("quickEditModal"), quickEditTitle: document.getElementById("quickEditTitle"), quickEditWatchedBtn: document.getElementById("quickEditWatchedBtn"), quickEditWatchlistBtn: document.getElementById("quickEditWatchlistBtn"), quickEditRewatchCount: document.getElementById("quickEditRewatchCount"), confirmQuickEditBtn: document.getElementById("confirmQuickEditBtn"), cancelQuickEditBtn: document.getElementById("cancelQuickEditBtn"), notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"), shareLink: document.getElementById("shareLink"), copyLinkBtn: document.getElementById("copyLinkBtn"), disableShareBtn: document.getElementById("disableShareBtn"), viewModeBanner: document.getElementById("viewModeBanner"), closeViewBtn: document.getElementById("closeViewBtn")
     };
@@ -849,26 +789,10 @@
 
     function setupAuthListeners(){elements.authToggle.addEventListener("click",e=>{e.stopPropagation(),elements.authForms.classList.toggle("active")}),document.addEventListener("click",e=>{elements.authForms.contains(e.target)||e.target.closest("#authToggle")||elements.authForms.classList.remove("active")}),document.querySelectorAll(".auth-tab").forEach(e=>{e.addEventListener("click",()=>{document.querySelectorAll(".auth-tab").forEach(e=>e.classList.remove("active")),e.classList.add("active"),document.querySelectorAll(".auth-form-container").forEach(t=>t.classList.remove("active")),document.getElementById(`${e.dataset.tab}Form`).classList.add("active")})}),elements.loginBtn.addEventListener("click",()=>{const e=elements.loginEmail.value,t=elements.loginPassword.value;e&&t?firebase.auth().signInWithEmailAndPassword(e,t).then(()=>{showNotification("Login effettuato","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Inserisci email e password","warning")}),elements.registerBtn.addEventListener("click",()=>{const e=elements.registerEmail.value,t=elements.registerPassword.value,a=elements.registerConfirmPassword.value;e&&t&&a?t!==a?showNotification("Le password non corrispondono","warning"):t.length<6?showNotification("La password deve avere almeno 6 caratteri","warning"):firebase.auth().createUserWithEmailAndPassword(e,t).then(()=>{showNotification("Registrazione completata!","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Compila tutti i campi","warning")}),elements.logoutBtn.addEventListener("click",()=>firebase.auth().signOut()),firebase.auth().onAuthStateChanged(e=>{if(checkSharedView()) return; currentUser=e,updateAuthUI(),e?(loadData(),checkActiveShare()):loadLocalData()})}
     function getAuthErrorMessage(e){switch(e.code){case"auth/email-already-in-use":return"Email già registrata";case"auth/invalid-email":return"Email non valida";case"auth/weak-password":return"Password troppo debole";case"auth/user-not-found":return"Utente non trovato";case"auth/wrong-password":return"Password errata";default:return"Errore: "+e.message}}
-    function updateAuthUI() {
-        if (currentUser) {
-            elements.userInfo.style.display = 'flex';
-            elements.authToggle.style.display = 'none';
-            document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
-        } else {
-            elements.userInfo.style.display = 'none';
-            elements.authToggle.style.display = 'block';
-            document.querySelectorAll('#addMediaBtn, #manageCategoriesBtn, #shareBtn').forEach(btn => {
-                btn.disabled = true;
-            });
-            document.querySelectorAll('#exportBtn, #importBtn, #resetBtn').forEach(btn => {
-                btn.disabled = false;
-            });
-        }
-    }
-    function loadData(){if(!currentUser)return;database.ref(`users/${currentUser.uid}/mediaTracker`).on("value",e=>{let t=e.val()||{};mediaList=t.mediaList?t.mediaList.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})):[],categories=t.categories||[...DEFAULT_CATEGORIES],renderFullUI()})}
+    function updateAuthUI(){currentUser?(elements.userInfo.style.display="flex",elements.authToggle.style.display="none",document.querySelectorAll(".btn").forEach(e=>e.disabled=!1)):(elements.userInfo.style.display="none",elements.authToggle.style.display="block",document.querySelectorAll("#addMediaBtn, #manageCategoriesBtn, #shareBtn").forEach(e=>{e.disabled=!0}),document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(e=>e.disabled=!1))}
+    function loadData(){if(!currentUser)return;database.ref(`users/${currentUser.uid}/mediaTracker`).on("value",e=>{let t=e.val()||{};mediaList=t.mediaList?t.mediaList.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})):[],categories=t.categories||[...DEFAULT_CATEGORIES],activeShareId=t.activeShare||null,renderFullUI()})}
     function loadLocalData(){try{let e=JSON.parse(localStorage.getItem("mediaList"))||[];mediaList=e.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),categories=JSON.parse(localStorage.getItem("categories"))||[...DEFAULT_CATEGORIES],renderFullUI(),updateStats()}catch(e){console.error("Error loading local data:",e)}}
     function saveData(){currentUser?database.ref(`users/${currentUser.uid}/mediaTracker`).set({mediaList,categories,activeShare:activeShareId||null}):(localStorage.setItem("mediaList",JSON.stringify(mediaList)),localStorage.setItem("categories",JSON.stringify(categories)))}
-    function saveToLocal(){try{localStorage.setItem("mediaList",JSON.stringify(mediaList)),localStorage.setItem("categories",JSON.stringify(categories))}catch(e){console.error("Error saving locally:",e)}}
     function checkSharedView() {
         const urlParams = new URLSearchParams(window.location.search);
         const uid = urlParams.get('uid');
@@ -906,7 +830,543 @@
     function deactivateSharing(){currentUser&&(activeShareId=null,database.ref(`users/${currentUser.uid}/mediaTracker/activeShare`).remove().then(()=>{elements.shareDropdown.classList.remove("active"),showNotification("Condivisione disattivata","success")}).catch(e=>showNotification("Errore nella disattivazione","error")))}
     function generateId(){return Math.random().toString(36).substring(2,15)}
 
-    // (Il resto delle funzioni JS è qui sotto, completo)
+    function renderFullUI() {
+        renderCategorySections();
+        updateCategoryFilter();
+        populateAddMediaCategorySelect();
+        renderCategoriesList();
+        renderMedia();
+    }
+    
+    function renderMedia() {
+      clearMediaGrids();
+      updateStats();
+      const searchTerm = elements.searchInput.value.toLowerCase();
+      const filterCategory = elements.categoryFilter.value;
+      const sortBy = elements.sortFilter.value;
+      document.querySelectorAll('.media-section').forEach(section => { section.style.display = 'block'; });
+      let filteredMedia = [...mediaList];
+      if (searchTerm) {
+        filteredMedia = filteredMedia.filter(media => media.title.toLowerCase().includes(searchTerm));
+      }
+      if (filterCategory !== "all") {
+        filteredMedia = filteredMedia.filter(media => media.category === filterCategory);
+        document.querySelectorAll('.media-section').forEach(section => {
+          if (section.dataset.category !== filterCategory) section.style.display = 'none';
+        });
+      }
+      filteredMedia.sort((a, b) => {
+        switch(sortBy) {
+          case "alpha": return a.title.localeCompare(b.title);
+          case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
+          case "year": return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+          case "added": default: return new Date(b.addedAt) - new Date(a.addedAt);
+        }
+      });
+      filteredMedia.forEach(media => {
+        const grid = document.getElementById(`${media.category}Grid`);
+        if (grid) {
+          const existingCard = grid.querySelector(`.media-card[data-id="${media.id}"]`);
+          if (!existingCard) grid.appendChild(createMediaCard(media));
+          else grid.replaceChild(createMediaCard(media), existingCard);
+        }
+      });
+      setupLazyLoading();
+      updateCounts();
+    }
+
+    function clearMediaGrids() {
+      categories.forEach(category => {
+        const grid = document.getElementById(`${category}Grid`);
+        if (grid) grid.innerHTML = "";
+      });
+    }
+
+    function updateStats() {
+      let stats = { total: mediaList.length, watchlist: 0, watched: 0, rewatched: 0, hours: 0, minutes: 0 };
+      mediaList.forEach(media => {
+        if (media.category === "watchlist" || media.isCountedAsWatchlist) stats.watchlist++;
+        if (media.category === "watched") stats.watched++;
+        if (media.rewatchCount > 0) stats.rewatched += media.rewatchCount;
+        if (media.category === "watched" || media.isCountedAsWatched) {
+          const runtime = media.runtime ? parseInt(media.runtime.toString().replace(/\D/g, '')) : 0;
+          if (runtime > 0) {
+            const totalViews = (media.rewatchCount || 0) + 1;
+            stats.minutes += runtime * totalViews;
+          }
+        }
+      });
+      stats.hours = Math.floor(stats.minutes / 60);
+      stats.minutes %= 60;
+      elements.statTotal.textContent = stats.total;
+      elements.statWatchlist.textContent = stats.watchlist;
+      elements.statWatched.textContent = stats.watched;
+      elements.statRewatched.textContent = stats.rewatched;
+      elements.statHours.textContent = `${stats.hours}h ${stats.minutes}m`;
+    }
+
+    function updateCounts() {
+      categories.forEach(category => {
+        const countElement = document.getElementById(`${category}Count`);
+        if (countElement) {
+          const count = mediaList.filter(m => m.category === category).length;
+          countElement.textContent = count;
+          const section = document.getElementById(`${category}Section`);
+          if (section && elements.categoryFilter.value !== 'all' && count === 0) {
+            section.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    function createMediaCard(media) {
+      const card = document.createElement("div");
+      card.className = "media-card";
+      card.dataset.id = media.id;
+      const ratingsHTML = media.imdbRating || media.rottenTomatoes ? `<div class="media-ratings">${media.imdbRating ? `<span>⭐ ${media.imdbRating}</span>` : ''}${media.rottenTomatoes ? `<span>🍅 ${media.rottenTomatoes}</span>` : ''}</div>` : '';
+      let watchStatusHTML = '';
+      if (media.isCountedAsWatched) {
+          const totalViews = (media.rewatchCount || 0) + 1;
+          const rewatchSup = totalViews > 1 ? `<sup>${totalViews}</sup>` : '';
+          watchStatusHTML = `<span class="watch-status-icon" title="Visto ${totalViews} volte"><i class="fas fa-eye"></i>${rewatchSup}</span>`;
+      } else if (media.isCountedAsWatchlist && media.category !== 'watchlist') {
+          watchStatusHTML = `<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`;
+      }
+      card.innerHTML = `<div style="position:relative;"><img data-src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'"><div class="card-actions card-actions-left"><button class="card-btn" data-action="toggle-move-dropdown" title="Sposta in..."><i class="fas fa-folder-open"></i></button></div><div class="card-actions card-actions-right"><button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button></div></div><div class="media-info"><h3 class="media-title" title="${media.title}">${media.title}</h3><div class="media-meta">${media.year ? `<span>${media.year}</span>` : ''}${media.runtime ? `<span>⏱️ ${formatRuntime(media.runtime)}</span>` : ''}${watchStatusHTML}</div>${ratingsHTML}</div>`;
+      if (media.category !== 'watchlist') {
+          card.addEventListener("dblclick", () => openQuickEditModal(media));
+      }
+      card.querySelector("[data-action='toggle-move-dropdown']").addEventListener("click", e => { e.stopPropagation(); showCardMoveDropdown(media, e.currentTarget); });
+      card.querySelector("[data-action='delete']").addEventListener("click", e => { e.stopPropagation(); deleteMedia(media.id); });
+      return card;
+    }
+
+    function fixPosterUrl(url) {
+      if (!url || url === "N/A") return null;
+      if (url.startsWith("http://") || url.startsWith("https://")) return url;
+      if (url.startsWith("//")) return `https:${url}`;
+      return `https://${url}`;
+    }
+
+    function renderCategorySections(){elements.mediaSectionsContainer.innerHTML=categories.map(e=>`<div class="media-section" id="${e}Section" data-category="${e}" style="display:block"><div class="section-header"><h2 class="section-title user-select-none">${getCategoryName(e)}</h2><span id="${e}Count" class="category-count">0</span></div><div class="media-grid" id="${e}Grid"></div></div>`).join("")}
+    function renderCategoriesList(){elements.categoriesList.innerHTML=categories.map((e,t)=>`<div class="category-item" data-category-name="${e}"><span class="category-name-span user-select-none">${getCategoryName(e)}</span><div style="display: flex; gap: 0.2rem;">${DEFAULT_CATEGORIES.includes(e)?"":`<button class="btn btn-secondary rename-category-btn" data-category="${e}"><i class="fas fa-pencil-alt"></i></button><button class="btn btn-danger delete-category-btn" data-category="${e}"><i class="fas fa-trash"></i></button>`}<button class="btn btn-secondary move-up-btn" data-category="${e}" ${0===t?"disabled":""}><i class="fas fa-arrow-up"></i></button><button class="btn btn-secondary move-down-btn" data-category="${e}" ${t===categories.length-1?"disabled":""}><i class="fas fa-arrow-down"></i></button></div></div>`).join(""),document.querySelectorAll(".rename-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation();const a=e.closest(".category-item"),o=a.dataset.categoryName,n=a.querySelector(".category-name-span");renameCategory(o,n)})}),document.querySelectorAll(".delete-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation(),deleteCategory(e.dataset.category)})}),document.querySelectorAll(".move-up-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,-1))}),document.querySelectorAll(".move-down-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,1))})}
+    function renameCategory(e,t){const a=t.textContent,o=document.createElement("input");o.type="text",o.value=a,o.className="filter-select",t.replaceWith(o),o.focus();const n=()=>{const t=o.value.trim();if(t&&t!==e&&!categories.includes(t)){const a=categories.indexOf(e);a>-1&&(categories[a]=t),mediaList.forEach(a=>{a.category===e&&(a.category=t)}),saveData(),renderFullUI(),showNotification(`Categoria rinominata in "${t}"`,"success")}else{const e=document.createElement("span");e.className="category-name-span",e.textContent=a,o.replaceWith(e),categories.includes(t)&&t!==oldName&&showNotification("Nome categoria già esistente.","warning")}};o.addEventListener("blur",n),o.addEventListener("keydown",e=>{"Enter"===e.key&&o.blur(),"Escape"===e.key&&(()=>{const e=document.createElement("span");e.className="category-name-span",e.textContent=a,o.replaceWith(e)})()})}
+    function moveCategory(e,t){const a=categories.indexOf(e),o=a+t;o<0||o>=categories.length||([categories[a],categories[o]]=[categories[o],categories[a]],saveData(),renderFullUI())}
+    function updateCategoryFilter(){const e=elements.categoryFilter.value;elements.categoryFilter.innerHTML=`<option value="all">Tutte le categorie</option>${categories.map(e=>`<option value="${e}">${getCategoryName(e)}</option>`).join("")}`,elements.categoryFilter.value=e}
+    function populateAddMediaCategorySelect(){const e=localStorage.getItem("lastUsedCategory");elements.addMediaCategorySelect.innerHTML=categories.map(e=>`<option value="${e}">${getCategoryName(e)}</option>`).join(""),e&&categories.includes(e)&&(elements.addMediaCategorySelect.value=e)}
+    function getCategoryName(e){return{watchlist:"Da Vedere",watched:"Visti"}[e]||e}
+    function addCategory(e){if(!e)return showNotification("Inserisci un nome per la categoria","warning"),!1;const t=e.trim();return categories.some(e=>e.toLowerCase()===t.toLowerCase())?(showNotification("Questa categoria esiste già","warning"),!1):(categories.push(t),saveData(),renderFullUI(),showNotification(`Categoria "${t}" creata`,"success"),!0)}
+    function deleteCategory(e){DEFAULT_CATEGORIES.includes(e)?showNotification("Non puoi eliminare questa categoria predefinita","warning"):confirm(`Eliminare la categoria "${e}"? Tutti i film verranno spostati in "Da Vedere".`)&&(mediaList.forEach(t=>{t.category===e&&(t.category="watchlist")}),categories=categories.filter(t=>t!==e),saveData(),renderFullUI(),showNotification(`Categoria "${e}" eliminata`,"success"))}
+
+    function showCardMoveDropdown(media, button) {
+        closeCardMoveDropdowns();
+        const dropdown = document.createElement('div');
+        dropdown.className = 'card-move-dropdown';
+        categories.filter(c => c !== media.category).forEach(cat => {
+            const item = document.createElement('div');
+            item.className = 'card-move-dropdown-item user-select-none';
+            item.textContent = getCategoryName(cat);
+            item.onclick = (e) => { e.stopPropagation(); moveMediaToCategory(media.id, cat); closeCardMoveDropdowns(); };
+            dropdown.appendChild(item);
+        });
+        const rect = button.getBoundingClientRect();
+        dropdown.style.left = `${rect.left}px`;
+        dropdown.style.top = `${rect.bottom + 5}px`;
+        document.body.appendChild(dropdown);
+        setTimeout(() => { document.addEventListener('click', closeCardMoveDropdowns, { once: true }); }, 0);
+    }
+    
+    function closeCardMoveDropdowns() {
+        document.querySelectorAll('.card-move-dropdown').forEach(d => d.remove());
+    }
+
+    function moveMediaToCategory(mediaId, category) {
+      const media = mediaList.find(m => m.id === mediaId);
+      if (!media) return;
+      const card = document.querySelector(`.media-card[data-id="${mediaId}"]`);
+      if (card) card.classList.add('moving');
+      
+      const wasWatched = media.category === 'watched';
+      if (category === 'watchlist') {
+          media.isCountedAsWatched = false;
+          media.rewatchCount = 0;
+      }
+      if (wasWatched && category !== 'watched') {
+          media.isCountedAsWatched = false;
+          media.rewatchCount = 0;
+      }
+
+      media.category = category;
+      saveData();
+      renderMedia();
+      showNotification(`Film spostato in "${getCategoryName(category)}"`, "success");
+    }
+    
+    function toggleCountedAsWatched(mediaId) {
+        const media = mediaList.find(m => m.id === mediaId);
+        if (!media) return;
+        media.isCountedAsWatched = !media.isCountedAsWatched;
+        if (media.isCountedAsWatched) {
+            media.isCountedAsWatchlist = false;
+            if (media.rewatchCount < 0) media.rewatchCount = 0;
+        } else {
+            media.rewatchCount = 0;
+        }
+        updateStats();
+        refreshSingleMedia(mediaId);
+        openQuickEditModal(media);
+    }
+    
+    function toggleCountedAsWatchlist(mediaId) {
+        const media = mediaList.find(m => m.id === mediaId);
+        if (!media) return;
+        media.isCountedAsWatchlist = !media.isCountedAsWatchlist;
+        if (media.isCountedAsWatchlist) {
+            media.isCountedAsWatched = false;
+        }
+        updateStats();
+        refreshSingleMedia(mediaId);
+        openQuickEditModal(media);
+    }
+
+    function markRewatch(mediaId, count) {
+      const media = mediaList.find(m => m.id === mediaId);
+      if (!media) return;
+      media.rewatchCount = count;
+      if (count >= 1 && media.category !== 'watched' && !media.isCountedAsWatched) {
+          media.isCountedAsWatched = true;
+          media.isCountedAsWatchlist = false;
+      }
+      saveData();
+      refreshSingleMedia(mediaId);
+      updateStats();
+      showNotification(`Rewatch di "${media.title}" aggiornati`, "success");
+    }
+
+    function refreshSingleMedia(mediaId) {
+      const media = mediaList.find(m => m.id === mediaId);
+      if (!media) return;
+      const oldCard = document.querySelector(`.media-card[data-id="${mediaId}"]`);
+      const grid = oldCard ? oldCard.parentElement : document.getElementById(`${media.category}Grid`);
+      if (oldCard && grid) {
+          const newCard = createMediaCard(media);
+          grid.replaceChild(newCard, oldCard);
+          if (lazyLoadObserver) lazyLoadObserver.observe(newCard.querySelector('.lazy'));
+      } else if (grid) {
+          const newCard = createMediaCard(media);
+          grid.appendChild(newCard);
+          if (lazyLoadObserver) lazyLoadObserver.observe(newCard.querySelector('.lazy'));
+      }
+      updateCounts();
+    }
+
+    function deleteMedia(id) {
+      if (isViewMode || !confirm("Eliminare questo film dalla lista?")) return;
+      mediaList = mediaList.filter(m => m.id !== id);
+      saveData();
+      renderMedia();
+      showNotification("Film eliminato", "success");
+    }
+
+    function closeModal(modal) {
+      modal.style.display = "none";
+      document.body.classList.remove("modal-open");
+    }
+    
+    async function searchOMDb() {
+        const title = elements.mediaTitle.value.trim();
+        if (!title) {
+            showNotification("Inserisci un titolo", "warning");
+            return;
+        }
+        elements.omdbResults.innerHTML = "<p>Ricerca in corso...</p>";
+        try {
+            let searchUrl = `https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&s=${encodeURIComponent(title)}&type=movie`;
+            const searchResponse = await fetch(searchUrl);
+            const searchData = await searchResponse.json();
+            if (searchData.Response === "True") {
+                displayOMDbResults(searchData.Search);
+            } else if (searchData.Error === "Too many results.") {
+                showNotification("Troppi risultati. Tento una ricerca esatta...", "warning");
+                let exactMatchUrl = `https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&t=${encodeURIComponent(title)}&type=movie`;
+                const exactResponse = await fetch(exactMatchUrl);
+                const exactData = await exactResponse.json();
+                if (exactData.Response === "True") {
+                    displayOMDbResults([exactData]);
+                } else {
+                    elements.omdbResults.innerHTML = `<p>${exactData.Error || "Nessun risultato trovato"}</p>`;
+                }
+            } else {
+                elements.omdbResults.innerHTML = `<p>${searchData.Error || "Nessun risultato trovato"}</p>`;
+            }
+        } catch (error) {
+            showNotification("Errore nella ricerca", "error");
+            console.error("OMDb error:", error);
+            elements.omdbResults.innerHTML = "<p>Errore durante la ricerca</p>";
+        }
+    }
+
+    function displayOMDbResults(results) {
+      elements.omdbResults.innerHTML = results.map(movie => `<div class="omdb-result-item user-select-none" data-id="${movie.imdbID}"><img src="${fixPosterUrl(movie.Poster)}" class="omdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'"><div><div><strong>${movie.Title}</strong></div><div>${movie.Year}</div></div></div>`).join("");
+      document.querySelectorAll(".omdb-result-item").forEach(item => {
+        item.addEventListener("click", async () => {
+          const imdbID = item.dataset.id;
+          const movie = await getOMDbMovieDetails(imdbID);
+          if (movie) {
+            currentOMDbSelection = movie;
+            elements.mediaTitle.value = movie.Title;
+            showNotification(`Dettagli di "${movie.Title}" pronti per il salvataggio`, "success");
+          }
+        });
+      });
+    }
+
+    async function getOMDbMovieDetails(imdbID) {
+      try {
+        const response = await fetch(`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&i=${imdbID}`);
+        const data = await response.json();
+        if (data.Response === "False") throw new Error(data.Error || "Dettagli non disponibili");
+        return data;
+      } catch (error) {
+        console.error("Error fetching movie details:", error);
+        showNotification("Errore nel caricamento dei dettagli", "error");
+        return null;
+      }
+    }
+
+    function addNewMedia() {
+      if (isViewMode) return;
+      const title = elements.mediaTitle.value.trim();
+      if (!title) {
+        showNotification("Inserisci un titolo", "warning");
+        return;
+      }
+      const selectedCategory = elements.addMediaCategorySelect.value;
+      localStorage.setItem('lastUsedCategory', selectedCategory);
+      let mediaData = {
+        id: Date.now().toString(), title, category: selectedCategory, addedAt: new Date().toISOString(), poster: "", rewatchCount: 0,
+        isCountedAsWatched: selectedCategory === 'watched',
+        isCountedAsWatchlist: selectedCategory === 'watchlist',
+        year: "", imdbRating: "", rottenTomatoes: "", runtime: ""
+      };
+      if (currentOMDbSelection) {
+        mediaData = { ...mediaData, title: currentOMDbSelection.Title, year: currentOMDbSelection.Year, poster: fixPosterUrl(currentOMDbSelection.Poster), imdbRating: currentOMDbSelection.imdbRating, runtime: currentOMDbSelection.Runtime || "" };
+        if (currentOMDbSelection.Ratings) {
+          const rtRating = currentOMDbSelection.Ratings.find(r => r.Source === "Rotten Tomatoes");
+          if (rtRating) mediaData.rottenTomatoes = rtRating.Value;
+        }
+      }
+      mediaList.push(mediaData);
+      saveData();
+      closeModal(elements.addMediaModal);
+      renderMedia();
+      showNotification(`Film "${mediaData.title}" aggiunto!`, "success");
+    }
+    
+    function exportData(){if(isViewMode)return;const e={mediaList:mediaList,categories:categories,exportedAt:(new Date).toISOString()},t=new Blob([JSON.stringify(e,null,2)],{type:"application/json"}),a=URL.createObjectURL(t),o=document.createElement("a");o.href=a,o.download=`mediatracker_export_${(new Date).toISOString().split("T")[0]}.json`,o.click(),URL.revokeObjectURL(a),showNotification("Dati esportati","success")}
+    function importData(e){if(isViewMode||!e)return;const t=new FileReader;t.onload=e=>{try{const t=JSON.parse(e.target.result);if(!Array.isArray(t.mediaList))throw new Error("Formato file non valido");confirm(`Importare ${t.mediaList.length} media? I dati attuali verranno sovrascritti.`)&&(mediaList=t.mediaList,categories=t.categories||[...DEFAULT_CATEGORIES],saveData(),renderFullUI(),showNotification("Dati importati con successo","success"))}catch(e){showNotification("Errore nell'importazione: "+e.message,"error")}},t.readAsText(e)}
+    function resetApp(){if(isViewMode)return;confirm("Resettare completamente l'applicazione? Tutti i dati verranno persi.")&&(mediaList=[],categories=[...DEFAULT_CATEGORIES],saveData(),elements.searchInput.value="",elements.categoryFilter.value="all",elements.sortFilter.value="alpha",renderFullUI(),showNotification("Applicazione resettata","success"))}
+    function loadTheme(){const e=localStorage.getItem("theme")||"dark";document.body.classList.toggle("dark","dark"===e),elements.themeToggle.innerHTML=`<i class="fas fa-${"dark"===e?"sun":"moon"}"></i>`}
+    function toggleTheme(){document.body.classList.toggle("dark");const e=document.body.classList.contains("dark");localStorage.setItem("theme",e?"dark":"light"),elements.themeToggle.innerHTML=`<i class="fas fa-${e?"sun":"moon"}"></i>`}
+    function loadSortOrder(){const e=localStorage.getItem("mediaTrackerSortOrder");e&&(elements.sortFilter.value=e)}
+    function openCategoryManagement(){isViewMode||(renderCategoriesList(),elements.categoryManagementModal.style.display="flex",document.body.classList.add("modal-open"))}
+    function showNotification(e,t="success"){elements.notificationText.textContent=e,elements.notification.className=`notification ${t}`,elements.notification.style.display="block",setTimeout(()=>{elements.notification.style.display="none"},3e3)}
+
+    function setupLazyLoading() {
+        if (lazyLoadObserver) lazyLoadObserver.disconnect();
+        lazyLoadObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy');
+                    observer.unobserve(img);
+                }
+            });
+        });
+        const lazyImages = document.querySelectorAll('.lazy');
+        lazyImages.forEach(img => lazyLoadObserver.observe(img));
+    }
+
+    function formatRuntime(runtimeStr) {
+        if (!runtimeStr) return '';
+        const minutes = parseInt(runtimeStr);
+        if (isNaN(minutes) || minutes <= 0) return '';
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        if (hours > 0) {
+            return `${hours}h ${mins > 0 ? `${mins}m` : ''}`;
+        }
+        return `${mins}m`;
+    }
+
+    function setupEventListeners() {
+      elements.addMediaBtn.addEventListener("click", () => {
+        elements.mediaTitle.value = "";
+        elements.omdbResults.innerHTML = "";
+        currentOMDbSelection = null;
+        elements.saveMediaBtn.textContent = "Salva";
+        elements.saveMediaBtn.onclick = addNewMedia;
+        populateAddMediaCategorySelect(); 
+        elements.addMediaModal.style.display = "flex";
+        document.body.classList.add("modal-open");
+      });
+      
+      elements.confirmQuickEditBtn.addEventListener("click", () => {
+          const count = parseInt(elements.quickEditRewatchCount.value) || 0;
+          if (count < 0) {
+              showNotification("Inserisci un numero valido", "warning");
+              return;
+          }
+          markRewatch(currentQuickEditMedia.id, count);
+          closeModal(elements.quickEditModal);
+      });
+      
+      elements.quickEditWatchedBtn.addEventListener("click", () => {
+          toggleCountedAsWatched(currentQuickEditMedia.id);
+      });
+      
+      elements.quickEditWatchlistBtn.addEventListener("click", () => {
+          toggleCountedAsWatchlist(currentQuickEditMedia.id);
+      });
+
+      elements.cancelQuickEditBtn.addEventListener("click", () => {
+          if (currentUser) {
+            loadData();
+          } else {
+            loadLocalData();
+          }
+          closeModal(elements.quickEditModal);
+      });
+
+      elements.manageCategoriesBtn.addEventListener("click", openCategoryManagement);
+      elements.addCategoryBtn.addEventListener("click", () => {
+        if (addCategory(elements.newCategoryName.value)) {
+          elements.newCategoryName.value = "";
+        }
+      });
+      elements.closeCategoryManagementBtn.addEventListener("click", () => closeModal(elements.categoryManagementModal));
+      elements.cancelMediaBtn.addEventListener("click", () => closeModal(elements.addMediaModal));
+      elements.searchOMDbBtn.addEventListener("click", searchOMDb);
+      
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest('.card-move-dropdown')) {
+            closeCardMoveDropdowns();
+        }
+      });
+
+      elements.addMediaModal.addEventListener("click", (e) => {
+        if (e.target === elements.addMediaModal) closeModal(elements.addMediaModal);
+      });
+      elements.categoryManagementModal.addEventListener("click", (e) => {
+        if (e.target === elements.categoryManagementModal) closeModal(elements.categoryManagementModal);
+      });
+      elements.quickEditModal.addEventListener("click", (e) => {
+        if (e.target === elements.quickEditModal) closeModal(elements.quickEditModal);
+      });
+      elements.exportBtn.addEventListener("click", exportData);
+      elements.importBtn.addEventListener("click", () => elements.importFile.click());
+      elements.importFile.addEventListener("change", (e) => importData(e.target.files[0]));
+      elements.resetBtn.addEventListener("click", resetApp);
+      elements.themeToggle.addEventListener("click", toggleTheme);
+      
+      elements.searchInput.addEventListener("input", () => {
+          clearTimeout(debounceTimeout);
+          debounceTimeout = setTimeout(() => {
+              renderMedia();
+          }, 300);
+      });
+
+      elements.categoryFilter.addEventListener("change", renderMedia);
+      elements.sortFilter.addEventListener("change", () => {
+          localStorage.setItem('mediaTrackerSortOrder', elements.sortFilter.value);
+          renderMedia();
+      });
+      elements.shareBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (activeShareId) {
+          elements.shareDropdown.classList.toggle('active');
+        } else {
+          activateSharing();
+        }
+      });
+      document.addEventListener('click', (e) => {
+        if (!elements.shareDropdown.contains(e.target)) {
+          elements.shareDropdown.classList.remove('active');
+        }
+      });
+      elements.copyLinkBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(elements.shareLink.value);
+        showNotification("Link copiato!", "success");
+      });
+      elements.disableShareBtn.addEventListener("click", () => {
+        deactivateSharing();
+        elements.shareDropdown.classList.remove('active');
+      });
+      elements.closeViewBtn.addEventListener("click", closeViewMode);
+
+      document.querySelectorAll('.num-spinner-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+              const targetInput = document.getElementById(e.currentTarget.dataset.target);
+              if (targetInput) {
+                  let currentValue = parseInt(targetInput.value) || 0;
+                  const isUp = e.currentTarget.classList.contains('up');
+                  if (isUp) {
+                      currentValue++;
+                  } else {
+                      currentValue--;
+                  }
+                  
+                  const min = parseInt(targetInput.min);
+                  if (!isNaN(min) && currentValue < min) {
+                      currentValue = min;
+                  }
+
+                  targetInput.value = currentValue;
+              }
+          });
+      });
+    }
+    
+    function openQuickEditModal(media) {
+        if (isViewMode) return;
+        currentQuickEditMedia = media;
+        
+        elements.quickEditTitle.textContent = `Modifica: ${media.title}`;
+        elements.quickEditRewatchCount.value = media.rewatchCount || 0;
+        
+        const watchlistBtn = elements.quickEditWatchlistBtn;
+        if (media.category === 'watched') {
+            watchlistBtn.style.display = 'none';
+        } else {
+            watchlistBtn.style.display = 'inline-flex';
+            if (media.isCountedAsWatchlist) {
+                watchlistBtn.innerHTML = `<i class="fas fa-times"></i> Rimuovi da vedere come qui`;
+                watchlistBtn.className = 'btn btn-danger';
+            } else {
+                watchlistBtn.innerHTML = `<i class="fas fa-list-alt"></i> Segna come da vedere qui`;
+                watchlistBtn.className = 'btn btn-secondary';
+            }
+        }
+        
+        const watchedBtn = elements.quickEditWatchedBtn;
+        if (media.category === 'watched') {
+            watchedBtn.style.display = 'none';
+        } else {
+            watchedBtn.style.display = 'inline-flex';
+            if (media.isCountedAsWatched) {
+                watchedBtn.innerHTML = `<i class="fas fa-times"></i> Rimuovi come visto qui`;
+                watchedBtn.className = 'btn btn-danger';
+            } else {
+                watchedBtn.innerHTML = `<i class="fas fa-check-double"></i> Segna come visto qui`;
+                watchedBtn.className = 'btn btn-success';
+            }
+        }
+        
+        elements.quickEditModal.style.display = "flex";
+        document.body.classList.add("modal-open");
+    }
+    
   </script>
 </body>
 </html>
