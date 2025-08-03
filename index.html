@@ -123,6 +123,18 @@
         font-weight: bold;
         margin-left: 1px;
     }
+    
+    .rewatch-badge {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
 
     .media-ratings {
       display: flex;
@@ -182,15 +194,13 @@
     }
     
     .btn:disabled {
-        background-color: #ccc !important;
+        background-color: #ccc;
         cursor: not-allowed;
         opacity: 0.7;
-        box-shadow: none;
-        transform: none;
     }
 
     body.dark .btn:disabled {
-        background-color: #555 !important;
+        background-color: #555;
     }
 
     .btn-primary {
@@ -614,6 +624,7 @@
   </style>
 </head>
 <body class="dark user-select-none">
+  <!-- View Mode Banner -->
   <div id="viewModeBanner" class="view-mode-banner" style="display:none">
     <i class="fas fa-eye"></i>
     <span>Stai visualizzando una lista condivisa</span>
@@ -622,6 +633,7 @@
     </button>
   </div>
 
+  <!-- Top Bar -->
   <div class="top-bar">
     <div class="main-controls">
       <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
@@ -634,66 +646,127 @@
         <option value="rating">Valutazione</option>
         <option value="year">Anno di uscita</option>
       </select>
-      <button id="addMediaBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi Film</button>
-      <button id="manageCategoriesBtn" class="btn btn-secondary"><i class="fas fa-folder"></i></button>
+      
+      <button id="addMediaBtn" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Aggiungi Film
+      </button>
+      <button id="manageCategoriesBtn" class="btn btn-secondary">
+        <i class="fas fa-folder"></i>
+      </button>
+      
       <div class="share-dropdown" id="shareDropdown">
-        <button id="shareBtn" class="btn btn-secondary dropdown-toggle"><i class="fas fa-share-alt"></i></button>
+        <button id="shareBtn" class="btn btn-secondary dropdown-toggle">
+          <i class="fas fa-share-alt"></i> 
+        </button>
         <div class="share-dropdown-content">
           <h3>Condivisione attiva</h3>
           <p>Chiunque abbia questo link può vedere la tua lista in tempo reale:</p>
           <div class="share-link">
             <input type="text" id="shareLink" readonly>
-            <button id="copyLinkBtn" class="btn btn-primary"><i class="fas fa-copy"></i> Copia</button>
+            <button id="copyLinkBtn" class="btn btn-primary">
+              <i class="fas fa-copy"></i> Copia
+            </button>
           </div>
           <div class="share-actions">
-            <button id="disableShareBtn" class="btn btn-danger"><i class="fas fa-ban"></i> Disattiva</button>
+            <button id="disableShareBtn" class="btn btn-danger">
+              <i class="fas fa-ban"></i> Disattiva
+            </button>
           </div>
         </div>
       </div>
-      <button id="exportBtn" class="btn btn-secondary"><i class="fas fa-download"></i></button>
+      
+      <button id="exportBtn" class="btn btn-secondary">
+        <i class="fas fa-download"></i> 
+      </button>
       <input type="file" id="importFile" accept=".json" style="display: none;">
-      <button id="importBtn" class="btn btn-secondary"><i class="fas fa-upload"></i></button>
-      <button id="resetBtn" class="btn btn-reset"><i class="fas fa-undo"></i></button>
-      <button id="themeToggle" class="btn"><i class="fas fa-moon"></i></button>
+      <button id="importBtn" class="btn btn-secondary">
+        <i class="fas fa-upload"></i> 
+      </button>
+      <button id="resetBtn" class="btn btn-reset">
+        <i class="fas fa-undo"></i> 
+      </button>
+      <button id="themeToggle" class="btn">
+        <i class="fas fa-moon"></i> 
+      </button>
+
       <div id="userInfo" style="display:none; margin-left: auto;">
-        <button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        <button id="logoutBtn" class="btn btn-danger">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
       </div>
-      <button id="authToggle" class="btn btn-secondary" style="margin-left: auto;"><i class="fas fa-user"></i> Login</button>
+      <button id="authToggle" class="btn btn-secondary" style="margin-left: auto;">
+        <i class="fas fa-user"></i> Login
+      </button>
     </div>
   </div>
 
+  <!-- Stats -->
   <div class="stats-container">
     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-      <div class="stat-item"><div class="stat-value" id="statTotal">0</div><div>Totale</div></div>
-      <div class="stat-item"><div class="stat-value" id="statWatchlist">0</div><div>Da Vedere</div></div>
-      <div class="stat-item"><div class="stat-value" id="statWatched">0</div><div>Visti</div></div>
-      <div class="stat-item"><div class="stat-value" id="statRewatched">0</div><div>Rewatch</div></div>
-      <div class="stat-item"><div class="stat-value" id="statHours">0h 0m</div><div>Tempo Totale</div></div>
+      <div class="stat-item">
+        <div class="stat-value" id="statTotal">0</div>
+        <div>Totale</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statWatchlist">0</div>
+        <div>Da Vedere</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statWatched">0</div>
+        <div>Visti</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statRewatched">0</div>
+        <div>Rewatch</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statHours">0h 0m</div>
+        <div>Tempo Totale</div>
+      </div>
     </div>
+    
     <div id="authForms" class="auth-form">
-      <div class="auth-tabs"><div class="auth-tab active" data-tab="login">Login</div><div class="auth-tab" data-tab="register">Registrati</div></div>
+      <div class="auth-tabs">
+        <div class="auth-tab active" data-tab="login">Login</div>
+        <div class="auth-tab" data-tab="register">Registrati</div>
+      </div>
+      
       <div id="loginForm" class="auth-form-container active">
         <input type="email" id="loginEmail" placeholder="Email">
         <input type="password" id="loginPassword" placeholder="Password">
-        <div class="auth-form-buttons"><button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button></div>
+        <div class="auth-form-buttons">
+          <button id="loginBtn" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt"></i> Login
+          </button>
+        </div>
       </div>
+      
       <div id="registerForm" class="auth-form-container">
         <input type="email" id="registerEmail" placeholder="Email">
         <input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)">
         <input type="password" id="registerConfirmPassword" placeholder="Conferma Password">
-        <div class="auth-form-buttons"><button id="registerBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati</button></div>
+        <div class="auth-form-buttons">
+          <button id="registerBtn" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Registrati
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Media Sections -->
   <div id="mediaSectionsContainer"></div>
 
+  <!-- Modals -->
   <div class="modal" id="addMediaModal">
     <div class="modal-content">
       <h2>Aggiungi Film</h2>
       <input type="text" id="mediaTitle" placeholder="Titolo" style="margin-bottom: 1rem;">
+
       <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
-        <button id="searchOMDbBtn" class="btn btn-secondary" style="flex-shrink: 0;"><i class="fas fa-search"></i> Cerca su OMDb</button>
+        <button id="searchOMDbBtn" class="btn btn-secondary" style="flex-shrink: 0;">
+            <i class="fas fa-search"></i> Cerca su OMDb
+        </button>
         <select id="addMediaCategorySelect" class="filter-select" style="margin: 0;"></select>
       </div>
       <div id="omdbResults" class="omdb-results-container"></div>
@@ -714,7 +787,7 @@
         <div style="display: flex; align-items: center; gap: 1rem;">
             <label for="quickEditRewatchCount">Rewatch:</label>
             <div class="number-input-wrapper" style="width: 100px;">
-              <input type="number" id="quickEditRewatchCount" min="0" value="0" style="margin: 0; text-align: center;">
+              <input type="number" id="quickEditRewatchCount" min="0" value="1" style="margin: 0; text-align: center;">
               <div class="number-input-controls">
                 <button class="num-spinner-btn up" data-target="quickEditRewatchCount">+</button>
                 <button class="num-spinner-btn down" data-target="quickEditRewatchCount">-</button>
@@ -733,7 +806,9 @@
       <h2>Gestione Categorie</h2>
       <div class="filter-row">
         <input type="text" id="newCategoryName" placeholder="Nome categoria">
-        <button id="addCategoryBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi</button>
+        <button id="addCategoryBtn" class="btn btn-primary">
+          <i class="fas fa-plus"></i> Aggiungi
+        </button>
       </div>
       <div class="categories-list" id="categoriesList"></div>
       <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
@@ -742,15 +817,18 @@
     </div>
   </div>
   
+  <!-- Notification -->
   <div id="notification" class="notification">
     <span id="notificationText"></span>
   </div>
 
   <script>
-    // Configurazione e Stato
+    // Configurazione
     const OMDb_API_KEY = "2526ef70";
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
+
+    // Stato
     let mediaList = [];
     let categories = [...DEFAULT_CATEGORIES];
     let currentQuickEditMedia = null;
@@ -761,7 +839,7 @@
     let debounceTimeout;
     let lazyLoadObserver;
 
-    // Connessione a Firebase
+    // Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk",
       authDomain: "gametrackerdb.firebaseapp.com",
@@ -769,15 +847,68 @@
       projectId: "gametrackerdb",
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const database = firebase.database();
+    const db = firebase.database();
 
     // Elementi DOM
     const elements = {
-      authForms: document.getElementById("authForms"), authToggle: document.getElementById("authToggle"), userInfo: document.getElementById("userInfo"), loginBtn: document.getElementById("loginBtn"), loginEmail: document.getElementById("loginEmail"), loginPassword: document.getElementById("loginPassword"), registerBtn: document.getElementById("registerBtn"), registerEmail: document.getElementById("registerEmail"), registerPassword: document.getElementById("registerPassword"), registerConfirmPassword: document.getElementById("registerConfirmPassword"), logoutBtn: document.getElementById("logoutBtn"), loginForm: document.getElementById("loginForm"), registerForm: document.getElementById("registerForm"), addMediaBtn: document.getElementById("addMediaBtn"), manageCategoriesBtn: document.getElementById("manageCategoriesBtn"), shareBtn: document.getElementById("shareBtn"), shareDropdown: document.getElementById("shareDropdown"), exportBtn: document.getElementById("exportBtn"), importBtn: document.getElementById("importBtn"), importFile: document.getElementById("importFile"), resetBtn: document.getElementById("resetBtn"), themeToggle: document.getElementById("themeToggle"), searchInput: document.getElementById("searchInput"), categoryFilter: document.getElementById("categoryFilter"), sortFilter: document.getElementById("sortFilter"), statTotal: document.getElementById("statTotal"), statWatchlist: document.getElementById("statWatchlist"), statWatched: document.getElementById("statWatched"), statRewatched: document.getElementById("statRewatched"), statHours: document.getElementById("statHours"), mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), addMediaModal: document.getElementById("addMediaModal"), mediaTitle: document.getElementById("mediaTitle"), searchOMDbBtn: document.getElementById("searchOMDbBtn"), omdbResults: document.getElementById("omdbResults"), saveMediaBtn: document.getElementById("saveMediaBtn"), cancelMediaBtn: document.getElementById("cancelMediaBtn"), addMediaCategorySelect: document.getElementById("addMediaCategorySelect"), categoryManagementModal: document.getElementById("categoryManagementModal"), newCategoryName: document.getElementById("newCategoryName"), addCategoryBtn: document.getElementById("addCategoryBtn"), categoriesList: document.getElementById("categoriesList"), closeCategoryManagementBtn: document.getElementById("closeCategoryManagementBtn"), quickEditModal: document.getElementById("quickEditModal"), quickEditTitle: document.getElementById("quickEditTitle"), quickEditWatchedBtn: document.getElementById("quickEditWatchedBtn"), quickEditWatchlistBtn: document.getElementById("quickEditWatchlistBtn"), quickEditRewatchCount: document.getElementById("quickEditRewatchCount"), confirmQuickEditBtn: document.getElementById("confirmQuickEditBtn"), cancelQuickEditBtn: document.getElementById("cancelQuickEditBtn"), notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"), shareLink: document.getElementById("shareLink"), copyLinkBtn: document.getElementById("copyLinkBtn"), disableShareBtn: document.getElementById("disableShareBtn"), viewModeBanner: document.getElementById("viewModeBanner"), closeViewBtn: document.getElementById("closeViewBtn")
+      authForms: document.getElementById("authForms"),
+      authToggle: document.getElementById("authToggle"),
+      userInfo: document.getElementById("userInfo"),
+      loginBtn: document.getElementById("loginBtn"),
+      loginEmail: document.getElementById("loginEmail"),
+      loginPassword: document.getElementById("loginPassword"),
+      registerBtn: document.getElementById("registerBtn"),
+      registerEmail: document.getElementById("registerEmail"),
+      registerPassword: document.getElementById("registerPassword"),
+      registerConfirmPassword: document.getElementById("registerConfirmPassword"),
+      logoutBtn: document.getElementById("logoutBtn"),
+      loginForm: document.getElementById("loginForm"),
+      registerForm: document.getElementById("registerForm"),
+      addMediaBtn: document.getElementById("addMediaBtn"),
+      manageCategoriesBtn: document.getElementById("manageCategoriesBtn"),
+      shareBtn: document.getElementById("shareBtn"),
+      shareDropdown: document.getElementById("shareDropdown"),
+      exportBtn: document.getElementById("exportBtn"),
+      importBtn: document.getElementById("importBtn"),
+      importFile: document.getElementById("importFile"),
+      resetBtn: document.getElementById("resetBtn"),
+      themeToggle: document.getElementById("themeToggle"),
+      searchInput: document.getElementById("searchInput"),
+      categoryFilter: document.getElementById("categoryFilter"),
+      sortFilter: document.getElementById("sortFilter"),
+      statTotal: document.getElementById("statTotal"),
+      statWatchlist: document.getElementById("statWatchlist"),
+      statWatched: document.getElementById("statWatched"),
+      statRewatched: document.getElementById("statRewatched"),
+      statHours: document.getElementById("statHours"),
+      mediaSectionsContainer: document.getElementById("mediaSectionsContainer"),
+      addMediaModal: document.getElementById("addMediaModal"),
+      mediaTitle: document.getElementById("mediaTitle"),
+      searchOMDbBtn: document.getElementById("searchOMDbBtn"),
+      omdbResults: document.getElementById("omdbResults"),
+      saveMediaBtn: document.getElementById("saveMediaBtn"),
+      cancelMediaBtn: document.getElementById("cancelMediaBtn"),
+      addMediaCategorySelect: document.getElementById("addMediaCategorySelect"),
+      categoryManagementModal: document.getElementById("categoryManagementModal"),
+      newCategoryName: document.getElementById("newCategoryName"),
+      addCategoryBtn: document.getElementById("addCategoryBtn"),
+      categoriesList: document.getElementById("categoriesList"),
+      closeCategoryManagementBtn: document.getElementById("closeCategoryManagementBtn"),
+      quickEditModal: document.getElementById("quickEditModal"),
+      quickEditTitle: document.getElementById("quickEditTitle"),
+      quickEditWatchedBtn: document.getElementById("quickEditWatchedBtn"),
+      quickEditWatchlistBtn: document.getElementById("quickEditWatchlistBtn"),
+      quickEditRewatchCount: document.getElementById("quickEditRewatchCount"),
+      confirmQuickEditBtn: document.getElementById("confirmQuickEditBtn"),
+      cancelQuickEditBtn: document.getElementById("cancelQuickEditBtn"),
+      notification: document.getElementById("notification"),
+      notificationText: document.getElementById("notificationText"),
+      shareLink: document.getElementById("shareLink"),
+      copyLinkBtn: document.getElementById("copyLinkBtn"),
+      disableShareBtn: document.getElementById("disableShareBtn"),
+      viewModeBanner: document.getElementById("viewModeBanner"),
+      closeViewBtn: document.getElementById("closeViewBtn")
     };
-    
-    document.addEventListener("DOMContentLoaded", init);
 
     function init() {
       setupAuthListeners();
@@ -789,26 +920,50 @@
 
     function setupAuthListeners(){elements.authToggle.addEventListener("click",e=>{e.stopPropagation(),elements.authForms.classList.toggle("active")}),document.addEventListener("click",e=>{elements.authForms.contains(e.target)||e.target.closest("#authToggle")||elements.authForms.classList.remove("active")}),document.querySelectorAll(".auth-tab").forEach(e=>{e.addEventListener("click",()=>{document.querySelectorAll(".auth-tab").forEach(e=>e.classList.remove("active")),e.classList.add("active"),document.querySelectorAll(".auth-form-container").forEach(t=>t.classList.remove("active")),document.getElementById(`${e.dataset.tab}Form`).classList.add("active")})}),elements.loginBtn.addEventListener("click",()=>{const e=elements.loginEmail.value,t=elements.loginPassword.value;e&&t?firebase.auth().signInWithEmailAndPassword(e,t).then(()=>{showNotification("Login effettuato","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Inserisci email e password","warning")}),elements.registerBtn.addEventListener("click",()=>{const e=elements.registerEmail.value,t=elements.registerPassword.value,a=elements.registerConfirmPassword.value;e&&t&&a?t!==a?showNotification("Le password non corrispondono","warning"):t.length<6?showNotification("La password deve avere almeno 6 caratteri","warning"):firebase.auth().createUserWithEmailAndPassword(e,t).then(()=>{showNotification("Registrazione completata!","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Compila tutti i campi","warning")}),elements.logoutBtn.addEventListener("click",()=>firebase.auth().signOut()),firebase.auth().onAuthStateChanged(e=>{if(checkSharedView()) return; currentUser=e,updateAuthUI(),e?(loadData(),checkActiveShare()):loadLocalData()})}
     function getAuthErrorMessage(e){switch(e.code){case"auth/email-already-in-use":return"Email già registrata";case"auth/invalid-email":return"Email non valida";case"auth/weak-password":return"Password troppo debole";case"auth/user-not-found":return"Utente non trovato";case"auth/wrong-password":return"Password errata";default:return"Errore: "+e.message}}
-    function updateAuthUI(){currentUser?(elements.userInfo.style.display="flex",elements.authToggle.style.display="none",document.querySelectorAll(".btn").forEach(e=>e.disabled=!1)):(elements.userInfo.style.display="none",elements.authToggle.style.display="block",document.querySelectorAll("#addMediaBtn, #manageCategoriesBtn, #shareBtn").forEach(e=>{e.disabled=!0}),document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(e=>e.disabled=!1))}
-    function loadData(){if(!currentUser)return;database.ref(`users/${currentUser.uid}/mediaTracker`).on("value",e=>{let t=e.val()||{};mediaList=t.mediaList?t.mediaList.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})):[],categories=t.categories||[...DEFAULT_CATEGORIES],activeShareId=t.activeShare||null,renderFullUI()})}
+    
+    function updateAuthUI() {
+      if (currentUser) {
+        elements.userInfo.style.display = 'flex';
+        elements.authToggle.style.display = 'none';
+        document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
+      } else {
+        elements.userInfo.style.display = 'none';
+        elements.authToggle.style.display = 'block';
+        document.querySelectorAll('#addMediaBtn, #manageCategoriesBtn, #shareBtn').forEach(btn => {
+          btn.disabled = true;
+        });
+        document.querySelectorAll('#exportBtn, #importBtn, #resetBtn').forEach(btn => {
+            btn.disabled = false;
+        });
+      }
+    }
+    
+    function loadData(){if(!currentUser)return;db.ref(`users/${currentUser.uid}/mediaTracker/mediaList`).on("value",e=>{let t=e.val()||[];mediaList=t.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),renderMedia(),updateStats()}),db.ref(`users/${currentUser.uid}/mediaTracker/categories`).once("value").then(e=>{categories=e.val()||[...DEFAULT_CATEGORIES],renderFullUI()})}
     function loadLocalData(){try{let e=JSON.parse(localStorage.getItem("mediaList"))||[];mediaList=e.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),categories=JSON.parse(localStorage.getItem("categories"))||[...DEFAULT_CATEGORIES],renderFullUI(),updateStats()}catch(e){console.error("Error loading local data:",e)}}
-    function saveData(){currentUser?database.ref(`users/${currentUser.uid}/mediaTracker`).set({mediaList,categories,activeShare:activeShareId||null}):(localStorage.setItem("mediaList",JSON.stringify(mediaList)),localStorage.setItem("categories",JSON.stringify(categories)))}
+    function saveData(){currentUser?db.ref(`users/${currentUser.uid}/mediaTracker`).set({mediaList:mediaList,categories:categories}).catch(e=>{console.error("Error saving to Firebase:",e)}):saveToLocal()}
+    function saveToLocal(){try{localStorage.setItem("mediaList",JSON.stringify(mediaList)),localStorage.setItem("categories",JSON.stringify(categories))}catch(e){console.error("Error saving locally:",e)}}
+    
     function checkSharedView() {
         const urlParams = new URLSearchParams(window.location.search);
         const uid = urlParams.get('uid');
-        const shareId = urlParams.get('share');
-        if (uid && shareId) {
+        const share = urlParams.get('share');
+
+        if (uid && share) {
             isViewMode = true;
-            database.ref(`users/${uid}/mediaTracker/activeShare`).once('value').then(snap => {
+            db.ref(`users/${uid}/mediaTracker/activeShare`).once('value').then(snap => {
                 const data = snap.val();
-                if (data && data.shareId === shareId && data.expiresAt > Date.now()) {
+                if (data && data.shareId === share && data.expiresAt > Date.now()) {
                     Promise.all([
-                        database.ref(`users/${uid}/mediaTracker/mediaList`).once('value'),
-                        database.ref(`users/${uid}/mediaTracker/categories`).once('value')
+                        db.ref(`users/${uid}/mediaTracker/mediaList`).once('value'),
+                        db.ref(`users/${uid}/mediaTracker/categories`).once('value')
                     ]).then(([mediaSnap, categoriesSnap]) => {
                         let remoteMediaList = mediaSnap.val() || [];
-                        mediaList = remoteMediaList.map(media => ({...{isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0}, ...media}));
+                        mediaList = remoteMediaList.map(media => ({
+                            ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 },
+                            ...media
+                        }));
                         categories = categoriesSnap.val() || [...DEFAULT_CATEGORIES];
+                        
                         renderFullUI();
                         updateStats();
                         enableViewMode(uid);
@@ -822,12 +977,12 @@
         }
         return false;
     }
-    function activateSharing(){if(!currentUser)return;const e=generateId(),t=Date.now()+6048e5,a={shareId:e,expiresAt:t};database.ref(`users/${currentUser.uid}/mediaTracker/activeShare`).set(a).then(()=>{activeShareId=a,updateShareLink(e),showNotification("Condivisione attivata (valida 7 giorni)","success")}).catch(e=>showNotification("Errore nell'attivazione della condivisione","error"))}
-    function enableViewMode(e){isViewMode=!0,document.querySelector(".main-controls").style.display="none",elements.viewModeBanner.style.display="flex",database.ref(`users/${e}/mediaTracker/mediaList`).on("value",e=>{mediaList=e.val()||[],renderMedia(),updateStats()})}
+    function activateSharing(){if(!currentUser)return;const e=generateId(),t=Date.now()+6048e5;db.ref(`users/${currentUser.uid}/mediaTracker/activeShare`).set({shareId:e,expiresAt:t}).then(()=>{activeShareId=e,updateShareLink(e),showNotification("Condivisione attivata (valida 7 giorni)","success")}).catch(e=>showNotification("Errore nell'attivazione della condivisione","error"))}
+    function enableViewMode(e){isViewMode=!0,document.querySelector(".main-controls").style.display="none",elements.viewModeBanner.style.display="flex",db.ref(`users/${e}/mediaTracker/mediaList`).on("value",e=>{mediaList=e.val()||[],renderMedia(),updateStats()})}
     function closeViewMode(){window.location.href=window.location.pathname}
-    function checkActiveShare(){currentUser&&database.ref(`users/${currentUser.uid}/mediaTracker/activeShare`).once("value").then(e=>{const t=e.val();t&&t.shareId&&(activeShareId=t,updateShareLink(t.shareId))})}
+    function checkActiveShare(){currentUser&&db.ref(`users/${currentUser.uid}/mediaTracker/activeShare`).once("value").then(e=>{const t=e.val();t&&t.shareId&&(activeShareId=t.shareId,updateShareLink(activeShareId))})}
     function updateShareLink(e){if(e){const t=`${window.location.origin}${window.location.pathname}?uid=${currentUser.uid}&share=${e}`;elements.shareLink.value=t,elements.shareDropdown.classList.add("active")}}
-    function deactivateSharing(){currentUser&&(activeShareId=null,database.ref(`users/${currentUser.uid}/mediaTracker/activeShare`).remove().then(()=>{elements.shareDropdown.classList.remove("active"),showNotification("Condivisione disattivata","success")}).catch(e=>showNotification("Errore nella disattivazione","error")))}
+    function deactivateSharing(){currentUser&&db.ref(`users/${currentUser.uid}/mediaTracker/activeShare`).remove().then(()=>{activeShareId=null,elements.shareDropdown.classList.remove("active"),showNotification("Condivisione disattivata","success")}).catch(e=>showNotification("Errore nella disattivazione","error"))}
     function generateId(){return Math.random().toString(36).substring(2,15)}
 
     function renderFullUI() {
@@ -932,7 +1087,8 @@
       } else if (media.isCountedAsWatchlist && media.category !== 'watchlist') {
           watchStatusHTML = `<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`;
       }
-      card.innerHTML = `<div style="position:relative;"><img data-src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'"><div class="card-actions card-actions-left"><button class="card-btn" data-action="toggle-move-dropdown" title="Sposta in..."><i class="fas fa-folder-open"></i></button></div><div class="card-actions card-actions-right"><button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button></div></div><div class="media-info"><h3 class="media-title" title="${media.title}">${media.title}</h3><div class="media-meta">${media.year ? `<span>${media.year}</span>` : ''}${media.runtime ? `<span>⏱️ ${formatRuntime(media.runtime)}</span>` : ''}${watchStatusHTML}</div>${ratingsHTML}</div>`;
+      const rewatchBadgeHTML = (media.rewatchCount > 0 && media.category === 'watched') ? `<span class="rewatch-badge">🔄×${media.rewatchCount + 1}</span>` : '';
+      card.innerHTML = `<div style="position:relative;"><img data-src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'">${rewatchBadgeHTML}<div class="card-actions card-actions-left"><button class="card-btn" data-action="toggle-move-dropdown" title="Sposta in..."><i class="fas fa-folder-open"></i></button></div><div class="card-actions card-actions-right"><button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button></div></div><div class="media-info"><h3 class="media-title" title="${media.title}">${media.title}</h3><div class="media-meta">${media.year ? `<span>${media.year}</span>` : ''}${media.runtime ? `<span>⏱️ ${formatRuntime(media.runtime)}</span>` : ''}${watchStatusHTML}</div>${ratingsHTML}</div>`;
       if (media.category !== 'watchlist') {
           card.addEventListener("dblclick", () => openQuickEditModal(media));
       }
@@ -996,10 +1152,12 @@
           media.rewatchCount = 0;
       }
 
-      media.category = category;
-      saveData();
-      renderMedia();
-      showNotification(`Film spostato in "${getCategoryName(category)}"`, "success");
+      setTimeout(() => {
+        media.category = category;
+        saveData();
+        renderMedia();
+        showNotification(`Film spostato in "${getCategoryName(category)}"`, "success");
+      }, 300);
     }
     
     function toggleCountedAsWatched(mediaId) {
@@ -1367,6 +1525,7 @@
         document.body.classList.add("modal-open");
     }
     
+    document.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
 </html>
