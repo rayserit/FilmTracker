@@ -624,6 +624,659 @@
   </style>
 </head>
 <body class="dark user-select-none">
+  <div id="viewModeBanner" class="view-mode-banner" style="display:none">
+    <i class="fas fa-eye"></i>
+    <span>Stai visualizzando una lista condivisa</span>
+    <button id="closeViewBtn" class="btn btn-danger" style="margin-left:auto">
+      <i class="fas fa-times"></i> Chiudi
+    </button>
+  </div>
+  <div class="top-bar">
+    <div class="main-controls">
+      <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
+      <select id="categoryFilter" class="filter-select">
+        <option value="all">Tutte le categorie</option>
+      </select>
+      <select id="sortFilter" class="filter-select">
+        <option value="alpha" selected>Alfabetico</option>
+        <option value="added">Ultimi aggiunti</option>
+        <option value="rating">Valutazione</option>
+        <option value="year">Anno di uscita</option>
+      </select>
+      <button id="addMediaBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi Film</button>
+      <button id="manageCategoriesBtn" class="btn btn-secondary"><i class="fas fa-folder"></i></button>
+      <div class="share-dropdown" id="shareDropdown">
+        <button id="shareBtn" class="btn btn-secondary dropdown-toggle"><i class="fas fa-share-alt"></i></button>
+        <div class="share-dropdown-content">
+          <h3>Condivisione attiva</h3>
+          <p>Chiunque abbia questo link può vedere la tua lista in tempo reale:</p>
+          <div class="share-link"><input type="text" id="shareLink" readonly><button id="copyLinkBtn" class="btn btn-primary"><i class="fas fa-copy"></i> Copia</button></div>
+          <div class=<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MediaTracker Pro</title>
+  
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  
+  <style>
+    :root {
+      --primary: #3A86FF;
+      --secondary: #00B4D8;
+      --danger: #ff4444;
+      --reset: #e74c3c;
+      --success: #228b22;
+      --warning: #ffcc00;
+      --bg-color: #f5f5f5;
+      --card-bg: white;
+      --text-color: #333;
+      --text-secondary: #666;
+      --border-color: #e0e0e0;
+    }
+
+    body.dark {
+      --bg-color: #1a1a1a;
+      --card-bg: #2d2d2d;
+      --text-color: #f5f5f5;
+      --text-secondary: #aaa;
+      --border-color: #444;
+      --reset: #ff6b6b;
+    }
+
+    .user-select-none {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      margin: 0;
+      padding: 1rem;
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .media-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      width: 180px;
+      transition: all 0.3s ease;
+      position: relative;
+      border: 1px solid var(--border-color);
+    }
+
+    .media-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+
+    .media-card.moving {
+      transform: scale(0.95);
+      opacity: 0.5;
+    }
+
+    .media-poster {
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      object-fit: cover;
+      object-position: center top;
+      cursor: pointer;
+      background-color: var(--border-color);
+    }
+
+    .media-info {
+      padding: 0.75rem;
+    }
+
+    .media-title {
+      font-size: 0.9rem;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-color);
+    }
+
+    .media-meta {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .watch-status-icon {
+        font-size: 0.9rem;
+        color: var(--primary);
+    }
+    
+    .watchlist-status-icon {
+        font-size: 0.9rem;
+        color: var(--secondary);
+    }
+
+    .watch-status-icon sup {
+        font-size: 0.7rem;
+        font-weight: bold;
+        margin-left: 1px;
+    }
+    
+    .rewatch-badge {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+
+    .media-ratings {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+    }
+    
+    .media-section {
+      transition: all 0.3s ease;
+    }
+
+    .media-section.hidden {
+      display: none !important;
+    }
+
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 1.5rem 0 0.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary);
+    }
+
+    .section-title {
+      color: var(--primary);
+      margin: 0;
+    }
+
+    .category-count {
+      background: var(--primary);
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      margin-left: 0.5rem;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    body.dark .btn:disabled {
+        background-color: #555;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: white;
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-reset {
+      background: var(--reset);
+      color: white;
+    }
+
+    .stat-item {
+      background: var(--card-bg);
+      padding: 0.75rem;
+      border-radius: 8px;
+      text-align: center;
+      min-width: 80px;
+      border: 1px solid var(--border-color);
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-open {
+      overflow: hidden;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-color);
+    }
+
+    .card-move-dropdown {
+        position: fixed;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        z-index: 1001;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
+    .card-move-dropdown-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+    .card-move-dropdown-item:hover {
+        background: var(--primary);
+        color: white;
+    }
+
+    .card-actions {
+      position: absolute;
+      top: 10px;
+      display: flex;
+      gap: 0.5rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .card-actions-left {
+        left: 10px;
+    }
+    .card-actions-right {
+        right: 10px;
+    }
+    .media-card:hover .card-actions {
+      opacity: 1;
+    }
+
+    .modal-open .card-actions {
+      display: none !important;
+    }
+
+    .card-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      flex: 1 1 auto;
+      min-width: 150px;
+      max-width: 300px; 
+    }
+
+    .filter-select {
+      flex: 1 1 auto;
+      min-width: 150px;
+      max-width: 180px; 
+    }
+
+    .omdb-results-container {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem;
+    }
+
+    .omdb-result-item {
+      padding: 0.5rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .omdb-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .omdb-result-item:hover {
+      background: rgba(0,0,0,0.05);
+    }
+
+    .omdb-poster-small {
+      width: 50px;
+      height: 75px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    
+    .category-management-modal {
+      max-width: 400px;
+    }
+
+    .categories-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin: 1rem 0;
+    }
+
+    .category-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .category-item:last-child {
+      border-bottom: none;
+    }
+
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--success);
+      color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      display: none;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .notification.error {
+      background: var(--danger);
+    }
+
+    .notification.warning {
+      background: var(--warning);
+      color: #333;
+    }
+    
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      background: var(--card-bg);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      position: absolute;
+      right: 1rem;
+      top: 5rem;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: none;
+    }
+
+    .auth-form.active {
+      display: flex;
+    }
+
+    .auth-form input {
+      margin: 0;
+    }
+
+    .auth-form-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .auth-form-buttons button {
+      flex: 1;
+    }
+
+    .auth-tabs {
+      display: flex;
+      margin-bottom: 0.5rem;
+    }
+
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.5rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+    .auth-tab.active {
+      border-bottom: 2px solid var(--primary);
+      font-weight: bold;
+    }
+
+    .auth-form-container {
+      display: none;
+    }
+
+    .auth-form-container.active {
+      display: block;
+    }
+
+    .share-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .share-dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 100;
+      width: 300px;
+    }
+
+    .share-dropdown.active .share-dropdown-content {
+      display: block;
+    }
+
+    .share-link {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .share-link input {
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    .share-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .view-mode-banner {
+      background: var(--primary);
+      color: white;
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    
+    .main-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-grow: 1;
+      flex-wrap: wrap;
+    }
+    
+    .stats-container {
+      display: flex;
+      gap: 1rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dropdown-toggle {
+      cursor: pointer;
+    }
+
+    .number-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .number-input-wrapper input {
+        padding-right: 25px;
+    }
+
+    .number-input-controls {
+        position: absolute;
+        right: 1px;
+        top: 1px;
+        bottom: 1px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .num-spinner-btn {
+        flex: 1;
+        width: 22px;
+        border: none;
+        background-color: var(--border-color);
+        color: var(--text-color);
+        cursor: pointer;
+        font-size: 0.8rem;
+        line-height: 1;
+    }
+    .num-spinner-btn:hover {
+        background-color: var(--primary);
+        color: white;
+    }
+    .num-spinner-btn.up {
+        border-top-right-radius: 7px;
+    }
+    .num-spinner-btn.down {
+        border-bottom-right-radius: 7px;
+    }
+
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="dark user-select-none">
   <!-- View Mode Banner -->
   <div id="viewModeBanner" class="view-mode-banner" style="display:none">
     <i class="fas fa-eye"></i>
@@ -1524,6 +2177,138 @@
         elements.quickEditModal.style.display = "flex";
         document.body.classList.add("modal-open");
     }
+    
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>"share-actions"><button id="disableShareBtn" class="btn btn-danger"><i class="fas fa-ban"></i> Disattiva</button></div>
+        </div>
+      </div>
+      <button id="exportBtn" class="btn btn-secondary"><i class="fas fa-download"></i></button>
+      <input type="file" id="importFile" accept=".json" style="display: none;">
+      <button id="importBtn" class="btn btn-secondary"><i class="fas fa-upload"></i></button>
+      <button id="resetBtn" class="btn btn-reset"><i class="fas fa-undo"></i></button>
+      <button id="themeToggle" class="btn"><i class="fas fa-moon"></i></button>
+      <div id="userInfo" style="display:none; margin-left: auto;"><button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+      <button id="authToggle" class="btn btn-secondary" style="margin-left: auto;"><i class="fas fa-user"></i> Login</button>
+    </div>
+  </div>
+  <div class="stats-container">
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <div class="stat-item"><div class="stat-value" id="statTotal">0</div><div>Totale</div></div>
+      <div class="stat-item"><div class="stat-value" id="statWatchlist">0</div><div>Da Vedere</div></div>
+      <div class="stat-item"><div class="stat-value" id="statWatched">0</div><div>Visti</div></div>
+      <div class="stat-item"><div class="stat-value" id="statRewatched">0</div><div>Rewatch</div></div>
+      <div class="stat-item"><div class="stat-value" id="statHours">0h 0m</div><div>Tempo Totale</div></div>
+    </div>
+    <div id="authForms" class="auth-form">
+      <div class="auth-tabs"><div class="auth-tab active" data-tab="login">Login</div><div class="auth-tab" data-tab="register">Registrati</div></div>
+      <div id="loginForm" class="auth-form-container active"><input type="email" id="loginEmail" placeholder="Email"><input type="password" id="loginPassword" placeholder="Password"><div class="auth-form-buttons"><button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button></div></div>
+      <div id="registerForm" class="auth-form-container"><input type="email" id="registerEmail" placeholder="Email"><input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)"><input type="password" id="registerConfirmPassword" placeholder="Conferma Password"><div class="auth-form-buttons"><button id="registerBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati</button></div></div>
+    </div>
+  </div>
+  <div id="mediaSectionsContainer"></div>
+  <div class="modal" id="addMediaModal"><div class="modal-content"><h2>Aggiungi Film</h2><input type="text" id="mediaTitle" placeholder="Titolo" style="margin-bottom: 1rem;"><div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;"><button id="searchOMDbBtn" class="btn btn-secondary" style="flex-shrink: 0;"><i class="fas fa-search"></i> Cerca su OMDb</button><select id="addMediaCategorySelect" class="filter-select" style="margin: 0;"></select></div><div id="omdbResults" class="omdb-results-container"></div><div style="display: flex; gap: 0.5rem; margin-top: 1rem;"><button id="saveMediaBtn" class="btn btn-primary">Salva</button><button id="cancelMediaBtn" class="btn btn-danger">Annulla</button></div></div></div>
+  <div class="modal" id="quickEditModal"><div class="modal-content" style="max-width: 400px;"><h2 id="quickEditTitle">Modifica Rapida</h2><div id="quickEditButtonsContainer" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;"><button class="btn" id="quickEditWatchlistBtn" style="width: 100%;"></button><button class="btn" id="quickEditWatchedBtn" style="width: 100%;"></button></div><div style="display: flex; align-items: center; gap: 1rem;"><label for="quickEditRewatchCount">Rewatch:</label><div class="number-input-wrapper" style="width: 100px;"><input type="number" id="quickEditRewatchCount" min="0" value="1" style="margin: 0; text-align: center;"><div class="number-input-controls"><button class="num-spinner-btn up" data-target="quickEditRewatchCount">+</button><button class="num-spinner-btn down" data-target="quickEditRewatchCount">-</button></div></div></div><div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;"><button id="confirmQuickEditBtn" class="btn btn-primary">Salva</button><button id="cancelQuickEditBtn" class="btn btn-danger">Annulla</button></div></div></div>
+  <div class="modal" id="categoryManagementModal"><div class="modal-content category-management-modal"><h2>Gestione Categorie</h2><div class="filter-row"><input type="text" id="newCategoryName" placeholder="Nome categoria"><button id="addCategoryBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi</button></div><div class="categories-list" id="categoriesList"></div><div style="display: flex; gap: 0.5rem; margin-top: 1rem;"><button id="closeCategoryManagementBtn" class="btn btn-danger">Chiudi</button></div></div></div>
+  <div id="notification" class="notification"><span id="notificationText"></span></div>
+
+  <script>
+    const OMDb_API_KEY="2526ef70",DEFAULT_POSTER="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==",DEFAULT_CATEGORIES=["watchlist","watched"];let mediaList=[],categories=[...DEFAULT_CATEGORIES],currentQuickEditMedia=null,currentOMDbSelection=null,currentUser=null,isViewMode=!1,activeShareId=null,debounceTimeout,lazyLoadObserver;const firebaseConfig={apiKey:"AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk",authDomain:"gametrackerdb.firebaseapp.com",databaseURL:"https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app",projectId:"gametrackerdb"},elements={authForms:document.getElementById("authForms"),authToggle:document.getElementById("authToggle"),userInfo:document.getElementById("userInfo"),loginBtn:document.getElementById("loginBtn"),loginEmail:document.getElementById("loginEmail"),loginPassword:document.getElementById("loginPassword"),registerBtn:document.getElementById("registerBtn"),registerEmail:document.getElementById("registerEmail"),registerPassword:document.getElementById("registerPassword"),registerConfirmPassword:document.getElementById("registerConfirmPassword"),logoutBtn:document.getElementById("logoutBtn"),loginForm:document.getElementById("loginForm"),registerForm:document.getElementById("registerForm"),addMediaBtn:document.getElementById("addMediaBtn"),manageCategoriesBtn:document.getElementById("manageCategoriesBtn"),shareBtn:document.getElementById("shareBtn"),shareDropdown:document.getElementById("shareDropdown"),exportBtn:document.getElementById("exportBtn"),importBtn:document.getElementById("importBtn"),importFile:document.getElementById("importFile"),resetBtn:document.getElementById("resetBtn"),themeToggle:document.getElementById("themeToggle"),searchInput:document.getElementById("searchInput"),categoryFilter:document.getElementById("categoryFilter"),sortFilter:document.getElementById("sortFilter"),statTotal:document.getElementById("statTotal"),statWatchlist:document.getElementById("statWatchlist"),statWatched:document.getElementById("statWatched"),statRewatched:document.getElementById("statRewatched"),statHours:document.getElementById("statHours"),mediaSectionsContainer:document.getElementById("mediaSectionsContainer"),addMediaModal:document.getElementById("addMediaModal"),mediaTitle:document.getElementById("mediaTitle"),searchOMDbBtn:document.getElementById("searchOMDbBtn"),omdbResults:document.getElementById("omdbResults"),saveMediaBtn:document.getElementById("saveMediaBtn"),cancelMediaBtn:document.getElementById("cancelMediaBtn"),addMediaCategorySelect:document.getElementById("addMediaCategorySelect"),categoryManagementModal:document.getElementById("categoryManagementModal"),newCategoryName:document.getElementById("newCategoryName"),addCategoryBtn:document.getElementById("addCategoryBtn"),categoriesList:document.getElementById("categoriesList"),closeCategoryManagementBtn:document.getElementById("closeCategoryManagementBtn"),quickEditModal:document.getElementById("quickEditModal"),quickEditTitle:document.getElementById("quickEditTitle"),quickEditWatchedBtn:document.getElementById("quickEditWatchedBtn"),quickEditWatchlistBtn:document.getElementById("quickEditWatchlistBtn"),quickEditRewatchCount:document.getElementById("quickEditRewatchCount"),confirmQuickEditBtn:document.getElementById("confirmQuickEditBtn"),cancelQuickEditBtn:document.getElementById("cancelQuickEditBtn"),notification:document.getElementById("notification"),notificationText:document.getElementById("notificationText"),shareLink:document.getElementById("shareLink"),copyLinkBtn:document.getElementById("copyLinkBtn"),disableShareBtn:document.getElementById("disableShareBtn"),viewModeBanner:document.getElementById("viewModeBanner"),closeViewBtn:document.getElementById("closeViewBtn")};firebase.initializeApp(firebaseConfig);const db=firebase.database();
+    function init(){setupAuthListeners(),setupEventListeners(),checkSharedView()||(currentUser?loadData():loadLocalData()),loadTheme(),loadSortOrder()}
+    function setupAuthListeners(){elements.authToggle.addEventListener("click",e=>{e.stopPropagation(),elements.authForms.classList.toggle("active")}),document.addEventListener("click",e=>{elements.authForms.contains(e.target)||e.target.closest("#authToggle")||elements.authForms.classList.remove("active")}),document.querySelectorAll(".auth-tab").forEach(e=>{e.addEventListener("click",()=>{document.querySelectorAll(".auth-tab").forEach(e=>e.classList.remove("active")),e.classList.add("active"),document.querySelectorAll(".auth-form-container").forEach(t=>t.classList.remove("active")),document.getElementById(`${e.dataset.tab}Form`).classList.add("active")})}),elements.loginBtn.addEventListener("click",()=>{const e=elements.loginEmail.value,t=elements.loginPassword.value;e&&t?firebase.auth().signInWithEmailAndPassword(e,t).then(()=>{showNotification("Login effettuato","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Inserisci email e password","warning")}),elements.registerBtn.addEventListener("click",()=>{const e=elements.registerEmail.value,t=elements.registerPassword.value,a=elements.registerConfirmPassword.value;e&&t&&a?t!==a?showNotification("Le password non corrispondono","warning"):t.length<6?showNotification("La password deve avere almeno 6 caratteri","warning"):firebase.auth().createUserWithEmailAndPassword(e,t).then(()=>{showNotification("Registrazione completata!","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Compila tutti i campi","warning")}),elements.logoutBtn.addEventListener("click",()=>firebase.auth().signOut()),firebase.auth().onAuthStateChanged(e=>{if(isViewMode)return;currentUser=e,updateAuthUI(),e?(loadData(),checkActiveShare()):loadLocalData()})}
+    function getAuthErrorMessage(e){switch(e.code){case"auth/email-already-in-use":return"Email già registrata";case"auth/invalid-email":return"Email non valida";case"auth/weak-password":return"Password troppo debole";case"auth/user-not-found":return"Utente non trovato";case"auth/wrong-password":return"Password errata";default:return"Errore: "+e.message}}
+    function updateAuthUI(){currentUser?(elements.userInfo.style.display="flex",elements.authToggle.style.display="none",document.querySelectorAll(".btn").forEach(e=>e.disabled=!1)):(elements.userInfo.style.display="none",elements.authToggle.style.display="block",document.querySelectorAll("#addMediaBtn, #manageCategoriesBtn, #shareBtn").forEach(e=>e.disabled=!0),document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(e=>{e.disabled=!1}))}
+    function loadData(){if(!currentUser)return;const e=`users/${currentUser.uid}/mediaTracker`;db.ref(`${e}/mediaList`).on("value",t=>{let a=t.val()||[];mediaList=a.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),renderMedia(),updateStats()}),db.ref(`${e}/categories`).once("value").then(e=>{categories=e.val()||[...DEFAULT_CATEGORIES],renderFullUI()})}
+    function loadLocalData(){try{let e=JSON.parse(localStorage.getItem("mediaList"))||[];mediaList=e.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),categories=JSON.parse(localStorage.getItem("categories"))||[...DEFAULT_CATEGORIES],renderFullUI(),updateStats()}catch(e){console.error("Error loading local data:",e)}}
+    function saveData(){currentUser?db.ref(`users/${currentUser.uid}/mediaTracker`).set({mediaList:mediaList,categories:categories}).catch(e=>{console.error("Error saving to Firebase:",e)}):saveToLocal()}
+    function saveToLocal(){try{localStorage.setItem("mediaList",JSON.stringify(mediaList)),localStorage.setItem("categories",JSON.stringify(categories))}catch(e){console.error("Error saving locally:",e)}}
+    function checkSharedView(){const e=new URLSearchParams(window.location.search),t=e.get("uid"),a=e.get("share");return!!(t&&a&&(isViewMode=!0,db.ref(`users/${t}/mediaTracker/activeShare`).once("value").then(e=>{const o=e.val();o&&o.shareId===a&&o.expiresAt>Date.now()?Promise.all([db.ref(`users/${t}/mediaTracker/mediaList`).once("value"),db.ref(`users/${t}/mediaTracker/categories`).once("value")]).then(([e,t])=>{let a=e.val()||[];mediaList=a.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),categories=t.val()||[...DEFAULT_CATEGORIES],renderFullUI(),updateStats(),enableViewMode(uid)}):showNotification("Link non valido o scaduto","error")}).catch(()=>showNotification("Errore nel caricamento della libreria condivisa","error")),!0))}
+    function activateSharing(){if(!currentUser)return;const e=generateId(),t=Date.now()+6048e5;db.ref(`users/${currentUser.uid}/mediaTracker/activeShare`).set({shareId:e,expiresAt:t}).then(()=>{activeShareId=e,updateShareLink(e),showNotification("Condivisione attivata (valida 7 giorni)","success")}).catch(e=>showNotification("Errore nell'attivazione della condivisione","error"))}
+    function enableViewMode(e){isViewMode=!0,document.querySelector(".main-controls").style.display="none",elements.viewModeBanner.style.display="flex",db.ref(`users/${e}/mediaTracker/mediaList`).on("value",e=>{mediaList=e.val()||[],renderMedia(),updateStats()})}
+    function closeViewMode(){window.location.href=window.location.pathname}
+    function checkActiveShare(){currentUser&&db.ref(`users/${currentUser.uid}/mediaTracker/activeShare`).once("value").then(e=>{const t=e.val();t&&t.shareId&&(activeShareId=t.shareId,updateShareLink(activeShareId))})}
+    function updateShareLink(e){if(e){const t=`${window.location.origin}${window.location.pathname}?uid=${currentUser.uid}&share=${e}`;elements.shareLink.value=t,elements.shareDropdown.classList.add("active")}}
+    function deactivateSharing(){currentUser&&db.ref(`users/${currentUser.uid}/mediaTracker/activeShare`).remove().then(()=>{activeShareId=null,elements.shareDropdown.classList.remove("active"),showNotification("Condivisione disattivata","success")}).catch(e=>showNotification("Errore nella disattivazione","error"))}
+    function generateId(){return Math.random().toString(36).substring(2,15)}
+    function renderFullUI(){renderCategorySections(),updateCategoryFilter(),populateAddMediaCategorySelect(),renderCategoriesList(),renderMedia()}
+    function renderMedia(){clearMediaGrids(),updateStats();const e=elements.searchInput.value.toLowerCase(),t=elements.categoryFilter.value,a=elements.sortFilter.value;document.querySelectorAll(".media-section").forEach(e=>{e.style.display="block"});let o=[...mediaList];e&&(o=o.filter(t=>t.title.toLowerCase().includes(e))),"all"!==t&&(o=o.filter(e=>e.category===t),document.querySelectorAll(".media-section").forEach(e=>{e.dataset.category!==t&&(e.style.display="none")})),o.sort((e,t)=>{switch(a){case"alpha":return e.title.localeCompare(t.title);case"rating":return(parseFloat(t.imdbRating)||0)-(parseFloat(e.imdbRating)||0);case"year":return(parseInt(t.year)||0)-(parseInt(e.year)||0);case"added":default:return new Date(t.addedAt)-new Date(e.addedAt)}}),o.forEach(e=>{const t=document.getElementById(`${e.category}Grid`);if(t){const a=t.querySelector(`.media-card[data-id="${e.id}"]`);a?t.replaceChild(createMediaCard(e),a):t.appendChild(createMediaCard(e))}}),setupLazyLoading(),updateCounts()}
+    function clearMediaGrids(){categories.forEach(e=>{const t=document.getElementById(`${e}Grid`);t&&(t.innerHTML="")})}
+    function updateStats() {
+        const processedIds = new Set();
+        const stats = { total: 0, watchlist: 0, watched: 0, rewatched: 0, hours: 0, minutes: 0 };
+
+        mediaList.forEach(media => {
+            const uniqueId = media.imdbID || media.title.toLowerCase().trim();
+            if (processedIds.has(uniqueId)) {
+                return;
+            }
+            processedIds.add(uniqueId);
+            stats.total++;
+
+            const isConsideredWatched = media.category === 'watched' || media.isCountedAsWatched;
+
+            if (isConsideredWatched) {
+                stats.watched++;
+                if (media.rewatchCount > 0) {
+                    stats.rewatched += media.rewatchCount;
+                }
+                const runtime = media.runtime ? parseInt(media.runtime.replace(/\D/g, '')) : 0;
+                if (runtime > 0) {
+                    const totalViews = (media.rewatchCount || 0) + 1;
+                    stats.minutes += runtime * totalViews;
+                }
+            } else if (media.category === 'watchlist' || media.isCountedAsWatchlist) {
+                stats.watchlist++;
+            }
+        });
+
+        stats.hours = Math.floor(stats.minutes / 60);
+        stats.minutes %= 60;
+        elements.statTotal.textContent = stats.total;
+        elements.statWatchlist.textContent = stats.watchlist;
+        elements.statWatched.textContent = stats.watched;
+        elements.statRewatched.textContent = stats.rewatched;
+        elements.statHours.textContent = `${stats.hours}h ${stats.minutes}m`;
+    }
+    function updateCounts(){categories.forEach(e=>{const t=document.getElementById(`${e}Count`);if(t){const a=mediaList.filter(t=>t.category===e).length;t.textContent=a;const o=document.getElementById(`${e}Section`);o&&"all"!==elements.categoryFilter.value&&0===a&&(o.style.display="none")}})}
+    function createMediaCard(e){const t=document.createElement("div");t.className="media-card",t.dataset.id=e.id;const a=e.imdbRating||e.rottenTomatoes?`<div class="media-ratings">${e.imdbRating?`<span>⭐ ${e.imdbRating}</span>`:""}${e.rottenTomatoes?`<span>🍅 ${e.rottenTomatoes}</span>`:""}</div>`:"";let o="";if(e.isCountedAsWatched||"watched"===e.category){const t=(e.rewatchCount||0)+1,a=t>1?`<sup>${t}</sup>`:"";o=`<span class="watch-status-icon" title="Visto ${t} volte"><i class="fas fa-eye"></i>${a}</span>`}else e.isCountedAsWatchlist&&"watchlist"!==e.category&&(o=`<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`);return t.innerHTML=`<div style="position:relative;"><img data-src="${fixPosterUrl(e.poster)||DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'"><div class="card-actions card-actions-left"><button class="card-btn" data-action="toggle-move-dropdown" title="Sposta in..."><i class="fas fa-folder-open"></i></button></div><div class="card-actions card-actions-right"><button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button></div></div><div class="media-info"><h3 class="media-title" title="${e.title}">${e.title}</h3><div class="media-meta">${e.year?`<span>${e.year}</span>`:""}${e.runtime?`<span>⏱️ ${formatRuntime(e.runtime)}</span>`:""}${o}</div>${a}</div>`,"watchlist"!==e.category&&t.addEventListener("dblclick",()=>openQuickEditModal(e)),t.querySelector("[data-action='toggle-move-dropdown']").addEventListener("click",a=>{a.stopPropagation(),showCardMoveDropdown(e,a.currentTarget)}),t.querySelector("[data-action='delete']").addEventListener("click",a=>{a.stopPropagation(),deleteMedia(e.id)}),t}
+    function fixPosterUrl(e){return e&&"N/A"!==e?e.startsWith("http://")||e.startsWith("https://")?e:e.startsWith("//")?`https:${e}`:`https://${e}`:null}
+    function renderCategorySections(){elements.mediaSectionsContainer.innerHTML=categories.map(e=>`<div class="media-section" id="${e}Section" data-category="${e}" style="display:block"><div class="section-header"><h2 class="section-title user-select-none">${getCategoryName(e)}</h2><span id="${e}Count" class="category-count">0</span></div><div class="media-grid" id="${e}Grid"></div></div>`).join("")}
+    function renderCategoriesList(){elements.categoriesList.innerHTML=categories.map((e,t)=>`<div class="category-item" data-category-name="${e}"><span class="category-name-span user-select-none">${getCategoryName(e)}</span><div style="display: flex; gap: 0.2rem;">${DEFAULT_CATEGORIES.includes(e)?"":`<button class="btn btn-secondary rename-category-btn" data-category="${e}"><i class="fas fa-pencil-alt"></i></button><button class="btn btn-danger delete-category-btn" data-category="${e}"><i class="fas fa-trash"></i></button>`}<button class="btn btn-secondary move-up-btn" data-category="${e}" ${0===t?"disabled":""}><i class="fas fa-arrow-up"></i></button><button class="btn btn-secondary move-down-btn" data-category="${e}" ${t===categories.length-1?"disabled":""}><i class="fas fa-arrow-down"></i></button></div></div>`).join(""),document.querySelectorAll(".rename-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation();const a=e.closest(".category-item"),o=a.dataset.categoryName,n=a.querySelector(".category-name-span");renameCategory(o,n)})}),document.querySelectorAll(".delete-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation(),deleteCategory(e.dataset.category)})}),document.querySelectorAll(".move-up-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,-1))}),document.querySelectorAll(".move-down-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,1))})}
+    function renameCategory(e,t){const a=t.textContent,o=document.createElement("input");o.type="text",o.value=a,o.className="filter-select",t.replaceWith(o),o.focus();const n=()=>{const t=o.value.trim();if(t&&t!==e&&!categories.includes(t)){const a=categories.indexOf(e);a>-1&&(categories[a]=t),mediaList.forEach(a=>{a.category===e&&(a.category=t)}),saveData(),renderFullUI(),showNotification(`Categoria rinominata in "${t}"`,"success")}else{const e=document.createElement("span");e.className="category-name-span",e.textContent=a,o.replaceWith(e),categories.includes(t)&&t!==oldName&&showNotification("Nome categoria già esistente.","warning")}};o.addEventListener("blur",n),o.addEventListener("keydown",e=>{"Enter"===e.key&&o.blur(),"Escape"===e.key&&(()=>{const e=document.createElement("span");e.className="category-name-span",e.textContent=a,o.replaceWith(e)})()})}
+    function moveCategory(e,t){const a=categories.indexOf(e),o=a+t;o<0||o>=categories.length||([categories[a],categories[o]]=[categories[o],categories[a]],saveData(),renderFullUI())}
+    function updateCategoryFilter(){const e=elements.categoryFilter.value;elements.categoryFilter.innerHTML=`<option value="all">Tutte le categorie</option>${categories.map(e=>`<option value="${e}">${getCategoryName(e)}</option>`).join("")}`,elements.categoryFilter.value=e}
+    function populateAddMediaCategorySelect(){const e=localStorage.getItem("lastUsedCategory");elements.addMediaCategorySelect.innerHTML=categories.map(e=>`<option value="${e}">${getCategoryName(e)}</option>`).join(""),e&&categories.includes(e)&&(elements.addMediaCategorySelect.value=e)}
+    function getCategoryName(e){return{watchlist:"Da Vedere",watched:"Visti"}[e]||e}
+    function addCategory(e){if(!e)return showNotification("Inserisci un nome per la categoria","warning"),!1;const t=e.trim();return categories.some(e=>e.toLowerCase()===t.toLowerCase())?(showNotification("Questa categoria esiste già","warning"),!1):(categories.push(t),saveData(),renderFullUI(),showNotification(`Categoria "${t}" creata`,"success"),!0)}
+    function deleteCategory(e){DEFAULT_CATEGORIES.includes(e)?showNotification("Non puoi eliminare questa categoria predefinita","warning"):confirm(`Eliminare la categoria "${e}"? Tutti i film verranno spostati in "Da Vedere".`)&&(mediaList.forEach(t=>{t.category===e&&(t.category="watchlist")}),categories=categories.filter(t=>t!==e),saveData(),renderFullUI(),showNotification(`Categoria "${e}" eliminata`,"success"))}
+    function showCardMoveDropdown(e,t){closeCardMoveDropdowns();const a=document.createElement("div");a.className="card-move-dropdown",categories.filter(t=>t!==e.category).forEach(t=>{const o=document.createElement("div");o.className="card-move-dropdown-item user-select-none",o.textContent=getCategoryName(t),o.onclick=a=>{a.stopPropagation(),moveMediaToCategory(e.id,t),closeCardMoveDropdowns()},a.appendChild(o)});const o=t.getBoundingClientRect();a.style.left=`${o.left}px`,a.style.top=`${o.bottom+5}px`,document.body.appendChild(a),setTimeout(()=>{document.addEventListener("click",closeCardMoveDropdowns,{once:!0})},0)}
+    function closeCardMoveDropdowns(){document.querySelectorAll(".card-move-dropdown").forEach(e=>e.remove())}
+    function moveMediaToCategory(e,t){const a=mediaList.find(t=>t.id===e);if(!a)return;const o=document.querySelector(`.media-card[data-id="${e}"]`);o&&o.classList.add("moving");const n=a.category==="watched";"watchlist"===t&&(a.isCountedAsWatched=!1,a.rewatchCount=0),n&&"watched"!==t&&(a.isCountedAsWatched=!1,a.rewatchCount=0),"watched"===t&&(a.isCountedAsWatched=!1,a.isCountedAsWatchlist=!1),setTimeout(()=>{a.category=t,saveData(),renderMedia(),showNotification(`Film spostato in "${getCategoryName(t)}"`,"success")},300)}
+    function toggleCountedAsWatched(e){const t=mediaList.find(t=>t.id===e);t&&(t.isCountedAsWatched=!t.isCountedAsWatched,t.isCountedAsWatched?(t.isCountedAsWatchlist=!1,t.rewatchCount<0&&(t.rewatchCount=0)):t.rewatchCount=0,openQuickEditModal(t))}
+    function toggleCountedAsWatchlist(e){const t=mediaList.find(t=>t.id===e);t&&(t.isCountedAsWatchlist=!t.isCountedAsWatchlist,t.isCountedAsWatchlist&&(t.isCountedAsWatched=!1),openQuickEditModal(t))}
+    function markRewatch(e,t){const a=mediaList.find(t=>t.id===e);a&&(a.rewatchCount=t,t>=1&&"watched"!==a.category&&!a.isCountedAsWatched&&(a.isCountedAsWatched=!0,a.isCountedAsWatchlist=!1),saveData(),refreshSingleMedia(e),updateStats(),showNotification(`Rewatch di "${a.title}" aggiornati`,"success"))}
+    function refreshSingleMedia(e){const t=mediaList.find(t=>t.id===e);if(!t)return;const a=document.querySelector(`.media-card[data-id="${e}"]`),o=a?a.parentElement:document.getElementById(`${t.category}Grid`);if(a&&o){const e=createMediaCard(t);o.replaceChild(e,a),lazyLoadObserver&&lazyLoadObserver.observe(e.querySelector(".lazy"))}else if(o){const e=createMediaCard(t);o.appendChild(e),lazyLoadObserver&&lazyLoadObserver.observe(e.querySelector(".lazy"))}updateCounts()}
+    function deleteMedia(e){isViewMode||!confirm("Eliminare questo film dalla lista?")||(mediaList=mediaList.filter(t=>t.id!==e),saveData(),renderMedia(),showNotification("Film eliminato","success"))}
+    function closeModal(e){e.style.display="none",document.body.classList.remove("modal-open")}
+    async function searchOMDb(){const e=elements.mediaTitle.value.trim();if(!e)return void showNotification("Inserisci un titolo","warning");elements.omdbResults.innerHTML="<p>Ricerca in corso...</p>";try{let t=`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&s=${encodeURIComponent(e)}&type=movie`;const a=await fetch(t),o=await a.json();if("True"===o.Response)displayOMDbResults(o.Search);else if("Too many results."===o.Error){showNotification("Troppi risultati. Tento una ricerca esatta...","warning");let t=`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&t=${encodeURIComponent(e)}&type=movie`;const a=await fetch(t),n=await a.json();"True"===n.Response?displayOMDbResults([n]):elements.omdbResults.innerHTML=`<p>${n.Error||"Nessun risultato trovato"}</p>`}else elements.omdbResults.innerHTML=`<p>${o.Error||"Nessun risultato trovato"}</p>`}catch(t){showNotification("Errore nella ricerca","error"),console.error("OMDb error:",t),elements.omdbResults.innerHTML="<p>Errore durante la ricerca</p>"}}
+    function displayOMDbResults(e){elements.omdbResults.innerHTML=e.map(e=>`<div class="omdb-result-item user-select-none" data-id="${e.imdbID}"><img src="${fixPosterUrl(e.Poster)}" class="omdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'"><div><div><strong>${e.Title}</strong></div><div>${e.Year}</div></div></div>`).join(""),document.querySelectorAll(".omdb-result-item").forEach(e=>{e.addEventListener("click",async()=>{const t=e.dataset.id,a=await getOMDbMovieDetails(t);a&&(currentOMDbSelection=a,elements.mediaTitle.value=a.Title,showNotification(`Dettagli di "${a.Title}" pronti per il salvataggio`,"success"))})})}
+    async function getOMDbMovieDetails(e){try{const t=await fetch(`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&i=${e}`),a=await t.json();if("False"===a.Response)throw new Error(a.Error||"Dettagli non disponibili");return a}catch(t){return console.error("Error fetching movie details:",t),showNotification("Errore nel caricamento dei dettagli","error"),null}}
+    function addNewMedia(){if(isViewMode)return;const e=elements.mediaTitle.value.trim();if(!e)return void showNotification("Inserisci un titolo","warning");const t=elements.addMediaCategorySelect.value;localStorage.setItem("lastUsedCategory",t);let a={id:Date.now().toString(),title:e,category:t,addedAt:(new Date).toISOString(),poster:"",rewatchCount:0,isCountedAsWatched:"watched"===t,isCountedAsWatchlist:"watchlist"===t,year:"",imdbID:null,imdbRating:"",rottenTomatoes:"",runtime:""};if(currentOMDbSelection){a={...a,title:currentOMDbSelection.Title,year:currentOMDbSelection.Year,poster:fixPosterUrl(currentOMDbSelection.Poster),imdbID:currentOMDbSelection.imdbID,imdbRating:currentOMDbSelection.imdbRating,runtime:currentOMDbSelection.Runtime||""};if(currentOMDbSelection.Ratings){const e=currentOMDbSelection.Ratings.find(e=>"Rotten Tomatoes"===e.Source);e&&(a.rottenTomatoes=e.Value)}}mediaList.push(a),saveData(),closeModal(elements.addMediaModal),renderMedia(),showNotification(`Film "${a.title}" aggiunto!`,"success")}
+    function exportData(){if(isViewMode)return;const e={mediaList:mediaList,categories:categories,exportedAt:(new Date).toISOString()},t=new Blob([JSON.stringify(e,null,2)],{type:"application/json"}),a=URL.createObjectURL(t),o=document.createElement("a");o.href=a,o.download=`mediatracker_export_${(new Date).toISOString().split("T")[0]}.json`,o.click(),URL.revokeObjectURL(a),showNotification("Dati esportati","success")}
+    function importData(e){if(isViewMode||!e)return;const t=new FileReader;t.onload=e=>{try{const t=JSON.parse(e.target.result);if(!Array.isArray(t.mediaList))throw new Error("Formato file non valido");confirm(`Importare ${t.mediaList.length} media? I dati attuali verranno sovrascritti.`)&&(mediaList=t.mediaList,categories=t.categories||[...DEFAULT_CATEGORIES],saveData(),renderFullUI(),showNotification("Dati importati con successo","success"))}catch(e){showNotification("Errore nell'importazione: "+e.message,"error")}},t.readAsText(e)}
+    function resetApp(){if(isViewMode)return;confirm("Resettare completamente l'applicazione? Tutti i dati verranno persi.")&&(mediaList=[],categories=[...DEFAULT_CATEGORIES],saveData(),elements.searchInput.value="",elements.categoryFilter.value="all",elements.sortFilter.value="alpha",renderFullUI(),showNotification("Applicazione resettata","success"))}
+    function loadTheme(){const e=localStorage.getItem("theme")||"dark";document.body.classList.toggle("dark","dark"===e),elements.themeToggle.innerHTML=`<i class="fas fa-${"dark"===e?"sun":"moon"}"></i>`}
+    function toggleTheme(){document.body.classList.toggle("dark");const e=document.body.classList.contains("dark");localStorage.setItem("theme",e?"dark":"light"),elements.themeToggle.innerHTML=`<i class="fas fa-${e?"sun":"moon"}"></i>`}
+    function loadSortOrder(){const e=localStorage.getItem("mediaTrackerSortOrder");e&&(elements.sortFilter.value=e)}
+    function openCategoryManagement(){isViewMode||(renderCategoriesList(),elements.categoryManagementModal.style.display="flex",document.body.classList.add("modal-open"))}
+    function showNotification(e,t="success"){elements.notificationText.textContent=e,elements.notification.className=`notification ${t}`,elements.notification.style.display="block",setTimeout(()=>{elements.notification.style.display="none"},3e3)}
+    function setupLazyLoading(){if(lazyLoadObserver)lazyLoadObserver.disconnect();lazyLoadObserver=new IntersectionObserver((e,t)=>{e.forEach(e=>{if(e.isIntersecting){const a=e.target;a.src=a.dataset.src,a.classList.remove("lazy"),t.unobserve(a)}})});const e=document.querySelectorAll(".lazy");e.forEach(e=>lazyLoadObserver.observe(e))}
+    function formatRuntime(e){if(!e)return"";const t=parseInt(e);return isNaN(t)||t<=0?"":Math.floor(t/60)>0?`${Math.floor(t/60)}h ${t%60>0?`${t%60}m`:""}`:`${t%60}m`}
+    function setupEventListeners(){elements.addMediaBtn.addEventListener("click",()=>{elements.mediaTitle.value="",elements.omdbResults.innerHTML="",currentOMDbSelection=null,elements.saveMediaBtn.textContent="Salva",elements.saveMediaBtn.onclick=addNewMedia,populateAddMediaCategorySelect(),elements.addMediaModal.style.display="flex",document.body.classList.add("modal-open")}),elements.confirmQuickEditBtn.addEventListener("click",()=>{const e=parseInt(elements.quickEditRewatchCount.value)||0;e<0?showNotification("Inserisci un numero valido","warning"):(markRewatch(currentQuickEditMedia.id,e),closeModal(elements.quickEditModal))}),elements.quickEditWatchedBtn.addEventListener("click",()=>{toggleCountedAsWatched(currentQuickEditMedia.id)}),elements.quickEditWatchlistBtn.addEventListener("click",()=>{toggleCountedAsWatchlist(currentQuickEditMedia.id)}),elements.cancelQuickEditBtn.addEventListener("click",()=>{currentUser?loadData():loadLocalData(),closeModal(elements.quickEditModal)}),elements.manageCategoriesBtn.addEventListener("click",openCategoryManagement),elements.addCategoryBtn.addEventListener("click",()=>{addCategory(elements.newCategoryName.value)&&(elements.newCategoryName.value="")}),elements.closeCategoryManagementBtn.addEventListener("click",()=>closeModal(elements.categoryManagementModal)),elements.cancelMediaBtn.addEventListener("click",()=>closeModal(elements.addMediaModal)),elements.searchOMDbBtn.addEventListener("click",searchOMDb),document.addEventListener("click",e=>{e.target.closest(".card-move-dropdown")||closeCardMoveDropdowns()}),elements.addMediaModal.addEventListener("click",e=>{e.target===elements.addMediaModal&&closeModal(elements.addMediaModal)}),elements.categoryManagementModal.addEventListener("click",e=>{e.target===elements.categoryManagementModal&&closeModal(elements.categoryManagementModal)}),elements.quickEditModal.addEventListener("click",e=>{e.target===elements.quickEditModal&&closeModal(elements.quickEditModal)}),elements.exportBtn.addEventListener("click",exportData),elements.importBtn.addEventListener("click",()=>elements.importFile.click()),elements.importFile.addEventListener("change",e=>importData(e.target.files[0])),elements.resetBtn.addEventListener("click",resetApp),elements.themeToggle.addEventListener("click",toggleTheme),elements.searchInput.addEventListener("input",()=>{clearTimeout(debounceTimeout),debounceTimeout=setTimeout(()=>{renderMedia()},300)}),elements.categoryFilter.addEventListener("change",renderMedia),elements.sortFilter.addEventListener("change",()=>{localStorage.setItem("mediaTrackerSortOrder",elements.sortFilter.value),renderMedia()}),elements.shareBtn.addEventListener("click",e=>{e.stopPropagation(),activeShareId?elements.shareDropdown.classList.toggle("active"):activateSharing()}),document.addEventListener("click",e=>{e.target.closest(".share-dropdown")||elements.shareDropdown.classList.remove("active")}),elements.copyLinkBtn.addEventListener("click",()=>{navigator.clipboard.writeText(elements.shareLink.value),showNotification("Link copiato!","success")}),elements.disableShareBtn.addEventListener("click",()=>{deactivateSharing(),elements.shareDropdown.classList.remove("active")}),elements.closeViewBtn.addEventListener("click",closeViewMode),document.querySelectorAll(".num-spinner-btn").forEach(e=>{e.addEventListener("click",t=>{const a=document.getElementById(t.currentTarget.dataset.target);if(a){let o=parseInt(a.value)||0;o=t.currentTarget.classList.contains("up")?o+1:o-1;const n=parseInt(a.min);isNaN(n)||o>=n||(o=n),a.value=o}})})
+    }
+    function openQuickEditModal(e){if(isViewMode)return;currentQuickEditMedia=e,elements.quickEditTitle.textContent=`Modifica: ${e.title}`,elements.quickEditRewatchCount.value=e.rewatchCount||0;const t=elements.quickEditWatchlistBtn;"watched"===e.category?(t.style.display="none"):(t.style.display="inline-flex",e.isCountedAsWatchlist?(t.innerHTML='<i class="fas fa-times"></i> Rimuovi da vedere come qui',t.className="btn btn-danger"):(t.innerHTML='<i class="fas fa-list-alt"></i> Segna come da vedere qui',t.className="btn btn-secondary"));const a=elements.quickEditWatchedBtn;"watched"===e.category?a.style.display="none":(a.style.display="inline-flex",e.isCountedAsWatched?(a.innerHTML='<i class="fas fa-times"></i> Rimuovi come visto qui',a.className="btn btn-danger"):(a.innerHTML='<i class="fas fa-check-double"></i> Segna come visto qui',a.className="btn btn-success")),elements.quickEditModal.style.display="flex",document.body.classList.add("modal-open")}
     
     document.addEventListener("DOMContentLoaded", init);
   </script>
