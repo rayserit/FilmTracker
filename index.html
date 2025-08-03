@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MediaTracker Pro</title>
+  <title>Film Tracker</title>
   
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
   
@@ -113,7 +113,6 @@
         color: var(--primary);
     }
     
-    /* NUOVO: Stile per l'icona "da vedere qui" */
     .watchlist-status-icon {
         font-size: 0.9rem;
         color: var(--secondary);
@@ -740,7 +739,6 @@
   <div class="modal" id="addMediaModal">
     <div class="modal-content">
       <h2>Aggiungi Film</h2>
-      <!-- FIX: Rimosso campo Anno -->
       <input type="text" id="mediaTitle" placeholder="Titolo" style="margin-bottom: 1rem;">
 
       <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
@@ -761,7 +759,6 @@
     <div class="modal-content" style="max-width: 400px;">
         <h2 id="quickEditTitle">Modifica Rapida</h2>
         <div id="quickEditButtonsContainer" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
-            <!-- NUOVO: Pulsante per "Da Vedere Qui" -->
             <button class="btn" id="quickEditWatchlistBtn" style="width: 100%;"></button>
             <button class="btn" id="quickEditWatchedBtn" style="width: 100%;"></button>
         </div>
@@ -905,14 +902,52 @@
     function getAuthErrorMessage(e){switch(e.code){case"auth/email-already-in-use":return"Email già registrata";case"auth/invalid-email":return"Email non valida";case"auth/weak-password":return"Password troppo debole";case"auth/user-not-found":return"Utente non trovato";case"auth/wrong-password":return"Password errata";default:return"Errore: "+e.message}}
     function updateAuthUI(){currentUser?(elements.userInfo.style.display="flex",elements.authToggle.style.display="none",document.querySelectorAll(".btn").forEach(e=>e.disabled=!1)):(elements.userInfo.style.display="none",elements.authToggle.style.display="block",document.querySelectorAll("#addMediaBtn, #manageCategoriesBtn, #exportBtn, #importBtn, #resetBtn, #shareBtn").forEach(e=>e.disabled=!0))}
 
-    // Caricamento dati... (invariato)
-    function loadData(){currentUser&&(db.ref(`users/${currentUser.uid}/mediaList`).on("value",e=>{mediaList=e.val()||[],renderMedia(),updateStats()}),db.ref(`users/${currentUser.uid}/categories`).once("value").then(e=>{categories=e.val()||[...DEFAULT_CATEGORIES],renderFullUI()}))}
-    function loadLocalData(){try{mediaList=JSON.parse(localStorage.getItem("mediaList"))||[],categories=JSON.parse(localStorage.getItem("categories"))||[...DEFAULT_CATEGORIES],renderFullUI(),updateStats()}catch(e){console.error("Error loading local data:",e)}}
+    // Caricamento dati
+    function loadData(){currentUser&&(db.ref(`users/${currentUser.uid}/mediaList`).on("value",e=>{let t=e.val()||[];mediaList=t.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),renderMedia(),updateStats()}),db.ref(`users/${currentUser.uid}/categories`).once("value").then(e=>{categories=e.val()||[...DEFAULT_CATEGORIES],renderFullUI()}))}
+    function loadLocalData(){try{let e=JSON.parse(localStorage.getItem("mediaList"))||[];mediaList=e.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),categories=JSON.parse(localStorage.getItem("categories"))||[...DEFAULT_CATEGORIES],renderFullUI(),updateStats()}catch(e){console.error("Error loading local data:",e)}}
     function saveData(){currentUser?db.ref(`users/${currentUser.uid}/mediaList`).set(mediaList).then(()=>db.ref(`users/${currentUser.uid}/categories`).set(categories)).then(()=>saveToLocal()).catch(e=>{console.error("Error saving to Firebase:",e),saveToLocal()}):saveToLocal()}
     function saveToLocal(){try{localStorage.setItem("mediaList",JSON.stringify(mediaList)),localStorage.setItem("categories",JSON.stringify(categories))}catch(e){console.error("Error saving locally:",e)}}
 
-    // Condivisione... (invariato)
-    function checkSharedView(){const e=new URLSearchParams(window.location.search),t=e.get("uid"),a=e.get("share");t&&a&&(isViewMode=!0,db.ref(`users/${t}/activeShare`).once("value").then(e=>{const a=e.val();a&&a.shareId===share&&a.expiresAt>Date.now()?(Promise.all([db.ref(`users/${t}/mediaList`).once("value"),db.ref(`users/${t}/categories`).once("value")]).then(([e,t])=>{mediaList=e.val()||[],categories=t.val()||[...DEFAULT_CATEGORIES],renderFullUI(),updateStats()}),enableViewMode(t)):(showNotification("Link non valido o scaduto","error"),setTimeout(()=>{window.location.href=window.location.pathname},2e3))}).catch(()=>showNotification("Errore nel caricamento","error")))}
+    // Condivisione
+    function checkSharedView() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const uid = urlParams.get('uid');
+        const share = urlParams.get('share');
+
+        if (uid && share) {
+            isViewMode = true;
+
+            db.ref(`users/${uid}/activeShare`).once('value').then(snap => {
+                const data = snap.val();
+                if (data && data.shareId === share && data.expiresAt > Date.now()) {
+                    Promise.all([
+                        db.ref(`users/${uid}/mediaList`).once('value'),
+                        db.ref(`users/${uid}/categories`).once('value')
+                    ]).then(([mediaSnap, categoriesSnap]) => {
+                        let remoteMediaList = mediaSnap.val() || [];
+                        // FIX: Assicura che i dati remoti abbiano le nuove proprietà
+                        mediaList = remoteMediaList.map(media => ({
+                            ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 },
+                            ...media
+                        }));
+                        categories = categoriesSnap.val() || [...DEFAULT_CATEGORIES];
+                        
+                        renderFullUI();
+                        updateStats();
+                        // FIX: Abilita la view mode solo DOPO il caricamento
+                        enableViewMode(uid);
+                    });
+                } else {
+                    showNotification("Link non valido o scaduto", "error");
+                    setTimeout(() => {
+                        window.location.href = window.location.pathname;
+                    }, 2000);
+                }
+            }).catch(() => {
+                showNotification("Errore nel caricamento della libreria condivisa", "error");
+            });
+        }
+    }
     function activateSharing(){if(!currentUser)return;const e=generateId(),t=Date.now()+6048e5;db.ref(`users/${currentUser.uid}/activeShare`).set({shareId:e,expiresAt:t}).then(()=>{activeShareId=e,updateShareLink(e),showNotification("Condivisione attivata (valida 7 giorni)","success")}).catch(e=>showNotification("Errore nell'attivazione della condivisione","error"))}
     function enableViewMode(e){isViewMode=!0,document.querySelector(".main-controls").style.display="none",elements.viewModeBanner.style.display="flex",db.ref(`users/${e}/mediaList`).on("value",e=>{mediaList=e.val()||[],renderMedia(),updateStats()})}
     function closeViewMode(){window.location.href=window.location.pathname}
@@ -1120,203 +1155,16 @@
       return `https://${url}`;
     }
 
-    // Categories
-    function renderCategorySections() {
-      elements.mediaSectionsContainer.innerHTML = categories.map(category => `
-        <div class="media-section" id="${category}Section" data-category="${category}" style="display:block">
-          <div class="section-header">
-            <h2 class="section-title user-select-none">${getCategoryName(category)}</h2>
-            <span id="${category}Count" class="category-count">0</span>
-          </div>
-          <div class="media-grid" id="${category}Grid"></div>
-        </div>
-      `).join("");
-    }
-
-    function renderCategoriesList() {
-      elements.categoriesList.innerHTML = categories
-        .map((category, idx) => `
-          <div class="category-item" data-category-name="${category}">
-            <span class="category-name-span user-select-none">${getCategoryName(category)}</span>
-            <div style="display: flex; gap: 0.2rem;">
-              ${!DEFAULT_CATEGORIES.includes(category) ?
-                `
-                <button class="btn btn-secondary rename-category-btn" data-category="${category}">
-                  <i class="fas fa-pencil-alt"></i>
-                </button>
-                <button class="btn btn-danger delete-category-btn" data-category="${category}">
-                  <i class="fas fa-trash"></i>
-                </button>` : ''}
-              <button class="btn btn-secondary move-up-btn" data-category="${category}" ${idx === 0 ? 'disabled' : ''}>
-                <i class="fas fa-arrow-up"></i>
-              </button>
-              <button class="btn btn-secondary move-down-btn" data-category="${category}" ${idx === categories.length - 1 ? 'disabled' : ''}>
-                <i class="fas fa-arrow-down"></i>
-              </button>
-            </div>
-          </div>
-        `).join("");
-      
-      document.querySelectorAll(".rename-category-btn").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const categoryItem = btn.closest('.category-item');
-          const categoryName = categoryItem.dataset.categoryName;
-          const span = categoryItem.querySelector('.category-name-span');
-          renameCategory(categoryName, span);
-        });
-      });
-
-      document.querySelectorAll(".delete-category-btn").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const category = btn.dataset.category;
-          deleteCategory(category);
-        });
-      });
-      
-      document.querySelectorAll(".move-up-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          moveCategory(btn.dataset.category, -1);
-        });
-      });
-      
-      document.querySelectorAll(".move-down-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          moveCategory(btn.dataset.category, 1);
-        });
-      });
-    }
-
-    function renameCategory(oldName, spanElement) {
-        const originalText = spanElement.textContent;
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = originalText;
-        input.className = 'filter-select';
-        
-        spanElement.replaceWith(input);
-        input.focus();
-        
-        const saveRename = () => {
-            const newName = input.value.trim();
-            if (newName && newName !== oldName && !categories.includes(newName)) {
-                const catIndex = categories.indexOf(oldName);
-                if (catIndex > -1) {
-                    categories[catIndex] = newName;
-                }
-                
-                mediaList.forEach(media => {
-                    if (media.category === oldName) {
-                        media.category = newName;
-                    }
-                });
-                
-                saveData();
-                renderFullUI();
-                showNotification(`Categoria rinominata in "${newName}"`, "success");
-            } else {
-                const newSpan = document.createElement('span');
-                newSpan.className = 'category-name-span';
-                newSpan.textContent = originalText;
-                input.replaceWith(newSpan);
-                if (categories.includes(newName) && newName !== oldName) {
-                    showNotification("Nome categoria già esistente.", "warning");
-                }
-            }
-        };
-        
-        input.addEventListener('blur', saveRename);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') input.blur();
-            if (e.key === 'Escape') {
-                const newSpan = document.createElement('span');
-                newSpan.className = 'category-name-span';
-                newSpan.textContent = originalText;
-                input.replaceWith(newSpan);
-            }
-        });
-    }
-
-    function moveCategory(category, direction) {
-      const idx = categories.indexOf(category);
-      const newIndex = idx + direction;
-      if (newIndex < 0 || newIndex >= categories.length) return;
-
-      [categories[idx], categories[newIndex]] = [categories[newIndex], categories[idx]];
-      saveData();
-      renderFullUI();
-    }
-
-    function updateCategoryFilter() {
-      const currentSelection = elements.categoryFilter.value;
-      elements.categoryFilter.innerHTML = `
-        <option value="all">Tutte le categorie</option>
-        ${categories.map(cat => `
-          <option value="${cat}">${getCategoryName(cat)}</option>
-        `).join("")}
-      `;
-      elements.categoryFilter.value = currentSelection;
-    }
-    
-    function populateAddMediaCategorySelect() {
-        const lastUsedCategory = localStorage.getItem('lastUsedCategory');
-        elements.addMediaCategorySelect.innerHTML = categories.map(cat => `
-          <option value="${cat}">${getCategoryName(cat)}</option>
-        `).join("");
-
-        if (lastUsedCategory && categories.includes(lastUsedCategory)) {
-            elements.addMediaCategorySelect.value = lastUsedCategory;
-        }
-    }
-
-    function getCategoryName(category) {
-      const names = {
-        watchlist: "Da Vedere",
-        watched: "Visti"
-      };
-      return names[category] || category;
-    }
-
-    function addCategory(name) {
-      if (!name) {
-        showNotification("Inserisci un nome per la categoria", "warning");
-        return false;
-      }
-
-      const normalizedName = name.trim();
-      
-      if (categories.some(cat => cat.toLowerCase() === normalizedName.toLowerCase())) {
-        showNotification("Questa categoria esiste già", "warning");
-        return false;
-      }
-
-      categories.push(normalizedName);
-      saveData();
-      renderFullUI();
-      showNotification(`Categoria "${normalizedName}" creata`, "success");
-      return true;
-    }
-
-    function deleteCategory(category) {
-      if (DEFAULT_CATEGORIES.includes(category)) {
-        showNotification("Non puoi eliminare questa categoria predefinita", "warning");
-        return;
-      }
-
-      if (!confirm(`Eliminare la categoria "${category}"? Tutti i film verranno spostati in "Da Vedere".`)) return;
-      
-      mediaList.forEach(media => {
-        if (media.category === category) {
-          media.category = "watchlist";
-        }
-      });
-      
-      categories = categories.filter(c => c !== category);
-      saveData();
-      renderFullUI();
-      showNotification(`Categoria "${category}" eliminata`, "success");
-    }
+    // Categories... (invariato)
+    function renderCategorySections(){elements.mediaSectionsContainer.innerHTML=categories.map(e=>`<div class="media-section" id="${e}Section" data-category="${e}" style="display:block"><div class="section-header"><h2 class="section-title user-select-none">${getCategoryName(e)}</h2><span id="${e}Count" class="category-count">0</span></div><div class="media-grid" id="${e}Grid"></div></div>`).join("")}
+    function renderCategoriesList(){elements.categoriesList.innerHTML=categories.map((e,t)=>`<div class="category-item" data-category-name="${e}"><span class="category-name-span user-select-none">${getCategoryName(e)}</span><div style="display: flex; gap: 0.2rem;">${DEFAULT_CATEGORIES.includes(e)?"":`\n                <button class="btn btn-secondary rename-category-btn" data-category="${e}">\n                  <i class="fas fa-pencil-alt"></i>\n                </button>\n                <button class="btn btn-danger delete-category-btn" data-category="${e}">\n                  <i class="fas fa-trash"></i>\n                </button>`}<button class="btn btn-secondary move-up-btn" data-category="${e}" ${0===t?"disabled":""}>\n                <i class="fas fa-arrow-up"></i>\n              </button><button class="btn btn-secondary move-down-btn" data-category="${e}" ${t===categories.length-1?"disabled":""}>\n                <i class="fas fa-arrow-down"></i>\n              </button></div></div>`).join(""),document.querySelectorAll(".rename-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation();const a=e.closest(".category-item"),o=a.dataset.categoryName,n=a.querySelector(".category-name-span");renameCategory(o,n)})}),document.querySelectorAll(".delete-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation(),deleteCategory(e.dataset.category)})}),document.querySelectorAll(".move-up-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,-1))}),document.querySelectorAll(".move-down-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,1))})}
+    function renameCategory(e,t){const a=t.textContent,o=document.createElement("input");o.type="text",o.value=a,o.className="filter-select",t.replaceWith(o),o.focus();const n=()=>{const t=o.value.trim();if(t&&t!==e&&!categories.includes(t)){const a=categories.indexOf(e);a>-1&&(categories[a]=t),mediaList.forEach(a=>{a.category===e&&(a.category=t)}),saveData(),renderFullUI(),showNotification(`Categoria rinominata in "${t}"`,"success")}else{const e=document.createElement("span");e.className="category-name-span",e.textContent=a,o.replaceWith(e),categories.includes(t)&&t!==oldName&&showNotification("Nome categoria già esistente.","warning")}};o.addEventListener("blur",n),o.addEventListener("keydown",e=>{"Enter"===e.key&&o.blur(),"Escape"===e.key&&(()=>{const e=document.createElement("span");e.className="category-name-span",e.textContent=a,o.replaceWith(e)})()})}
+    function moveCategory(e,t){const a=categories.indexOf(e),o=a+t;o<0||o>=categories.length||([categories[a],categories[o]]=[categories[o],categories[a]],saveData(),renderFullUI())}
+    function updateCategoryFilter(){const e=elements.categoryFilter.value;elements.categoryFilter.innerHTML=`\n        <option value="all">Tutte le categorie</option>\n        ${categories.map(e=>`\n          <option value="${e}">${getCategoryName(e)}</option>\n        `).join("")}\n      `,elements.categoryFilter.value=e}
+    function populateAddMediaCategorySelect(){const e=localStorage.getItem("lastUsedCategory");elements.addMediaCategorySelect.innerHTML=categories.map(e=>`\n          <option value="${e}">${getCategoryName(e)}</option>\n        `).join(""),e&&categories.includes(e)&&(elements.addMediaCategorySelect.value=e)}
+    function getCategoryName(e){return{watchlist:"Da Vedere",watched:"Visti"}[e]||e}
+    function addCategory(e){if(!e)return showNotification("Inserisci un nome per la categoria","warning"),!1;const t=e.trim();return categories.some(e=>e.toLowerCase()===t.toLowerCase())?(showNotification("Questa categoria esiste già","warning"),!1):(categories.push(t),saveData(),renderFullUI(),showNotification(`Categoria "${t}" creata`,"success"),!0)}
+    function deleteCategory(e){DEFAULT_CATEGORIES.includes(e)?showNotification("Non puoi eliminare questa categoria predefinita","warning"):confirm(`Eliminare la categoria "${e}"? Tutti i film verranno spostati in "Da Vedere".`)&&(mediaList.forEach(t=>{t.category===e&&(t.category="watchlist")}),categories=categories.filter(t=>t!==e),saveData(),renderFullUI(),showNotification(`Categoria "${e}" eliminata`,"success"))}
 
     // Media actions
     function showCardMoveDropdown(media, button) {
@@ -1380,13 +1228,12 @@
             media.isCountedAsWatchlist = false;
             if (media.rewatchCount < 0) media.rewatchCount = 0;
         } else {
-            // FIX: Se lo rimuovo da "visto qui", resetto i rewatch
             media.rewatchCount = 0;
         }
 
         updateStats();
         refreshSingleMedia(mediaId);
-        openQuickEditModal(media); // Riapre il modale per mostrare il cambiamento
+        openQuickEditModal(media);
     }
     
     function toggleCountedAsWatchlist(mediaId) {
@@ -1401,7 +1248,7 @@
 
         updateStats();
         refreshSingleMedia(mediaId);
-        openQuickEditModal(media); // Riapre il modale per mostrare il cambiamento
+        openQuickEditModal(media);
     }
 
     function markRewatch(mediaId, count) {
@@ -1594,89 +1441,14 @@
       showNotification(`Film "${mediaData.title}" aggiunto!`, "success");
     }
     
-    function exportData() {
-      if (isViewMode) return;
-      const data = { mediaList, categories, exportedAt: new Date().toISOString() };
-      const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `mediatracker_export_${new Date().toISOString().split("T")[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(a);
-      showNotification("Dati esportati", "success");
-    }
-
-    function importData(file) {
-      if (isViewMode || !file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target.result);
-          if (!Array.isArray(data.mediaList)) throw new Error("Formato file non valido");
-          if (confirm(`Importare ${data.mediaList.length} media? I dati attuali verranno sovrascritti.`)) {
-            mediaList = data.mediaList;
-            categories = data.categories || [...DEFAULT_CATEGORIES];
-            saveData();
-            renderFullUI();
-            showNotification("Dati importati con successo", "success");
-          }
-        } catch (error) {
-          showNotification("Errore nell'importazione: " + error.message, "error");
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function resetApp() {
-      if (isViewMode) return;
-      if (confirm("Resettare completamente l'applicazione? Tutti i dati verranno persi.")) {
-        mediaList = [];
-        categories = [...DEFAULT_CATEGORIES];
-        saveData();
-        elements.searchInput.value = "";
-        elements.categoryFilter.value = "all";
-        elements.sortFilter.value = "alpha";
-        renderFullUI();
-        showNotification("Applicazione resettata", "success");
-      }
-    }
-
-    function loadTheme() {
-      const savedTheme = localStorage.getItem("theme") || "dark";
-      document.body.classList.toggle("dark", savedTheme === "dark");
-      elements.themeToggle.innerHTML = `<i class="fas fa-${savedTheme === "dark" ? "sun" : "moon"}"></i>`;
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle("dark");
-      const isDark = document.body.classList.contains("dark");
-      localStorage.setItem("theme", isDark ? "dark" : "light");
-      elements.themeToggle.innerHTML = `<i class="fas fa-${isDark ? "sun" : "moon"}"></i>`;
-    }
-
-    function loadSortOrder() {
-        const savedSortOrder = localStorage.getItem('mediaTrackerSortOrder');
-        if (savedSortOrder) {
-            elements.sortFilter.value = savedSortOrder;
-        }
-    }
-
-    function openCategoryManagement() {
-      if (isViewMode) return;
-      renderCategoriesList();
-      elements.categoryManagementModal.style.display = "flex";
-      document.body.classList.add("modal-open");
-    }
-
-    function showNotification(message, type = "success") {
-      elements.notificationText.textContent = message;
-      elements.notification.className = `notification ${type}`;
-      elements.notification.style.display = "block";
-      setTimeout(() => {
-        elements.notification.style.display = "none";
-      }, 3000);
-    }
+    function exportData(){if(isViewMode)return;const e={mediaList:mediaList,categories:categories,exportedAt:(new Date).toISOString()},t=new Blob([JSON.stringify(e,null,2)],{type:"application/json"}),a=URL.createObjectURL(t),o=document.createElement("a");o.href=a,o.download=`mediatracker_export_${(new Date).toISOString().split("T")[0]}.json`,o.click(),URL.revokeObjectURL(a),showNotification("Dati esportati","success")}
+    function importData(e){if(isViewMode||!e)return;const t=new FileReader;t.onload=e=>{try{const t=JSON.parse(e.target.result);if(!Array.isArray(t.mediaList))throw new Error("Formato file non valido");confirm(`Importare ${t.mediaList.length} media? I dati attuali verranno sovrascritti.`)&&(mediaList=t.mediaList,categories=t.categories||[...DEFAULT_CATEGORIES],saveData(),renderFullUI(),showNotification("Dati importati con successo","success"))}catch(e){showNotification("Errore nell'importazione: "+e.message,"error")}},t.readAsText(e)}
+    function resetApp(){if(isViewMode)return;confirm("Resettare completamente l'applicazione? Tutti i dati verranno persi.")&&(mediaList=[],categories=[...DEFAULT_CATEGORIES],saveData(),elements.searchInput.value="",elements.categoryFilter.value="all",elements.sortFilter.value="alpha",renderFullUI(),showNotification("Applicazione resettata","success"))}
+    function loadTheme(){const e=localStorage.getItem("theme")||"dark";document.body.classList.toggle("dark","dark"===e),elements.themeToggle.innerHTML=`<i class="fas fa-${"dark"===e?"sun":"moon"}"></i>`}
+    function toggleTheme(){document.body.classList.toggle("dark");const e=document.body.classList.contains("dark");localStorage.setItem("theme",e?"dark":"light"),elements.themeToggle.innerHTML=`<i class="fas fa-${e?"sun":"moon"}"></i>`}
+    function loadSortOrder(){const e=localStorage.getItem("mediaTrackerSortOrder");e&&(elements.sortFilter.value=e)}
+    function openCategoryManagement(){isViewMode||(renderCategoriesList(),elements.categoryManagementModal.style.display="flex",document.body.classList.add("modal-open"))}
+    function showNotification(e,t="success"){elements.notificationText.textContent=e,elements.notification.className=`notification ${t}`,elements.notification.style.display="block",setTimeout(()=>{elements.notification.style.display="none"},3e3)}
 
     function setupLazyLoading() {
         if (lazyLoadObserver) lazyLoadObserver.disconnect();
@@ -1724,7 +1496,6 @@
               showNotification("Inserisci un numero valido", "warning");
               return;
           }
-          // L'azione di salvataggio ora gestisce solo i rewatch
           markRewatch(currentQuickEditMedia.id, count);
           closeModal(elements.quickEditModal);
       });
@@ -1738,7 +1509,6 @@
       });
 
       elements.cancelQuickEditBtn.addEventListener("click", () => {
-          // Ricarica i dati per annullare eventuali cambi di stato non salvati
           loadData();
           closeModal(elements.quickEditModal);
       });
@@ -1840,12 +1610,17 @@
         elements.quickEditRewatchCount.value = media.rewatchCount || 0;
         
         const watchlistBtn = elements.quickEditWatchlistBtn;
-        if (media.isCountedAsWatchlist) {
-            watchlistBtn.innerHTML = `<i class="fas fa-times"></i> Rimuovi da vedere come qui`;
-            watchlistBtn.className = 'btn btn-danger';
+        if (media.category === 'watchlist') {
+            watchlistBtn.style.display = 'none';
         } else {
-            watchlistBtn.innerHTML = `<i class="fas fa-list-alt"></i> Segna come da vedere qui`;
-            watchlistBtn.className = 'btn btn-secondary';
+            watchlistBtn.style.display = 'inline-flex';
+            if (media.isCountedAsWatchlist) {
+                watchlistBtn.innerHTML = `<i class="fas fa-times"></i> Rimuovi da vedere come qui`;
+                watchlistBtn.className = 'btn btn-danger';
+            } else {
+                watchlistBtn.innerHTML = `<i class="fas fa-list-alt"></i> Segna come da vedere qui`;
+                watchlistBtn.className = 'btn btn-secondary';
+            }
         }
         
         const watchedBtn = elements.quickEditWatchedBtn;
