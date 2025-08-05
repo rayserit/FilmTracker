@@ -693,7 +693,16 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
-    function init(){setupAuthListeners(),setupEventListeners(),checkSharedView()||(currentUser?loadData():loadLocalData()),loadTheme(),loadSortOrder(),setInterval(checkForRatingUpdates,216e5)}
+    function init() {
+      setupEventListeners();
+      loadTheme();
+      loadSortOrder();
+      if (!checkSharedView()) {
+        setupAuthListeners();
+      }
+      setInterval(checkForRatingUpdates, 216e5); // 6 hours
+    }
+
     function setupAuthListeners(){elements.authToggle.addEventListener("click",e=>{e.stopPropagation(),elements.authForms.classList.toggle("active")}),document.addEventListener("click",e=>{elements.authForms.contains(e.target)||e.target.closest("#authToggle")||elements.authForms.classList.remove("active")}),document.querySelectorAll(".auth-tab").forEach(e=>{e.addEventListener("click",()=>{document.querySelectorAll(".auth-tab").forEach(e=>e.classList.remove("active")),e.classList.add("active"),document.querySelectorAll(".auth-form-container").forEach(t=>t.classList.remove("active")),document.getElementById(`${e.dataset.tab}Form`).classList.add("active")})}),elements.loginBtn.addEventListener("click",()=>{const e=elements.loginEmail.value,t=elements.loginPassword.value;e&&t?firebase.auth().signInWithEmailAndPassword(e,t).then(()=>{showNotification("Login effettuato","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Inserisci email e password","warning")}),elements.registerBtn.addEventListener("click",()=>{const e=elements.registerEmail.value,t=elements.registerPassword.value,a=elements.registerConfirmPassword.value;e&&t&&a?t!==a?showNotification("Le password non corrispondono","warning"):t.length<6?showNotification("La password deve avere almeno 6 caratteri","warning"):firebase.auth().createUserWithEmailAndPassword(e,t).then(()=>{showNotification("Registrazione completata!","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Compila tutti i campi","warning")}),elements.logoutBtn.addEventListener("click",()=>firebase.auth().signOut()),firebase.auth().onAuthStateChanged(e=>{if(isViewMode)return;currentUser=e,updateAuthUI(),e?(loadData(),checkActiveShare()):loadLocalData()})}
     function getAuthErrorMessage(e){switch(e.code){case"auth/email-already-in-use":return"Email già registrata";case"auth/invalid-email":return"Email non valida";case"auth/weak-password":return"Password troppo debole";case"auth/user-not-found":return"Utente non trovato";case"auth/wrong-password":return"Password errata";default:return"Errore: "+e.message}}
     function updateAuthUI(){currentUser?(elements.userInfo.style.display="flex",elements.authToggle.style.display="none",document.querySelectorAll(".btn").forEach(e=>e.disabled=!1)):(elements.userInfo.style.display="none",elements.authToggle.style.display="block",document.querySelectorAll("#addMediaBtn, #manageCategoriesBtn, #shareBtn").forEach(e=>e.disabled=!0),document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(e=>{e.disabled=!1}))}
@@ -712,45 +721,7 @@
     function renderFullUI(){renderCategorySections(),updateCategoryFilter(),populateAddMediaCategorySelect(),renderCategoriesList(),renderMedia()}
     function renderMedia(){clearMediaGrids(),updateStats();const e=elements.searchInput.value.toLowerCase(),t=elements.categoryFilter.value,a=elements.sortFilter.value;document.querySelectorAll(".media-section").forEach(e=>{e.style.display="block"});let o=[...mediaList];e&&(o=o.filter(t=>t.title.toLowerCase().includes(e))),"all"!==t&&(o=o.filter(e=>e.category===t),document.querySelectorAll(".media-section").forEach(e=>{e.dataset.category!==t&&(e.style.display="none")})),o.sort((e,t)=>{switch(a){case"alpha":return e.title.localeCompare(t.title);case"rating":return(parseFloat(t.imdbRating)||0)-(parseFloat(e.imdbRating)||0);case"year":return(parseInt(t.year)||0)-(parseInt(e.year)||0);case"added":default:return new Date(t.addedAt)-new Date(e.addedAt)}}),o.forEach(e=>{const t=document.getElementById(`${e.category}Grid`);if(t){const a=t.querySelector(`.media-card[data-id="${e.id}"]`);a?t.replaceChild(createMediaCard(e),a):t.appendChild(createMediaCard(e))}}),setupLazyLoading(),updateCounts()}
     function clearMediaGrids(){categories.forEach(e=>{const t=document.getElementById(`${e}Grid`);t&&(t.innerHTML="")})}
-    function updateStats() {
-        const processedIds = new Set();
-        const stats = { total: mediaList.length, watchlist: 0, watched: 0, rewatched: 0, hours: 0, minutes: 0 };
-
-        mediaList.filter(m => m.category === 'watched').forEach(media => {
-            const uniqueId = media.imdbID || media.title.toLowerCase().trim();
-            if (processedIds.has(uniqueId)) return;
-            processedIds.add(uniqueId);
-            
-            stats.watched++;
-            if (media.rewatchCount > 0) stats.rewatched += media.rewatchCount;
-            const runtime = media.runtime ? parseInt(media.runtime.replace(/\D/g, '')) : 0;
-            if (runtime > 0) stats.minutes += runtime * ((media.rewatchCount || 0) + 1);
-        });
-
-        mediaList.forEach(media => {
-            const uniqueId = media.imdbID || media.title.toLowerCase().trim();
-            if (processedIds.has(uniqueId)) return;
-
-            const isConsideredWatched = media.isCountedAsWatched;
-
-            if (isConsideredWatched) {
-                processedIds.add(uniqueId);
-                if (media.rewatchCount > 0) stats.rewatched += media.rewatchCount;
-                const runtime = media.runtime ? parseInt(media.runtime.replace(/\D/g, '')) : 0;
-                if (runtime > 0) stats.minutes += runtime * ((media.rewatchCount || 0) + 1);
-            } else if (media.category === 'watchlist' || media.isCountedAsWatchlist) {
-                stats.watchlist++;
-            }
-        });
-
-        stats.hours = Math.floor(stats.minutes / 60);
-        stats.minutes %= 60;
-        elements.statTotal.textContent = stats.total;
-        elements.statWatchlist.textContent = stats.watchlist;
-        elements.statWatched.textContent = stats.watched;
-        elements.statRewatched.textContent = stats.rewatched;
-        elements.statHours.textContent = `${stats.hours}h ${stats.minutes}m`;
-    }
+    function updateStats(){const e=new Set,t={total:mediaList.length,watchlist:0,watched:0,rewatched:0,hours:0,minutes:0};mediaList.filter(e=>"watched"===e.category).forEach(a=>{const o=a.imdbID||a.title.toLowerCase().trim();e.has(o)||(e.add(o),t.watched++,a.rewatchCount>0&&(t.rewatched+=a.rewatchCount),(()=>{const e=a.runtime?parseInt(a.runtime.replace(/\D/g,"")):0;e>0&&(t.minutes+=e*((a.rewatchCount||0)+1))})())}),mediaList.forEach(a=>{const o=a.imdbID||a.title.toLowerCase().trim();if(!e.has(o)){if(a.isCountedAsWatched){e.add(o),a.rewatchCount>0&&(t.rewatched+=a.rewatchCount);const n=a.runtime?parseInt(a.runtime.replace(/\D/g,"")):0;n>0&&(t.minutes+=n*((a.rewatchCount||0)+1))}else"watchlist"===a.category||a.isCountedAsWatchlist?t.watchlist++:void 0}}),t.hours=Math.floor(t.minutes/60),t.minutes%=60,elements.statTotal.textContent=t.total,elements.statWatchlist.textContent=t.watchlist,elements.statWatched.textContent=t.watched,elements.statRewatched.textContent=t.rewatched,elements.statHours.textContent=`${t.hours}h ${t.minutes}m`}
     function updateCounts(){categories.forEach(e=>{const t=document.getElementById(`${e}Count`);if(t){const a=mediaList.filter(t=>t.category===e).length;t.textContent=a;const o=document.getElementById(`${e}Section`);o&&"all"!==elements.categoryFilter.value&&0===a&&(o.style.display="none")}})}
     function createMediaCard(e){const t=document.createElement("div");t.className="media-card",t.dataset.id=e.id;const a=e.imdbRating&&"N/A"!==e.imdbRating?`<span>⭐ ${e.imdbRating}</span>`:"",o=e.rottenTomatoes&&"N/A"!==e.rottenTomatoes?`<span>🍅 ${e.rottenTomatoes}</span>`:"",n=a||o?`<div class="media-ratings">${a}${o}</div>`:"";let i="";if(e.isCountedAsWatched||"watched"===e.category){const t=(e.rewatchCount||0)+1,a=t>1?`<sup>${t}</sup>`:"";i=`<span class="watch-status-icon" title="Visto ${t} volte"><i class="fas fa-eye"></i>${a}</span>`}else e.isCountedAsWatchlist&&"watchlist"!==e.category&&(i=`<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`);return t.innerHTML=`<div style="position:relative;"><img data-src="${fixPosterUrl(e.poster)||DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'"><div class="card-actions card-actions-left"><button class="card-btn" data-action="toggle-move-dropdown" title="Sposta in..."><i class="fas fa-folder-open"></i></button></div><div class="card-actions card-actions-right"><button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button></div></div><div class="media-info"><h3 class="media-title" title="${e.title}">${e.title}</h3><div class="media-meta">${e.year?`<span>${e.year}</span>`:""}${e.runtime?`<span>⏱️ ${formatRuntime(e.runtime)}</span>`:""}${i}</div>${n}</div>`,"watchlist"!==e.category&&t.addEventListener("dblclick",()=>openQuickEditModal(e)),t.querySelector("[data-action='toggle-move-dropdown']").addEventListener("click",a=>{a.stopPropagation(),showCardMoveDropdown(e,a.currentTarget)}),t.querySelector("[data-action='delete']").addEventListener("click",a=>{a.stopPropagation(),deleteMedia(e.id)}),t}
     function fixPosterUrl(e){return e&&"N/A"!==e?e.startsWith("http://")||e.startsWith("https://")?e:e.startsWith("//")?`https:${e}`:`https://${e}`:null}
@@ -794,4 +765,4 @@
     document.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
-</html>```
+</html>
