@@ -716,40 +716,28 @@
         const processedIds = new Set();
         const stats = { total: mediaList.length, watchlist: 0, watched: 0, rewatched: 0, hours: 0, minutes: 0 };
 
-        // Fase 1: Priorità ai film in "Visti"
-        mediaList.forEach(media => {
-            if (media.category === 'watched') {
-                const uniqueId = media.imdbID || media.title.toLowerCase().trim();
-                if (!processedIds.has(uniqueId)) {
-                    processedIds.add(uniqueId);
-                    stats.watched++;
-                    if (media.rewatchCount > 0) {
-                        stats.rewatched += media.rewatchCount;
-                    }
-                    const runtime = media.runtime ? parseInt(media.runtime.replace(/\D/g, '')) : 0;
-                    if (runtime > 0) {
-                        stats.minutes += runtime * ((media.rewatchCount || 0) + 1);
-                    }
-                }
-            }
+        mediaList.filter(m => m.category === 'watched').forEach(media => {
+            const uniqueId = media.imdbID || media.title.toLowerCase().trim();
+            if (processedIds.has(uniqueId)) return;
+            processedIds.add(uniqueId);
+            
+            stats.watched++;
+            if (media.rewatchCount > 0) stats.rewatched += media.rewatchCount;
+            const runtime = media.runtime ? parseInt(media.runtime.replace(/\D/g, '')) : 0;
+            if (runtime > 0) stats.minutes += runtime * ((media.rewatchCount || 0) + 1);
         });
 
-        // Fase 2: Analisi di tutti gli altri film
         mediaList.forEach(media => {
             const uniqueId = media.imdbID || media.title.toLowerCase().trim();
-            if (processedIds.has(uniqueId)) {
-                return; 
-            }
-            
-            if (media.isCountedAsWatched) {
+            if (processedIds.has(uniqueId)) return;
+
+            const isConsideredWatched = media.isCountedAsWatched;
+
+            if (isConsideredWatched) {
                 processedIds.add(uniqueId);
-                if (media.rewatchCount > 0) {
-                    stats.rewatched += media.rewatchCount;
-                }
+                if (media.rewatchCount > 0) stats.rewatched += media.rewatchCount;
                 const runtime = media.runtime ? parseInt(media.runtime.replace(/\D/g, '')) : 0;
-                if (runtime > 0) {
-                    stats.minutes += runtime * ((media.rewatchCount || 0) + 1);
-                }
+                if (runtime > 0) stats.minutes += runtime * ((media.rewatchCount || 0) + 1);
             } else if (media.category === 'watchlist' || media.isCountedAsWatchlist) {
                 stats.watchlist++;
             }
@@ -787,7 +775,7 @@
     async function searchOMDb(){const e=elements.mediaTitle.value.trim();if(!e)return void showNotification("Inserisci un titolo","warning");elements.omdbResults.innerHTML="<p>Ricerca in corso...</p>";try{let t=`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&s=${encodeURIComponent(e)}&type=movie`;const a=await fetch(t),o=await a.json();if("True"===o.Response)displayOMDbResults(o.Search);else if("Too many results."===o.Error){showNotification("Troppi risultati. Tento una ricerca esatta...","warning");let t=`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&t=${encodeURIComponent(e)}&type=movie`;const a=await fetch(t),n=await a.json();"True"===n.Response?displayOMDbResults([n]):elements.omdbResults.innerHTML=`<p>${n.Error||"Nessun risultato trovato"}</p>`}else elements.omdbResults.innerHTML=`<p>${o.Error||"Nessun risultato trovato"}</p>`}catch(t){showNotification("Errore nella ricerca","error"),console.error("OMDb error:",t),elements.omdbResults.innerHTML="<p>Errore durante la ricerca</p>"}}
     function displayOMDbResults(e){elements.omdbResults.innerHTML=e.map(e=>`<div class="omdb-result-item user-select-none" data-id="${e.imdbID}"><img src="${fixPosterUrl(e.Poster)}" class="omdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'"><div><div><strong>${e.Title}</strong></div><div>${e.Year}</div></div></div>`).join(""),document.querySelectorAll(".omdb-result-item").forEach(e=>{e.addEventListener("click",async()=>{const t=e.dataset.id,a=await getOMDbMovieDetails(t);a&&(currentOMDbSelection=a,elements.mediaTitle.value=a.Title,showNotification(`Dettagli di "${a.Title}" pronti per il salvataggio`,"success"))})})}
     async function getOMDbMovieDetails(e){try{const t=await fetch(`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&i=${e}`),a=await t.json();if("False"===a.Response)throw new Error(a.Error||"Dettagli non disponibili");return a}catch(t){return console.error("Error fetching movie details:",t),showNotification("Errore nel caricamento dei dettagli","error"),null}}
-    function addNewMedia(){if(isViewMode)return;const e=elements.mediaTitle.value.trim();if(!e)return void showNotification("Inserisci un titolo","warning");const t=elements.addMediaCategorySelect.value;localStorage.setItem("lastUsedCategory",t);let a={id:Date.now().toString(),title:e,category:t,addedAt:(new Date).toISOString(),poster:"",rewatchCount:0,isCountedAsWatched:"watched"===t,isCountedAsWatchlist:"watchlist"===t,year:"",imdbID:null,imdbRating:"",rottenTomatoes:"",runtime:""};if(currentOMDbSelection){a={...a,title:currentOMDbSelection.Title,year:currentOMDbSelection.Year,poster:fixPosterUrl(currentOMDbSelection.Poster),imdbID:currentOMDbSelection.imdbID,imdbRating:currentOMDbSelection.imdbRating&&"N/A"!==currentOMDbSelection.imdbRating?currentOMDbSelection.imdbRating:"",runtime:currentOMDbSelection.Runtime||""};if(currentOMDbSelection.Ratings&&Array.isArray(currentOMDbSelection.Ratings))for(const e of currentOMDbSelection.Ratings)"Rotten Tomatoes"===e.Source&&(a.rottenTomatoes=e.Value&&"N/A"!==e.Value?e.Value:"")}mediaList.push(a),saveData(),closeModal(elements.addMediaModal),renderMedia(),showNotification(`Film "${a.title}" aggiunto!`,"success")}
+    function addNewMedia(){if(isViewMode)return;const e=elements.mediaTitle.value.trim();if(!e)return void showNotification("Inserisci un titolo","warning");const t=elements.addMediaCategorySelect.value;localStorage.setItem("lastUsedCategory",t);let a={id:Date.now().toString(),title:e,category:t,addedAt:(new Date).toISOString(),poster:"",rewatchCount:0,isCountedAsWatched:"watched"===t,isCountedAsWatchlist:"watchlist"===t,year:"",imdbID:null,imdbRating:"",rottenTomatoes:"",runtime:""};if(currentOMDbSelection){a={...a,title:currentOMDbSelection.Title,year:currentOMDbSelection.Year,poster:fixPosterUrl(currentOMDbSelection.Poster),imdbID:currentOMDbSelection.imdbID,imdbRating:currentOMDbSelection.imdbRating&&"N/A"!==currentOMDbSelection.imdbRating?currentOMDbSelection.imdbRating:"",rottenTomatoes:"",runtime:currentOMDbSelection.Runtime||""};if(currentOMDbSelection.Ratings&&Array.isArray(currentOMDbSelection.Ratings))for(const e of currentOMDbSelection.Ratings)"Rotten Tomatoes"===e.Source&&(a.rottenTomatoes=e.Value&&"N/A"!==e.Value?e.Value:"")}mediaList.push(a),saveData(),closeModal(elements.addMediaModal),renderMedia(),showNotification(`Film "${a.title}" aggiunto!`,"success")}
     function exportData(){if(isViewMode)return;const e={mediaList:mediaList,categories:categories,exportedAt:(new Date).toISOString()},t=new Blob([JSON.stringify(e,null,2)],{type:"application/json"}),a=URL.createObjectURL(t),o=document.createElement("a");o.href=a,o.download=`mediatracker_export_${(new Date).toISOString().split("T")[0]}.json`,o.click(),URL.revokeObjectURL(a),showNotification("Dati esportati","success")}
     function importData(e){if(isViewMode||!e)return;const t=new FileReader;t.onload=e=>{try{const t=JSON.parse(e.target.result);if(!Array.isArray(t.mediaList))throw new Error("Formato file non valido");confirm(`Importare ${t.mediaList.length} media? I dati attuali verranno sovrascritti.`)&&(mediaList=t.mediaList,categories=t.categories||[...DEFAULT_CATEGORIES],saveData(),renderFullUI(),showNotification("Dati importati con successo","success"))}catch(e){showNotification("Errore nell'importazione: "+e.message,"error")}},t.readAsText(e)}
     function resetApp(){if(isViewMode)return;confirm("Resettare completamente l'applicazione? Tutti i dati verranno persi.")&&(mediaList=[],categories=[...DEFAULT_CATEGORIES],saveData(),elements.searchInput.value="",elements.categoryFilter.value="all",elements.sortFilter.value="alpha",renderFullUI(),showNotification("Applicazione resettata","success"))}
@@ -806,4 +794,4 @@
     document.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
-</html>
+</html>```
