@@ -152,17 +152,14 @@
       border-radius: 12px;
       font-size: 0.8rem;
     }
-
+    body.dark .rating-badge {
+        background: rgba(255, 255, 255, 0.1);
+    }
     .rating-icon {
       width: 16px;
       height: 16px;
       object-fit: contain;
     }
-
-    [title*="Rotten Tomatoes"] {
-      background: rgba(255, 255, 255, 0.1);
-    }
-
     [title*="Rotten Tomatoes"] .rating-icon {
       width: 14px;
       height: 14px;
@@ -612,6 +609,48 @@
     input[type=number] {
         -moz-appearance: textfield;
     }
+
+    .poster-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+  
+    .poster-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 20px;
+      background: var(--card-bg);
+      border-radius: 8px;
+    }
+  
+    .poster-option {
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.2s;
+    }
+  
+    .poster-option:hover, .poster-option.selected {
+      border-color: var(--primary);
+    }
+  
+    .poster-option img {
+      width: 100%;
+      aspect-ratio: 2/3;
+      object-fit: cover;
+    }
+
   </style>
 </head>
 <body class="dark user-select-none">
@@ -667,23 +706,27 @@
   <div class="modal" id="shareModal"><div class="modal-content" style="max-width: 450px;"><h2>Condividi la tua libreria</h2><p>Chiunque abbia questo link potrà vedere la tua lista in tempo reale (sola lettura).</p><input type="text" id="shareLinkInput" class="share-link-input" readonly><div style="display: flex; gap: 0.5rem; margin-top: 1rem;"><button id="copyShareLinkBtn" class="btn btn-primary">Copia Link</button><button id="closeShareModalBtn" class="btn btn-danger">Chiudi</button></div></div></div>
   <div id="notification" class="notification"><span id="notificationText"></span></div>
 
+  <div id="posterModal" class="poster-modal">
+    <div class="poster-grid" id="posterGrid"></div>
+  </div>
+
   <script>
     const OMDb_API_KEY = "2526ef70";
+    const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ="); // Chiave codificata
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
     let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentQuickEditMedia = null, currentOMDbSelection = null, currentUser = null, isViewMode = !1, activeShareId = null, debounceTimeout, lazyLoadObserver;
     const firebaseConfig = { apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk", authDomain: "gametrackerdb.firebaseapp.com", databaseURL: "https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gametrackerdb" };
-    const elements = { authForms: document.getElementById("authForms"), authToggle: document.getElementById("authToggle"), userInfo: document.getElementById("userInfo"), loginBtn: document.getElementById("loginBtn"), loginEmail: document.getElementById("loginEmail"), loginPassword: document.getElementById("loginPassword"), registerBtn: document.getElementById("registerBtn"), registerEmail: document.getElementById("registerEmail"), registerPassword: document.getElementById("registerPassword"), registerConfirmPassword: document.getElementById("registerConfirmPassword"), logoutBtn: document.getElementById("logoutBtn"), loginForm: document.getElementById("loginForm"), registerForm: document.getElementById("registerForm"), addMediaBtn: document.getElementById("addMediaBtn"), manageCategoriesBtn: document.getElementById("manageCategoriesBtn"), shareBtn: document.getElementById("shareBtn"), exportBtn: document.getElementById("exportBtn"), importBtn: document.getElementById("importBtn"), importFile: document.getElementById("importFile"), resetBtn: document.getElementById("resetBtn"), themeToggle: document.getElementById("themeToggle"), searchInput: document.getElementById("searchInput"), categoryFilter: document.getElementById("categoryFilter"), sortFilter: document.getElementById("sortFilter"), statTotal: document.getElementById("statTotal"), statWatchlist: document.getElementById("statWatchlist"), statWatched: document.getElementById("statWatched"), statRewatched: document.getElementById("statRewatched"), statHours: document.getElementById("statHours"), mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), addMediaModal: document.getElementById("addMediaModal"), mediaTitle: document.getElementById("mediaTitle"), searchOMDbBtn: document.getElementById("searchOMDbBtn"), omdbResults: document.getElementById("omdbResults"), saveMediaBtn: document.getElementById("saveMediaBtn"), cancelMediaBtn: document.getElementById("cancelMediaBtn"), addMediaCategorySelect: document.getElementById("addMediaCategorySelect"), categoryManagementModal: document.getElementById("categoryManagementModal"), newCategoryName: document.getElementById("newCategoryName"), addCategoryBtn: document.getElementById("addCategoryBtn"), categoriesList: document.getElementById("categoriesList"), closeCategoryManagementBtn: document.getElementById("closeCategoryManagementBtn"), quickEditModal: document.getElementById("quickEditModal"), quickEditTitle: document.getElementById("quickEditTitle"), quickEditWatchedBtn: document.getElementById("quickEditWatchedBtn"), quickEditWatchlistBtn: document.getElementById("quickEditWatchlistBtn"), quickEditRewatchCount: document.getElementById("quickEditRewatchCount"), confirmQuickEditBtn: document.getElementById("confirmQuickEditBtn"), cancelQuickEditBtn: document.getElementById("cancelQuickEditBtn"), notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"), shareModal: document.getElementById("shareModal"), shareLinkInput: document.getElementById("shareLinkInput"), copyShareLinkBtn: document.getElementById("copyShareLinkBtn"), closeShareModalBtn: document.getElementById("closeShareModalBtn"), viewModeBanner: document.getElementById("viewModeBanner"), viewModeUserEmail: document.getElementById("viewModeUserEmail"), closeViewBtn: document.getElementById("closeViewBtn") };
+    const elements = { authForms: document.getElementById("authForms"), authToggle: document.getElementById("authToggle"), userInfo: document.getElementById("userInfo"), loginBtn: document.getElementById("loginBtn"), loginEmail: document.getElementById("loginEmail"), loginPassword: document.getElementById("loginPassword"), registerBtn: document.getElementById("registerBtn"), registerEmail: document.getElementById("registerEmail"), registerPassword: document.getElementById("registerPassword"), registerConfirmPassword: document.getElementById("registerConfirmPassword"), logoutBtn: document.getElementById("logoutBtn"), loginForm: document.getElementById("loginForm"), registerForm: document.getElementById("registerForm"), addMediaBtn: document.getElementById("addMediaBtn"), manageCategoriesBtn: document.getElementById("manageCategoriesBtn"), shareBtn: document.getElementById("shareBtn"), exportBtn: document.getElementById("exportBtn"), importBtn: document.getElementById("importBtn"), importFile: document.getElementById("importFile"), resetBtn: document.getElementById("resetBtn"), themeToggle: document.getElementById("themeToggle"), searchInput: document.getElementById("searchInput"), categoryFilter: document.getElementById("categoryFilter"), sortFilter: document.getElementById("sortFilter"), statTotal: document.getElementById("statTotal"), statWatchlist: document.getElementById("statWatchlist"), statWatched: document.getElementById("statWatched"), statRewatched: document.getElementById("statRewatched"), statHours: document.getElementById("statHours"), mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), addMediaModal: document.getElementById("addMediaModal"), mediaTitle: document.getElementById("mediaTitle"), searchOMDbBtn: document.getElementById("searchOMDbBtn"), omdbResults: document.getElementById("omdbResults"), saveMediaBtn: document.getElementById("saveMediaBtn"), cancelMediaBtn: document.getElementById("cancelMediaBtn"), addMediaCategorySelect: document.getElementById("addMediaCategorySelect"), categoryManagementModal: document.getElementById("categoryManagementModal"), newCategoryName: document.getElementById("newCategoryName"), addCategoryBtn: document.getElementById("addCategoryBtn"), categoriesList: document.getElementById("categoriesList"), closeCategoryManagementBtn: document.getElementById("closeCategoryManagementBtn"), quickEditModal: document.getElementById("quickEditModal"), quickEditTitle: document.getElementById("quickEditTitle"), quickEditWatchedBtn: document.getElementById("quickEditWatchedBtn"), quickEditWatchlistBtn: document.getElementById("quickEditWatchlistBtn"), quickEditRewatchCount: document.getElementById("quickEditRewatchCount"), confirmQuickEditBtn: document.getElementById("confirmQuickEditBtn"), cancelQuickEditBtn: document.getElementById("cancelQuickEditBtn"), notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"), shareModal: document.getElementById("shareModal"), shareLinkInput: document.getElementById("shareLinkInput"), copyShareLinkBtn: document.getElementById("copyShareLinkBtn"), closeShareModalBtn: document.getElementById("closeShareModalBtn"), viewModeBanner: document.getElementById("viewModeBanner"), viewModeUserEmail: document.getElementById("viewModeUserEmail"), closeViewBtn: document.getElementById("closeViewBtn"), posterModal: document.getElementById("posterModal"), posterGrid: document.getElementById("posterGrid") };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
     document.addEventListener("DOMContentLoaded", init);
 
     function getRottenTomatoesState(e){if(!e||"N/A"===e)return null;const t=parseInt(e);return isNaN(t)?null:t>=75?"certified":t>=60?"fresh":"rotten"}
-    
-    function init(){setupEventListeners(),handleViewMode()||(setupAuthListeners(),loadLocalData()),loadTheme(),loadSortOrder();const e=localStorage.getItem("lastRatingCheck"),t=(new Date).toISOString().split("T")[0];e!==t&&setTimeout(checkForRatingUpdates,5e3)}
+    function init(){setupEventListeners(),handleViewMode()||(setupAuthListeners(),loadLocalData()),loadTheme(),loadSortOrder(),setInterval(checkForRatingUpdates,216e5)}
     function setupAuthListeners(){elements.authToggle.addEventListener("click",e=>{e.stopPropagation(),elements.authForms.classList.toggle("active")}),document.addEventListener("click",e=>{elements.authForms.contains(e.target)||e.target.closest("#authToggle")||elements.authForms.classList.remove("active")}),document.querySelectorAll(".auth-tab").forEach(e=>{e.addEventListener("click",()=>{document.querySelectorAll(".auth-tab").forEach(e=>e.classList.remove("active")),e.classList.add("active"),document.querySelectorAll(".auth-form-container").forEach(t=>t.classList.remove("active")),document.getElementById(`${e.dataset.tab}Form`).classList.add("active")})}),elements.loginBtn.addEventListener("click",()=>{const e=elements.loginEmail.value,t=elements.loginPassword.value;e&&t?firebase.auth().signInWithEmailAndPassword(e,t).then(()=>{showNotification("Login effettuato","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Inserisci email e password","warning")}),elements.registerBtn.addEventListener("click",()=>{const e=elements.registerEmail.value,t=elements.registerPassword.value,a=elements.registerConfirmPassword.value;e&&t&&a?t!==a?showNotification("Le password non corrispondono","warning"):t.length<6?showNotification("La password deve avere almeno 6 caratteri","warning"):firebase.auth().createUserWithEmailAndPassword(e,t).then(()=>{showNotification("Registrazione completata!","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Compila tutti i campi","warning")}),elements.logoutBtn.addEventListener("click",()=>firebase.auth().signOut()),firebase.auth().onAuthStateChanged(e=>{if(isViewMode)return;currentUser=e,updateAuthUI(),e?loadData():loadLocalData()})}
     function getAuthErrorMessage(e){switch(e.code){case"auth/email-already-in-use":return"Email già registrata";case"auth/invalid-email":return"Email non valida";case"auth/weak-password":return"Password troppo debole";case"auth/user-not-found":return"Utente non trovato";case"auth/wrong-password":return"Password errata";default:return"Errore: "+e.message}}
     function updateAuthUI(){currentUser?(elements.userInfo.style.display="flex",elements.authToggle.style.display="none",document.querySelectorAll(".btn").forEach(e=>e.disabled=!1)):(elements.userInfo.style.display="none",elements.authToggle.style.display="block",document.querySelectorAll("#addMediaBtn, #manageCategoriesBtn, #shareBtn").forEach(e=>e.disabled=!0),document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(e=>{e.disabled=!1}))}
@@ -697,55 +740,7 @@
     function clearMediaGrids(){categories.forEach(e=>{const t=document.getElementById(`${e}Grid`);t&&(t.innerHTML="")})}
     function updateStats(){const processedIds=new Set;const stats={total:mediaList.length,watchlist:0,watched:0,rewatched:0,hours:0,minutes:0};mediaList.forEach(media=>{const uniqueId=media.imdbID||media.title.toLowerCase().trim();if(processedIds.has(uniqueId))return;processedIds.add(uniqueId);const isConsideredWatched=media.category==="watched"||media.isCountedAsWatched;media.category==="watched"&&stats.watched++;(media.category==="watchlist"||media.isCountedAsWatchlist)&&!isConsideredWatched&&stats.watchlist++;if(isConsideredWatched){media.rewatchCount>0&&(stats.rewatched+=media.rewatchCount);const runtime=media.runtime?parseInt(media.runtime.replace(/\D/g,"")):0;if(runtime>0){const totalViews=(media.rewatchCount||0)+1;stats.minutes+=runtime*totalViews}}});stats.hours=Math.floor(stats.minutes/60),stats.minutes%=60,elements.statTotal.textContent=stats.total,elements.statWatchlist.textContent=stats.watchlist,elements.statWatched.textContent=stats.watched,elements.statRewatched.textContent=stats.rewatched,elements.statHours.textContent=`${stats.hours}h ${stats.minutes}m`}
     function updateCounts(){categories.forEach(e=>{const t=document.getElementById(`${e}Count`);if(t){const a=mediaList.filter(t=>t.category===e).length;t.textContent=a;const o=document.getElementById(`${e}Section`);o&&"all"!==elements.categoryFilter.value&&0===a&&(o.style.display="none")}})}
-    function createMediaCard(media) {
-        const card = document.createElement("div");
-        card.className = "media-card";
-        card.dataset.id = media.id;
-
-        let ratingsHTML = "";
-        if (media.imdbRating && media.imdbRating !== "N/A") {
-            ratingsHTML += `<span class="rating-badge" title="IMDb Rating: ${media.imdbRating}"><img src="${IMDB_STAR_ICON}" class="rating-icon" alt="IMDb"> ${media.imdbRating}</span>`;
-        }
-        if (media.rottenTomatoes && media.rottenTomatoes !== "N/A") {
-            const rtState = getRottenTomatoesState(media.rottenTomatoes);
-            if (rtState) {
-                ratingsHTML += `<span class="rating-badge" title="Rotten Tomatoes: ${media.rottenTomatoes}"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon" alt="Rotten Tomatoes"> ${media.rottenTomatoes}</span>`;
-            }
-        }
-        const ratingsSection = ratingsHTML ? `<div class="media-ratings">${ratingsHTML}</div>` : "";
-
-        let watchStatusHTML = '';
-        if (media.isCountedAsWatched || media.category === 'watched') {
-            const totalViews = (media.rewatchCount || 0) + 1;
-            const rewatchSup = totalViews > 1 ? `<sup>${totalViews}</sup>` : '';
-            watchStatusHTML = `<span class="watch-status-icon" title="Visto ${totalViews} volte"><i class="fas fa-eye"></i>${rewatchSup}</span>`;
-        } else if (media.isCountedAsWatchlist && media.category !== 'watchlist') {
-            watchStatusHTML = `<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`;
-        }
-
-        card.innerHTML = `
-            <div style="position:relative;">
-                <img data-src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'">
-                <div class="card-actions card-actions-left"><button class="card-btn" data-action="toggle-move-dropdown" title="Sposta in..."><i class="fas fa-folder-open"></i></button></div>
-                <div class="card-actions card-actions-right"><button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button></div>
-            </div>
-            <div class="media-info">
-                <h3 class="media-title" title="${media.title}">${media.title}</h3>
-                <div class="media-meta">
-                    ${media.year ? `<span>${media.year}</span>` : ''}
-                    ${media.runtime ? `<span>⏱️ ${formatRuntime(media.runtime)}</span>` : ''}
-                    ${watchStatusHTML}
-                </div>
-                ${ratingsSection}
-            </div>`;
-        
-        if (media.category !== 'watchlist') {
-            card.addEventListener("dblclick", () => openQuickEditModal(media));
-        }
-        card.querySelector("[data-action='toggle-move-dropdown']").addEventListener("click", e => { e.stopPropagation(); showCardMoveDropdown(media, e.currentTarget); });
-        card.querySelector("[data-action='delete']").addEventListener("click", e => { e.stopPropagation(); deleteMedia(media.id); });
-        return card;
-    }
+    function createMediaCard(e){const t=document.createElement("div");t.className="media-card",t.dataset.id=e.id;let a="";e.imdbRating&&"N/A"!==e.imdbRating&&(a+=`<span class="rating-badge" title="IMDb Rating: ${e.imdbRating}"><img src="${IMDB_STAR_ICON}" class="rating-icon" alt="IMDb"> ${e.imdbRating}</span>`);if(e.rottenTomatoes&&"N/A"!==e.rottenTomatoes){const o=getRottenTomatoesState(e.rottenTomatoes);o&&(a+=`<span class="rating-badge" title="Rotten Tomatoes: ${e.rottenTomatoes}"><img src="${ROTTEN_TOMATOES_ICONS[o]}" class="rating-icon" alt="Rotten Tomatoes"> ${e.rottenTomatoes}</span>`)}const o=a?`<div class="media-ratings">${a}</div>`:"";let n="";if(e.isCountedAsWatched||"watched"===e.category){const t=(e.rewatchCount||0)+1,a=t>1?`<sup>${t}</sup>`:"";n=`<span class="watch-status-icon" title="Visto ${t} volte"><i class="fas fa-eye"></i>${a}</span>`}else e.isCountedAsWatchlist&&"watchlist"!==e.category&&(n=`<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`);return t.innerHTML=`<div style="position:relative;"><img data-src="${fixPosterUrl(e.poster)||DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'"><div class="card-actions card-actions-left"><button class="card-btn" data-action="toggle-move-dropdown" title="Sposta in..."><i class="fas fa-folder-open"></i></button><button class="card-btn" data-action="change-poster" title="Cambia copertina"><i class="fas fa-image"></i></button></div><div class="card-actions card-actions-right"><button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button></div></div><div class="media-info"><h3 class="media-title" title="${e.title}">${e.title}</h3><div class="media-meta">${e.year?`<span>${e.year}</span>`:""}${e.runtime?`<span>⏱️ ${formatRuntime(e.runtime)}</span>`:""}${n}</div>${o}</div>`,"watchlist"!==e.category&&t.addEventListener("dblclick",()=>openQuickEditModal(e)),t.querySelector("[data-action='toggle-move-dropdown']").addEventListener("click",a=>{a.stopPropagation(),showCardMoveDropdown(e,a.currentTarget)}),t.querySelector("[data-action='delete']").addEventListener("click",a=>{a.stopPropagation(),deleteMedia(e.id)}),t}
     function fixPosterUrl(e){return e&&"N/A"!==e?e.startsWith("http://")||e.startsWith("https://")?e:e.startsWith("//")?`https:${e}`:`https://${e}`:null}
     function renderCategorySections(){elements.mediaSectionsContainer.innerHTML=categories.map(e=>`<div class="media-section" id="${e}Section" data-category="${e}" style="display:block"><div class="section-header"><h2 class="section-title user-select-none">${getCategoryName(e)}</h2><span id="${e}Count" class="category-count">0</span></div><div class="media-grid" id="${e}Grid"></div></div>`).join("")}
     function renderCategoriesList(){elements.categoriesList.innerHTML=categories.map((e,t)=>`<div class="category-item" data-category-name="${e}"><span class="category-name-span user-select-none">${getCategoryName(e)}</span><div style="display: flex; gap: 0.2rem;">${DEFAULT_CATEGORIES.includes(e)?"":`<button class="btn btn-secondary rename-category-btn" data-category="${e}"><i class="fas fa-pencil-alt"></i></button><button class="btn btn-danger delete-category-btn" data-category="${e}"><i class="fas fa-trash"></i></button>`}<button class="btn btn-secondary move-up-btn" data-category="${e}" ${0===t?"disabled":""}><i class="fas fa-arrow-up"></i></button><button class="btn btn-secondary move-down-btn" data-category="${e}" ${t===categories.length-1?"disabled":""}><i class="fas fa-arrow-down"></i></button></div></div>`).join(""),document.querySelectorAll(".rename-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation();const a=e.closest(".category-item"),o=a.dataset.categoryName,n=a.querySelector(".category-name-span");renameCategory(o,n)})}),document.querySelectorAll(".delete-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation(),deleteCategory(e.dataset.category)})}),document.querySelectorAll(".move-up-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,-1))}),document.querySelectorAll(".move-down-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,1))})}
@@ -780,9 +775,12 @@
     function setupLazyLoading(){if(lazyLoadObserver)lazyLoadObserver.disconnect();lazyLoadObserver=new IntersectionObserver((e,t)=>{e.forEach(e=>{if(e.isIntersecting){const a=e.target;a.src=a.dataset.src,a.classList.remove("lazy"),t.unobserve(a)}})});const e=document.querySelectorAll(".lazy");e.forEach(e=>lazyLoadObserver.observe(e))}
     function formatRuntime(e){if(!e)return"";const t=parseInt(e);return isNaN(t)||t<=0?"":Math.floor(t/60)>0?`${Math.floor(t/60)}h ${t%60>0?`${t%60}m`:""}`:`${t%60}m`}
     async function checkForRatingUpdates(){const e=mediaList.filter(e=>e.imdbID&&(!e.imdbRating||"N/A"===e.imdbRating)).sort((e,t)=>(e.lastChecked||0)-(t.lastChecked||0)).slice(0,5);for(const t of e){const a=await getOMDbMovieDetails(t.imdbID);if(a&&a.imdbRating&&"N/A"!==a.imdbRating){t.imdbRating=a.imdbRating,t.rottenTomatoes="";for(const e of a.Ratings||[])"Rotten Tomatoes"===e.Source&&(t.rottenTomatoes=e.Value);t.lastChecked=Date.now(),refreshSingleMedia(t.id),showNotification(`Rating aggiornati per: ${t.title}`,"success")}}saveData()}
-    function setupEventListeners(){elements.addMediaBtn.addEventListener("click",()=>{elements.mediaTitle.value="",elements.omdbResults.innerHTML="",currentOMDbSelection=null,elements.saveMediaBtn.textContent="Salva",elements.saveMediaBtn.onclick=addNewMedia,populateAddMediaCategorySelect(),elements.addMediaModal.style.display="flex",document.body.classList.add("modal-open")}),elements.confirmQuickEditBtn.addEventListener("click",()=>{const e=parseInt(elements.quickEditRewatchCount.value)||0;e<0?showNotification("Inserisci un numero valido","warning"):(markRewatch(currentQuickEditMedia.id,e),closeModal(elements.quickEditModal))}),elements.quickEditWatchedBtn.addEventListener("click",()=>{toggleCountedAsWatched(currentQuickEditMedia.id)}),elements.quickEditWatchlistBtn.addEventListener("click",()=>{toggleCountedAsWatchlist(currentQuickEditMedia.id)}),elements.cancelQuickEditBtn.addEventListener("click",()=>{currentUser?loadData():loadLocalData(),closeModal(elements.quickEditModal)}),elements.manageCategoriesBtn.addEventListener("click",openCategoryManagement),elements.addCategoryBtn.addEventListener("click",()=>{addCategory(elements.newCategoryName.value)&&(elements.newCategoryName.value="")}),elements.closeCategoryManagementBtn.addEventListener("click",()=>closeModal(elements.categoryManagementModal)),elements.cancelMediaBtn.addEventListener("click",()=>closeModal(elements.addMediaModal)),elements.searchOMDbBtn.addEventListener("click",searchOMDb),document.addEventListener("click",e=>{e.target.closest(".card-move-dropdown")||closeCardMoveDropdowns()}),elements.addMediaModal.addEventListener("click",e=>{e.target===elements.addMediaModal&&closeModal(elements.addMediaModal)}),elements.categoryManagementModal.addEventListener("click",e=>{e.target===elements.categoryManagementModal&&closeModal(elements.categoryManagementModal)}),elements.quickEditModal.addEventListener("click",e=>{e.target===elements.quickEditModal&&closeModal(elements.quickEditModal)}),elements.exportBtn.addEventListener("click",exportData),elements.importBtn.addEventListener("click",()=>elements.importFile.click()),elements.importFile.addEventListener("change",e=>importData(e.target.files[0])),elements.resetBtn.addEventListener("click",resetApp),elements.themeToggle.addEventListener("click",toggleTheme),elements.searchInput.addEventListener("input",()=>{clearTimeout(debounceTimeout),debounceTimeout=setTimeout(()=>{renderMedia()},300)}),elements.categoryFilter.addEventListener("change",renderMedia),elements.sortFilter.addEventListener("change",()=>{localStorage.setItem("mediaTrackerSortOrder",elements.sortFilter.value),renderMedia()}),elements.shareBtn.addEventListener("click",()=>{if(!currentUser)return void showNotification("Devi essere loggato per condividere.","warning");const e=`${window.location.origin}${window.location.pathname}?view=${currentUser.uid}`;elements.shareLinkInput.value=e,elements.shareModal.style.display="flex",document.body.classList.add("modal-open")}),elements.copyShareLinkBtn.addEventListener("click",()=>{navigator.clipboard.writeText(elements.shareLinkInput.value),showNotification("Link copiato!","success")}),elements.closeShareModalBtn.addEventListener("click",()=>closeModal(elements.shareModal)),elements.closeViewBtn.addEventListener("click",()=>{window.location.href=window.location.pathname}),document.querySelectorAll(".num-spinner-btn").forEach(e=>{e.addEventListener("click",t=>{const a=document.getElementById(t.currentTarget.dataset.target);if(a){let o=parseInt(a.value)||0;o=t.currentTarget.classList.contains("up")?o+1:o-1;const n=parseInt(a.min);isNaN(n)||o>=n||(o=n),a.value=o}})})
+    function setupEventListeners(){elements.addMediaBtn.addEventListener("click",()=>{elements.mediaTitle.value="",elements.omdbResults.innerHTML="",currentOMDbSelection=null,elements.saveMediaBtn.textContent="Salva",elements.saveMediaBtn.onclick=addNewMedia,populateAddMediaCategorySelect(),elements.addMediaModal.style.display="flex",document.body.classList.add("modal-open")}),elements.confirmQuickEditBtn.addEventListener("click",()=>{const e=parseInt(elements.quickEditRewatchCount.value)||0;e<0?showNotification("Inserisci un numero valido","warning"):(markRewatch(currentQuickEditMedia.id,e),closeModal(elements.quickEditModal))}),elements.quickEditWatchedBtn.addEventListener("click",()=>{toggleCountedAsWatched(currentQuickEditMedia.id)}),elements.quickEditWatchlistBtn.addEventListener("click",()=>{toggleCountedAsWatchlist(currentQuickEditMedia.id)}),elements.cancelQuickEditBtn.addEventListener("click",()=>{currentUser?loadData():loadLocalData(),closeModal(elements.quickEditModal)}),elements.manageCategoriesBtn.addEventListener("click",openCategoryManagement),elements.addCategoryBtn.addEventListener("click",()=>{addCategory(elements.newCategoryName.value)&&(elements.newCategoryName.value="")}),elements.closeCategoryManagementBtn.addEventListener("click",()=>closeModal(elements.categoryManagementModal)),elements.cancelMediaBtn.addEventListener("click",()=>closeModal(elements.addMediaModal)),elements.searchOMDbBtn.addEventListener("click",searchOMDb),document.addEventListener("click",e=>{if(!e.target.closest(".card-move-dropdown"))closeCardMoveDropdowns();if(e.target.closest('[data-action="change-poster"]')){const t=e.target.closest(".media-card");showPosterModal(t.dataset.id)}e.target===elements.posterModal&&(()=>{const t=document.querySelector(".poster-option.selected");t?changePoster(elements.posterModal.dataset.mediaId,t.dataset.url):showNotification("Nessuna nuova copertina selezionata.","warning"),elements.posterModal.style.display="none"})()}),elements.addMediaModal.addEventListener("click",e=>{e.target===elements.addMediaModal&&closeModal(elements.addMediaModal)}),elements.categoryManagementModal.addEventListener("click",e=>{e.target===elements.categoryManagementModal&&closeModal(elements.categoryManagementModal)}),elements.quickEditModal.addEventListener("click",e=>{e.target===elements.quickEditModal&&closeModal(elements.quickEditModal)}),elements.exportBtn.addEventListener("click",exportData),elements.importBtn.addEventListener("click",()=>elements.importFile.click()),elements.importFile.addEventListener("change",e=>importData(e.target.files[0])),elements.resetBtn.addEventListener("click",resetApp),elements.themeToggle.addEventListener("click",toggleTheme),elements.searchInput.addEventListener("input",()=>{clearTimeout(debounceTimeout),debounceTimeout=setTimeout(()=>{renderMedia()},300)}),elements.categoryFilter.addEventListener("change",renderMedia),elements.sortFilter.addEventListener("change",()=>{localStorage.setItem("mediaTrackerSortOrder",elements.sortFilter.value),renderMedia()}),elements.shareBtn.addEventListener("click",()=>{if(!currentUser)return void showNotification("Devi essere loggato per condividere.","warning");const e=`${window.location.origin}${window.location.pathname}?view=${currentUser.uid}`;elements.shareLinkInput.value=e,elements.shareModal.style.display="flex",document.body.classList.add("modal-open")}),elements.copyShareLinkBtn.addEventListener("click",()=>{navigator.clipboard.writeText(elements.shareLinkInput.value),showNotification("Link copiato!","success")}),elements.closeShareModalBtn.addEventListener("click",()=>closeModal(elements.shareModal)),elements.closeViewBtn.addEventListener("click",()=>{window.location.href=window.location.pathname}),document.querySelectorAll(".num-spinner-btn").forEach(e=>{e.addEventListener("click",t=>{const a=document.getElementById(t.currentTarget.dataset.target);if(a){let o=parseInt(a.value)||0;o=t.currentTarget.classList.contains("up")?o+1:o-1;const n=parseInt(a.min);isNaN(n)||o>=n||(o=n),a.value=o}})})
     }
     function openQuickEditModal(e){if(isViewMode)return;currentQuickEditMedia=e,elements.quickEditTitle.textContent=`Modifica: ${e.title}`,elements.quickEditRewatchCount.value=e.rewatchCount||0;const t=elements.quickEditWatchlistBtn;"watched"===e.category?(t.style.display="none"):(t.style.display="inline-flex",e.isCountedAsWatchlist?(t.innerHTML='<i class="fas fa-times"></i> Rimuovi da vedere come qui',t.className="btn btn-danger"):(t.innerHTML='<i class="fas fa-list-alt"></i> Segna come da vedere qui',t.className="btn btn-secondary"));const a=elements.quickEditWatchedBtn;"watched"===e.category?a.style.display="none":(a.style.display="inline-flex",e.isCountedAsWatched?(a.innerHTML='<i class="fas fa-times"></i> Rimuovi come visto qui',a.className="btn btn-danger"):(a.innerHTML='<i class="fas fa-check-double"></i> Segna come visto qui',a.className="btn btn-success")),elements.quickEditModal.style.display="flex",document.body.classList.add("modal-open")}
+    function showPosterModal(e){const t=mediaList.find(t=>t.id===e);if(!t||!t.imdbID)return void showNotification("Nessun IMDb ID trovato per questo film.","warning");const a=elements.posterModal,o=elements.posterGrid;a.dataset.mediaId=e,o.innerHTML="<p>Caricamento copertine...</p>",a.style.display="flex",fetchPosters(t.imdbID).then(e=>{if(0===e.length)return void(o.innerHTML="<p>Nessuna copertina alternativa trovata</p>");o.innerHTML="",e.forEach(e=>{const t=document.createElement("div");t.className="poster-option",t.dataset.url=e.url;const a=document.createElement("img");a.src=e.url,a.onerror=()=>a.src=DEFAULT_POSTER,t.appendChild(a),t.addEventListener("click",()=>{document.querySelectorAll(".poster-option").forEach(e=>e.classList.remove("selected")),t.classList.add("selected")}),o.appendChild(t)})})}
+    async function fetchPosters(e){try{const t=await fetch(`https://api.themoviedb.org/3/find/${e}?api_key=${TMDB_KEY}&external_source=imdb_id`),a=await t.json(),o=a.movie_results[0]?.id;if(!o)return[];const n=await fetch(`https://api.themoviedb.org/3/movie/${o}/images?api_key=${TMDB_KEY}`),i=await n.json();return i.posters.filter(e=>"en"===e.iso_639_1||null===e.iso_639_1).slice(0,10).map(e=>({url:`https://image.tmdb.org/t/p/w500${e.file_path}`}))}catch(t){return console.error("Error fetching posters:",t),[]}}
+    function changePoster(e,t){const a=mediaList.find(t=>t.id===e);a&&(a.poster=t,saveData(),refreshSingleMedia(e))}
     
     document.addEventListener("DOMContentLoaded", init);
   </script>
