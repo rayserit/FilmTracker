@@ -3,9 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MediaTracker Pro</title>
+  <title>Film Tracker</title>
   
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+  <link rel="icon" href="https://www.svgrepo.com/show/164284/movie-clapper-open.svg" type="image/svg+xml">
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -22,21 +27,38 @@
       --danger: #ff4444;
       --reset: #e74c3c;
       --success: #228b22;
-      --warning: #ffcc00;
-      --bg-color: #f5f5f5;
+      --warning: #ffbe0b;
+      --bg-color: #f4f7fa;
       --card-bg: white;
-      --text-color: #333;
+      --text-color: #1a1a1a;
       --text-secondary: #666;
       --border-color: #e0e0e0;
+      --section-tint: rgba(58, 134, 255, 0.05);
     }
 
     body.dark {
-      --bg-color: #1a1a1a;
-      --card-bg: #2d2d2d;
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
       --text-color: #f5f5f5;
       --text-secondary: #aaa;
-      --border-color: #444;
-      --reset: #ff6b6b;
+      --border-color: #333;
+      --section-tint: rgba(58, 134, 255, 0.08);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .loading-spinner {
+      animation: spin 1s linear infinite;
     }
 
     .user-select-none {
@@ -47,33 +69,115 @@
     }
 
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 1rem;
       background: var(--bg-color);
       color: var(--text-color);
       transition: background 0.3s, color 0.3s;
     }
+    
+    /* Header & Controls */
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .top-bar-left h1 {
+        margin: 0;
+        font-size: 1.75rem;
+        letter-spacing: -1px;
+        color: var(--primary);
+    }
+    .top-bar-right {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        flex-grow: 1;
+        justify-content: flex-end;
+    }
+    .search-box { max-width: 300px; }
+    .filter-select { max-width: 180px; }
 
+    /* Stats Panel */
+    .stats-panel {
+        background-color: var(--section-tint);
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 1rem;
+    }
+    .stat-item {
+      background: var(--card-bg);
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+      transition: background 0.2s;
+    }
+    .stat-item:hover {
+        background: rgba(58, 134, 255, 0.1);
+    }
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .stat-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+    }
+
+    /* Cards */
     .media-card {
       background: var(--card-bg);
       border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       width: 180px;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease-out;
       position: relative;
       border: 1px solid var(--border-color);
+      animation: fadeIn 0.5s ease-out both;
     }
 
     .media-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+    body.dark .media-card:hover {
+        box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    }
+    .media-card.is-stat-contributor {
+        border-top: 2px dashed var(--primary);
+    }
+    .media-card.is-duplicate {
+        opacity: 0.65;
     }
 
-    .media-card.moving {
-      transform: scale(0.95);
-      opacity: 0.5;
+
+    .poster-container {
+        position: relative;
+    }
+    .poster-container::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 50%;
+        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+        pointer-events: none;
     }
 
     .media-poster {
@@ -81,8 +185,8 @@
       aspect-ratio: 2 / 3;
       object-fit: cover;
       object-position: center top;
-      cursor: pointer;
       background-color: var(--border-color);
+      display: block;
     }
 
     .media-info {
@@ -96,8 +200,10 @@
       overflow: hidden;
       text-overflow: ellipsis;
       color: var(--text-color);
+      font-weight: 600;
+      letter-spacing: -0.25px;
     }
-
+    
     .media-meta {
       font-size: 0.8rem;
       color: var(--text-secondary);
@@ -108,32 +214,10 @@
       align-items: center;
     }
 
-    .watch-status-icon {
-        font-size: 0.9rem;
-        color: var(--primary);
-    }
-    
-    .watchlist-status-icon {
-        font-size: 0.9rem;
-        color: var(--secondary);
-    }
-
     .watch-status-icon sup {
         font-size: 0.7rem;
         font-weight: bold;
         margin-left: 1px;
-    }
-    
-    .rewatch-badge {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      font-weight: bold;
     }
 
     .media-ratings {
@@ -142,7 +226,6 @@
       margin-top: 0.5rem;
       font-size: 0.75rem;
     }
-    
     .rating-badge {
       display: inline-flex;
       align-items: center;
@@ -152,25 +235,25 @@
       border-radius: 12px;
       font-size: 0.8rem;
     }
-    body.dark .rating-badge {
-        background: rgba(255, 255, 255, 0.1);
-    }
-    .rating-icon {
-      width: 16px;
-      height: 16px;
-      object-fit: contain;
-    }
-    [title*="Rotten Tomatoes"] .rating-icon {
-      width: 14px;
-      height: 14px;
-    }
+    body.dark .rating-badge { background: rgba(255, 255, 255, 0.1); }
+    .rating-icon { width: 16px; height: 16px; object-fit: contain; }
     
+    /* Sections */
     .media-section {
-      transition: all 0.3s ease;
+      background: var(--section-tint);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: opacity 0.4s, transform 0.4s;
     }
-
-    .media-section.hidden {
-      display: none !important;
+     .media-section.hidden {
+      opacity: 0;
+      transform: scale(0.98);
+      height: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      pointer-events: none;
     }
 
     .media-grid {
@@ -179,30 +262,33 @@
       gap: 1.5rem;
       margin-top: 1rem;
     }
-
     .section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 1.5rem 0 0.5rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid var(--primary);
+      margin: 0 0 1rem 0;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+    }
+    .section-header::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
     }
 
     .section-title {
-      color: var(--primary);
+      color: var(--text-color);
       margin: 0;
+      font-size: 1.25rem;
+      letter-spacing: -0.5px;
+      font-weight: 700;
     }
-
-    .category-count {
-      background: var(--primary);
-      color: white;
-      padding: 0.2rem 0.5rem;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      margin-left: 0.5rem;
-    }
-
+    
     .btn {
       padding: 0.5rem 1rem;
       border-radius: 8px;
@@ -213,447 +299,289 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      box-sizing: border-box;
+      height: 38px;
     }
-    
-    .btn:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-        opacity: 0.7;
-    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: var(--secondary); color: white; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-reset { background: var(--reset); color: white; }
+    .btn-warning { background: var(--warning); color: #1a1a1a; }
 
-    body.dark .btn:disabled {
-        background-color: #555;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-    }
-
-    .btn-secondary {
-      background: var(--secondary);
-      color: white;
-    }
-    
-    .btn-success {
-      background: var(--success);
-      color: white;
-    }
-
-    .btn-danger {
-      background: var(--danger);
-      color: white;
-    }
-
-    .btn-reset {
-      background: var(--reset);
-      color: white;
-    }
-
-    .stat-item {
-      background: var(--card-bg);
-      padding: 0.75rem;
-      border-radius: 8px;
-      text-align: center;
-      min-width: 80px;
-      border: 1px solid var(--border-color);
-    }
-
-    .stat-value {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: var(--primary);
-    }
-
+    /* Modals, Forms, etc. */
     .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.7);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); display: none;
+      justify-content: center; align-items: center; z-index: 1000;
     }
-
-    .modal-open {
-      overflow: hidden;
-    }
-
+    .modal-open { overflow: hidden; }
     .modal-content {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 1.5rem;
-      width: 90%;
-      max-width: 500px;
+      background: var(--card-bg); border-radius: 12px;
+      padding: 1.5rem; width: 90%; max-width: 800px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
-
+    
     input, select {
-      width: 100%;
-      padding: 0.5rem;
-      margin: 0.5rem 0;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      background: var(--card-bg);
-      color: var(--text-color);
-    }
-
-    .card-move-dropdown {
-        position: fixed;
-        background: var(--card-bg);
+        padding: 0.5rem 0.75rem;
         border: 1px solid var(--border-color);
-        border-radius: 8px;
-        z-index: 1001;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        overflow: hidden;
+        border-radius: 8px; background: var(--bg-color);
+        color: var(--text-color); font-size: 1rem;
+        box-sizing: border-box; margin: 0; height: 38px;
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .card-move-dropdown-item {
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        font-size: 0.9rem;
-    }
-    .card-move-dropdown-item:hover {
-        background: var(--primary);
-        color: white;
-    }
-
-    .card-actions {
-      position: absolute;
-      top: 10px;
-      display: flex;
-      gap: 0.5rem;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .card-actions-left {
-        left: 10px;
-    }
-    .card-actions-right {
-        right: 10px;
-    }
-    .media-card:hover .card-actions {
-      opacity: 1;
-    }
-
-    .modal-open .card-actions {
-      display: none !important;
-    }
-
-    .card-btn {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    .filter-row {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .search-box {
-      flex: 1 1 auto;
-      min-width: 150px;
-      max-width: 300px; 
-    }
-
-    .filter-select {
-      flex: 1 1 auto;
-      min-width: 150px;
-      max-width: 180px; 
+    input:focus, select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
     }
 
     .omdb-results-container {
-      max-height: 300px;
-      overflow-y: auto;
-      margin-top: 1rem;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 0.5rem;
+      max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color);
+      border-radius: 8px; padding: 0.5rem; margin-top: 1rem;
     }
+    .omdb-result-item:hover { background: rgba(0,0,0,0.05); }
 
-    .omdb-result-item {
-      padding: 0.5rem;
-      cursor: pointer;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .omdb-result-item:last-child {
-      border-bottom: none;
-    }
-
-    .omdb-result-item:hover {
-      background: rgba(0,0,0,0.05);
-    }
-
-    .omdb-poster-small {
-      width: 50px;
-      height: 75px;
-      object-fit: cover;
-      border-radius: 4px;
-    }
-    
-    .category-management-modal {
-      max-width: 400px;
-    }
-
-    .categories-list {
-      max-height: 300px;
-      overflow-y: auto;
-      margin: 1rem 0;
-    }
-
-    .category-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .category-item:last-child {
-      border-bottom: none;
-    }
-
-    .notification {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: var(--success);
-      color: white;
-      padding: 1rem;
-      border-radius: 8px;
-      display: none;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-
-    .notification.error {
-      background: var(--danger);
-    }
-
-    .notification.warning {
-      background: var(--warning);
-      color: #333;
-    }
-    
-    .auth-form {
+    /* Action Buttons on Card Hover */
+    .card-actions {
+      position: absolute;
+      top: 10px;
+      right: 10px;
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
-      background: var(--card-bg);
-      padding: 1rem;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
+      opacity: 0;
+      transform: translateX(10px);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .media-card:hover .card-actions {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .card-btn {
+      width: 32px; height: 32px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.7); color: white; border: none;
+      cursor: pointer; font-size: 0.8rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .top-bar { flex-direction: column; align-items: stretch; }
+        .top-bar-right { justify-content: flex-start; }
+    }
+    @media (max-width: 768px) {
+        body { padding: 0.5rem; }
+        .top-bar { flex-direction: column; align-items: stretch; }
+        .media-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    }
+    
+    /* Context Menu */
+    .context-menu {
+        position: fixed; background: var(--card-bg); border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1001;
+        min-width: 220px; padding: 0.5rem 0; border: 1px solid var(--border-color);
+        opacity: 0; transform: translateY(-10px);
+        transition: opacity 0.15s, transform 0.15s;
+    }
+    .context-menu.visible { opacity: 1; transform: translateY(0); }
+    .context-menu-item {
+        padding: 0.75rem 1rem; cursor: pointer; display: flex;
+        align-items: center; gap: 0.75rem; font-size: 0.9rem;
+    }
+    .context-menu-item i { width: 18px; text-align: center; }
+    .context-menu-item:hover { background: var(--primary); color: white; }
+    .context-menu-divider { height: 1px; background: var(--border-color); margin: 0.25rem 0; }
+    
+    .empty-state {
+      text-align: center; padding: 3rem 1rem; color: var(--text-secondary);
+      border: 2px dashed var(--border-color); border-radius: 8px;
+      margin-top: 1rem;
+    }
+    /* FIX 1: Changed to direct child selector (>) to avoid styling icons inside buttons */
+    .empty-state > i {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    .add-film-from-empty {
+        margin-top: 1rem;
+        width: auto;
+        white-space: nowrap;
+    }
+    
+    #confirmModal .modal-content { max-width: 400px; }
+    #confirmModalBody { margin: 1rem 0; }
+    #confirmModalButtons { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+    /* Auth Forms */
+    .auth-form {
       position: absolute;
-      right: 1rem;
-      top: 5rem;
-      z-index: 100;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 300px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      z-index: 1001;
       display: none;
     }
-
-    .auth-form.active {
-      display: flex;
-    }
-
-    .auth-form input {
-      margin: 0;
-    }
-
-    .auth-form-buttons {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-
-    .auth-form-buttons button {
-      flex: 1;
-    }
-
-    .auth-tabs {
-      display: flex;
-      margin-bottom: 0.5rem;
-    }
-
+    .auth-form.active { display: block; }
+    .auth-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
     .auth-tab {
-      flex: 1;
-      text-align: center;
-      padding: 0.5rem;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
+        padding: 0.75rem 1rem; cursor: pointer; font-weight: 600;
+        color: var(--text-secondary); border-bottom: 2px solid transparent;
+    }
+    .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .auth-form-container { display: none; }
+    .auth-form-container.active { display: block; }
+    .auth-form-container input { width: 100%; margin-bottom: 1rem; }
+    .auth-form-buttons { display: flex; justify-content: flex-end; margin-top: 1rem; }
+
+    /* Notification */
+    .notification {
+      position: fixed; bottom: 20px; right: 20px;
+      padding: 1rem 1.5rem; border-radius: 8px; background: var(--card-bg);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1002; display: none;
+    }
+    .notification.success { border-left: 4px solid var(--success); }
+    .notification.error { border-left: 4px solid var(--danger); }
+    .notification.warning { border-left: 4px solid var(--warning); }
+
+    /* Modal fixes */
+    .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; }
+    .management-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
     }
 
-    .auth-tab.active {
-      border-bottom: 2px solid var(--primary);
-      font-weight: bold;
+    .tab-btn {
+        padding: 0.75rem 1.5rem; background: transparent; border: none;
+        cursor: pointer; font-weight: 600; color: var(--text-secondary);
+        border-bottom: 2px solid transparent; transition: all 0.2s;
+        display: flex; align-items: center; gap: 0.5rem;
     }
 
-    .auth-form-container {
-      display: none;
-    }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-btn:hover:not(.active) { color: var(--text-color); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .add-media-form { display: flex; flex-direction: column; gap: 1rem; }
+    .form-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .form-row input, .form-row select { flex: 1; min-width: 200px; }
+    .form-row .btn { flex-shrink: 0; }
 
-    .auth-form-container.active {
-      display: block;
+    /* Category management */
+    .category-management { margin-top: 1rem; }
+    .category-form { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .category-form input { flex: 1; }
+    .categories-list { max-height: 300px; overflow-y: auto; }
+    .category-card {
+      display: flex; align-items: center; padding: 0.75rem;
+      border-radius: 8px; background: var(--bg-color); margin-bottom: 0.5rem;
     }
+    .category-dot {
+      width: 16px; height: 16px; border-radius: 50%;
+      margin-right: 0.75rem; flex-shrink: 0;
+    }
+    .category-dot-watchlist { background: #00B4D8; }
+    .category-dot-watched { background: #228b22; }
+    .category-dot-0 { background: #3A86FF; } .category-dot-1 { background: #FF006E; }
+    .category-dot-2 { background: #8338EC; } .category-dot-3 { background: #FFBE0B; }
+    .category-dot-4 { background: #FB5607; } .category-dot-5 { background: #00B4D8; }
+    .category-card > div { flex: 1; }
+    .category-name { font-weight: 600; }
+    .category-item-count { font-size: 0.8rem; color: var(--text-secondary); }
+    .category-card-actions { display: flex; gap: 0.25rem; }
+    .category-card-actions .btn { padding: 0.5rem; height: auto; }
 
-    .share-link-input {
-        width: 100%;
-        background: var(--bg-color);
-        border: 1px solid var(--border-color);
-        padding: 0.5rem;
-        border-radius: 4px;
-        color: var(--text-color);
+    /* Poster modal */
+    .poster-modal {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.9); display: none; justify-content: center;
+      align-items: center; z-index: 1000; padding: 2rem;
     }
+    .poster-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem; max-height: 80vh; overflow-y: auto; width: 100%;
+    }
+    .poster-option {
+      cursor: pointer; transition: transform 0.2s; border: 2px solid transparent;
+      border-radius: 4px;
+    }
+    .poster-option:hover { transform: scale(1.05); }
+    .poster-option.selected { border-color: var(--primary); }
+    .poster-option img { width: 100%; height: auto; border-radius: 4px; }
 
-    .view-mode-banner {
-      background: var(--primary);
-      color: white;
-      padding: 0.75rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .top-bar {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-    
-    .main-controls {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      flex-grow: 1;
-      flex-wrap: wrap;
-    }
-    
-    .stats-container {
-      display: flex;
-      gap: 1rem;
-      margin: 1rem 0;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .dropdown-toggle {
-      cursor: pointer;
-    }
-
+    /* Number input controls */
     .number-input-wrapper {
         position: relative;
         display: flex;
         align-items: center;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+        height: 38px;
     }
-
     .number-input-wrapper input {
-        padding-right: 25px;
-    }
-
-    .number-input-controls {
-        position: absolute;
-        right: 1px;
-        top: 1px;
-        bottom: 1px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .num-spinner-btn {
-        flex: 1;
-        width: 22px;
-        border: none;
-        background-color: var(--border-color);
-        color: var(--text-color);
-        cursor: pointer;
-        font-size: 0.8rem;
-        line-height: 1;
-    }
-    .num-spinner-btn:hover {
-        background-color: var(--primary);
-        color: white;
-    }
-    .num-spinner-btn.up {
-        border-top-right-radius: 7px;
-    }
-    .num-spinner-btn.down {
-        border-bottom-right-radius: 7px;
-    }
-
-    input[type=number]::-webkit-outer-spin-button,
-    input[type=number]::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    input[type=number] {
+        border: none; text-align: center; flex: 1;
+        width: 100%; padding-right: 25px;
+        background: var(--card-bg);
         -moz-appearance: textfield;
     }
+    .number-input-wrapper input::-webkit-outer-spin-button,
+    .number-input-wrapper input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .number-input-controls {
+        position: absolute;
+        right: 1px; top: 1px; bottom: 1px;
+        display: flex;
+        flex-direction: column;
+        width: 24px;
+    }
+    .num-spinner-btn {
+        flex: 1; width: 100%; border: none;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        cursor: pointer; font-size: 0.8rem; line-height: 1;
+        padding: 0; height: 50%;
+    }
+    .num-spinner-btn:hover { background-color: var(--primary); color: white; }
+    .num-spinner-btn.up { border-top-right-radius: 7px; }
+    .num-spinner-btn.down { border-bottom-right-radius: 7px; }
 
-    .poster-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
+
+    /* OMDb results */
+    .omdb-result-item {
+      display: flex; align-items: center; padding: 0.5rem;
+      cursor: pointer; border-radius: 4px; margin-bottom: 0.25rem;
     }
-  
-    .poster-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 15px;
-      max-width: 800px;
-      max-height: 80vh;
-      overflow-y: auto;
-      padding: 20px;
-      background: var(--card-bg);
-      border-radius: 8px;
-    }
-  
-    .poster-option {
-      cursor: pointer;
-      border: 3px solid transparent;
-      transition: all 0.2s;
-    }
-  
-    .poster-option:hover, .poster-option.selected {
-      border-color: var(--primary);
-    }
-  
-    .poster-option img {
-      width: 100%;
-      aspect-ratio: 2/3;
-      object-fit: cover;
+    .omdb-result-item:hover { background: rgba(0,0,0,0.05); }
+    .omdb-poster-small {
+      width: 40px; height: 60px; object-fit: cover;
+      margin-right: 0.75rem; border-radius: 4px;
     }
 
+    /* View mode banner */
+    .view-mode-banner {
+      display: none; align-items: center; background: var(--primary); color: white;
+      padding: 0.75rem 1.5rem; margin-bottom: 1.5rem; border-radius: 8px;
+    }
+    .view-mode-banner i { margin-right: 0.75rem; }
+
+    /* FIX 2: Corrects the vertical alignment of the plus icon */
+    .btn i.fa-plus {
+        position: relative;
+        top: -1px;
+    }
   </style>
 </head>
 <body class="dark user-select-none">
+  
   <div id="viewModeBanner" class="view-mode-banner" style="display:none">
     <i class="fas fa-eye"></i>
     <span id="viewModeUserEmail">Stai visualizzando una libreria condivisa</span>
@@ -661,128 +589,1271 @@
       <i class="fas fa-times"></i> Esci
     </button>
   </div>
+
   <div class="top-bar">
-    <div class="main-controls">
-      <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
-      <select id="categoryFilter" class="filter-select">
-        <option value="all">Tutte le categorie</option>
-      </select>
-      <select id="sortFilter" class="filter-select">
-        <option value="alpha" selected>Alfabetico</option>
-        <option value="added">Ultimi aggiunti</option>
-        <option value="rating">Valutazione</option>
-        <option value="year">Anno di uscita</option>
-      </select>
-      <button id="addMediaBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi Film</button>
-      <button id="manageCategoriesBtn" class="btn btn-secondary"><i class="fas fa-folder"></i></button>
-      <button id="shareBtn" class="btn btn-secondary"><i class="fas fa-share-alt"></i></button>
-      <button id="exportBtn" class="btn btn-secondary"><i class="fas fa-download"></i></button>
-      <input type="file" id="importFile" accept=".json" style="display: none;">
-      <button id="importBtn" class="btn btn-secondary"><i class="fas fa-upload"></i></button>
-      <button id="resetBtn" class="btn btn-reset"><i class="fas fa-undo"></i></button>
-      <button id="themeToggle" class="btn"><i class="fas fa-moon"></i></button>
-      <div id="userInfo" style="display:none; margin-left: auto;"><button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
-      <button id="authToggle" class="btn btn-secondary" style="margin-left: auto;"><i class="fas fa-user"></i> Login</button>
+    <div class="top-bar-left">
+      <h1><i class="fas fa-film"></i> Film Tracker</h1>
+    </div>
+    <div class="top-bar-right">
+        <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
+        <select id="categoryFilter" class="filter-select">
+          <option value="all">Tutte le categorie</option>
+        </select>
+        <select id="sortFilter" class="filter-select">
+          <option value="alpha" selected>Alfabetico</option>
+          <option value="added">Ultimi aggiunti</option>
+          <option value="rating">Valutazione</option>
+          <option value="year">Anno di uscita</option>
+        </select>
+        <button id="mediaManagementBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Gestione</button>
+        <button id="shareBtn" class="btn btn-secondary"><i class="fas fa-share-alt"></i></button>
+        <button id="exportBtn" class="btn btn-success"><i class="fas fa-download"></i></button>
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+        <button id="importBtn" class="btn btn-warning"><i class="fas fa-upload"></i></button>
+        <button id="resetBtn" class="btn btn-reset"><i class="fas fa-undo"></i></button>
+        <button id="themeToggle" class="btn"><i class="fas fa-moon"></i></button>
+      <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+      <button id="authToggle" class="btn btn-secondary"><i class="fas fa-user"></i> Login</button>
+      <div id="authForms" class="auth-form">
+        <div class="auth-tabs"><div class="auth-tab active" data-tab="login">Login</div><div class="auth-tab" data-tab="register">Registrati</div></div>
+        <div id="loginForm" class="auth-form-container active"><input type="email" id="loginEmail" placeholder="Email"><input type="password" id="loginPassword" placeholder="Password"><div class="auth-form-buttons"><button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button></div></div>
+        <div id="registerForm" class="auth-form-container"><input type="email" id="registerEmail" placeholder="Email"><input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)"><input type="password" id="registerConfirmPassword" placeholder="Conferma Password"><div class="auth-form-buttons"><button id="registerBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati</button></div></div>
+      </div>
     </div>
   </div>
-  <div class="stats-container">
-    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-      <div class="stat-item"><div class="stat-value" id="statTotal">0</div><div>Totale</div></div>
-      <div class="stat-item"><div class="stat-value" id="statWatchlist">0</div><div>Da Vedere</div></div>
-      <div class="stat-item"><div class="stat-value" id="statWatched">0</div><div>Visti</div></div>
-      <div class="stat-item"><div class="stat-value" id="statRewatched">0</div><div>Rewatch</div></div>
-      <div class="stat-item"><div class="stat-value" id="statHours">0h 0m</div><div>Tempo Totale</div></div>
-    </div>
-    <div id="authForms" class="auth-form">
-      <div class="auth-tabs"><div class="auth-tab active" data-tab="login">Login</div><div class="auth-tab" data-tab="register">Registrati</div></div>
-      <div id="loginForm" class="auth-form-container active"><input type="email" id="loginEmail" placeholder="Email"><input type="password" id="loginPassword" placeholder="Password"><div class="auth-form-buttons"><button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button></div></div>
-      <div id="registerForm" class="auth-form-container"><input type="email" id="registerEmail" placeholder="Email"><input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)"><input type="password" id="registerConfirmPassword" placeholder="Conferma Password"><div class="auth-form-buttons"><button id="registerBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati</button></div></div>
-    </div>
+
+  <div class="stats-panel">
+      <div class="stats-container">
+        <div class="stat-item"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Totale</div></div>
+        <div class="stat-item"><div class="stat-value" id="statWatchlist">0</div><div class="stat-label">Da Vedere</div></div>
+        <div class="stat-item"><div class="stat-value" id="statWatched">0</div><div class="stat-label">Visti</div></div>
+        <div class="stat-item"><div class="stat-value" id="statRewatched">0</div><div class="stat-label">Rewatch</div></div>
+        <div class="stat-item"><div class="stat-value" id="statHours">0h 0m</div><div class="stat-label">Tempo Totale</div></div>
+      </div>
   </div>
+
   <div id="mediaSectionsContainer"></div>
-  <div class="modal" id="addMediaModal"><div class="modal-content"><h2>Aggiungi Film</h2><input type="text" id="mediaTitle" placeholder="Titolo" style="margin-bottom: 1rem;"><div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;"><button id="searchOMDbBtn" class="btn btn-secondary" style="flex-shrink: 0;"><i class="fas fa-search"></i> Cerca su OMDb</button><select id="addMediaCategorySelect" class="filter-select" style="margin: 0;"></select></div><div id="omdbResults" class="omdb-results-container"></div><div style="display: flex; gap: 0.5rem; margin-top: 1rem;"><button id="saveMediaBtn" class="btn btn-primary">Salva</button><button id="cancelMediaBtn" class="btn btn-danger">Annulla</button></div></div></div>
-  <div class="modal" id="quickEditModal"><div class="modal-content" style="max-width: 400px;"><h2 id="quickEditTitle">Modifica Rapida</h2><div id="quickEditButtonsContainer" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;"><button class="btn" id="quickEditWatchlistBtn" style="width: 100%;"></button><button class="btn" id="quickEditWatchedBtn" style="width: 100%;"></button></div><div style="display: flex; align-items: center; gap: 1rem;"><label for="quickEditRewatchCount">Rewatch:</label><div class="number-input-wrapper" style="width: 100px;"><input type="number" id="quickEditRewatchCount" min="0" value="1" style="margin: 0; text-align: center;"><div class="number-input-controls"><button class="num-spinner-btn up" data-target="quickEditRewatchCount">+</button><button class="num-spinner-btn down" data-target="quickEditRewatchCount">-</button></div></div></div><div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;"><button id="confirmQuickEditBtn" class="btn btn-primary">Salva</button><button id="cancelQuickEditBtn" class="btn btn-danger">Annulla</button></div></div></div>
-  <div class="modal" id="categoryManagementModal"><div class="modal-content category-management-modal"><h2>Gestione Categorie</h2><div class="filter-row"><input type="text" id="newCategoryName" placeholder="Nome categoria"><button id="addCategoryBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi</button></div><div class="categories-list" id="categoriesList"></div><div style="display: flex; gap: 0.5rem; margin-top: 1rem;"><button id="closeCategoryManagementBtn" class="btn btn-danger">Chiudi</button></div></div></div>
+  
+  <!-- MODALS START -->
+  <div class="modal" id="mediaManagementModal">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="media-management-container">
+        <div class="management-tabs">
+          <button class="tab-btn active" data-tab="add-media"><i class="fas fa-film"></i> Aggiungi Film</button>
+          <button class="tab-btn" data-tab="manage-categories"><i class="fas fa-folder"></i> Gestisci Categorie</button>
+        </div>
+        <div class="tab-content active" id="add-media-tab">
+          <div class="add-media-form">
+            <div class="form-row">
+              <input type="text" id="mediaTitle" placeholder="Titolo film" class="modern-input">
+              <select id="addMediaCategorySelect" class="modern-select"></select>
+              <button id="searchOMDbBtn" class="btn btn-secondary"><i class="fas fa-search"></i> Cerca</button>
+            </div>
+            <div id="omdbResults" class="omdb-results-container"></div>
+          </div>
+        </div>
+        <div class="tab-content" id="manage-categories-tab">
+          <div class="category-management">
+            <div class="category-form">
+              <input type="text" id="newCategoryName" placeholder="Nuova categoria" class="modern-input">
+              <button id="addCategoryBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi</button>
+            </div>
+            <div class="categories-list" id="categoriesList"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="saveMediaBtn" class="btn btn-primary"><i class="fas fa-save"></i> Salva Film</button>
+          <button id="closeManagementModal" class="btn btn-danger"><i class="fas fa-times"></i> Chiudi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal" id="quickEditModal"><div class="modal-content" style="max-width: 400px;"><h2 id="quickEditTitle">Modifica Rapida</h2><div id="quickEditButtonsContainer" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;"><button class="btn" id="quickEditWatchlistBtn" style="width: 100%;"></button><button class="btn" id="quickEditWatchedBtn" style="width: 100%;"></button></div><div style="display: flex; align-items: center; gap: 1rem;"><label for="quickEditRewatchCount">Rewatch:</label><div class="number-input-wrapper" style="width: 100px;"><input type="number" id="quickEditRewatchCount" min="0" value="1"><div class="number-input-controls"><button class="num-spinner-btn up" data-target="quickEditRewatchCount">+</button><button class="num-spinner-btn down" data-target="quickEditRewatchCount">-</button></div></div></div><div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;"><button id="confirmQuickEditBtn" class="btn btn-primary">Salva</button><button id="cancelQuickEditBtn" class="btn btn-danger">Annulla</button></div></div></div>
   <div class="modal" id="shareModal"><div class="modal-content" style="max-width: 450px;"><h2>Condividi la tua libreria</h2><p>Chiunque abbia questo link potrà vedere la tua lista in tempo reale (sola lettura).</p><input type="text" id="shareLinkInput" class="share-link-input" readonly><div style="display: flex; gap: 0.5rem; margin-top: 1rem;"><button id="copyShareLinkBtn" class="btn btn-primary">Copia Link</button><button id="closeShareModalBtn" class="btn btn-danger">Chiudi</button></div></div></div>
   <div id="notification" class="notification"><span id="notificationText"></span></div>
-
-  <div id="posterModal" class="poster-modal">
-    <div class="poster-grid" id="posterGrid"></div>
+  <div id="posterModal" class="poster-modal"><div class="poster-grid" id="posterGrid"></div></div>
+  <div class="modal" id="confirmModal">
+    <div class="modal-content">
+      <h2 id="confirmModalTitle"></h2>
+      <p id="confirmModalBody"></p>
+      <div id="confirmModalButtons">
+        <button id="confirmModalCancel" class="btn btn-secondary">Annulla</button>
+        <button id="confirmModalConfirm" class="btn btn-danger">Conferma</button>
+      </div>
+    </div>
   </div>
+  <!-- MODALS END -->
 
   <script>
     const OMDb_API_KEY = "2526ef70";
-    const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ="); // Chiave codificata
+    const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ=");
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
-    let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentQuickEditMedia = null, currentOMDbSelection = null, currentUser = null, isViewMode = !1, activeShareId = null, debounceTimeout, lazyLoadObserver;
+    let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentQuickEditMedia = null, currentOMDbSelection = null, currentUser = null, isViewMode = false, debounceTimeout, lazyLoadObserver;
+    let statContributorIds = new Set();
+    let ignoredDuplicateIds = new Set();
     const firebaseConfig = { apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk", authDomain: "gametrackerdb.firebaseapp.com", databaseURL: "https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gametrackerdb" };
-    const elements = { authForms: document.getElementById("authForms"), authToggle: document.getElementById("authToggle"), userInfo: document.getElementById("userInfo"), loginBtn: document.getElementById("loginBtn"), loginEmail: document.getElementById("loginEmail"), loginPassword: document.getElementById("loginPassword"), registerBtn: document.getElementById("registerBtn"), registerEmail: document.getElementById("registerEmail"), registerPassword: document.getElementById("registerPassword"), registerConfirmPassword: document.getElementById("registerConfirmPassword"), logoutBtn: document.getElementById("logoutBtn"), loginForm: document.getElementById("loginForm"), registerForm: document.getElementById("registerForm"), addMediaBtn: document.getElementById("addMediaBtn"), manageCategoriesBtn: document.getElementById("manageCategoriesBtn"), shareBtn: document.getElementById("shareBtn"), exportBtn: document.getElementById("exportBtn"), importBtn: document.getElementById("importBtn"), importFile: document.getElementById("importFile"), resetBtn: document.getElementById("resetBtn"), themeToggle: document.getElementById("themeToggle"), searchInput: document.getElementById("searchInput"), categoryFilter: document.getElementById("categoryFilter"), sortFilter: document.getElementById("sortFilter"), statTotal: document.getElementById("statTotal"), statWatchlist: document.getElementById("statWatchlist"), statWatched: document.getElementById("statWatched"), statRewatched: document.getElementById("statRewatched"), statHours: document.getElementById("statHours"), mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), addMediaModal: document.getElementById("addMediaModal"), mediaTitle: document.getElementById("mediaTitle"), searchOMDbBtn: document.getElementById("searchOMDbBtn"), omdbResults: document.getElementById("omdbResults"), saveMediaBtn: document.getElementById("saveMediaBtn"), cancelMediaBtn: document.getElementById("cancelMediaBtn"), addMediaCategorySelect: document.getElementById("addMediaCategorySelect"), categoryManagementModal: document.getElementById("categoryManagementModal"), newCategoryName: document.getElementById("newCategoryName"), addCategoryBtn: document.getElementById("addCategoryBtn"), categoriesList: document.getElementById("categoriesList"), closeCategoryManagementBtn: document.getElementById("closeCategoryManagementBtn"), quickEditModal: document.getElementById("quickEditModal"), quickEditTitle: document.getElementById("quickEditTitle"), quickEditWatchedBtn: document.getElementById("quickEditWatchedBtn"), quickEditWatchlistBtn: document.getElementById("quickEditWatchlistBtn"), quickEditRewatchCount: document.getElementById("quickEditRewatchCount"), confirmQuickEditBtn: document.getElementById("confirmQuickEditBtn"), cancelQuickEditBtn: document.getElementById("cancelQuickEditBtn"), notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"), shareModal: document.getElementById("shareModal"), shareLinkInput: document.getElementById("shareLinkInput"), copyShareLinkBtn: document.getElementById("copyShareLinkBtn"), closeShareModalBtn: document.getElementById("closeShareModalBtn"), viewModeBanner: document.getElementById("viewModeBanner"), viewModeUserEmail: document.getElementById("viewModeUserEmail"), closeViewBtn: document.getElementById("closeViewBtn"), posterModal: document.getElementById("posterModal"), posterGrid: document.getElementById("posterGrid") };
+    
+    const elements = { 
+        authForms: document.getElementById("authForms"), authToggle: document.getElementById("authToggle"), 
+        userInfo: document.getElementById("userInfo"), loginBtn: document.getElementById("loginBtn"), 
+        loginEmail: document.getElementById("loginEmail"), loginPassword: document.getElementById("loginPassword"), 
+        registerBtn: document.getElementById("registerBtn"), registerEmail: document.getElementById("registerEmail"), 
+        registerPassword: document.getElementById("registerPassword"), registerConfirmPassword: document.getElementById("registerConfirmPassword"), 
+        logoutBtn: document.getElementById("logoutBtn"), loginForm: document.getElementById("loginForm"), 
+        registerForm: document.getElementById("registerForm"), mediaManagementBtn: document.getElementById("mediaManagementBtn"), 
+        shareBtn: document.getElementById("shareBtn"), exportBtn: document.getElementById("exportBtn"), 
+        importBtn: document.getElementById("importBtn"), importFile: document.getElementById("importFile"), 
+        resetBtn: document.getElementById("resetBtn"), themeToggle: document.getElementById("themeToggle"), 
+        searchInput: document.getElementById("searchInput"), categoryFilter: document.getElementById("categoryFilter"), 
+        sortFilter: document.getElementById("sortFilter"), statTotal: document.getElementById("statTotal"), 
+        statWatchlist: document.getElementById("statWatchlist"), statWatched: document.getElementById("statWatched"), 
+        statRewatched: document.getElementById("statRewatched"), statHours: document.getElementById("statHours"), 
+        mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), mediaManagementModal: document.getElementById("mediaManagementModal"), 
+        mediaTitle: document.getElementById("mediaTitle"), searchOMDbBtn: document.getElementById("searchOMDbBtn"), 
+        omdbResults: document.getElementById("omdbResults"), saveMediaBtn: document.getElementById("saveMediaBtn"), 
+        addMediaCategorySelect: document.getElementById("addMediaCategorySelect"), newCategoryName: document.getElementById("newCategoryName"), 
+        addCategoryBtn: document.getElementById("addCategoryBtn"), categoriesList: document.getElementById("categoriesList"), 
+        closeManagementModal: document.getElementById("closeManagementModal"), quickEditModal: document.getElementById("quickEditModal"), 
+        quickEditTitle: document.getElementById("quickEditTitle"), quickEditWatchedBtn: document.getElementById("quickEditWatchedBtn"), 
+        quickEditWatchlistBtn: document.getElementById("quickEditWatchlistBtn"), quickEditRewatchCount: document.getElementById("quickEditRewatchCount"), 
+        confirmQuickEditBtn: document.getElementById("confirmQuickEditBtn"), cancelQuickEditBtn: document.getElementById("cancelQuickEditBtn"), 
+        notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"), 
+        shareModal: document.getElementById("shareModal"), shareLinkInput: document.getElementById("shareLinkInput"), 
+        copyShareLinkBtn: document.getElementById("copyShareLinkBtn"), closeShareModalBtn: document.getElementById("closeShareModalBtn"), 
+        viewModeBanner: document.getElementById("viewModeBanner"), viewModeUserEmail: document.getElementById("viewModeUserEmail"), 
+        closeViewBtn: document.getElementById("closeViewBtn"), posterModal: document.getElementById("posterModal"), 
+        posterGrid: document.getElementById("posterGrid"),
+        confirmModal: document.getElementById("confirmModal"), confirmModalTitle: document.getElementById("confirmModalTitle"),
+        confirmModalBody: document.getElementById("confirmModalBody"), confirmModalConfirm: document.getElementById("confirmModalConfirm"),
+        confirmModalCancel: document.getElementById("confirmModalCancel")
+    };
+    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
     document.addEventListener("DOMContentLoaded", init);
 
-    function getRottenTomatoesState(e){if(!e||"N/A"===e)return null;const t=parseInt(e);return isNaN(t)?null:t>=75?"certified":t>=60?"fresh":"rotten"}
-    function init(){setupEventListeners(),handleViewMode()||(setupAuthListeners(),loadLocalData()),loadTheme(),loadSortOrder(),setInterval(checkForRatingUpdates,216e5)}
-    function setupAuthListeners(){elements.authToggle.addEventListener("click",e=>{e.stopPropagation(),elements.authForms.classList.toggle("active")}),document.addEventListener("click",e=>{elements.authForms.contains(e.target)||e.target.closest("#authToggle")||elements.authForms.classList.remove("active")}),document.querySelectorAll(".auth-tab").forEach(e=>{e.addEventListener("click",()=>{document.querySelectorAll(".auth-tab").forEach(e=>e.classList.remove("active")),e.classList.add("active"),document.querySelectorAll(".auth-form-container").forEach(t=>t.classList.remove("active")),document.getElementById(`${e.dataset.tab}Form`).classList.add("active")})}),elements.loginBtn.addEventListener("click",()=>{const e=elements.loginEmail.value,t=elements.loginPassword.value;e&&t?firebase.auth().signInWithEmailAndPassword(e,t).then(()=>{showNotification("Login effettuato","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Inserisci email e password","warning")}),elements.registerBtn.addEventListener("click",()=>{const e=elements.registerEmail.value,t=elements.registerPassword.value,a=elements.registerConfirmPassword.value;e&&t&&a?t!==a?showNotification("Le password non corrispondono","warning"):t.length<6?showNotification("La password deve avere almeno 6 caratteri","warning"):firebase.auth().createUserWithEmailAndPassword(e,t).then(()=>{showNotification("Registrazione completata!","success"),elements.authForms.classList.remove("active")}).catch(e=>showNotification(getAuthErrorMessage(e),"error")):showNotification("Compila tutti i campi","warning")}),elements.logoutBtn.addEventListener("click",()=>firebase.auth().signOut()),firebase.auth().onAuthStateChanged(e=>{if(isViewMode)return;currentUser=e,updateAuthUI(),e?loadData():loadLocalData()})}
-    function getAuthErrorMessage(e){switch(e.code){case"auth/email-already-in-use":return"Email già registrata";case"auth/invalid-email":return"Email non valida";case"auth/weak-password":return"Password troppo debole";case"auth/user-not-found":return"Utente non trovato";case"auth/wrong-password":return"Password errata";default:return"Errore: "+e.message}}
-    function updateAuthUI(){currentUser?(elements.userInfo.style.display="flex",elements.authToggle.style.display="none",document.querySelectorAll(".btn").forEach(e=>e.disabled=!1)):(elements.userInfo.style.display="none",elements.authToggle.style.display="block",document.querySelectorAll("#addMediaBtn, #manageCategoriesBtn, #shareBtn").forEach(e=>e.disabled=!0),document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(e=>{e.disabled=!1}))}
-    function loadData(){if(!currentUser)return;const e=`users/${currentUser.uid}/mediaTracker`;db.ref(`${e}/mediaList`).on("value",t=>{let a=t.val()||[];mediaList=a.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),renderMedia(),updateStats()}),db.ref(`${e}/categories`).once("value").then(e=>{categories=e.val()||[...DEFAULT_CATEGORIES],renderFullUI()})}
-    function loadLocalData(){try{let e=JSON.parse(localStorage.getItem("mediaList"))||[];mediaList=e.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),categories=JSON.parse(localStorage.getItem("categories"))||[...DEFAULT_CATEGORIES],renderFullUI(),updateStats()}catch(e){console.error("Error loading local data:",e)}}
-    function saveData(){currentUser?db.ref(`users/${currentUser.uid}/mediaTracker`).set({mediaList:mediaList,categories:categories}).catch(e=>{console.error("Error saving to Firebase:",e)}):saveToLocal()}
-    function saveToLocal(){try{localStorage.setItem("mediaList",JSON.stringify(mediaList)),localStorage.setItem("categories",JSON.stringify(categories))}catch(e){console.error("Error saving locally:",e)}}
-    function handleViewMode(){const e=new URLSearchParams(window.location.search).get("view");return!!e&&(isViewMode=!0,document.querySelectorAll("#addMediaBtn, #manageCategoriesBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, #authToggle, #userInfo").forEach(e=>e.style.display="none"),elements.viewModeBanner.style.display="flex",db.ref(`users/${e}/mediaTracker`).on("value",e=>{const t=e.val();if(t){let e=t.mediaList||[];mediaList=e.map(e=>({...{isCountedAsWatched:!1,isCountedAsWatchlist:!1,rewatchCount:0},...e})),categories=t.categories||[...DEFAULT_CATEGORIES],renderFullUI(),updateStats(),db.ref(`users/${e}/email`).once("value",e=>{const t=e.val();elements.viewModeUserEmail.textContent=`Stai visualizzando la libreria di ${t||"un utente"}`})}else showNotification("Libreria condivisa non trovata o non accessibile.","error")}),!0)}
-    function renderFullUI(){renderCategorySections(),updateCategoryFilter(),populateAddMediaCategorySelect(),renderCategoriesList(),renderMedia()}
-    function renderMedia(){clearMediaGrids(),updateStats();const e=elements.searchInput.value.toLowerCase(),t=elements.categoryFilter.value,a=elements.sortFilter.value;document.querySelectorAll(".media-section").forEach(e=>{e.style.display="block"});let o=[...mediaList];e&&(o=o.filter(t=>t.title.toLowerCase().includes(e))),"all"!==t&&(o=o.filter(e=>e.category===t),document.querySelectorAll(".media-section").forEach(e=>{e.dataset.category!==t&&(e.style.display="none")})),o.sort((e,t)=>{switch(a){case"alpha":return e.title.localeCompare(t.title);case"rating":return(parseFloat(t.imdbRating)||0)-(parseFloat(e.imdbRating)||0);case"year":return(parseInt(t.year)||0)-(parseInt(e.year)||0);case"added":default:return new Date(t.addedAt)-new Date(e.addedAt)}}),o.forEach(e=>{const t=document.getElementById(`${e.category}Grid`);if(t){const a=t.querySelector(`.media-card[data-id="${e.id}"]`);a?t.replaceChild(createMediaCard(e),a):t.appendChild(createMediaCard(e))}}),setupLazyLoading(),updateCounts()}
-    function clearMediaGrids(){categories.forEach(e=>{const t=document.getElementById(`${e}Grid`);t&&(t.innerHTML="")})}
-    function updateStats(){const processedIds=new Set;const stats={total:mediaList.length,watchlist:0,watched:0,rewatched:0,hours:0,minutes:0};mediaList.forEach(media=>{const uniqueId=media.imdbID||media.title.toLowerCase().trim();if(processedIds.has(uniqueId))return;processedIds.add(uniqueId);const isConsideredWatched=media.category==="watched"||media.isCountedAsWatched;media.category==="watched"&&stats.watched++;(media.category==="watchlist"||media.isCountedAsWatchlist)&&!isConsideredWatched&&stats.watchlist++;if(isConsideredWatched){media.rewatchCount>0&&(stats.rewatched+=media.rewatchCount);const runtime=media.runtime?parseInt(media.runtime.replace(/\D/g,"")):0;if(runtime>0){const totalViews=(media.rewatchCount||0)+1;stats.minutes+=runtime*totalViews}}});stats.hours=Math.floor(stats.minutes/60),stats.minutes%=60,elements.statTotal.textContent=stats.total,elements.statWatchlist.textContent=stats.watchlist,elements.statWatched.textContent=stats.watched,elements.statRewatched.textContent=stats.rewatched,elements.statHours.textContent=`${stats.hours}h ${stats.minutes}m`}
-    function updateCounts(){categories.forEach(e=>{const t=document.getElementById(`${e}Count`);if(t){const a=mediaList.filter(t=>t.category===e).length;t.textContent=a;const o=document.getElementById(`${e}Section`);o&&"all"!==elements.categoryFilter.value&&0===a&&(o.style.display="none")}})}
-    function createMediaCard(e){const t=document.createElement("div");t.className="media-card",t.dataset.id=e.id;let a="";e.imdbRating&&"N/A"!==e.imdbRating&&(a+=`<span class="rating-badge" title="IMDb Rating: ${e.imdbRating}"><img src="${IMDB_STAR_ICON}" class="rating-icon" alt="IMDb"> ${e.imdbRating}</span>`);if(e.rottenTomatoes&&"N/A"!==e.rottenTomatoes){const o=getRottenTomatoesState(e.rottenTomatoes);o&&(a+=`<span class="rating-badge" title="Rotten Tomatoes: ${e.rottenTomatoes}"><img src="${ROTTEN_TOMATOES_ICONS[o]}" class="rating-icon" alt="Rotten Tomatoes"> ${e.rottenTomatoes}</span>`)}const o=a?`<div class="media-ratings">${a}</div>`:"";let n="";if(e.isCountedAsWatched||"watched"===e.category){const t=(e.rewatchCount||0)+1,a=t>1?`<sup>${t}</sup>`:"";n=`<span class="watch-status-icon" title="Visto ${t} volte"><i class="fas fa-eye"></i>${a}</span>`}else e.isCountedAsWatchlist&&"watchlist"!==e.category&&(n=`<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`);return t.innerHTML=`<div style="position:relative;"><img data-src="${fixPosterUrl(e.poster)||DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'"><div class="card-actions card-actions-left"><button class="card-btn" data-action="toggle-move-dropdown" title="Sposta in..."><i class="fas fa-folder-open"></i></button><button class="card-btn" data-action="change-poster" title="Cambia copertina"><i class="fas fa-image"></i></button></div><div class="card-actions card-actions-right"><button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button></div></div><div class="media-info"><h3 class="media-title" title="${e.title}">${e.title}</h3><div class="media-meta">${e.year?`<span>${e.year}</span>`:""}${e.runtime?`<span>⏱️ ${formatRuntime(e.runtime)}</span>`:""}${n}</div>${o}</div>`,"watchlist"!==e.category&&t.addEventListener("dblclick",()=>openQuickEditModal(e)),t.querySelector("[data-action='toggle-move-dropdown']").addEventListener("click",a=>{a.stopPropagation(),showCardMoveDropdown(e,a.currentTarget)}),t.querySelector("[data-action='delete']").addEventListener("click",a=>{a.stopPropagation(),deleteMedia(e.id)}),t}
-    function fixPosterUrl(e){return e&&"N/A"!==e?e.startsWith("http://")||e.startsWith("https://")?e:e.startsWith("//")?`https:${e}`:`https://${e}`:null}
-    function renderCategorySections(){elements.mediaSectionsContainer.innerHTML=categories.map(e=>`<div class="media-section" id="${e}Section" data-category="${e}" style="display:block"><div class="section-header"><h2 class="section-title user-select-none">${getCategoryName(e)}</h2><span id="${e}Count" class="category-count">0</span></div><div class="media-grid" id="${e}Grid"></div></div>`).join("")}
-    function renderCategoriesList(){elements.categoriesList.innerHTML=categories.map((e,t)=>`<div class="category-item" data-category-name="${e}"><span class="category-name-span user-select-none">${getCategoryName(e)}</span><div style="display: flex; gap: 0.2rem;">${DEFAULT_CATEGORIES.includes(e)?"":`<button class="btn btn-secondary rename-category-btn" data-category="${e}"><i class="fas fa-pencil-alt"></i></button><button class="btn btn-danger delete-category-btn" data-category="${e}"><i class="fas fa-trash"></i></button>`}<button class="btn btn-secondary move-up-btn" data-category="${e}" ${0===t?"disabled":""}><i class="fas fa-arrow-up"></i></button><button class="btn btn-secondary move-down-btn" data-category="${e}" ${t===categories.length-1?"disabled":""}><i class="fas fa-arrow-down"></i></button></div></div>`).join(""),document.querySelectorAll(".rename-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation();const a=e.closest(".category-item"),o=a.dataset.categoryName,n=a.querySelector(".category-name-span");renameCategory(o,n)})}),document.querySelectorAll(".delete-category-btn").forEach(e=>{e.addEventListener("click",t=>{t.stopPropagation(),deleteCategory(e.dataset.category)})}),document.querySelectorAll(".move-up-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,-1))}),document.querySelectorAll(".move-down-btn").forEach(e=>{e.addEventListener("click",()=>moveCategory(e.dataset.category,1))})}
-    function renameCategory(e,t){const a=t.textContent,o=document.createElement("input");o.type="text",o.value=a,o.className="filter-select",t.replaceWith(o),o.focus();const n=()=>{const t=o.value.trim();if(t&&t!==e&&!categories.includes(t)){const a=categories.indexOf(e);a>-1&&(categories[a]=t),mediaList.forEach(a=>{a.category===e&&(a.category=t)}),saveData(),renderFullUI(),showNotification(`Categoria rinominata in "${t}"`,"success")}else{const e=document.createElement("span");e.className="category-name-span",e.textContent=a,o.replaceWith(e),categories.includes(t)&&t!==oldName&&showNotification("Nome categoria già esistente.","warning")}};o.addEventListener("blur",n),o.addEventListener("keydown",e=>{"Enter"===e.key&&o.blur(),"Escape"===e.key&&(()=>{const e=document.createElement("span");e.className="category-name-span",e.textContent=a,o.replaceWith(e)})()})}
-    function moveCategory(e,t){const a=categories.indexOf(e),o=a+t;o<0||o>=categories.length||([categories[a],categories[o]]=[categories[o],categories[a]],saveData(),renderFullUI())}
-    function updateCategoryFilter(){const e=elements.categoryFilter.value;elements.categoryFilter.innerHTML=`<option value="all">Tutte le categorie</option>${categories.map(e=>`<option value="${e}">${getCategoryName(e)}</option>`).join("")}`,elements.categoryFilter.value=e}
-    function populateAddMediaCategorySelect(){const e=localStorage.getItem("lastUsedCategory");elements.addMediaCategorySelect.innerHTML=categories.map(e=>`<option value="${e}">${getCategoryName(e)}</option>`).join(""),e&&categories.includes(e)&&(elements.addMediaCategorySelect.value=e)}
-    function getCategoryName(e){return{watchlist:"Da Vedere",watched:"Visti"}[e]||e}
-    function addCategory(e){if(!e)return showNotification("Inserisci un nome per la categoria","warning"),!1;const t=e.trim();return categories.some(e=>e.toLowerCase()===t.toLowerCase())?(showNotification("Questa categoria esiste già","warning"),!1):(categories.push(t),saveData(),renderFullUI(),showNotification(`Categoria "${t}" creata`,"success"),!0)}
-    function deleteCategory(e){DEFAULT_CATEGORIES.includes(e)?showNotification("Non puoi eliminare questa categoria predefinita","warning"):confirm(`Eliminare la categoria "${e}"? Tutti i film verranno spostati in "Da Vedere".`)&&(mediaList.forEach(t=>{t.category===e&&(t.category="watchlist")}),categories=categories.filter(t=>t!==e),saveData(),renderFullUI(),showNotification(`Categoria "${e}" eliminata`,"success"))}
-    function showCardMoveDropdown(e,t){closeCardMoveDropdowns();const a=document.createElement("div");a.className="card-move-dropdown",categories.filter(t=>t!==e.category).forEach(t=>{const o=document.createElement("div");o.className="card-move-dropdown-item user-select-none",o.textContent=getCategoryName(t),o.onclick=a=>{a.stopPropagation(),moveMediaToCategory(e.id,t),closeCardMoveDropdowns()},a.appendChild(o)});const o=t.getBoundingClientRect();a.style.left=`${o.left}px`,a.style.top=`${o.bottom+5}px`,document.body.appendChild(a),setTimeout(()=>{document.addEventListener("click",closeCardMoveDropdowns,{once:!0})},0)}
-    function closeCardMoveDropdowns(){document.querySelectorAll(".card-move-dropdown").forEach(e=>e.remove())}
-    function moveMediaToCategory(e,t){const a=mediaList.find(t=>t.id===e);if(!a)return;const o=document.querySelector(`.media-card[data-id="${e}"]`);o&&o.classList.add("moving");const n=a.category==="watched";"watchlist"===t&&(a.isCountedAsWatched=!1,a.rewatchCount=0),n&&"watched"!==t&&(a.isCountedAsWatched=!1,a.rewatchCount=0),"watched"===t&&(a.isCountedAsWatched=!1,a.isCountedAsWatchlist=!1),setTimeout(()=>{a.category=t,saveData(),renderMedia(),showNotification(`Film spostato in "${getCategoryName(t)}"`,"success")},300)}
-    function toggleCountedAsWatched(e){const t=mediaList.find(t=>t.id===e);t&&(t.isCountedAsWatched=!t.isCountedAsWatched,t.isCountedAsWatched?(t.isCountedAsWatchlist=!1,t.rewatchCount<0&&(t.rewatchCount=0)):t.rewatchCount=0,openQuickEditModal(t))}
-    function toggleCountedAsWatchlist(e){const t=mediaList.find(t=>t.id===e);t&&(t.isCountedAsWatchlist=!t.isCountedAsWatchlist,t.isCountedAsWatchlist&&(t.isCountedAsWatched=!1),openQuickEditModal(t))}
-    function markRewatch(e,t){const a=mediaList.find(t=>t.id===e);a&&(a.rewatchCount=t,t>=1&&"watched"!==a.category&&!a.isCountedAsWatched&&(a.isCountedAsWatched=!0,a.isCountedAsWatchlist=!1),saveData(),refreshSingleMedia(e),updateStats(),showNotification(`Rewatch di "${a.title}" aggiornati`,"success"))}
-    function refreshSingleMedia(e){const t=mediaList.find(t=>t.id===e);if(!t)return;const a=document.querySelector(`.media-card[data-id="${e}"]`),o=a?a.parentElement:document.getElementById(`${t.category}Grid`);if(a&&o){const e=createMediaCard(t);o.replaceChild(e,a),lazyLoadObserver&&lazyLoadObserver.observe(e.querySelector(".lazy"))}else if(o){const e=createMediaCard(t);o.appendChild(e),lazyLoadObserver&&lazyLoadObserver.observe(e.querySelector(".lazy"))}updateCounts()}
-    function deleteMedia(e){isViewMode||!confirm("Eliminare questo film dalla lista?")||(mediaList=mediaList.filter(t=>t.id!==e),saveData(),renderMedia(),showNotification("Film eliminato","success"))}
-    function closeModal(e){e.style.display="none",document.body.classList.remove("modal-open")}
-    async function searchOMDb(){const e=elements.mediaTitle.value.trim();if(!e)return void showNotification("Inserisci un titolo","warning");elements.omdbResults.innerHTML="<p>Ricerca in corso...</p>";try{let t=`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&s=${encodeURIComponent(e)}&type=movie`;const a=await fetch(t),o=await a.json();if("True"===o.Response)displayOMDbResults(o.Search);else if("Too many results."===o.Error){showNotification("Troppi risultati. Tento una ricerca esatta...","warning");let t=`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&t=${encodeURIComponent(e)}&type=movie`;const a=await fetch(t),n=await a.json();"True"===n.Response?displayOMDbResults([n]):elements.omdbResults.innerHTML=`<p>${n.Error||"Nessun risultato trovato"}</p>`}else elements.omdbResults.innerHTML=`<p>${o.Error||"Nessun risultato trovato"}</p>`}catch(t){showNotification("Errore nella ricerca","error"),console.error("OMDb error:",t),elements.omdbResults.innerHTML="<p>Errore durante la ricerca</p>"}}
-    function displayOMDbResults(e){elements.omdbResults.innerHTML=e.map(e=>`<div class="omdb-result-item user-select-none" data-id="${e.imdbID}"><img src="${fixPosterUrl(e.Poster)}" class="omdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'"><div><div><strong>${e.Title}</strong></div><div>${e.Year}</div></div></div>`).join(""),document.querySelectorAll(".omdb-result-item").forEach(e=>{e.addEventListener("click",async()=>{const t=e.dataset.id,a=await getOMDbMovieDetails(t);a&&(currentOMDbSelection=a,elements.mediaTitle.value=a.Title,showNotification(`Dettagli di "${a.Title}" pronti per il salvataggio`,"success"))})})}
-    async function getOMDbMovieDetails(e){try{const t=await fetch(`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&i=${e}`),a=await t.json();if("False"===a.Response)throw new Error(a.Error||"Dettagli non disponibili");return a}catch(t){return console.error("Error fetching movie details:",t),showNotification("Errore nel caricamento dei dettagli","error"),null}}
-    function addNewMedia(){if(isViewMode)return;const e=elements.mediaTitle.value.trim();if(!e)return void showNotification("Inserisci un titolo","warning");const t=elements.addMediaCategorySelect.value;localStorage.setItem("lastUsedCategory",t);let a={id:Date.now().toString(),title:e,category:t,addedAt:(new Date).toISOString(),poster:"",rewatchCount:0,isCountedAsWatched:"watched"===t,isCountedAsWatchlist:"watchlist"===t,year:"",imdbID:null,imdbRating:"",rottenTomatoes:"",runtime:""};if(currentOMDbSelection){a={...a,title:currentOMDbSelection.Title,year:currentOMDbSelection.Year,poster:fixPosterUrl(currentOMDbSelection.Poster),imdbID:currentOMDbSelection.imdbID,imdbRating:currentOMDbSelection.imdbRating||"N/A",rottenTomatoes:"",runtime:currentOMDbSelection.Runtime||""};if(currentOMDbSelection.Ratings&&Array.isArray(currentOMDbSelection.Ratings))for(const e of currentOMDbSelection.Ratings)"Rotten Tomatoes"===e.Source&&(a.rottenTomatoes=e.Value||"N/A")}mediaList.push(a),saveData(),closeModal(elements.addMediaModal),renderMedia(),showNotification(`Film "${a.title}" aggiunto!`,"success")}
-    function exportData(){if(isViewMode)return;const e={mediaList:mediaList,categories:categories,exportedAt:(new Date).toISOString()},t=new Blob([JSON.stringify(e,null,2)],{type:"application/json"}),a=URL.createObjectURL(t),o=document.createElement("a");o.href=a,o.download=`mediatracker_export_${(new Date).toISOString().split("T")[0]}.json`,o.click(),URL.revokeObjectURL(a),showNotification("Dati esportati","success")}
-    function importData(e){if(isViewMode||!e)return;const t=new FileReader;t.onload=e=>{try{const t=JSON.parse(e.target.result);if(!Array.isArray(t.mediaList))throw new Error("Formato file non valido");confirm(`Importare ${t.mediaList.length} media? I dati attuali verranno sovrascritti.`)&&(mediaList=t.mediaList,categories=t.categories||[...DEFAULT_CATEGORIES],saveData(),renderFullUI(),showNotification("Dati importati con successo","success"))}catch(e){showNotification("Errore nell'importazione: "+e.message,"error")}},t.readAsText(e)}
-    function resetApp(){if(isViewMode)return;confirm("Resettare completamente l'applicazione? Tutti i dati verranno persi.")&&(mediaList=[],categories=[...DEFAULT_CATEGORIES],saveData(),elements.searchInput.value="",elements.categoryFilter.value="all",elements.sortFilter.value="alpha",renderFullUI(),showNotification("Applicazione resettata","success"))}
-    function loadTheme(){const e=localStorage.getItem("theme")||"dark";document.body.classList.toggle("dark","dark"===e),elements.themeToggle.innerHTML=`<i class="fas fa-${"dark"===e?"sun":"moon"}"></i>`}
-    function toggleTheme(){document.body.classList.toggle("dark");const e=document.body.classList.contains("dark");localStorage.setItem("theme",e?"dark":"light"),elements.themeToggle.innerHTML=`<i class="fas fa-${e?"sun":"moon"}"></i>`}
-    function loadSortOrder(){const e=localStorage.getItem("mediaTrackerSortOrder");e&&(elements.sortFilter.value=e)}
-    function openCategoryManagement(){isViewMode||(renderCategoriesList(),elements.categoryManagementModal.style.display="flex",document.body.classList.add("modal-open"))}
-    function showNotification(e,t="success"){elements.notificationText.textContent=e,elements.notification.className=`notification ${t}`,elements.notification.style.display="block",setTimeout(()=>{elements.notification.style.display="none"},3e3)}
-    function setupLazyLoading(){if(lazyLoadObserver)lazyLoadObserver.disconnect();lazyLoadObserver=new IntersectionObserver((e,t)=>{e.forEach(e=>{if(e.isIntersecting){const a=e.target;a.src=a.dataset.src,a.classList.remove("lazy"),t.unobserve(a)}})});const e=document.querySelectorAll(".lazy");e.forEach(e=>lazyLoadObserver.observe(e))}
-    function formatRuntime(e){if(!e)return"";const t=parseInt(e);return isNaN(t)||t<=0?"":Math.floor(t/60)>0?`${Math.floor(t/60)}h ${t%60>0?`${t%60}m`:""}`:`${t%60}m`}
-    async function checkForRatingUpdates(){const e=mediaList.filter(e=>e.imdbID&&(!e.imdbRating||"N/A"===e.imdbRating)).sort((e,t)=>(e.lastChecked||0)-(t.lastChecked||0)).slice(0,5);for(const t of e){const a=await getOMDbMovieDetails(t.imdbID);if(a&&a.imdbRating&&"N/A"!==a.imdbRating){t.imdbRating=a.imdbRating,t.rottenTomatoes="";for(const e of a.Ratings||[])"Rotten Tomatoes"===e.Source&&(t.rottenTomatoes=e.Value);t.lastChecked=Date.now(),refreshSingleMedia(t.id),showNotification(`Rating aggiornati per: ${t.title}`,"success")}}saveData()}
-    function setupEventListeners(){elements.addMediaBtn.addEventListener("click",()=>{elements.mediaTitle.value="",elements.omdbResults.innerHTML="",currentOMDbSelection=null,elements.saveMediaBtn.textContent="Salva",elements.saveMediaBtn.onclick=addNewMedia,populateAddMediaCategorySelect(),elements.addMediaModal.style.display="flex",document.body.classList.add("modal-open")}),elements.confirmQuickEditBtn.addEventListener("click",()=>{const e=parseInt(elements.quickEditRewatchCount.value)||0;e<0?showNotification("Inserisci un numero valido","warning"):(markRewatch(currentQuickEditMedia.id,e),closeModal(elements.quickEditModal))}),elements.quickEditWatchedBtn.addEventListener("click",()=>{toggleCountedAsWatched(currentQuickEditMedia.id)}),elements.quickEditWatchlistBtn.addEventListener("click",()=>{toggleCountedAsWatchlist(currentQuickEditMedia.id)}),elements.cancelQuickEditBtn.addEventListener("click",()=>{currentUser?loadData():loadLocalData(),closeModal(elements.quickEditModal)}),elements.manageCategoriesBtn.addEventListener("click",openCategoryManagement),elements.addCategoryBtn.addEventListener("click",()=>{addCategory(elements.newCategoryName.value)&&(elements.newCategoryName.value="")}),elements.closeCategoryManagementBtn.addEventListener("click",()=>closeModal(elements.categoryManagementModal)),elements.cancelMediaBtn.addEventListener("click",()=>closeModal(elements.addMediaModal)),elements.searchOMDbBtn.addEventListener("click",searchOMDb),document.addEventListener("click",e=>{if(!e.target.closest(".card-move-dropdown"))closeCardMoveDropdowns();if(e.target.closest('[data-action="change-poster"]')){const t=e.target.closest(".media-card");showPosterModal(t.dataset.id)}e.target===elements.posterModal&&(()=>{const t=document.querySelector(".poster-option.selected");t?changePoster(elements.posterModal.dataset.mediaId,t.dataset.url):showNotification("Nessuna nuova copertina selezionata.","warning"),elements.posterModal.style.display="none"})()}),elements.addMediaModal.addEventListener("click",e=>{e.target===elements.addMediaModal&&closeModal(elements.addMediaModal)}),elements.categoryManagementModal.addEventListener("click",e=>{e.target===elements.categoryManagementModal&&closeModal(elements.categoryManagementModal)}),elements.quickEditModal.addEventListener("click",e=>{e.target===elements.quickEditModal&&closeModal(elements.quickEditModal)}),elements.exportBtn.addEventListener("click",exportData),elements.importBtn.addEventListener("click",()=>elements.importFile.click()),elements.importFile.addEventListener("change",e=>importData(e.target.files[0])),elements.resetBtn.addEventListener("click",resetApp),elements.themeToggle.addEventListener("click",toggleTheme),elements.searchInput.addEventListener("input",()=>{clearTimeout(debounceTimeout),debounceTimeout=setTimeout(()=>{renderMedia()},300)}),elements.categoryFilter.addEventListener("change",renderMedia),elements.sortFilter.addEventListener("change",()=>{localStorage.setItem("mediaTrackerSortOrder",elements.sortFilter.value),renderMedia()}),elements.shareBtn.addEventListener("click",()=>{if(!currentUser)return void showNotification("Devi essere loggato per condividere.","warning");const e=`${window.location.origin}${window.location.pathname}?view=${currentUser.uid}`;elements.shareLinkInput.value=e,elements.shareModal.style.display="flex",document.body.classList.add("modal-open")}),elements.copyShareLinkBtn.addEventListener("click",()=>{navigator.clipboard.writeText(elements.shareLinkInput.value),showNotification("Link copiato!","success")}),elements.closeShareModalBtn.addEventListener("click",()=>closeModal(elements.shareModal)),elements.closeViewBtn.addEventListener("click",()=>{window.location.href=window.location.pathname}),document.querySelectorAll(".num-spinner-btn").forEach(e=>{e.addEventListener("click",t=>{const a=document.getElementById(t.currentTarget.dataset.target);if(a){let o=parseInt(a.value)||0;o=t.currentTarget.classList.contains("up")?o+1:o-1;const n=parseInt(a.min);isNaN(n)||o>=n||(o=n),a.value=o}})})
+    function init() {
+      setupEventListeners();
+      setupManagementModal();
+      handleViewMode() || (setupAuthListeners(), loadLocalData());
+      loadTheme();
+      loadSortOrder();
+      setInterval(checkForRatingUpdates, 216e5);
     }
-    function openQuickEditModal(e){if(isViewMode)return;currentQuickEditMedia=e,elements.quickEditTitle.textContent=`Modifica: ${e.title}`,elements.quickEditRewatchCount.value=e.rewatchCount||0;const t=elements.quickEditWatchlistBtn;"watched"===e.category?(t.style.display="none"):(t.style.display="inline-flex",e.isCountedAsWatchlist?(t.innerHTML='<i class="fas fa-times"></i> Rimuovi da vedere come qui',t.className="btn btn-danger"):(t.innerHTML='<i class="fas fa-list-alt"></i> Segna come da vedere qui',t.className="btn btn-secondary"));const a=elements.quickEditWatchedBtn;"watched"===e.category?a.style.display="none":(a.style.display="inline-flex",e.isCountedAsWatched?(a.innerHTML='<i class="fas fa-times"></i> Rimuovi come visto qui',a.className="btn btn-danger"):(a.innerHTML='<i class="fas fa-check-double"></i> Segna come visto qui',a.className="btn btn-success")),elements.quickEditModal.style.display="flex",document.body.classList.add("modal-open")}
-    function showPosterModal(e){const t=mediaList.find(t=>t.id===e);if(!t||!t.imdbID)return void showNotification("Nessun IMDb ID trovato per questo film.","warning");const a=elements.posterModal,o=elements.posterGrid;a.dataset.mediaId=e,o.innerHTML="<p>Caricamento copertine...</p>",a.style.display="flex",fetchPosters(t.imdbID).then(e=>{if(0===e.length)return void(o.innerHTML="<p>Nessuna copertina alternativa trovata</p>");o.innerHTML="",e.forEach(e=>{const t=document.createElement("div");t.className="poster-option",t.dataset.url=e.url;const a=document.createElement("img");a.src=e.url,a.onerror=()=>a.src=DEFAULT_POSTER,t.appendChild(a),t.addEventListener("click",()=>{document.querySelectorAll(".poster-option").forEach(e=>e.classList.remove("selected")),t.classList.add("selected")}),o.appendChild(t)})})}
-    async function fetchPosters(e){try{const t=await fetch(`https://api.themoviedb.org/3/find/${e}?api_key=${TMDB_KEY}&external_source=imdb_id`),a=await t.json(),o=a.movie_results[0]?.id;if(!o)return[];const n=await fetch(`https://api.themoviedb.org/3/movie/${o}/images?api_key=${TMDB_KEY}`),i=await n.json();return i.posters.filter(e=>"en"===e.iso_639_1||null===e.iso_639_1).slice(0,10).map(e=>({url:`https://image.tmdb.org/t/p/w500${e.file_path}`}))}catch(t){return console.error("Error fetching posters:",t),[]}}
-    function changePoster(e,t){const a=mediaList.find(t=>t.id===e);a&&(a.poster=t,saveData(),refreshSingleMedia(e))}
     
-    document.addEventListener("DOMContentLoaded", init);
+    function setupManagementModal() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          
+          btn.classList.add('active');
+          document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
+          
+          if (btn.dataset.tab === 'add-media') {
+            elements.saveMediaBtn.style.display = 'inline-flex';
+          } else {
+            elements.saveMediaBtn.style.display = 'none';
+          }
+        });
+      });
+      elements.saveMediaBtn.addEventListener('click', addNewMedia);
+      elements.closeManagementModal.addEventListener('click', () => {
+        elements.mediaManagementModal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+      });
+    }
+
+    function openMediaManagementModal() {
+      if (isViewMode) return;
+      elements.mediaTitle.value = "";
+      elements.omdbResults.innerHTML = "";
+      currentOMDbSelection = null;
+      
+      populateAddMediaCategorySelect();
+      renderCategoriesList();
+      
+      const addMediaTab = document.querySelector('.tab-btn[data-tab="add-media"]');
+      addMediaTab.classList.add('active');
+      document.getElementById('add-media-tab').classList.add('active');
+      document.querySelector('.tab-btn[data-tab="manage-categories"]').classList.remove('active');
+      document.getElementById('manage-categories-tab').classList.remove('active');
+      elements.saveMediaBtn.style.display = 'inline-flex';
+      
+      elements.mediaManagementModal.style.display = 'flex';
+      document.body.classList.add('modal-open');
+    }
+
+    function getRottenTomatoesState(score) {
+      if (!score || score === "N/A") return null;
+      const value = parseInt(score);
+      return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten";
+    }
+
+    function setupAuthListeners() {
+      elements.authToggle.addEventListener("click", e => {
+        e.stopPropagation();
+        elements.authForms.classList.toggle("active");
+      });
+      document.addEventListener("click", e => {
+        if (!elements.authForms.contains(e.target) && !e.target.closest("#authToggle")) {
+          elements.authForms.classList.remove("active");
+        }
+      });
+      document.querySelectorAll(".auth-tab").forEach(tab => {
+        tab.addEventListener("click", () => {
+          document.querySelectorAll(".auth-tab").forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          document.querySelectorAll(".auth-form-container").forEach(c => c.classList.remove("active"));
+          document.getElementById(`${tab.dataset.tab}Form`).classList.add("active");
+        });
+      });
+      elements.loginBtn.addEventListener("click", () => {
+        const email = elements.loginEmail.value;
+        const password = elements.loginPassword.value;
+        if (email && password) {
+          firebase.auth().signInWithEmailAndPassword(email, password)
+            .then(() => {
+              showNotification("Login effettuato", "success");
+              elements.authForms.classList.remove("active");
+            })
+            .catch(err => showNotification(getAuthErrorMessage(err), "error"));
+        } else {
+          showNotification("Inserisci email e password", "warning");
+        }
+      });
+      elements.registerBtn.addEventListener("click", () => {
+        const email = elements.registerEmail.value;
+        const password = elements.registerPassword.value;
+        const confirmPassword = elements.registerConfirmPassword.value;
+        if (email && password && confirmPassword) {
+          if (password !== confirmPassword) {
+            showNotification("Le password non corrispondono", "warning");
+          } else if (password.length < 6) {
+            showNotification("La password deve avere almeno 6 caratteri", "warning");
+          } else {
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+              .then(() => {
+                showNotification("Registrazione completata!", "success");
+                elements.authForms.classList.remove("active");
+              })
+              .catch(err => showNotification(getAuthErrorMessage(err), "error"));
+          }
+        } else {
+          showNotification("Compila tutti i campi", "warning");
+        }
+      });
+      elements.logoutBtn.addEventListener("click", () => firebase.auth().signOut());
+      firebase.auth().onAuthStateChanged(user => {
+        if (isViewMode) return;
+        currentUser = user;
+        updateAuthUI();
+        if (user) {
+          loadData();
+        } else {
+          loadLocalData();
+        }
+      });
+    }
+
+    function getAuthErrorMessage(err) {
+      switch (err.code) {
+        case "auth/email-already-in-use": return "Email già registrata";
+        case "auth/invalid-email": return "Email non valida";
+        case "auth/weak-password": return "Password troppo debole";
+        case "auth/user-not-found": return "Utente non trovato";
+        case "auth/wrong-password": return "Password errata";
+        default: return "Errore: " + err.message;
+      }
+    }
+
+    function updateAuthUI() {
+      if (currentUser) {
+        elements.userInfo.style.display = "flex";
+        elements.authToggle.style.display = "none";
+        document.querySelectorAll(".btn").forEach(btn => btn.disabled = false);
+      } else {
+        elements.userInfo.style.display = "none";
+        elements.authToggle.style.display = "block";
+        document.querySelectorAll("#mediaManagementBtn, #shareBtn").forEach(btn => btn.disabled = true);
+        document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(btn => btn.disabled = false);
+      }
+    }
+
+    function loadData() {
+      if (!currentUser) return;
+      const path = `users/${currentUser.uid}/mediaTracker`;
+      db.ref(`${path}/mediaList`).on("value", snapshot => {
+        let data = snapshot.val() || [];
+        mediaList = data.map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+        renderMedia();
+        updateStats();
+      });
+      db.ref(`${path}/categories`).once("value").then(snapshot => {
+        categories = snapshot.val() || [...DEFAULT_CATEGORIES];
+        renderFullUI();
+      });
+    }
+
+    function loadLocalData() {
+      try {
+        let storedMedia = JSON.parse(localStorage.getItem("mediaList")) || [];
+        mediaList = storedMedia.map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+        categories = JSON.parse(localStorage.getItem("categories")) || [...DEFAULT_CATEGORIES];
+        renderFullUI();
+        updateStats();
+      } catch (err) {
+        console.error("Error loading local data:", err);
+      }
+    }
+
+    function saveData() {
+      if (currentUser) {
+        db.ref(`users/${currentUser.uid}/mediaTracker`).set({ mediaList, categories }).catch(err => {
+          console.error("Error saving to Firebase:", err);
+        });
+      } else {
+        saveToLocal();
+      }
+    }
+
+    function saveToLocal() {
+      try {
+        localStorage.setItem("mediaList", JSON.stringify(mediaList));
+        localStorage.setItem("categories", JSON.stringify(categories));
+      } catch (err) {
+        console.error("Error saving locally:", err);
+      }
+    }
+
+    function handleViewMode() {
+      const viewId = new URLSearchParams(window.location.search).get("view");
+      if (!viewId) return false;
+      isViewMode = true;
+      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, #authToggle, #userInfo").forEach(el => el.style.display = "none");
+      elements.viewModeBanner.style.display = "flex";
+      db.ref(`users/${viewId}/mediaTracker`).on("value", snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          let storedMedia = data.mediaList || [];
+          mediaList = storedMedia.map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+          categories = data.categories || [...DEFAULT_CATEGORIES];
+          renderFullUI();
+          updateStats();
+          db.ref(`users/${viewId}/email`).once("value", snapshot => {
+            const email = snapshot.val();
+            elements.viewModeUserEmail.textContent = `Stai visualizzando la libreria di ${email || "un utente"}`;
+          });
+        } else {
+          showNotification("Libreria condivisa non trovata o non accessibile.", "error");
+        }
+      });
+      return true;
+    }
+
+    function renderFullUI() {
+      renderCategorySections();
+      updateCategoryFilter();
+      populateAddMediaCategorySelect();
+      renderCategoriesList();
+      renderMedia();
+    }
+
+    function renderMedia() {
+      const selectedCategory = elements.categoryFilter.value;
+      clearMediaGrids();
+      updateStats();
+      document.querySelectorAll(".media-section").forEach(section => {
+        if (selectedCategory !== "all" && section.dataset.category !== selectedCategory) {
+          section.classList.add("hidden");
+        } else {
+          section.classList.remove("hidden");
+        }
+      });
+      const searchTerm = elements.searchInput.value.toLowerCase();
+      const sortBy = elements.sortFilter.value;
+      let filteredMedia = [...mediaList];
+      if (searchTerm) {
+        filteredMedia = filteredMedia.filter(m => m.title.toLowerCase().includes(searchTerm));
+      }
+      if (selectedCategory !== "all") {
+        filteredMedia = filteredMedia.filter(m => m.category === selectedCategory);
+      }
+      filteredMedia.sort((a, b) => {
+        switch (sortBy) {
+          case "alpha": return a.title.localeCompare(b.title);
+          case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
+          case "year": return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+          case "added": default: return new Date(b.addedAt) - new Date(a.addedAt);
+        }
+      });
+      const fragments = {};
+      categories.forEach(cat => fragments[cat] = document.createDocumentFragment());
+      filteredMedia.forEach(media => {
+        const grid = fragments[media.category];
+        if (grid) grid.appendChild(createMediaCard(media));
+      });
+      categories.forEach(cat => {
+        const grid = document.getElementById(`${cat}Grid`);
+        if (grid) {
+          grid.appendChild(fragments[cat]);
+          if (grid.children.length === 0) {
+            grid.innerHTML = `<div class="empty-state"><i class="fas fa-film"></i><p>Nessun film in questa categoria.</p><button class="btn btn-primary add-film-from-empty"><i class="fas fa-plus"></i> Aggiungi un film</button></div>`;
+          }
+        }
+      });
+      setupLazyLoading();
+      updateCounts();
+    }
+
+    function clearMediaGrids() {
+      categories.forEach(cat => {
+        const grid = document.getElementById(`${cat}Grid`);
+        if (grid) grid.innerHTML = "";
+      });
+    }
+
+    function updateStats() {
+      const stats = { total: mediaList.length, watchlist: 0, watched: 0, rewatched: 0, minutes: 0 };
+      statContributorIds.clear();
+      ignoredDuplicateIds.clear();
+      const processed = new Set();
+      mediaList.forEach(media => {
+        const uniqueId = media.imdbID || media.title.toLowerCase().trim();
+        if (processed.has(uniqueId)) return;
+        processed.add(uniqueId);
+        const instances = mediaList.filter(m => (m.imdbID || m.title.toLowerCase()) === uniqueId);
+        let contributor = instances.find(m => m.category === "watched") ||
+                         instances.find(m => m.isCountedAsWatched) ||
+                         instances.find(m => m.category === "watchlist") ||
+                         instances.find(m => m.isCountedAsWatchlist);
+        if (contributor) {
+          statContributorIds.add(contributor.id);
+          instances.forEach(inst => {
+            if (inst.id !== contributor.id) ignoredDuplicateIds.add(inst.id);
+          });
+        }
+      });
+      statContributorIds.forEach(id => {
+        const media = mediaList.find(m => m.id === id);
+        if (!media) return;
+        const isWatched = media.category === "watched" || media.isCountedAsWatched;
+        if (media.category === "watched") stats.watched++;
+        else if ((media.category === "watchlist" || media.isCountedAsWatchlist) && !isWatched) stats.watchlist++;
+        if (isWatched) {
+          if (media.rewatchCount > 0) stats.rewatched += media.rewatchCount;
+          const runtime = parseInt(media.runtime?.replace(/\D/g, "")) || 0;
+          if (runtime > 0) stats.minutes += runtime * ((media.rewatchCount || 0) + 1);
+        }
+      });
+      const hours = Math.floor(stats.minutes / 60);
+      stats.minutes %= 60;
+      elements.statTotal.textContent = stats.total;
+      elements.statWatchlist.textContent = stats.watchlist;
+      elements.statWatched.textContent = stats.watched;
+      elements.statRewatched.textContent = stats.rewatched;
+      elements.statHours.textContent = `${hours}h ${stats.minutes}m`;
+    }
+
+    function updateCounts() {
+      document.querySelectorAll(".category-count").forEach(el => el.textContent = "");
+      categories.forEach(cat => {
+        const countEl = document.getElementById(`${cat}Count`);
+        if (countEl) countEl.textContent = mediaList.filter(m => m.category === cat).length;
+      });
+    }
+
+    function createMediaCard(media) {
+      const card = document.createElement("div");
+      card.className = "media-card";
+      card.dataset.id = media.id;
+      if (statContributorIds.has(media.id)) card.classList.add("is-stat-contributor");
+      if (ignoredDuplicateIds.has(media.id)) card.classList.add("is-duplicate");
+      let ratingsHTML = "";
+      if (media.imdbRating && media.imdbRating !== "N/A") {
+        ratingsHTML += `<span class="rating-badge" title="IMDb Rating: ${media.imdbRating}"><img src="${IMDB_STAR_ICON}" class="rating-icon" alt="IMDb"> ${media.imdbRating}</span>`;
+      }
+      if (media.rottenTomatoes && media.rottenTomatoes !== "N/A") {
+        const state = getRottenTomatoesState(media.rottenTomatoes);
+        if (state) {
+          ratingsHTML += `<span class="rating-badge" title="Rotten Tomatoes: ${media.rottenTomatoes}"><img src="${ROTTEN_TOMATOES_ICONS[state]}" class="rating-icon" alt="Rotten Tomatoes"> ${media.rottenTomatoes}</span>`;
+        }
+      }
+      const ratingsSection = ratingsHTML ? `<div class="media-ratings">${ratingsHTML}</div>` : "";
+      let statusHTML = "";
+      if (media.isCountedAsWatched || media.category === "watched") {
+        const times = (media.rewatchCount || 0) + 1;
+        const sup = times > 1 ? `<sup>${times}</sup>` : "";
+        statusHTML = `<span class="watch-status-icon" title="Visto ${times} volte"><i class="fas fa-eye"></i>${sup}</span>`;
+      } else if (media.isCountedAsWatchlist && media.category !== "watchlist") {
+        statusHTML = `<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`;
+      }
+      card.innerHTML = `
+        <div class="poster-container">
+          <img data-src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'">
+          <div class="card-actions">
+            <button class="card-btn" data-action="move" title="Sposta in..."><i class="fas fa-folder-open"></i></button>
+            <button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+        <div class="media-info">
+          <h3 class="media-title" title="${media.title}">${media.title}</h3>
+          <div class="media-meta">
+            ${media.year ? `<span>${media.year}</span>` : ""}
+            ${media.runtime ? `<span>⏱️ ${formatRuntime(media.runtime)}</span>` : ""}
+            ${statusHTML}
+          </div>
+          ${ratingsSection}
+        </div>
+      `;
+      card.querySelector('[data-action="move"]').addEventListener("click", e => {
+        e.stopPropagation();
+        showContextMenu(media, { x: e.clientX, y: e.clientY });
+      });
+      card.querySelector('[data-action="delete"]').addEventListener("click", e => {
+        e.stopPropagation();
+        deleteMedia(media.id);
+      });
+      return card;
+    }
+
+    function fixPosterUrl(url) {
+      if (!url || url === "N/A") return null;
+      return url.startsWith("http://") || url.startsWith("https://") ? url : url.startsWith("//") ? `https:${url}` : `https://${url}`;
+    }
+
+    function renderCategorySections() {
+      elements.mediaSectionsContainer.innerHTML = categories.map(cat => `
+        <div class="media-section" id="${cat}Section" data-category="${cat}">
+          <div class="section-header">
+            <h2 class="section-title user-select-none">${getCategoryName(cat)}</h2>
+            <span id="${cat}Count" class="category-count">0</span>
+          </div>
+          <div class="media-grid" id="${cat}Grid"></div>
+        </div>
+      `).join("");
+    }
+
+    function renderCategoriesList() {
+      const list = elements.categoriesList;
+      list.innerHTML = "";
+      categories.forEach((cat, index) => {
+        const count = mediaList.filter(m => m.category === cat).length;
+        const dotClass = `category-dot-${index % 6}`;
+        const specialDot = cat === "watchlist" ? "category-dot-watchlist" : cat === "watched" ? "category-dot-watched" : "";
+        const card = document.createElement("div");
+        card.className = "category-card";
+        card.innerHTML = `
+          <span class="category-dot ${dotClass} ${specialDot}"></span>
+          <div>
+            <div class="category-name">${getCategoryName(cat)}</div>
+            <div class="category-item-count">${count} film</div>
+          </div>
+          <div class="category-card-actions">
+            ${DEFAULT_CATEGORIES.includes(cat) ? "" : `
+              <button class="btn btn-secondary rename-category-btn" data-category="${cat}"><i class="fas fa-pencil-alt"></i></button>
+              <button class="btn btn-danger delete-category-btn" data-category="${cat}"><i class="fas fa-trash"></i></button>
+            `}
+            <button class="btn btn-secondary move-up-btn" data-category="${cat}" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button>
+            <button class="btn btn-secondary move-down-btn" data-category="${cat}" ${index === categories.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+      list.querySelectorAll(".rename-category-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          const cat = btn.dataset.category;
+          const nameEl = btn.closest(".category-card").querySelector(".category-name");
+          renameCategory(cat, nameEl);
+        });
+      });
+      list.querySelectorAll(".delete-category-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          deleteCategory(btn.dataset.category);
+        });
+      });
+      list.querySelectorAll(".move-up-btn").forEach(btn => btn.addEventListener("click", () => moveCategory(btn.dataset.category, -1)));
+      list.querySelectorAll(".move-down-btn").forEach(btn => btn.addEventListener("click", () => moveCategory(btn.dataset.category, 1)));
+    }
+
+    function renameCategory(cat, nameEl) {
+      const oldName = nameEl.textContent.trim();
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = oldName;
+      input.className = "modern-input";
+      input.style.marginBottom = "0";
+      nameEl.parentElement.innerHTML = "";
+      nameEl.parentElement.appendChild(input);
+      input.focus();
+      const save = () => {
+        const newName = input.value.trim();
+        if (newName && newName !== cat && !categories.includes(newName)) {
+          mediaList.forEach(m => { if (m.category === cat) m.category = newName; });
+          categories[categories.indexOf(cat)] = newName;
+          saveData();
+          renderFullUI();
+          showNotification(`Categoria rinominata in "${newName}"`, "success");
+        } else {
+          renderCategoriesList();
+        }
+      };
+      input.addEventListener("blur", save);
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter") input.blur();
+        if (e.key === "Escape") renderCategoriesList();
+      });
+    }
+
+    function moveCategory(cat, direction) {
+      const index = categories.indexOf(cat);
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= categories.length) return;
+      [categories[index], categories[newIndex]] = [categories[newIndex], categories[index]];
+      saveData();
+      renderFullUI();
+    }
+
+    function updateCategoryFilter() {
+      const current = elements.categoryFilter.value;
+      elements.categoryFilter.innerHTML = `<option value="all">Tutte le categorie</option>${categories.map(cat => `<option value="${cat}">${getCategoryName(cat)}</option>`).join("")}`;
+      elements.categoryFilter.value = current;
+    }
+
+    function populateAddMediaCategorySelect() {
+      const lastUsed = localStorage.getItem("lastUsedCategory");
+      elements.addMediaCategorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${getCategoryName(cat)}</option>`).join("");
+      if (lastUsed && categories.includes(lastUsed)) elements.addMediaCategorySelect.value = lastUsed;
+    }
+
+    function getCategoryName(cat, withDot = false) {
+      const names = { watchlist: "Da Vedere", watched: "Visti" };
+      const index = categories.indexOf(cat);
+      const dotClass = `category-dot-${index % 6}`;
+      const specialDot = cat === "watchlist" ? "category-dot-watchlist" : cat === "watched" ? "category-dot-watched" : "";
+      return withDot ? `<span class="category-dot ${dotClass} ${specialDot}"></span>${names[cat] || cat}` : names[cat] || cat;
+    }
+
+    function addCategory(name) {
+      if (!name) return showNotification("Inserisci un nome per la categoria", "warning"), false;
+      const trimmed = name.trim();
+      if (categories.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+        showNotification("Questa categoria esiste già", "warning");
+        return false;
+      }
+      categories.push(trimmed);
+      saveData();
+      renderFullUI();
+      showNotification(`Categoria "${trimmed}" creata`, "success");
+      elements.newCategoryName.value = "";
+      return true;
+    }
+    
+    function showConfirmModal(title, body, onConfirm) {
+      elements.confirmModalTitle.textContent = title;
+      elements.confirmModalBody.textContent = body;
+      elements.confirmModal.style.display = "flex";
+      document.body.classList.add("modal-open");
+      const cancel = () => {
+        closeModal(elements.confirmModal);
+        cleanup();
+      };
+      const confirm = () => {
+        onConfirm();
+        closeModal(elements.confirmModal);
+        cleanup();
+      };
+      const cleanup = () => {
+        elements.confirmModalConfirm.removeEventListener("click", confirm);
+        elements.confirmModalCancel.removeEventListener("click", cancel);
+      };
+      elements.confirmModalConfirm.addEventListener("click", confirm);
+      elements.confirmModalCancel.addEventListener("click", cancel);
+    }
+    
+    function deleteCategory(cat) {
+      if (DEFAULT_CATEGORIES.includes(cat)) {
+        showNotification("Non puoi eliminare questa categoria predefinita", "warning");
+        return;
+      }
+      showConfirmModal("Elimina Categoria", `Sei sicuro di voler eliminare la categoria "${cat}"? Tutti i film al suo interno saranno spostati in "Da Vedere".`, () => {
+        mediaList.forEach(m => { if (m.category === cat) m.category = "watchlist"; });
+        categories = categories.filter(c => c !== cat);
+        saveData();
+        renderFullUI();
+        showNotification(`Categoria "${cat}" eliminata`, "success");
+      });
+    }
+
+    function closeAllMenus() {
+      document.querySelectorAll(".context-menu").forEach(menu => menu.remove());
+    }
+    
+    function showContextMenu(media, pos) {
+      closeAllMenus();
+      const menu = document.createElement("div");
+      menu.className = "context-menu";
+      const hide = () => {
+        menu.classList.remove("visible");
+        setTimeout(() => menu.remove(), 150);
+        document.removeEventListener("click", hide, { capture: true });
+        document.removeEventListener("contextmenu", hide, { capture: true });
+      };
+      setTimeout(() => {
+        document.addEventListener("click", hide, { capture: true, once: true });
+        document.addEventListener("contextmenu", hide, { capture: true, once: true });
+        requestAnimationFrame(() => menu.classList.add("visible"));
+      }, 0);
+      menu.addEventListener("click", e => e.stopPropagation());
+      const header = document.createElement("div");
+      header.className = "context-menu-item";
+      header.innerHTML = '<i class="fas fa-folder-open fa-fw"></i> <strong>Sposta in...</strong>';
+      header.style.color = "var(--text-secondary)";
+      header.style.cursor = "default";
+      header.style.background = "rgba(128,128,128,0.1)";
+      menu.appendChild(header);
+      categories.filter(c => c !== media.category).forEach(cat => {
+        const item = document.createElement("div");
+        item.className = "context-menu-item";
+        item.innerHTML = getCategoryName(cat, true);
+        item.addEventListener("click", () => {
+          moveMediaToCategory(media.id, cat);
+          hide();
+        });
+        menu.appendChild(item);
+      });
+      const divider1 = document.createElement("div");
+      divider1.className = "context-menu-divider";
+      menu.appendChild(divider1);
+      const quickEdit = document.createElement("div");
+      quickEdit.className = "context-menu-item";
+      quickEdit.innerHTML = '<i class="fas fa-edit fa-fw"></i> Modifica Rapida';
+      if (media.category !== "watchlist") {
+        quickEdit.addEventListener("click", () => {
+          openQuickEditModal(media);
+          hide();
+        });
+      } else {
+        quickEdit.style.display = "none";
+      }
+      menu.appendChild(quickEdit);
+      if (media.category !== "watchlist") {
+        const divider2 = document.createElement("div");
+        divider2.className = "context-menu-divider";
+        menu.appendChild(divider2);
+      }
+      const changePoster = document.createElement("div");
+      changePoster.className = "context-menu-item";
+      changePoster.innerHTML = '<i class="fas fa-image fa-fw"></i> Cambia Copertina';
+      changePoster.addEventListener("click", () => {
+        showPosterModal(media.id);
+        hide();
+      });
+      menu.appendChild(changePoster);
+      const deleteItem = document.createElement("div");
+      deleteItem.className = "context-menu-item";
+      deleteItem.innerHTML = '<i class="fas fa-trash fa-fw"></i> Elimina';
+      deleteItem.style.color = "var(--danger)";
+      deleteItem.addEventListener("click", () => {
+        deleteMedia(media.id);
+        hide();
+      });
+      menu.appendChild(deleteItem);
+      document.body.appendChild(menu);
+      const rect = menu.getBoundingClientRect();
+      let x = pos.x, y = pos.y;
+      if (x + rect.width > window.innerWidth) x = window.innerWidth - rect.width - 5;
+      if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 5;
+      menu.style.left = `${x}px`;
+      menu.style.top = `${y}px`;
+    }
+    
+    function moveMediaToCategory(id, cat) {
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+      const card = document.querySelector(`.media-card[data-id="${id}"]`);
+      if (card) card.classList.add("moving");
+      media.category = cat;
+      saveData();
+      renderMedia();
+      showNotification(`Film spostato in "${getCategoryName(cat)}"`, "success");
+    }
+
+    function toggleCountedAsWatched(id) {
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+      media.isCountedAsWatched = !media.isCountedAsWatched;
+      if (media.isCountedAsWatched) {
+        media.isCountedAsWatchlist = false;
+        if (media.rewatchCount < 0) media.rewatchCount = 0;
+      }
+      openQuickEditModal(media);
+    }
+
+    function toggleCountedAsWatchlist(id) {
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+      media.isCountedAsWatchlist = !media.isCountedAsWatchlist;
+      if (media.isCountedAsWatchlist) media.isCountedAsWatched = false;
+      openQuickEditModal(media);
+    }
+
+    function markRewatch(id, count) {
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+      media.rewatchCount = count;
+      if (count >= 1 && media.category !== "watched" && !media.isCountedAsWatched) {
+        media.isCountedAsWatched = true;
+        media.isCountedAsWatchlist = false;
+      }
+      saveData();
+      refreshSingleMedia(id);
+      updateStats();
+      showNotification(`Rewatch di "${media.title}" aggiornati`, "success");
+    }
+
+    function refreshSingleMedia(id) {
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+      const oldCard = document.querySelector(`.media-card[data-id="${id}"]`);
+      const grid = oldCard ? oldCard.parentElement : document.getElementById(`${media.category}Grid`);
+      if (!grid) return;
+      const newCard = createMediaCard(media);
+      if (oldCard) {
+        grid.replaceChild(newCard, oldCard);
+      } else {
+        grid.appendChild(newCard);
+      }
+      if (lazyLoadObserver) lazyLoadObserver.observe(newCard.querySelector(".lazy"));
+      updateCounts();
+    }
+
+    function deleteMedia(id) {
+      if (isViewMode) return;
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+      showConfirmModal("Elimina Film", `Sei sicuro di voler eliminare "${media.title}"?`, () => {
+        mediaList = mediaList.filter(m => m.id !== id);
+        saveData();
+        renderMedia();
+        showNotification("Film eliminato", "success");
+      });
+    }
+
+    function closeModal(modal) {
+      modal.style.display = "none";
+      document.body.classList.remove("modal-open");
+    }
+
+    async function searchOMDb() {
+      const title = elements.mediaTitle.value.trim();
+      if (!title) return showNotification("Inserisci un titolo", "warning");
+      elements.omdbResults.innerHTML = '<div style="text-align: center; padding: 2rem;"><i class="fas fa-spinner fa-2x loading-spinner"></i></div>';
+      try {
+        let url = `https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&s=${encodeURIComponent(title)}&type=movie`;
+        let response = await fetch(url);
+        let data = await response.json();
+        if (data.Response === "True") {
+          displayOMDbResults(data.Search);
+        } else if (data.Error === "Too many results.") {
+          showNotification("Troppi risultati. Tento una ricerca esatta...", "warning");
+          url = `https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&t=${encodeURIComponent(title)}&type=movie`;
+          response = await fetch(url);
+          data = await response.json();
+          if (data.Response === "True") {
+            displayOMDbResults([data]);
+          } else {
+            elements.omdbResults.innerHTML = `<p>${data.Error || "Nessun risultato trovato"}</p>`;
+          }
+        } else {
+          elements.omdbResults.innerHTML = `<p>${data.Error || "Nessun risultato trovato"}</p>`;
+        }
+      } catch (err) {
+        showNotification("Errore nella ricerca", "error");
+        console.error("OMDb error:", err);
+        elements.omdbResults.innerHTML = "<p>Errore durante la ricerca</p>";
+      }
+    }
+
+    function displayOMDbResults(results) {
+      elements.omdbResults.innerHTML = results.map(result => `
+        <div class="omdb-result-item user-select-none" data-id="${result.imdbID}">
+          <img src="${fixPosterUrl(result.Poster)}" class="omdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'">
+          <div><div><strong>${result.Title}</strong></div><div>${result.Year}</div></div>
+        </div>
+      `).join("");
+      document.querySelectorAll(".omdb-result-item").forEach(item => {
+        item.addEventListener("click", async () => {
+          const details = await getOMDbMovieDetails(item.dataset.id);
+          if (details) {
+            currentOMDbSelection = details;
+            elements.mediaTitle.value = details.Title;
+            showNotification(`Dettagli di "${details.Title}" pronti per il salvataggio`, "success");
+          }
+        });
+      });
+    }
+
+    async function getOMDbMovieDetails(imdbID) {
+      try {
+        const response = await fetch(`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&i=${imdbID}`);
+        const data = await response.json();
+        if (data.Response === "False") throw new Error(data.Error || "Dettagli non disponibili");
+        return data;
+      } catch (err) {
+        console.error("Error fetching movie details:", err);
+        showNotification("Errore nel caricamento dei dettagli", "error");
+        return null;
+      }
+    }
+
+    function addNewMedia() {
+      if (isViewMode) return;
+      const title = elements.mediaTitle.value.trim();
+      if (!title) return showNotification("Inserisci un titolo", "warning");
+      const category = elements.addMediaCategorySelect.value;
+      localStorage.setItem("lastUsedCategory", category);
+      let media = {
+        id: Date.now().toString(),
+        title,
+        category,
+        addedAt: new Date().toISOString(),
+        poster: "",
+        rewatchCount: 0,
+        isCountedAsWatched: category === "watched",
+        isCountedAsWatchlist: category === "watchlist",
+        year: "",
+        imdbID: null,
+        imdbRating: "",
+        rottenTomatoes: "",
+        runtime: ""
+      };
+      if (currentOMDbSelection) {
+        media = {
+          ...media,
+          title: currentOMDbSelection.Title,
+          year: currentOMDbSelection.Year,
+          poster: fixPosterUrl(currentOMDbSelection.Poster),
+          imdbID: currentOMDbSelection.imdbID,
+          imdbRating: currentOMDbSelection.imdbRating || "N/A",
+          rottenTomatoes: "",
+          runtime: currentOMDbSelection.Runtime || ""
+        };
+        if (currentOMDbSelection.Ratings && Array.isArray(currentOMDbSelection.Ratings)) {
+          for (const rating of currentOMDbSelection.Ratings) {
+            if (rating.Source === "Rotten Tomatoes") media.rottenTomatoes = rating.Value || "N/A";
+          }
+        }
+      }
+      const duplicate = mediaList.some(m => (m.imdbID && m.imdbID === media.imdbID || !m.imdbID && m.title.toLowerCase() === media.title.toLowerCase()) && m.category === media.category);
+      if (duplicate) showNotification(`Attenzione: Questo film è già in "${getCategoryName(media.category)}"`, "warning");
+      mediaList.push(media);
+      saveData();
+      closeModal(elements.mediaManagementModal);
+      renderMedia();
+      showNotification(`Film "${media.title}" aggiunto!`, "success");
+    }
+
+    function exportData() {
+      if (isViewMode) return;
+      const data = { mediaList, categories, exportedAt: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `filmtracker_export_${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showNotification("Dati esportati", "success");
+    }
+
+    function importData(file) {
+      if (isViewMode || !file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!Array.isArray(data.mediaList)) throw new Error("Formato file non valido");
+          showConfirmModal("Importa Dati", `Stai per importare ${data.mediaList.length} film. I dati attuali verranno sovrascritti. Continuare?`, () => {
+            mediaList = data.mediaList;
+            categories = data.categories || [...DEFAULT_CATEGORIES];
+            saveData();
+            renderFullUI();
+            showNotification("Dati importati con successo", "success");
+          });
+        } catch (err) {
+          showNotification("Errore nell'importazione: " + err.message, "error");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetApp() {
+      if (isViewMode) return;
+      showConfirmModal("Resetta Applicazione", "Sei sicuro di voler resettare l'applicazione? Tutti i dati andranno persi.", () => {
+        mediaList = [];
+        categories = [...DEFAULT_CATEGORIES];
+        saveData();
+        elements.searchInput.value = "";
+        elements.categoryFilter.value = "all";
+        elements.sortFilter.value = "alpha";
+        renderFullUI();
+        showNotification("Applicazione resettata", "success");
+      });
+    }
+
+    function loadTheme() {
+      const theme = localStorage.getItem("theme") || "dark";
+      document.body.classList.toggle("dark", theme === "dark");
+      elements.themeToggle.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>`;
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      const isDark = document.body.classList.contains("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+      elements.themeToggle.innerHTML = `<i class="fas fa-${isDark ? "sun" : "moon"}"></i>`;
+    }
+
+    function loadSortOrder() {
+      const sort = localStorage.getItem("mediaTrackerSortOrder");
+      if (sort) elements.sortFilter.value = sort;
+    }
+
+    function showNotification(text, type = "success") {
+      elements.notificationText.textContent = text;
+      elements.notification.className = `notification ${type}`;
+      elements.notification.style.display = "block";
+      setTimeout(() => elements.notification.style.display = "none", 3000);
+    }
+
+    function setupLazyLoading() {
+      if (lazyLoadObserver) lazyLoadObserver.disconnect();
+      lazyLoadObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src;
+            img.classList.remove("lazy");
+            lazyLoadObserver.unobserve(img);
+          }
+        });
+      });
+      document.querySelectorAll(".lazy").forEach(img => lazyLoadObserver.observe(img));
+    }
+
+    function formatRuntime(runtime) {
+      if (!runtime) return "";
+      const minutes = parseInt(runtime);
+      if (isNaN(minutes) || minutes <= 0) return "";
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return hours > 0 ? `${hours}h ${mins > 0 ? `${mins}m` : ""}` : `${mins}m`;
+    }
+
+    async function checkForRatingUpdates() {
+      const toUpdate = mediaList.filter(m => m.imdbID && (!m.imdbRating || m.imdbRating === "N/A"))
+        .sort((a, b) => (a.lastChecked || 0) - (b.lastChecked || 0))
+        .slice(0, 5);
+      for (const media of toUpdate) {
+        const details = await getOMDbMovieDetails(media.imdbID);
+        if (details && details.imdbRating && details.imdbRating !== "N/A") {
+          media.imdbRating = details.imdbRating;
+          media.rottenTomatoes = "";
+          for (const rating of details.Ratings || []) {
+            if (rating.Source === "Rotten Tomatoes") media.rottenTomatoes = rating.Value;
+          }
+          media.lastChecked = Date.now();
+          refreshSingleMedia(media.id);
+          showNotification(`Rating aggiornati per: ${media.title}`, "success");
+        }
+      }
+      saveData();
+    }
+    
+    function setupEventListeners() {
+      elements.mediaSectionsContainer.addEventListener("click", e => {
+        if (e.target.closest(".add-film-from-empty")) openMediaManagementModal();
+      });
+      document.addEventListener("contextmenu", e => {
+        closeAllMenus();
+        const card = e.target.closest(".media-card");
+        if (card && !isViewMode) {
+          e.preventDefault();
+          const id = card.dataset.id;
+          const media = mediaList.find(m => m.id === id);
+          if (media) showContextMenu(media, { x: e.clientX, y: e.clientY });
+        }
+      });
+      elements.mediaManagementBtn.addEventListener("click", openMediaManagementModal);
+      elements.addCategoryBtn.addEventListener("click", () => addCategory(elements.newCategoryName.value));
+      elements.confirmQuickEditBtn.addEventListener("click", () => {
+        const count = parseInt(elements.quickEditRewatchCount.value) || 0;
+        if (count < 0) {
+          showNotification("Inserisci un numero valido", "warning");
+        } else {
+          markRewatch(currentQuickEditMedia.id, count);
+          closeModal(elements.quickEditModal);
+        }
+      });
+      elements.quickEditWatchedBtn.addEventListener("click", () => toggleCountedAsWatched(currentQuickEditMedia.id));
+      elements.quickEditWatchlistBtn.addEventListener("click", () => toggleCountedAsWatchlist(currentQuickEditMedia.id));
+      elements.cancelQuickEditBtn.addEventListener("click", () => {
+        currentUser ? loadData() : loadLocalData();
+        closeModal(elements.quickEditModal);
+      });
+      elements.searchOMDbBtn.addEventListener("click", searchOMDb);
+      document.addEventListener("click", e => {
+        if (e.target === elements.posterModal) {
+          const selected = document.querySelector(".poster-option.selected");
+          if (selected) {
+            changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url);
+          } else {
+            showNotification("Nessuna nuova copertina selezionata.", "warning");
+          }
+          elements.posterModal.style.display = "none";
+        }
+      });
+      elements.quickEditModal.addEventListener("click", e => {
+        if (e.target === elements.quickEditModal) closeModal(elements.quickEditModal);
+      });
+      elements.exportBtn.addEventListener("click", exportData);
+      elements.importBtn.addEventListener("click", () => elements.importFile.click());
+      elements.importFile.addEventListener("change", e => importData(e.target.files[0]));
+      elements.resetBtn.addEventListener("click", resetApp);
+      elements.themeToggle.addEventListener("click", toggleTheme);
+      elements.searchInput.addEventListener("input", () => {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(renderMedia, 300);
+      });
+      elements.categoryFilter.addEventListener("change", renderMedia);
+      elements.sortFilter.addEventListener("change", () => {
+        localStorage.setItem("mediaTrackerSortOrder", elements.sortFilter.value);
+        renderMedia();
+      });
+      elements.shareBtn.addEventListener("click", () => {
+        if (!currentUser) return showNotification("Devi essere loggato per condividere.", "warning");
+        const link = `${window.location.origin}${window.location.pathname}?view=${currentUser.uid}`;
+        elements.shareLinkInput.value = link;
+        elements.shareModal.style.display = "flex";
+        document.body.classList.add("modal-open");
+      });
+      elements.copyShareLinkBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(elements.shareLinkInput.value);
+        showNotification("Link copiato!", "success");
+      });
+      elements.closeShareModalBtn.addEventListener("click", () => closeModal(elements.shareModal));
+      elements.closeViewBtn.addEventListener("click", () => { window.location.href = window.location.pathname; });
+      document.querySelectorAll(".num-spinner-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+          const target = document.getElementById(e.currentTarget.dataset.target);
+          if (target) {
+            let value = parseInt(target.value) || 0;
+            value += e.currentTarget.classList.contains("up") ? 1 : -1;
+            const min = parseInt(target.min);
+            if (!isNaN(min) && value < min) value = min;
+            target.value = value;
+          }
+        });
+      });
+    }
+    
+    function openQuickEditModal(media) {
+      if (isViewMode) return;
+      currentQuickEditMedia = media;
+      elements.quickEditTitle.textContent = `Modifica: ${media.title}`;
+      elements.quickEditRewatchCount.value = media.rewatchCount || 0;
+      const watchlistBtn = elements.quickEditWatchlistBtn;
+      if (media.category === "watched") {
+        watchlistBtn.style.display = "none";
+      } else {
+        watchlistBtn.style.display = "inline-flex";
+        if (media.isCountedAsWatchlist) {
+          watchlistBtn.innerHTML = '<i class="fas fa-times"></i> Rimuovi da vedere come qui';
+          watchlistBtn.className = "btn btn-danger";
+        } else {
+          watchlistBtn.innerHTML = '<i class="fas fa-list-alt"></i> Segna come da vedere qui';
+          watchlistBtn.className = "btn btn-secondary";
+        }
+      }
+      const watchedBtn = elements.quickEditWatchedBtn;
+      if (media.category === "watched") {
+        watchedBtn.style.display = "none";
+      } else {
+        watchedBtn.style.display = "inline-flex";
+        if (media.isCountedAsWatched) {
+          watchedBtn.innerHTML = '<i class="fas fa-times"></i> Rimuovi come visto qui';
+          watchedBtn.className = "btn btn-danger";
+        } else {
+          watchedBtn.innerHTML = '<i class="fas fa-check-double"></i> Segna come visto qui';
+          watchedBtn.className = "btn btn-success";
+        }
+      }
+      elements.quickEditModal.style.display = "flex";
+      document.body.classList.add("modal-open");
+    }
+
+    function showPosterModal(id) {
+      const media = mediaList.find(m => m.id === id);
+      if (!media || !media.imdbID) return showNotification("Nessun IMDb ID trovato per questo film.", "warning");
+      elements.posterModal.dataset.mediaId = id;
+      elements.posterGrid.innerHTML = "<p>Caricamento copertine...</p>";
+      elements.posterModal.style.display = "flex";
+      fetchPosters(media.imdbID).then(posters => {
+        if (posters.length === 0) {
+          elements.posterGrid.innerHTML = "<p>Nessuna copertina alternativa trovata</p>";
+          return;
+        }
+        elements.posterGrid.innerHTML = "";
+        posters.forEach(poster => {
+          const option = document.createElement("div");
+          option.className = "poster-option";
+          option.dataset.url = poster.url;
+          const img = document.createElement("img");
+          img.src = poster.url;
+          img.onerror = () => img.src = DEFAULT_POSTER;
+          option.appendChild(img);
+          option.addEventListener("click", () => {
+            document.querySelectorAll(".poster-option").forEach(o => o.classList.remove("selected"));
+            option.classList.add("selected");
+          });
+          elements.posterGrid.appendChild(option);
+        });
+      });
+    }
+
+    async function fetchPosters(imdbID) {
+      try {
+        const response = await fetch(`https://api.themoviedb.org/3/find/${imdbID}?api_key=${TMDB_KEY}&external_source=imdb_id`);
+        const data = await response.json();
+        const tmdbId = data.movie_results[0]?.id;
+        if (!tmdbId) return [];
+        const imagesResponse = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/images?api_key=${TMDB_KEY}`);
+        const imagesData = await imagesResponse.json();
+        return imagesData.posters
+          .filter(p => p.iso_639_1 === "en" || p.iso_639_1 === null)
+          .slice(0, 10)
+          .map(p => ({ url: `https://image.tmdb.org/t/p/w500${p.file_path}` }));
+      } catch (err) {
+        console.error("Error fetching posters:", err);
+        return [];
+      }
+    }
+
+    function changePoster(id, url) {
+      const media = mediaList.find(m => m.id === id);
+      if (media) {
+        media.poster = url;
+        saveData();
+        refreshSingleMedia(id);
+      }
+    }
   </script>
 </body>
 </html>
