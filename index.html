@@ -381,7 +381,7 @@
     .context-menu {
         position: fixed; background: var(--card-bg); border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1001;
-        min-width: 220px; padding: 0.5rem 0; border: 1px solid var(--border-color);
+        min-width: 240px; padding: 0.5rem 0; border: 1px solid var(--border-color);
         opacity: 0; transform: translateY(-10px);
         transition: opacity 0.15s, transform 0.15s;
     }
@@ -399,7 +399,6 @@
       border: 2px dashed var(--border-color); border-radius: 8px;
       margin-top: 1rem;
     }
-    /* FIX 1: Changed to direct child selector (>) to avoid styling icons inside buttons */
     .empty-state > i {
       font-size: 2.5rem;
       margin-bottom: 1rem;
@@ -514,6 +513,19 @@
     .poster-option:hover { transform: scale(1.05); }
     .poster-option.selected { border-color: var(--primary); }
     .poster-option img { width: 100%; height: auto; border-radius: 4px; }
+    
+    /* Rewatch Modal */
+    #rewatchModal .modal-content { max-width: 450px; text-align: center; }
+    #rewatchModalTitle { margin-top: 0; }
+    #rewatchQuickButtons { display: flex; gap: 0.5rem; justify-content: center; margin: 1.5rem 0; }
+    .quick-rewatch-btn {
+        padding: 0; /* Changed */
+        width: 45px;
+        height: 45px;
+        justify-content: center; /* Added */
+    }
+    .quick-rewatch-btn.active { background: var(--primary); color: white; }
+    .custom-rewatch-container { display: flex; align-items: center; justify-content: center; gap: 1rem; }
 
     /* Number input controls */
     .number-input-wrapper {
@@ -573,7 +585,6 @@
     }
     .view-mode-banner i { margin-right: 0.75rem; }
 
-    /* FIX 2: Corrects the vertical alignment of the plus icon */
     .btn i.fa-plus {
         position: relative;
         top: -1px;
@@ -606,12 +617,12 @@
           <option value="year">Anno di uscita</option>
         </select>
         <button id="mediaManagementBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Gestione</button>
-        <button id="shareBtn" class="btn btn-secondary"><i class="fas fa-share-alt"></i></button>
-        <button id="exportBtn" class="btn btn-success"><i class="fas fa-download"></i></button>
+        <button id="shareBtn" class="btn btn-secondary" title="Condividi Libreria"><i class="fas fa-share-alt"></i></button>
+        <button id="exportBtn" class="btn btn-secondary" title="Esporta Dati (.json)"><i class="fas fa-download"></i></button>
         <input type="file" id="importFile" accept=".json" style="display: none;">
-        <button id="importBtn" class="btn btn-warning"><i class="fas fa-upload"></i></button>
-        <button id="resetBtn" class="btn btn-reset"><i class="fas fa-undo"></i></button>
-        <button id="themeToggle" class="btn"><i class="fas fa-moon"></i></button>
+        <button id="importBtn" class="btn btn-secondary" title="Importa Dati (.json)"><i class="fas fa-upload"></i></button>
+        <button id="resetBtn" class="btn btn-secondary" title="Resetta Applicazione"><i class="fas fa-undo"></i></button>
+        <button id="themeToggle" class="btn btn-secondary" title="Cambia Tema"><i class="fas fa-moon"></i></button>
       <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
       <button id="authToggle" class="btn btn-secondary"><i class="fas fa-user"></i> Login</button>
       <div id="authForms" class="auth-form">
@@ -668,7 +679,36 @@
       </div>
     </div>
   </div>
-  <div class="modal" id="quickEditModal"><div class="modal-content" style="max-width: 400px;"><h2 id="quickEditTitle">Modifica Rapida</h2><div id="quickEditButtonsContainer" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;"><button class="btn" id="quickEditWatchlistBtn" style="width: 100%;"></button><button class="btn" id="quickEditWatchedBtn" style="width: 100%;"></button></div><div style="display: flex; align-items: center; gap: 1rem;"><label for="quickEditRewatchCount">Rewatch:</label><div class="number-input-wrapper" style="width: 100px;"><input type="number" id="quickEditRewatchCount" min="0" value="1"><div class="number-input-controls"><button class="num-spinner-btn up" data-target="quickEditRewatchCount">+</button><button class="num-spinner-btn down" data-target="quickEditRewatchCount">-</button></div></div></div><div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;"><button id="confirmQuickEditBtn" class="btn btn-primary">Salva</button><button id="cancelQuickEditBtn" class="btn btn-danger">Annulla</button></div></div></div>
+
+  <div class="modal" id="rewatchModal">
+    <div class="modal-content">
+        <h2 id="rewatchModalTitle">Modifica Rewatch</h2>
+        <p>Specifica il numero di volte che hai rivisto il film (0 = visto una sola volta).</p>
+        <div id="rewatchQuickButtons">
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="0">0</button>
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="1">1</button>
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="2">2</button>
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="3">3</button>
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="4">4</button>
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="5">5</button>
+        </div>
+        <div class="custom-rewatch-container">
+            <label for="rewatchCountInput">Numero custom:</label>
+            <div class="number-input-wrapper" style="width: 120px;">
+                <input type="number" id="rewatchCountInput" min="0" value="0">
+                <div class="number-input-controls">
+                    <button class="num-spinner-btn up" data-target="rewatchCountInput">+</button>
+                    <button class="num-spinner-btn down" data-target="rewatchCountInput">-</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="cancelRewatchBtn" class="btn btn-danger">Annulla</button>
+            <button id="confirmRewatchBtn" class="btn btn-primary">Salva</button>
+        </div>
+    </div>
+  </div>
+
   <div class="modal" id="shareModal"><div class="modal-content" style="max-width: 450px;"><h2>Condividi la tua libreria</h2><p>Chiunque abbia questo link potrà vedere la tua lista in tempo reale (sola lettura).</p><input type="text" id="shareLinkInput" class="share-link-input" readonly><div style="display: flex; gap: 0.5rem; margin-top: 1rem;"><button id="copyShareLinkBtn" class="btn btn-primary">Copia Link</button><button id="closeShareModalBtn" class="btn btn-danger">Chiudi</button></div></div></div>
   <div id="notification" class="notification"><span id="notificationText"></span></div>
   <div id="posterModal" class="poster-modal"><div class="poster-grid" id="posterGrid"></div></div>
@@ -691,7 +731,7 @@
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
-    let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentQuickEditMedia = null, currentOMDbSelection = null, currentUser = null, isViewMode = false, debounceTimeout, lazyLoadObserver;
+    let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentOMDbSelection = null, currentUser = null, isViewMode = false, debounceTimeout, lazyLoadObserver, currentRewatchMediaId = null;
     let statContributorIds = new Set();
     let ignoredDuplicateIds = new Set();
     const firebaseConfig = { apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk", authDomain: "gametrackerdb.firebaseapp.com", databaseURL: "https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gametrackerdb" };
@@ -716,10 +756,7 @@
         omdbResults: document.getElementById("omdbResults"), saveMediaBtn: document.getElementById("saveMediaBtn"), 
         addMediaCategorySelect: document.getElementById("addMediaCategorySelect"), newCategoryName: document.getElementById("newCategoryName"), 
         addCategoryBtn: document.getElementById("addCategoryBtn"), categoriesList: document.getElementById("categoriesList"), 
-        closeManagementModal: document.getElementById("closeManagementModal"), quickEditModal: document.getElementById("quickEditModal"), 
-        quickEditTitle: document.getElementById("quickEditTitle"), quickEditWatchedBtn: document.getElementById("quickEditWatchedBtn"), 
-        quickEditWatchlistBtn: document.getElementById("quickEditWatchlistBtn"), quickEditRewatchCount: document.getElementById("quickEditRewatchCount"), 
-        confirmQuickEditBtn: document.getElementById("confirmQuickEditBtn"), cancelQuickEditBtn: document.getElementById("cancelQuickEditBtn"), 
+        closeManagementModal: document.getElementById("closeManagementModal"),
         notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"), 
         shareModal: document.getElementById("shareModal"), shareLinkInput: document.getElementById("shareLinkInput"), 
         copyShareLinkBtn: document.getElementById("copyShareLinkBtn"), closeShareModalBtn: document.getElementById("closeShareModalBtn"), 
@@ -728,7 +765,10 @@
         posterGrid: document.getElementById("posterGrid"),
         confirmModal: document.getElementById("confirmModal"), confirmModalTitle: document.getElementById("confirmModalTitle"),
         confirmModalBody: document.getElementById("confirmModalBody"), confirmModalConfirm: document.getElementById("confirmModalConfirm"),
-        confirmModalCancel: document.getElementById("confirmModalCancel")
+        confirmModalCancel: document.getElementById("confirmModalCancel"),
+        rewatchModal: document.getElementById("rewatchModal"), rewatchModalTitle: document.getElementById("rewatchModalTitle"),
+        rewatchCountInput: document.getElementById("rewatchCountInput"), confirmRewatchBtn: document.getElementById("confirmRewatchBtn"),
+        cancelRewatchBtn: document.getElementById("cancelRewatchBtn")
     };
     
     firebase.initializeApp(firebaseConfig);
@@ -1073,6 +1113,7 @@
       card.dataset.id = media.id;
       if (statContributorIds.has(media.id)) card.classList.add("is-stat-contributor");
       if (ignoredDuplicateIds.has(media.id)) card.classList.add("is-duplicate");
+      
       let ratingsHTML = "";
       if (media.imdbRating && media.imdbRating !== "N/A") {
         ratingsHTML += `<span class="rating-badge" title="IMDb Rating: ${media.imdbRating}"><img src="${IMDB_STAR_ICON}" class="rating-icon" alt="IMDb"> ${media.imdbRating}</span>`;
@@ -1084,14 +1125,18 @@
         }
       }
       const ratingsSection = ratingsHTML ? `<div class="media-ratings">${ratingsHTML}</div>` : "";
+      
       let statusHTML = "";
-      if (media.isCountedAsWatched || media.category === "watched") {
-        const times = (media.rewatchCount || 0) + 1;
-        const sup = times > 1 ? `<sup>${times}</sup>` : "";
-        statusHTML = `<span class="watch-status-icon" title="Visto ${times} volte"><i class="fas fa-eye"></i>${sup}</span>`;
+      const isEffectivelyWatched = media.isCountedAsWatched || media.category === "watched";
+      
+      if (isEffectivelyWatched) {
+          const totalViews = (media.rewatchCount || 0) + 1;
+          const sup = totalViews > 1 ? `<sup>${totalViews}</sup>` : "";
+          statusHTML = `<span class="watch-status-icon" title="Visto ${totalViews} volte"><i class="fas fa-eye"></i>${sup}</span>`;
       } else if (media.isCountedAsWatchlist && media.category !== "watchlist") {
-        statusHTML = `<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`;
+          statusHTML = `<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`;
       }
+
       card.innerHTML = `
         <div class="poster-container">
           <img data-src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'">
@@ -1311,60 +1356,72 @@
         requestAnimationFrame(() => menu.classList.add("visible"));
       }, 0);
       menu.addEventListener("click", e => e.stopPropagation());
+      
       const header = document.createElement("div");
       header.className = "context-menu-item";
       header.innerHTML = '<i class="fas fa-folder-open fa-fw"></i> <strong>Sposta in...</strong>';
-      header.style.color = "var(--text-secondary)";
-      header.style.cursor = "default";
-      header.style.background = "rgba(128,128,128,0.1)";
+      header.style.cssText = "color: var(--text-secondary); cursor: default; background: rgba(128,128,128,0.1);";
       menu.appendChild(header);
+      
       categories.filter(c => c !== media.category).forEach(cat => {
         const item = document.createElement("div");
         item.className = "context-menu-item";
         item.innerHTML = getCategoryName(cat, true);
-        item.addEventListener("click", () => {
-          moveMediaToCategory(media.id, cat);
-          hide();
-        });
+        item.addEventListener("click", () => { moveMediaToCategory(media.id, cat); hide(); });
         menu.appendChild(item);
       });
-      const divider1 = document.createElement("div");
-      divider1.className = "context-menu-divider";
-      menu.appendChild(divider1);
-      const quickEdit = document.createElement("div");
-      quickEdit.className = "context-menu-item";
-      quickEdit.innerHTML = '<i class="fas fa-edit fa-fw"></i> Modifica Rapida';
-      if (media.category !== "watchlist") {
-        quickEdit.addEventListener("click", () => {
-          openQuickEditModal(media);
-          hide();
-        });
-      } else {
-        quickEdit.style.display = "none";
+      menu.appendChild(document.createElement("div")).className = "context-menu-divider";
+      
+      const isCustomCategory = !DEFAULT_CATEGORIES.includes(media.category);
+      if (media.category === 'watched' || isCustomCategory) {
+        const rewatchItem = document.createElement("div");
+        rewatchItem.className = "context-menu-item";
+        rewatchItem.innerHTML = '<i class="fas fa-sync-alt fa-fw"></i> Modifica Rewatch';
+        rewatchItem.addEventListener("click", () => { openRewatchModal(media.id); hide(); });
+        menu.appendChild(rewatchItem);
       }
-      menu.appendChild(quickEdit);
-      if (media.category !== "watchlist") {
-        const divider2 = document.createElement("div");
-        divider2.className = "context-menu-divider";
-        menu.appendChild(divider2);
+
+      if (isCustomCategory) {
+        const watchedItem = document.createElement("div");
+        watchedItem.className = "context-menu-item";
+        if (media.isCountedAsWatched) {
+          watchedItem.innerHTML = '<i class="fas fa-times fa-fw"></i> Rimuovi stato "visto"';
+          watchedItem.style.color = "var(--danger)";
+        } else {
+          watchedItem.innerHTML = '<i class="fas fa-check-double fa-fw"></i> Segna come visto qui';
+        }
+        watchedItem.addEventListener("click", () => { toggleCountedAsWatched(media.id); hide(); });
+        menu.appendChild(watchedItem);
+
+        const watchlistItem = document.createElement("div");
+        watchlistItem.className = "context-menu-item";
+        if (media.isCountedAsWatchlist) {
+            watchlistItem.innerHTML = '<i class="fas fa-times fa-fw"></i> Rimuovi stato "da vedere"';
+            watchlistItem.style.color = "var(--danger)";
+        } else {
+            watchlistItem.innerHTML = '<i class="fas fa-list-alt fa-fw"></i> Segna come da vedere qui';
+        }
+        watchlistItem.addEventListener("click", () => { toggleCountedAsWatchlist(media.id); hide(); });
+        menu.appendChild(watchlistItem);
       }
-      const changePoster = document.createElement("div");
-      changePoster.className = "context-menu-item";
-      changePoster.innerHTML = '<i class="fas fa-image fa-fw"></i> Cambia Copertina';
-      changePoster.addEventListener("click", () => {
-        showPosterModal(media.id);
-        hide();
-      });
-      menu.appendChild(changePoster);
+      
+      if (media.category === 'watched' || isCustomCategory) {
+          menu.appendChild(document.createElement("div")).className = "context-menu-divider";
+      }
+
+      const changePosterItem = document.createElement("div");
+      changePosterItem.className = "context-menu-item";
+      changePosterItem.innerHTML = '<i class="fas fa-image fa-fw"></i> Cambia Copertina';
+      changePosterItem.addEventListener("click", () => { showPosterModal(media.id); hide(); });
+      menu.appendChild(changePosterItem);
+
       const deleteItem = document.createElement("div");
       deleteItem.className = "context-menu-item";
       deleteItem.innerHTML = '<i class="fas fa-trash fa-fw"></i> Elimina';
       deleteItem.style.color = "var(--danger)";
-      deleteItem.addEventListener("click", () => {
-        deleteMedia(media.id);
-        hide();
-      });
+      deleteItem.addEventListener("click", () => { deleteMedia(media.id); hide(); });
       menu.appendChild(deleteItem);
+
       document.body.appendChild(menu);
       const rect = menu.getBoundingClientRect();
       let x = pos.x, y = pos.y;
@@ -1374,41 +1431,85 @@
       menu.style.top = `${y}px`;
     }
     
-    function moveMediaToCategory(id, cat) {
-      const media = mediaList.find(m => m.id === id);
-      if (!media) return;
-      const card = document.querySelector(`.media-card[data-id="${id}"]`);
-      if (card) card.classList.add("moving");
-      media.category = cat;
-      saveData();
-      renderMedia();
-      showNotification(`Film spostato in "${getCategoryName(cat)}"`, "success");
+    function moveMediaToCategory(id, newCategory) {
+        const media = mediaList.find(m => m.id === id);
+        if (!media) return;
+
+        const oldCategory = media.category;
+        media.category = newCategory;
+
+        if (newCategory === 'watched') {
+            media.isCountedAsWatched = true;
+            media.isCountedAsWatchlist = false;
+        } else if (newCategory === 'watchlist') {
+            media.isCountedAsWatchlist = true;
+        }
+
+        if (!DEFAULT_CATEGORIES.includes(oldCategory) && DEFAULT_CATEGORIES.includes(newCategory)) {
+            if (newCategory === 'watched' && !media.isCountedAsWatched) {
+                media.rewatchCount = 0;
+            }
+            media.isCountedAsWatched = newCategory === 'watched';
+            media.isCountedAsWatchlist = newCategory === 'watchlist';
+        }
+
+        saveData();
+        renderMedia();
+        showNotification(`Film spostato in "${getCategoryName(newCategory)}"`, "success");
     }
 
     function toggleCountedAsWatched(id) {
-      const media = mediaList.find(m => m.id === id);
-      if (!media) return;
-      media.isCountedAsWatched = !media.isCountedAsWatched;
-      if (media.isCountedAsWatched) {
-        media.isCountedAsWatchlist = false;
-        if (media.rewatchCount < 0) media.rewatchCount = 0;
-      }
-      openQuickEditModal(media);
+        const media = mediaList.find(m => m.id === id);
+        if (!media) return;
+        media.isCountedAsWatched = !media.isCountedAsWatched;
+        if (media.isCountedAsWatched) {
+            media.isCountedAsWatchlist = false;
+            if (media.rewatchCount < 0) media.rewatchCount = 0;
+        }
+        saveData();
+        refreshSingleMedia(id);
+        updateStats();
+        showNotification(`Stato "visto" aggiornato per ${media.title}`, "success");
     }
 
     function toggleCountedAsWatchlist(id) {
-      const media = mediaList.find(m => m.id === id);
-      if (!media) return;
-      media.isCountedAsWatchlist = !media.isCountedAsWatchlist;
-      if (media.isCountedAsWatchlist) media.isCountedAsWatched = false;
-      openQuickEditModal(media);
+        const media = mediaList.find(m => m.id === id);
+        if (!media) return;
+        media.isCountedAsWatchlist = !media.isCountedAsWatchlist;
+        if (media.isCountedAsWatchlist) media.isCountedAsWatched = false;
+        saveData();
+        refreshSingleMedia(id);
+        updateStats();
+        showNotification(`Stato "da vedere" aggiornato per ${media.title}`, "success");
+    }
+
+    function openRewatchModal(id) {
+        const media = mediaList.find(m => m.id === id);
+        if (!media) return;
+
+        currentRewatchMediaId = id;
+        elements.rewatchModalTitle.textContent = `Modifica Rewatch: ${media.title}`;
+        
+        const currentCount = media.rewatchCount || 0;
+        elements.rewatchCountInput.value = currentCount;
+        
+        updateRewatchModalButtons(currentCount);
+
+        elements.rewatchModal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+    }
+
+    function updateRewatchModalButtons(count) {
+        document.querySelectorAll('.quick-rewatch-btn').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.count) === count);
+        });
     }
 
     function markRewatch(id, count) {
       const media = mediaList.find(m => m.id === id);
       if (!media) return;
       media.rewatchCount = count;
-      if (count >= 1 && media.category !== "watched" && !media.isCountedAsWatched) {
+      if (count >= 0 && !media.isCountedAsWatched) {
         media.isCountedAsWatched = true;
         media.isCountedAsWatchlist = false;
       }
@@ -1693,21 +1794,6 @@
       });
       elements.mediaManagementBtn.addEventListener("click", openMediaManagementModal);
       elements.addCategoryBtn.addEventListener("click", () => addCategory(elements.newCategoryName.value));
-      elements.confirmQuickEditBtn.addEventListener("click", () => {
-        const count = parseInt(elements.quickEditRewatchCount.value) || 0;
-        if (count < 0) {
-          showNotification("Inserisci un numero valido", "warning");
-        } else {
-          markRewatch(currentQuickEditMedia.id, count);
-          closeModal(elements.quickEditModal);
-        }
-      });
-      elements.quickEditWatchedBtn.addEventListener("click", () => toggleCountedAsWatched(currentQuickEditMedia.id));
-      elements.quickEditWatchlistBtn.addEventListener("click", () => toggleCountedAsWatchlist(currentQuickEditMedia.id));
-      elements.cancelQuickEditBtn.addEventListener("click", () => {
-        currentUser ? loadData() : loadLocalData();
-        closeModal(elements.quickEditModal);
-      });
       elements.searchOMDbBtn.addEventListener("click", searchOMDb);
       document.addEventListener("click", e => {
         if (e.target === elements.posterModal) {
@@ -1719,9 +1805,6 @@
           }
           elements.posterModal.style.display = "none";
         }
-      });
-      elements.quickEditModal.addEventListener("click", e => {
-        if (e.target === elements.quickEditModal) closeModal(elements.quickEditModal);
       });
       elements.exportBtn.addEventListener("click", exportData);
       elements.importBtn.addEventListener("click", () => elements.importFile.click());
@@ -1750,6 +1833,19 @@
       });
       elements.closeShareModalBtn.addEventListener("click", () => closeModal(elements.shareModal));
       elements.closeViewBtn.addEventListener("click", () => { window.location.href = window.location.pathname; });
+      
+      // Event Listeners for Rewatch Modal
+      document.querySelectorAll('.quick-rewatch-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const count = parseInt(btn.dataset.count);
+            elements.rewatchCountInput.value = count;
+            updateRewatchModalButtons(count);
+        });
+      });
+      elements.rewatchCountInput.addEventListener('input', () => {
+          const count = parseInt(elements.rewatchCountInput.value);
+          updateRewatchModalButtons(count);
+      });
       document.querySelectorAll(".num-spinner-btn").forEach(btn => {
         btn.addEventListener("click", e => {
           const target = document.getElementById(e.currentTarget.dataset.target);
@@ -1759,44 +1855,22 @@
             const min = parseInt(target.min);
             if (!isNaN(min) && value < min) value = min;
             target.value = value;
+            if (target.id === 'rewatchCountInput') {
+                updateRewatchModalButtons(value);
+            }
           }
         });
       });
-    }
-    
-    function openQuickEditModal(media) {
-      if (isViewMode) return;
-      currentQuickEditMedia = media;
-      elements.quickEditTitle.textContent = `Modifica: ${media.title}`;
-      elements.quickEditRewatchCount.value = media.rewatchCount || 0;
-      const watchlistBtn = elements.quickEditWatchlistBtn;
-      if (media.category === "watched") {
-        watchlistBtn.style.display = "none";
-      } else {
-        watchlistBtn.style.display = "inline-flex";
-        if (media.isCountedAsWatchlist) {
-          watchlistBtn.innerHTML = '<i class="fas fa-times"></i> Rimuovi da vedere come qui';
-          watchlistBtn.className = "btn btn-danger";
-        } else {
-          watchlistBtn.innerHTML = '<i class="fas fa-list-alt"></i> Segna come da vedere qui';
-          watchlistBtn.className = "btn btn-secondary";
-        }
-      }
-      const watchedBtn = elements.quickEditWatchedBtn;
-      if (media.category === "watched") {
-        watchedBtn.style.display = "none";
-      } else {
-        watchedBtn.style.display = "inline-flex";
-        if (media.isCountedAsWatched) {
-          watchedBtn.innerHTML = '<i class="fas fa-times"></i> Rimuovi come visto qui';
-          watchedBtn.className = "btn btn-danger";
-        } else {
-          watchedBtn.innerHTML = '<i class="fas fa-check-double"></i> Segna come visto qui';
-          watchedBtn.className = "btn btn-success";
-        }
-      }
-      elements.quickEditModal.style.display = "flex";
-      document.body.classList.add("modal-open");
+      elements.confirmRewatchBtn.addEventListener('click', () => {
+          const newCount = parseInt(elements.rewatchCountInput.value);
+          if (!isNaN(newCount) && newCount >= 0) {
+              markRewatch(currentRewatchMediaId, newCount);
+              closeModal(elements.rewatchModal);
+          } else {
+              showNotification("Per favore, inserisci un numero valido (0 o superiore).", "warning");
+          }
+      });
+      elements.cancelRewatchBtn.addEventListener('click', () => closeModal(elements.rewatchModal));
     }
 
     function showPosterModal(id) {
