@@ -86,6 +86,12 @@
         gap: 1rem;
         margin-bottom: 1.5rem;
     }
+    .top-bar-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
     .top-bar-left h1 {
         margin: 0;
         font-size: 1.75rem;
@@ -97,8 +103,6 @@
         align-items: center;
         gap: 0.75rem;
         flex-wrap: wrap;
-        flex-grow: 1;
-        justify-content: flex-end;
     }
     .search-box { max-width: 300px; }
     .filter-select { max-width: 180px; }
@@ -519,10 +523,10 @@
     #rewatchModalTitle { margin-top: 0; }
     #rewatchQuickButtons { display: flex; gap: 0.5rem; justify-content: center; margin: 1.5rem 0; }
     .quick-rewatch-btn {
-        padding: 0; /* Changed */
+        padding: 0;
         width: 45px;
         height: 45px;
-        justify-content: center; /* Added */
+        justify-content: center;
     }
     .quick-rewatch-btn.active { background: var(--primary); color: white; }
     .custom-rewatch-container { display: flex; align-items: center; justify-content: center; gap: 1rem; }
@@ -604,18 +608,18 @@
   <div class="top-bar">
     <div class="top-bar-left">
       <h1><i class="fas fa-film"></i> Film Tracker</h1>
+      <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
+      <select id="categoryFilter" class="filter-select">
+        <option value="all">Tutte le categorie</option>
+      </select>
+      <select id="sortFilter" class="filter-select">
+        <option value="alpha" selected>Alfabetico</option>
+        <option value="added">Ultimi aggiunti</option>
+        <option value="rating">Valutazione</option>
+        <option value="year">Anno di uscita</option>
+      </select>
     </div>
     <div class="top-bar-right">
-        <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
-        <select id="categoryFilter" class="filter-select">
-          <option value="all">Tutte le categorie</option>
-        </select>
-        <select id="sortFilter" class="filter-select">
-          <option value="alpha" selected>Alfabetico</option>
-          <option value="added">Ultimi aggiunti</option>
-          <option value="rating">Valutazione</option>
-          <option value="year">Anno di uscita</option>
-        </select>
         <button id="mediaManagementBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Gestione</button>
         <button id="shareBtn" class="btn btn-secondary" title="Condividi Libreria"><i class="fas fa-share-alt"></i></button>
         <button id="exportBtn" class="btn btn-secondary" title="Esporta Dati (.json)"><i class="fas fa-download"></i></button>
@@ -623,13 +627,13 @@
         <button id="importBtn" class="btn btn-secondary" title="Importa Dati (.json)"><i class="fas fa-upload"></i></button>
         <button id="resetBtn" class="btn btn-secondary" title="Resetta Applicazione"><i class="fas fa-undo"></i></button>
         <button id="themeToggle" class="btn btn-secondary" title="Cambia Tema"><i class="fas fa-moon"></i></button>
-      <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
-      <button id="authToggle" class="btn btn-secondary"><i class="fas fa-user"></i> Login</button>
-      <div id="authForms" class="auth-form">
-        <div class="auth-tabs"><div class="auth-tab active" data-tab="login">Login</div><div class="auth-tab" data-tab="register">Registrati</div></div>
-        <div id="loginForm" class="auth-form-container active"><input type="email" id="loginEmail" placeholder="Email"><input type="password" id="loginPassword" placeholder="Password"><div class="auth-form-buttons"><button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button></div></div>
-        <div id="registerForm" class="auth-form-container"><input type="email" id="registerEmail" placeholder="Email"><input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)"><input type="password" id="registerConfirmPassword" placeholder="Conferma Password"><div class="auth-form-buttons"><button id="registerBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati</button></div></div>
-      </div>
+        <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+        <button id="authToggle" class="btn btn-secondary"><i class="fas fa-user"></i> Login</button>
+        <div id="authForms" class="auth-form">
+          <div class="auth-tabs"><div class="auth-tab active" data-tab="login">Login</div><div class="auth-tab" data-tab="register">Registrati</div></div>
+          <div id="loginForm" class="auth-form-container active"><input type="email" id="loginEmail" placeholder="Email"><input type="password" id="loginPassword" placeholder="Password"><div class="auth-form-buttons"><button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button></div></div>
+          <div id="registerForm" class="auth-form-container"><input type="email" id="registerEmail" placeholder="Email"><input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)"><input type="password" id="registerConfirmPassword" placeholder="Conferma Password"><div class="auth-form-buttons"><button id="registerBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati</button></div></div>
+        </div>
     </div>
   </div>
 
@@ -1199,12 +1203,12 @@
             <div class="category-item-count">${count} film</div>
           </div>
           <div class="category-card-actions">
+            <button class="btn btn-secondary move-up-btn" data-category="${cat}" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button>
+            <button class="btn btn-secondary move-down-btn" data-category="${cat}" ${index === categories.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button>
             ${DEFAULT_CATEGORIES.includes(cat) ? "" : `
               <button class="btn btn-secondary rename-category-btn" data-category="${cat}"><i class="fas fa-pencil-alt"></i></button>
               <button class="btn btn-danger delete-category-btn" data-category="${cat}"><i class="fas fa-trash"></i></button>
             `}
-            <button class="btn btn-secondary move-up-btn" data-category="${cat}" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button>
-            <button class="btn btn-secondary move-down-btn" data-category="${cat}" ${index === categories.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button>
           </div>
         `;
         list.appendChild(card);
@@ -1443,6 +1447,7 @@
             media.isCountedAsWatchlist = false;
         } else if (newCategory === 'watchlist') {
             media.isCountedAsWatchlist = true;
+            // Preserve watched state and rewatch count if moving to watchlist
         }
 
         if (!DEFAULT_CATEGORIES.includes(oldCategory) && DEFAULT_CATEGORIES.includes(newCategory)) {
