@@ -77,6 +77,25 @@
       transition: background 0.3s, color 0.3s;
     }
     
+    /* App Loader */
+    #appLoader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg-color);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+        transition: opacity 0.3s;
+    }
+    #appLoader i {
+        font-size: 3rem;
+        color: var(--primary);
+    }
+
     /* Header & Controls */
     .top-bar {
         display: flex;
@@ -418,6 +437,9 @@
     #confirmModalButtons { display: flex; justify-content: flex-end; gap: 0.5rem; }
 
     /* Auth Forms */
+    .auth-container {
+        position: relative;
+    }
     .auth-form {
       position: absolute;
       top: calc(100% + 8px);
@@ -597,6 +619,10 @@
 </head>
 <body class="dark user-select-none">
   
+  <div id="appLoader">
+      <i class="fas fa-spinner loading-spinner"></i>
+  </div>
+  
   <div id="viewModeBanner" class="view-mode-banner" style="display:none">
     <i class="fas fa-eye"></i>
     <span id="viewModeUserEmail">Stai visualizzando una libreria condivisa</span>
@@ -628,11 +654,13 @@
         <button id="resetBtn" class="btn btn-secondary" title="Resetta Applicazione"><i class="fas fa-undo"></i></button>
         <button id="themeToggle" class="btn btn-secondary" title="Cambia Tema"><i class="fas fa-moon"></i></button>
         <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
-        <button id="authToggle" class="btn btn-secondary"><i class="fas fa-user"></i> Login</button>
-        <div id="authForms" class="auth-form">
-          <div class="auth-tabs"><div class="auth-tab active" data-tab="login">Login</div><div class="auth-tab" data-tab="register">Registrati</div></div>
-          <div id="loginForm" class="auth-form-container active"><input type="email" id="loginEmail" placeholder="Email"><input type="password" id="loginPassword" placeholder="Password"><div class="auth-form-buttons"><button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button></div></div>
-          <div id="registerForm" class="auth-form-container"><input type="email" id="registerEmail" placeholder="Email"><input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)"><input type="password" id="registerConfirmPassword" placeholder="Conferma Password"><div class="auth-form-buttons"><button id="registerBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati</button></div></div>
+        <div class="auth-container">
+            <button id="authToggle" class="btn btn-secondary"><i class="fas fa-user"></i> Login</button>
+            <div id="authForms" class="auth-form">
+              <div class="auth-tabs"><div class="auth-tab active" data-tab="login">Login</div><div class="auth-tab" data-tab="register">Registrati</div></div>
+              <div id="loginForm" class="auth-form-container active"><input type="email" id="loginEmail" placeholder="Email"><input type="password" id="loginPassword" placeholder="Password"><div class="auth-form-buttons"><button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button></div></div>
+              <div id="registerForm" class="auth-form-container"><input type="email" id="registerEmail" placeholder="Email"><input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)"><input type="password" id="registerConfirmPassword" placeholder="Conferma Password"><div class="auth-form-buttons"><button id="registerBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati</button></div></div>
+            </div>
         </div>
     </div>
   </div>
@@ -655,7 +683,7 @@
       <div class="media-management-container">
         <div class="management-tabs">
           <button class="tab-btn active" data-tab="add-media"><i class="fas fa-film"></i> Aggiungi Film</button>
-          <button class="tab-btn" data-tab="manage-categories"><i class="fas fa-folder"></i> Gestisci Categorie</button>
+          <button class="tab-btn" data-tab="manage-categories"><i class="fas fa-clapperboard"></i> Gestisci Categorie</button>
         </div>
         <div class="tab-content active" id="add-media-tab">
           <div class="add-media-form">
@@ -741,6 +769,7 @@
     const firebaseConfig = { apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk", authDomain: "gametrackerdb.firebaseapp.com", databaseURL: "https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gametrackerdb" };
     
     const elements = { 
+        appLoader: document.getElementById("appLoader"),
         authForms: document.getElementById("authForms"), authToggle: document.getElementById("authToggle"), 
         userInfo: document.getElementById("userInfo"), loginBtn: document.getElementById("loginBtn"), 
         loginEmail: document.getElementById("loginEmail"), loginPassword: document.getElementById("loginPassword"), 
@@ -783,12 +812,16 @@
     function init() {
       setupEventListeners();
       setupManagementModal();
-      handleViewMode() || (setupAuthListeners(), loadLocalData());
       loadTheme();
       loadSortOrder();
-      setInterval(checkForRatingUpdates, 216e5);
+      handleViewMode() || setupAuthListeners();
     }
     
+    function hideLoader() {
+        elements.appLoader.style.opacity = '0';
+        setTimeout(() => elements.appLoader.style.display = 'none', 300);
+    }
+
     function setupManagementModal() {
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -844,7 +877,7 @@
         elements.authForms.classList.toggle("active");
       });
       document.addEventListener("click", e => {
-        if (!elements.authForms.contains(e.target) && !e.target.closest("#authToggle")) {
+        if (!elements.authForms.contains(e.target) && !e.target.closest(".auth-container")) {
           elements.authForms.classList.remove("active");
         }
       });
@@ -892,6 +925,7 @@
         }
       });
       elements.logoutBtn.addEventListener("click", () => firebase.auth().signOut());
+      
       firebase.auth().onAuthStateChanged(user => {
         if (isViewMode) return;
         currentUser = user;
@@ -900,6 +934,7 @@
           loadData();
         } else {
           loadLocalData();
+          hideLoader();
         }
       });
     }
@@ -918,11 +953,11 @@
     function updateAuthUI() {
       if (currentUser) {
         elements.userInfo.style.display = "flex";
-        elements.authToggle.style.display = "none";
+        elements.authToggle.parentElement.style.display = "none";
         document.querySelectorAll(".btn").forEach(btn => btn.disabled = false);
       } else {
         elements.userInfo.style.display = "none";
-        elements.authToggle.style.display = "block";
+        elements.authToggle.parentElement.style.display = "block";
         document.querySelectorAll("#mediaManagementBtn, #shareBtn").forEach(btn => btn.disabled = true);
         document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(btn => btn.disabled = false);
       }
@@ -931,15 +966,21 @@
     function loadData() {
       if (!currentUser) return;
       const path = `users/${currentUser.uid}/mediaTracker`;
-      db.ref(`${path}/mediaList`).on("value", snapshot => {
-        let data = snapshot.val() || [];
-        mediaList = data.map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
-        renderMedia();
-        updateStats();
-      });
-      db.ref(`${path}/categories`).once("value").then(snapshot => {
-        categories = snapshot.val() || [...DEFAULT_CATEGORIES];
+      db.ref(path).once("value").then(snapshot => {
+        const data = snapshot.val() || {};
+        mediaList = (data.mediaList || []).map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+        categories = data.categories || [...DEFAULT_CATEGORIES];
         renderFullUI();
+        updateStats();
+        hideLoader();
+
+        // Attach real-time listener for future updates
+        db.ref(`${path}/mediaList`).on("value", snap => {
+            let updatedData = snap.val() || [];
+            mediaList = updatedData.map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+            renderMedia();
+            updateStats();
+        });
       });
     }
 
@@ -956,6 +997,7 @@
     }
 
     function saveData() {
+      if (isViewMode) return;
       if (currentUser) {
         db.ref(`users/${currentUser.uid}/mediaTracker`).set({ mediaList, categories }).catch(err => {
           console.error("Error saving to Firebase:", err);
@@ -995,6 +1037,7 @@
         } else {
           showNotification("Libreria condivisa non trovata o non accessibile.", "error");
         }
+        hideLoader();
       });
       return true;
     }
@@ -1046,7 +1089,8 @@
         if (grid) {
           grid.appendChild(fragments[cat]);
           if (grid.children.length === 0) {
-            grid.innerHTML = `<div class="empty-state"><i class="fas fa-film"></i><p>Nessun film in questa categoria.</p><button class="btn btn-primary add-film-from-empty"><i class="fas fa-plus"></i> Aggiungi un film</button></div>`;
+            const emptyStateBtn = isViewMode ? '' : `<button class="btn btn-primary add-film-from-empty"><i class="fas fa-plus"></i> Aggiungi un film</button>`;
+            grid.innerHTML = `<div class="empty-state"><i class="fas fa-film"></i><p>Nessun film in questa categoria.</p>${emptyStateBtn}</div>`;
           }
         }
       });
@@ -1140,14 +1184,17 @@
       } else if (media.isCountedAsWatchlist && media.category !== "watchlist") {
           statusHTML = `<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`;
       }
+      
+      const actionsHTML = isViewMode ? '' : `
+        <div class="card-actions">
+            <button class="card-btn" data-action="move" title="Sposta in..."><i class="fas fa-folder-open"></i></button>
+            <button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button>
+        </div>`;
 
       card.innerHTML = `
         <div class="poster-container">
           <img data-src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'">
-          <div class="card-actions">
-            <button class="card-btn" data-action="move" title="Sposta in..."><i class="fas fa-folder-open"></i></button>
-            <button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button>
-          </div>
+          ${actionsHTML}
         </div>
         <div class="media-info">
           <h3 class="media-title" title="${media.title}">${media.title}</h3>
@@ -1159,14 +1206,16 @@
           ${ratingsSection}
         </div>
       `;
-      card.querySelector('[data-action="move"]').addEventListener("click", e => {
-        e.stopPropagation();
-        showContextMenu(media, { x: e.clientX, y: e.clientY });
-      });
-      card.querySelector('[data-action="delete"]').addEventListener("click", e => {
-        e.stopPropagation();
-        deleteMedia(media.id);
-      });
+      if (!isViewMode) {
+          card.querySelector('[data-action="move"]').addEventListener("click", e => {
+            e.stopPropagation();
+            showContextMenu(media, { x: e.clientX, y: e.clientY });
+          });
+          card.querySelector('[data-action="delete"]').addEventListener("click", e => {
+            e.stopPropagation();
+            deleteMedia(media.id);
+          });
+      }
       return card;
     }
 
@@ -1444,10 +1493,9 @@
 
         if (newCategory === 'watched') {
             media.isCountedAsWatched = true;
-            media.isCountedAsWatchlist = false;
+            media.isCountedAsWatchlist = false; 
         } else if (newCategory === 'watchlist') {
             media.isCountedAsWatchlist = true;
-            // Preserve watched state and rewatch count if moving to watchlist
         }
 
         if (!DEFAULT_CATEGORIES.includes(oldCategory) && DEFAULT_CATEGORIES.includes(newCategory)) {
@@ -1785,12 +1833,14 @@
     
     function setupEventListeners() {
       elements.mediaSectionsContainer.addEventListener("click", e => {
+        if (isViewMode) return;
         if (e.target.closest(".add-film-from-empty")) openMediaManagementModal();
       });
       document.addEventListener("contextmenu", e => {
+        if (isViewMode) return;
         closeAllMenus();
         const card = e.target.closest(".media-card");
-        if (card && !isViewMode) {
+        if (card) {
           e.preventDefault();
           const id = card.dataset.id;
           const media = mediaList.find(m => m.id === id);
