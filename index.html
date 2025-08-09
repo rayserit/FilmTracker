@@ -1118,16 +1118,22 @@
       filteredMedia.sort((a, b) => {
           switch (sortBy) {
               case "saga-alpha":
-                  if (a.sagaName && a.sagaName === b.sagaName) {
-                      const dateA = a.releaseDate || '0';
-                      const dateB = b.releaseDate || '0';
-                      return new Date(dateA) - new Date(dateB);
+                  const aSagaCount = a.sagaName ? filteredMedia.filter(m => m.sagaName === a.sagaName).length : 0;
+                  const bSagaCount = b.sagaName ? filteredMedia.filter(m => m.sagaName === b.sagaName).length : 0;
+                  const isASaga = a.sagaName && aSagaCount > 1;
+                  const isBSaga = b.sagaName && bSagaCount > 1;
+                  
+                  const sortKeyA = isASaga ? a.sagaName : a.title;
+                  const sortKeyB = isBSaga ? b.sagaName : b.title;
+
+                  if (sortKeyA !== sortKeyB) {
+                      return sortKeyA.localeCompare(sortKeyB);
                   }
-                  if (a.sagaName && !b.sagaName) return -1;
-                  if (!a.sagaName && b.sagaName) return 1;
-                  const nameA = a.sagaName || a.title;
-                  const nameB = b.sagaName || b.title;
-                  return nameA.localeCompare(nameB);
+                  
+                  // If sort keys are the same (e.g., same saga or same title for standalone films)
+                  const dateA = a.releaseDate || '0';
+                  const dateB = b.releaseDate || '0';
+                  return new Date(dateA) - new Date(dateB);
               case "alpha": 
                   return a.title.localeCompare(b.title);
               case "rating": 
