@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -465,6 +466,62 @@
     .auth-form-buttons { display: flex; justify-content: flex-end; margin-top: 1rem; }
 
     /* Notification */
+    .notification-bell-container {
+        position: relative;
+    }
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: var(--danger);
+        color: white;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 2px solid var(--bg-color);
+        transform: scale(0);
+        transition: transform 0.2s ease-out;
+    }
+    .notification-badge.visible {
+        transform: scale(1);
+    }
+    .notification-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: var(--card-bg);
+        border-radius: 12px;
+        width: 320px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        z-index: 1001;
+        display: none;
+        padding: 0.5rem 0;
+        border: 1px solid var(--border-color);
+    }
+    .notification-dropdown.visible { display: block; }
+    .notification-item {
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+    }
+    .notification-item:hover {
+        background-color: var(--section-tint);
+    }
+    .notification-item i {
+        color: var(--primary);
+    }
+    .no-notifications {
+        padding: 1rem;
+        text-align: center;
+        color: var(--text-secondary);
+    }
     .notification {
       position: fixed; bottom: 20px; right: 20px;
       padding: 1rem 1.5rem; border-radius: 8px; background: var(--card-bg);
@@ -498,15 +555,20 @@
     .form-row input, .form-row select { flex: 1; min-width: 200px; }
     .form-row .btn { flex-shrink: 0; }
 
-    /* Category management */
-    .category-management { margin-top: 1rem; }
-    .category-form { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .category-form input { flex: 1; }
-    .categories-list { max-height: 300px; overflow-y: auto; }
-    .category-card {
+    /* Category & Friend management */
+    .management-section {
+        margin-top: 1rem;
+    }
+    .management-form { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .management-form input { flex: 1; }
+    .management-list { max-height: 300px; overflow-y: auto; }
+    .management-card {
       display: flex; align-items: center; padding: 0.75rem;
       border-radius: 8px; background: var(--bg-color); margin-bottom: 0.5rem;
     }
+    .management-card > div { flex: 1; }
+    .management-card-actions { display: flex; gap: 0.25rem; }
+    .management-card-actions .btn { padding: 0.5rem; height: auto; }
     .category-dot {
       width: 16px; height: 16px; border-radius: 50%;
       margin-right: 0.75rem; flex-shrink: 0;
@@ -516,11 +578,11 @@
     .category-dot-0 { background: #3A86FF; } .category-dot-1 { background: #FF006E; }
     .category-dot-2 { background: #8338EC; } .category-dot-3 { background: #FFBE0B; }
     .category-dot-4 { background: #FB5607; } .category-dot-5 { background: #00B4D8; }
-    .category-card > div { flex: 1; }
     .category-name { font-weight: 600; }
     .category-item-count { font-size: 0.8rem; color: var(--text-secondary); }
-    .category-card-actions { display: flex; gap: 0.25rem; }
-    .category-card-actions .btn { padding: 0.5rem; height: auto; }
+    .friend-email { font-weight: 600; }
+    .friend-id { font-size: 0.8rem; color: var(--text-secondary); }
+
 
     /* Poster modal */
     .poster-modal {
@@ -672,6 +734,11 @@
       </select>
     </div>
     <div class="top-bar-right">
+        <div class="notification-bell-container" id="notificationBellContainer" style="display: none;">
+            <button id="bellIcon" class="btn btn-secondary" title="Notifiche"><i class="fas fa-bell"></i></button>
+            <div id="notificationBadge" class="notification-badge">0</div>
+            <div id="notificationDropdown" class="notification-dropdown"></div>
+        </div>
         <button id="mediaManagementBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Gestione</button>
         <button id="shareBtn" class="btn btn-secondary" title="Condividi Libreria"><i class="fas fa-share-alt"></i></button>
         <button id="exportBtn" class="btn btn-secondary" title="Esporta Dati (.json)"><i class="fas fa-download"></i></button>
@@ -710,6 +777,7 @@
         <div class="management-tabs">
           <button class="tab-btn active" data-tab="add-media"><i class="fas fa-film"></i> Aggiungi Film</button>
           <button class="tab-btn" data-tab="manage-categories"><i class="fas fa-clapperboard"></i> Gestisci Categorie</button>
+          <button class="tab-btn" data-tab="manage-friends"><i class="fas fa-user-friends"></i> Amici</button>
         </div>
         <div class="tab-content active" id="add-media-tab">
           <div class="add-media-form">
@@ -737,13 +805,22 @@
                 <div id="migrationStatusText"></div>
             </div>
           </div>
-          <div class="category-management">
-            <div class="category-form">
-              <input type="text" id="newCategoryName" placeholder="Nuova categoria" class="modern-input">
+          <div class="management-section">
+            <div class="management-form">
+              <input type="text" id="newCategoryName" placeholder="Nuova categoria">
               <button id="addCategoryBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi</button>
             </div>
-            <div class="categories-list" id="categoriesList"></div>
+            <div class="management-list" id="categoriesList"></div>
           </div>
+        </div>
+        <div class="tab-content" id="manage-friends-tab">
+            <div class="management-section">
+                <div class="management-form">
+                    <input type="text" id="friendIdInput" placeholder="Incolla l'ID di un amico">
+                    <button id="addFriendBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi</button>
+                </div>
+                <div class="management-list" id="friendsList"></div>
+            </div>
         </div>
         <div class="modal-footer">
           <button id="saveMediaBtn" class="btn btn-primary"><i class="fas fa-save"></i> Salva Film</button>
@@ -805,6 +882,7 @@
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
     let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentOMDbSelection = null, currentUser = null, isViewMode = false, debounceTimeout, lazyLoadObserver, currentRewatchMediaId = null;
+    let followedFriends = [], lastCheckedTimestamps = {};
     let statContributorIds = new Set();
     let ignoredDuplicateIds = new Set();
     const firebaseConfig = { apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk", authDomain: "gametrackerdb.firebaseapp.com", databaseURL: "https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gametrackerdb" };
@@ -846,7 +924,14 @@
         migrateSagaDataBtn: document.getElementById("migrateSagaDataBtn"),
         migrationProgressContainer: document.getElementById('migrationProgressContainer'),
         progressBar: document.getElementById('progressBar'),
-        migrationStatusText: document.getElementById('migrationStatusText')
+        migrationStatusText: document.getElementById('migrationStatusText'),
+        addFriendBtn: document.getElementById('addFriendBtn'),
+        friendIdInput: document.getElementById('friendIdInput'),
+        friendsList: document.getElementById('friendsList'),
+        notificationBellContainer: document.getElementById('notificationBellContainer'),
+        bellIcon: document.getElementById('bellIcon'),
+        notificationBadge: document.getElementById('notificationBadge'),
+        notificationDropdown: document.getElementById('notificationDropdown')
     };
     
     firebase.initializeApp(firebaseConfig);
@@ -860,6 +945,7 @@
       loadTheme();
       loadSortOrder();
       handleViewMode() || setupAuthListeners();
+      setInterval(checkForFriendUpdates, 300000); // Check for updates every 5 minutes
     }
     
     function hideLoader() {
@@ -898,13 +984,14 @@
       
       populateAddMediaCategorySelect();
       renderCategoriesList();
+      renderFriendsList();
       
       const addMediaTab = document.querySelector('.tab-btn[data-tab="add-media"]');
-      addMediaTab.classList.add('active');
-      document.getElementById('add-media-tab').classList.add('active');
-      document.querySelector('.tab-btn[data-tab="manage-categories"]').classList.remove('active');
-      document.getElementById('manage-categories-tab').classList.remove('active');
-      elements.saveMediaBtn.style.display = 'inline-flex';
+      if(addMediaTab.classList.contains('active')) {
+          elements.saveMediaBtn.style.display = 'inline-flex';
+      } else {
+          elements.saveMediaBtn.style.display = 'none';
+      }
       
       elements.mediaManagementModal.style.display = 'flex';
       document.body.classList.add('modal-open');
@@ -959,7 +1046,8 @@
             showNotification("La password deve avere almeno 6 caratteri", "warning");
           } else {
             firebase.auth().createUserWithEmailAndPassword(email, password)
-              .then(() => {
+              .then((userCredential) => {
+                db.ref(`users/${userCredential.user.uid}/email`).set(email);
                 showNotification("Registrazione completata!", "success");
                 elements.authForms.classList.remove("active");
               })
@@ -999,10 +1087,12 @@
       if (currentUser) {
         elements.userInfo.style.display = "flex";
         elements.authToggle.parentElement.style.display = "none";
+        elements.notificationBellContainer.style.display = 'block';
         document.querySelectorAll(".btn").forEach(btn => btn.disabled = false);
       } else {
         elements.userInfo.style.display = "none";
         elements.authToggle.parentElement.style.display = "block";
+        elements.notificationBellContainer.style.display = 'none';
         document.querySelectorAll("#mediaManagementBtn, #shareBtn").forEach(btn => btn.disabled = true);
         document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(btn => btn.disabled = false);
       }
@@ -1010,17 +1100,20 @@
 
     function loadData() {
       if (!currentUser) return;
-      const path = `users/${currentUser.uid}/mediaTracker`;
+      const path = `users/${currentUser.uid}`;
       db.ref(path).once("value").then(snapshot => {
         const data = snapshot.val() || {};
-        mediaList = (data.mediaList || []).map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
-        categories = data.categories || [...DEFAULT_CATEGORIES];
+        mediaList = (data.mediaTracker?.mediaList || []).map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+        categories = data.mediaTracker?.categories || [...DEFAULT_CATEGORIES];
+        followedFriends = data.social?.followedFriends || [];
+        lastCheckedTimestamps = data.social?.lastCheckedTimestamps || {};
         renderFullUI();
         updateStats();
         hideLoader();
+        checkForFriendUpdates();
 
         // Attach real-time listener for future updates
-        db.ref(`${path}/mediaList`).on("value", snap => {
+        db.ref(`${path}/mediaTracker/mediaList`).on("value", snap => {
             let updatedData = snap.val() || [];
             mediaList = updatedData.map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
             renderMedia();
@@ -1044,12 +1137,20 @@
     function saveData() {
       if (isViewMode) return;
       if (currentUser) {
-        db.ref(`users/${currentUser.uid}/mediaTracker`).set({ mediaList, categories }).catch(err => {
-          console.error("Error saving to Firebase:", err);
+        const now = new Date().toISOString();
+        db.ref(`users/${currentUser.uid}/mediaTracker`).set({ mediaList, categories, lastModified: now }).catch(err => {
+          console.error("Error saving media data to Firebase:", err);
         });
       } else {
         saveToLocal();
       }
+    }
+
+    function saveSocialData() {
+        if (isViewMode || !currentUser) return;
+        db.ref(`users/${currentUser.uid}/social`).set({ followedFriends, lastCheckedTimestamps }).catch(err => {
+            console.error("Error saving social data to Firebase:", err);
+        });
     }
 
     function saveToLocal() {
@@ -1065,7 +1166,7 @@
       const viewId = new URLSearchParams(window.location.search).get("view");
       if (!viewId) return false;
       isViewMode = true;
-      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, .auth-container, #userInfo").forEach(el => el.style.display = "none");
+      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, .auth-container, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
       elements.viewModeBanner.style.display = "flex";
       db.ref(`users/${viewId}/mediaTracker`).on("value", snapshot => {
         const data = snapshot.val();
@@ -1130,7 +1231,6 @@
                       return sortKeyA.localeCompare(sortKeyB);
                   }
                   
-                  // If sort keys are the same (e.g., same saga or same title for standalone films)
                   const dateA = a.releaseDate || '0';
                   const dateB = b.releaseDate || '0';
                   return new Date(dateA) - new Date(dateB);
@@ -1311,14 +1411,14 @@
         const dotClass = `category-dot-${index % 6}`;
         const specialDot = cat === "watchlist" ? "category-dot-watchlist" : cat === "watched" ? "category-dot-watched" : "";
         const card = document.createElement("div");
-        card.className = "category-card";
+        card.className = "management-card";
         card.innerHTML = `
           <span class="category-dot ${dotClass} ${specialDot}"></span>
           <div>
             <div class="category-name">${getCategoryName(cat)}</div>
             <div class="category-item-count">${count} film</div>
           </div>
-          <div class="category-card-actions">
+          <div class="management-card-actions">
             <button class="btn btn-secondary move-up-btn" data-category="${cat}" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button>
             <button class="btn btn-secondary move-down-btn" data-category="${cat}" ${index === categories.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button>
             ${DEFAULT_CATEGORIES.includes(cat) ? "" : `
@@ -1333,7 +1433,7 @@
         btn.addEventListener("click", e => {
           e.stopPropagation();
           const cat = btn.dataset.category;
-          const nameEl = btn.closest(".category-card").querySelector(".category-name");
+          const nameEl = btn.closest(".management-card").querySelector(".category-name");
           renameCategory(cat, nameEl);
         });
       });
@@ -1991,6 +2091,62 @@
       saveData();
     }
     
+    async function checkForFriendUpdates() {
+        if (!currentUser || followedFriends.length === 0) return;
+
+        let newUpdates = [];
+        for (const friend of followedFriends) {
+            const friendPath = `users/${friend.id}/mediaTracker/lastModified`;
+            const lastChecked = lastCheckedTimestamps[friend.id] || 0;
+            
+            try {
+                const snapshot = await db.ref(friendPath).once('value');
+                const lastModified = snapshot.val();
+                if (lastModified && new Date(lastModified) > new Date(lastChecked)) {
+                    newUpdates.push(friend);
+                }
+            } catch (error) {
+                console.error(`Could not check for updates for friend ${friend.id}:`, error);
+            }
+        }
+        renderNotifications(newUpdates);
+    }
+
+    function renderNotifications(updates) {
+        const count = updates.length;
+        elements.notificationBadge.textContent = count;
+        elements.notificationBadge.classList.toggle('visible', count > 0);
+
+        if (count > 0) {
+            elements.notificationDropdown.innerHTML = updates.map(friend => `
+                <div class="notification-item" data-id="${friend.id}">
+                    <i class="fas fa-user-edit"></i>
+                    <span><strong>${friend.email}</strong> ha aggiornato la sua libreria.</span>
+                </div>
+            `).join('');
+            document.querySelectorAll('.notification-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const friendId = item.dataset.id;
+                    const url = `${window.location.origin}${window.location.pathname}?view=${friendId}`;
+                    window.open(url, '_blank');
+                    
+                    lastCheckedTimestamps[friendId] = new Date().toISOString();
+                    saveSocialData();
+                    
+                    item.remove();
+                    const newCount = elements.notificationDropdown.children.length;
+                    elements.notificationBadge.textContent = newCount;
+                    elements.notificationBadge.classList.toggle('visible', newCount > 0);
+                    if (newCount === 0) {
+                        elements.notificationDropdown.innerHTML = '<div class="no-notifications">Nessuna nuova notifica</div>';
+                    }
+                });
+            });
+        } else {
+            elements.notificationDropdown.innerHTML = '<div class="no-notifications">Nessuna nuova notifica</div>';
+        }
+    }
+
     function setupEventListeners() {
       elements.mediaSectionsContainer.addEventListener("click", e => {
         if (isViewMode) return;
@@ -2019,6 +2175,9 @@
             showNotification("Nessuna nuova copertina selezionata.", "warning");
           }
           elements.posterModal.style.display = "none";
+        }
+         if (!elements.notificationBellContainer.contains(e.target)) {
+            elements.notificationDropdown.classList.remove('visible');
         }
       });
       elements.exportBtn.addEventListener("click", exportData);
@@ -2087,6 +2246,69 @@
           }
       });
       elements.cancelRewatchBtn.addEventListener('click', () => closeModal(elements.rewatchModal));
+      
+      // Friends & Notifications
+      elements.addFriendBtn.addEventListener('click', addFriend);
+      elements.bellIcon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          elements.notificationDropdown.classList.toggle('visible');
+      });
+    }
+
+    async function addFriend() {
+        const friendId = elements.friendIdInput.value.trim();
+        if (!friendId) return showNotification("Inserisci l'ID di un amico.", "warning");
+        if (friendId === currentUser.uid) return showNotification("Non puoi aggiungere te stesso.", "warning");
+        if (followedFriends.some(f => f.id === friendId)) return showNotification("Questo utente è già nella tua lista amici.", "warning");
+
+        const friendRef = db.ref(`users/${friendId}/email`);
+        try {
+            const snapshot = await friendRef.once('value');
+            if (snapshot.exists()) {
+                const friendEmail = snapshot.val();
+                followedFriends.push({ id: friendId, email: friendEmail });
+                lastCheckedTimestamps[friendId] = new Date().toISOString();
+                saveSocialData();
+                renderFriendsList();
+                showNotification(`Amico ${friendEmail} aggiunto!`, "success");
+                elements.friendIdInput.value = "";
+            } else {
+                showNotification("ID utente non trovato.", "error");
+            }
+        } catch (error) {
+            console.error("Error adding friend:", error);
+            showNotification("Impossibile aggiungere l'amico. Controlla l'ID e riprova.", "error");
+        }
+    }
+
+    function removeFriend(friendId) {
+        followedFriends = followedFriends.filter(f => f.id !== friendId);
+        delete lastCheckedTimestamps[friendId];
+        saveSocialData();
+        renderFriendsList();
+        showNotification("Amico rimosso.", "success");
+    }
+
+    function renderFriendsList() {
+        elements.friendsList.innerHTML = "";
+        if (followedFriends.length === 0) {
+            elements.friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`;
+            return;
+        }
+        followedFriends.forEach(friend => {
+            const card = document.createElement("div");
+            card.className = "management-card";
+            card.innerHTML = `
+                <div>
+                    <div class="friend-email">${friend.email}</div>
+                    <div class="friend-id">${friend.id}</div>
+                </div>
+                <div class="management-card-actions">
+                    <button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button>
+                </div>`;
+            card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
+            elements.friendsList.appendChild(card);
+        });
     }
 
     function showPosterModal(id) {
@@ -2127,8 +2349,7 @@
         const imagesResponse = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/images?api_key=${TMDB_KEY}`);
         const imagesData = await imagesResponse.json();
         return imagesData.posters
-          .filter(p => p.iso_639_1 === "en" || p.iso_639_1 === null)
-          .slice(0, 10)
+          .slice(0, 20)
           .map(p => ({ url: `https://image.tmdb.org/t/p/w500${p.file_path}` }));
       } catch (err) {
         console.error("Error fetching posters:", err);
