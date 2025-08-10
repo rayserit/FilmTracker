@@ -2131,7 +2131,7 @@
         let newUpdates = [];
         for (const friend of followedFriends) {
             const lastChecked = lastCheckedTimestamps[friend.id] || 0;
-            const logRef = db.ref(`users/${friend.id}/activityLog`);
+            const logRef = db.ref(`users/${friend.id}/mediaTracker/activityLog`);
             
             try {
                 const snapshot = await logRef.once('value');
@@ -2208,6 +2208,25 @@
             case 'delete': return `ha eliminato <strong>${activity.movieTitle}</strong> ${activity.details}`;
             default: return `ha aggiornato <strong>${activity.movieTitle}</strong>`;
         }
+    }
+    
+    function logActivity(type, movieTitle, details) {
+        if (!currentUser) return;
+        const newActivity = {
+            type,
+            movieTitle,
+            details,
+            timestamp: new Date().toISOString()
+        };
+        const logRef = db.ref(`users/${currentUser.uid}/mediaTracker/activityLog`);
+        logRef.once('value', snapshot => {
+            let log = snapshot.val() || [];
+            log.unshift(newActivity);
+            if (log.length > 10) {
+                log = log.slice(0, 10);
+            }
+            logRef.set(log);
+        });
     }
 
     function setupEventListeners() {
@@ -2316,6 +2335,62 @@
           e.stopPropagation();
           elements.notificationDropdown.classList.toggle('visible');
       });
+    }
+
+    async function addFriend() {
+        const friendId = elements.friendIdInput.value.trim();
+        if (!friendId) return showNotification("Inserisci l'ID di un amico.", "warning");
+        if (friendId === currentUser.uid) return showNotification("Non puoi aggiungere te stesso.", "warning");
+        if (followedFriends.some(f => f.id === friendId)) return showNotification("Questo utente è già nella tua lista amici.", "warning");
+
+        const friendRef = db.ref(`users/${friendId}/email`);
+        try {
+            const snapshot = await friendRef.once('value');
+            if (snapshot.exists()) {
+                const friendEmail = snapshot.val();
+                followedFriends.push({ id: friendId, email: friendEmail });
+                lastCheckedTimestamps[friendId] = new Date().toISOString();
+                saveSocialData();
+                renderFriendsList();
+                showNotification(`Amico ${friendEmail} aggiunto!`, "success");
+                elements.friendIdInput.value = "";
+            } else {
+                showNotification("ID utente non trovato.", "error");
+            }
+        } catch (error) {
+            console.error("Error adding friend:", error);
+            showNotification("Impossibile aggiungere l'amico. Controlla l'ID e riprova.", "error");
+        }
+    }
+
+    function removeFriend(friendId) {
+        followedFriends = followedFriends.filter(f => f.id !== friendId);
+        delete lastCheckedTimestamps[friendId];
+        saveSocialData();
+        renderFriendsList();
+        showNotification("Amico rimosso.", "success");
+    }
+
+    function renderFriendsList() {
+        elements.friendsList.innerHTML = "";
+        if (followedFriends.length === 0) {
+            elements.friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`;
+            return;
+        }
+        followedFriends.forEach(friend => {
+            const card = document.createElement("div");
+            card.className = "management-card";
+            card.innerHTML = `
+                <div>
+                    <div class="friend-email">${friend.email}</div>
+                    <div class="friend-id">${friend.id}</div>
+                </div>
+                <div class="management-card-actions">
+                    <button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button>
+                </div>`;
+            card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
+            elements.friendsList.appendChild(card);
+        });
     }
 
     function showPosterModal(id) {
