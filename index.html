@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -496,29 +495,44 @@
         right: 0;
         background: var(--card-bg);
         border-radius: 12px;
-        width: 320px;
+        width: 350px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         z-index: 1001;
         display: none;
-        padding: 0.5rem 0;
         border: 1px solid var(--border-color);
+        overflow: hidden;
     }
     .notification-dropdown.visible { display: block; }
+    .notification-header {
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .notification-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
     .notification-item {
         padding: 0.75rem 1rem;
         display: flex;
         align-items: center;
         gap: 0.75rem;
         cursor: pointer;
+        font-size: 0.9rem;
     }
     .notification-item:hover {
         background-color: var(--section-tint);
     }
     .notification-item i {
         color: var(--primary);
+        width: 16px;
+        text-align: center;
+    }
+    .notification-item-text {
+        flex: 1;
     }
     .no-notifications {
-        padding: 1rem;
+        padding: 1.5rem;
         text-align: center;
         color: var(--text-secondary);
     }
@@ -734,12 +748,12 @@
       </select>
     </div>
     <div class="top-bar-right">
+        <button id="mediaManagementBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Gestione</button>
         <div class="notification-bell-container" id="notificationBellContainer" style="display: none;">
             <button id="bellIcon" class="btn btn-secondary" title="Notifiche"><i class="fas fa-bell"></i></button>
             <div id="notificationBadge" class="notification-badge">0</div>
             <div id="notificationDropdown" class="notification-dropdown"></div>
         </div>
-        <button id="mediaManagementBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Gestione</button>
         <button id="shareBtn" class="btn btn-secondary" title="Condividi Libreria"><i class="fas fa-share-alt"></i></button>
         <button id="exportBtn" class="btn btn-secondary" title="Esporta Dati (.json)"><i class="fas fa-download"></i></button>
         <input type="file" id="importFile" accept=".json" style="display: none;">
@@ -1026,9 +1040,17 @@
         const password = elements.loginPassword.value;
         if (email && password) {
           firebase.auth().signInWithEmailAndPassword(email, password)
-            .then(() => {
-              showNotification("Login effettuato", "success");
-              elements.authForms.classList.remove("active");
+            .then((userCredential) => {
+                if (userCredential.user) {
+                    const userRef = db.ref(`users/${userCredential.user.uid}/email`);
+                    userRef.once('value', snapshot => {
+                        if (!snapshot.exists()) {
+                            userRef.set(email);
+                        }
+                    });
+                }
+                showNotification("Login effettuato", "success");
+                elements.authForms.classList.remove("active");
             })
             .catch(err => showNotification(getAuthErrorMessage(err), "error"));
         } else {
@@ -1672,7 +1694,8 @@
             media.isCountedAsWatched = newCategory === 'watched';
             media.isCountedAsWatchlist = newCategory === 'watchlist';
         }
-
+        
+        logActivity('move', media.title, `da '${getCategoryName(oldCategory)}' a '${getCategoryName(newCategory)}'`);
         saveData();
         renderMedia();
         showNotification(`Film spostato in "${getCategoryName(newCategory)}"`, "success");
@@ -1685,6 +1708,9 @@
         if (media.isCountedAsWatched) {
             media.isCountedAsWatchlist = false;
             if (media.rewatchCount < 0) media.rewatchCount = 0;
+            logActivity('watched_status', media.title, `segnato come visto in '${getCategoryName(media.category)}'`);
+        } else {
+            logActivity('watched_status', media.title, `rimosso lo stato "visto" in '${getCategoryName(media.category)}'`);
         }
         saveData();
         refreshSingleMedia(id);
@@ -1696,7 +1722,12 @@
         const media = mediaList.find(m => m.id === id);
         if (!media) return;
         media.isCountedAsWatchlist = !media.isCountedAsWatchlist;
-        if (media.isCountedAsWatchlist) media.isCountedAsWatched = false;
+        if (media.isCountedAsWatchlist) {
+            media.isCountedAsWatched = false;
+            logActivity('watchlist_status', media.title, `segnato come da vedere in '${getCategoryName(media.category)}'`);
+        } else {
+             logActivity('watchlist_status', media.title, `rimosso lo stato "da vedere" in '${getCategoryName(media.category)}'`);
+        }
         saveData();
         refreshSingleMedia(id);
         updateStats();
@@ -1733,6 +1764,7 @@
         media.isCountedAsWatched = true;
         media.isCountedAsWatchlist = false;
       }
+      logActivity('rewatch', media.title, `impostato a ${count} rewatch`);
       saveData();
       refreshSingleMedia(id);
       updateStats();
@@ -1760,6 +1792,7 @@
       const media = mediaList.find(m => m.id === id);
       if (!media) return;
       showConfirmModal("Elimina Film", `Sei sicuro di voler eliminare "${media.title}"?`, () => {
+        logActivity('delete', media.title, `dalla categoria '${getCategoryName(media.category)}'`);
         mediaList = mediaList.filter(m => m.id !== id);
         saveData();
         renderMedia();
@@ -1899,6 +1932,7 @@
         if (duplicate) showNotification(`Attenzione: Questo film è già in "${getCategoryName(media.category)}"`, "warning");
         
         mediaList.push(media);
+        logActivity('add', media.title, `in '${getCategoryName(media.category)}'`);
         saveData();
         closeModal(elements.mediaManagementModal);
         renderMedia();
@@ -2096,14 +2130,15 @@
 
         let newUpdates = [];
         for (const friend of followedFriends) {
-            const friendPath = `users/${friend.id}/mediaTracker/lastModified`;
             const lastChecked = lastCheckedTimestamps[friend.id] || 0;
+            const logRef = db.ref(`users/${friend.id}/activityLog`);
             
             try {
-                const snapshot = await db.ref(friendPath).once('value');
-                const lastModified = snapshot.val();
-                if (lastModified && new Date(lastModified) > new Date(lastChecked)) {
-                    newUpdates.push(friend);
+                const snapshot = await logRef.once('value');
+                const activities = snapshot.val() || [];
+                const friendUpdates = activities.filter(act => new Date(act.timestamp) > new Date(lastChecked));
+                if (friendUpdates.length > 0) {
+                    newUpdates.push({ ...friend, activities: friendUpdates.reverse() });
                 }
             } catch (error) {
                 console.error(`Could not check for updates for friend ${friend.id}:`, error);
@@ -2116,34 +2151,62 @@
         const count = updates.length;
         elements.notificationBadge.textContent = count;
         elements.notificationBadge.classList.toggle('visible', count > 0);
+        elements.notificationDropdown.innerHTML = `<div class="notification-header">Notifiche Amici</div>`;
+        const list = document.createElement('div');
+        list.className = 'notification-list';
 
         if (count > 0) {
-            elements.notificationDropdown.innerHTML = updates.map(friend => `
-                <div class="notification-item" data-id="${friend.id}">
-                    <i class="fas fa-user-edit"></i>
-                    <span><strong>${friend.email}</strong> ha aggiornato la sua libreria.</span>
-                </div>
-            `).join('');
-            document.querySelectorAll('.notification-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const friendId = item.dataset.id;
-                    const url = `${window.location.origin}${window.location.pathname}?view=${friendId}`;
-                    window.open(url, '_blank');
-                    
-                    lastCheckedTimestamps[friendId] = new Date().toISOString();
-                    saveSocialData();
-                    
-                    item.remove();
-                    const newCount = elements.notificationDropdown.children.length;
-                    elements.notificationBadge.textContent = newCount;
-                    elements.notificationBadge.classList.toggle('visible', newCount > 0);
-                    if (newCount === 0) {
-                        elements.notificationDropdown.innerHTML = '<div class="no-notifications">Nessuna nuova notifica</div>';
-                    }
+            updates.forEach(update => {
+                update.activities.forEach(activity => {
+                    const item = document.createElement('div');
+                    item.className = 'notification-item';
+                    item.dataset.id = update.id;
+                    item.innerHTML = `
+                        <i class="fas ${getActivityIcon(activity.type)}"></i>
+                        <span class="notification-item-text"><strong>${update.email}</strong> ${getActivityText(activity)}</span>`;
+                    item.addEventListener('click', () => {
+                        const friendId = item.dataset.id;
+                        const url = `${window.location.origin}${window.location.pathname}?view=${friendId}`;
+                        window.open(url, '_blank');
+                        
+                        lastCheckedTimestamps[friendId] = new Date().toISOString();
+                        saveSocialData();
+                        
+                        document.querySelectorAll(`.notification-item[data-id="${friendId}"]`).forEach(el => el.remove());
+                        const newCount = document.querySelectorAll('.notification-item').length > 0 ? new Set([...document.querySelectorAll('.notification-item')].map(el => el.dataset.id)).size : 0;
+
+                        elements.notificationBadge.textContent = newCount;
+                        elements.notificationBadge.classList.toggle('visible', newCount > 0);
+                        if (newCount === 0) {
+                            list.innerHTML = '<div class="no-notifications">Nessuna nuova notifica</div>';
+                        }
+                    });
+                    list.appendChild(item);
                 });
             });
         } else {
-            elements.notificationDropdown.innerHTML = '<div class="no-notifications">Nessuna nuova notifica</div>';
+            list.innerHTML = '<div class="no-notifications">Nessuna nuova notifica</div>';
+        }
+        elements.notificationDropdown.appendChild(list);
+    }
+    
+    function getActivityIcon(type) {
+        switch (type) {
+            case 'add': return 'fa-plus-circle';
+            case 'move': return 'fa-folder-open';
+            case 'rewatch': return 'fa-sync-alt';
+            case 'delete': return 'fa-trash-alt';
+            default: return 'fa-info-circle';
+        }
+    }
+
+    function getActivityText(activity) {
+        switch (activity.type) {
+            case 'add': return `ha aggiunto <strong>${activity.movieTitle}</strong> ${activity.details}`;
+            case 'move': return `ha spostato <strong>${activity.movieTitle}</strong> ${activity.details}`;
+            case 'rewatch': return `ha aggiornato <strong>${activity.movieTitle}</strong> (${activity.details})`;
+            case 'delete': return `ha eliminato <strong>${activity.movieTitle}</strong> ${activity.details}`;
+            default: return `ha aggiornato <strong>${activity.movieTitle}</strong>`;
         }
     }
 
@@ -2253,62 +2316,6 @@
           e.stopPropagation();
           elements.notificationDropdown.classList.toggle('visible');
       });
-    }
-
-    async function addFriend() {
-        const friendId = elements.friendIdInput.value.trim();
-        if (!friendId) return showNotification("Inserisci l'ID di un amico.", "warning");
-        if (friendId === currentUser.uid) return showNotification("Non puoi aggiungere te stesso.", "warning");
-        if (followedFriends.some(f => f.id === friendId)) return showNotification("Questo utente è già nella tua lista amici.", "warning");
-
-        const friendRef = db.ref(`users/${friendId}/email`);
-        try {
-            const snapshot = await friendRef.once('value');
-            if (snapshot.exists()) {
-                const friendEmail = snapshot.val();
-                followedFriends.push({ id: friendId, email: friendEmail });
-                lastCheckedTimestamps[friendId] = new Date().toISOString();
-                saveSocialData();
-                renderFriendsList();
-                showNotification(`Amico ${friendEmail} aggiunto!`, "success");
-                elements.friendIdInput.value = "";
-            } else {
-                showNotification("ID utente non trovato.", "error");
-            }
-        } catch (error) {
-            console.error("Error adding friend:", error);
-            showNotification("Impossibile aggiungere l'amico. Controlla l'ID e riprova.", "error");
-        }
-    }
-
-    function removeFriend(friendId) {
-        followedFriends = followedFriends.filter(f => f.id !== friendId);
-        delete lastCheckedTimestamps[friendId];
-        saveSocialData();
-        renderFriendsList();
-        showNotification("Amico rimosso.", "success");
-    }
-
-    function renderFriendsList() {
-        elements.friendsList.innerHTML = "";
-        if (followedFriends.length === 0) {
-            elements.friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`;
-            return;
-        }
-        followedFriends.forEach(friend => {
-            const card = document.createElement("div");
-            card.className = "management-card";
-            card.innerHTML = `
-                <div>
-                    <div class="friend-email">${friend.email}</div>
-                    <div class="friend-id">${friend.id}</div>
-                </div>
-                <div class="management-card-actions">
-                    <button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button>
-                </div>`;
-            card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
-            elements.friendsList.appendChild(card);
-        });
     }
 
     function showPosterModal(id) {
