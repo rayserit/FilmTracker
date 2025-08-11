@@ -172,6 +172,7 @@
       position: relative;
       border: 1px solid var(--border-color);
       animation: fadeIn 0.5s ease-out both;
+      cursor: pointer;
     }
 
     .media-card:hover {
@@ -382,10 +383,12 @@
       opacity: 0;
       transform: translateX(10px);
       transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none; /* Let clicks pass through to card initially */
     }
     .media-card:hover .card-actions {
       opacity: 1;
       transform: translateX(0);
+      pointer-events: all; /* Make buttons clickable on hover */
     }
     .card-btn {
       width: 32px; height: 32px; border-radius: 50%; display: flex;
@@ -626,6 +629,7 @@
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       gap: 1rem;
       padding: 0.5rem;
+      /* flex: 1 was removed and min-height: 0 is no longer needed */
     }
     .poster-option {
       position: relative;
@@ -736,6 +740,113 @@
     .btn i.fa-plus {
         position: relative;
         top: -1px;
+    }
+    
+    /* Details Modal */
+    #detailsModal .modal-content {
+      max-width: 900px;
+      padding: 0;
+      overflow: hidden;
+    }
+    .details-backdrop {
+      width: 100%;
+      height: 250px;
+      background-size: cover;
+      background-position: center 25%;
+      position: relative;
+    }
+    .details-backdrop::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(to top, var(--card-bg) 0%, rgba(0,0,0,0.5) 100%);
+    }
+    .details-header {
+      position: relative;
+      display: flex;
+      padding: 1.5rem;
+      margin-top: -100px;
+      z-index: 2;
+    }
+    #detailsModalPoster {
+      width: 150px;
+      height: 225px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+      margin-right: 1.5rem;
+    }
+    .details-title-section {
+      padding-top: 100px;
+    }
+    #detailsModalTitle {
+      margin: 0;
+      font-size: 1.75rem;
+    }
+    #detailsModalTagline {
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+    #detailsModalMeta {
+      margin-top: 0.5rem;
+      display: flex;
+      gap: 1rem;
+      font-size: 0.9rem;
+    }
+    .details-body {
+      padding: 0 1.5rem 1.5rem 1.5rem;
+    }
+    .details-section-title {
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    #detailsModalOverview {
+      line-height: 1.6;
+    }
+    .cast-scroller {
+      display: flex;
+      overflow-x: auto;
+      gap: 1rem;
+      padding-bottom: 1rem;
+    }
+    .actor-card {
+      text-align: center;
+      width: 100px;
+      flex-shrink: 0;
+    }
+    .actor-photo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 0.5rem;
+      background-color: var(--border-color);
+    }
+    .actor-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .actor-character {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+    #detailsModalClose {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 3;
+      cursor: pointer;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
@@ -901,6 +1012,15 @@
       </div>
   </div>
   
+    <div class="modal" id="detailsModal">
+        <div class="modal-content">
+            <i class="fas fa-times" id="detailsModalClose"></i>
+            <div id="detailsModalContent">
+                <!-- Content will be injected by JS -->
+            </div>
+        </div>
+    </div>
+  
   <div class="modal" id="confirmModal">
     <div class="modal-content">
       <h2 id="confirmModalTitle"></h2>
@@ -917,6 +1037,7 @@
     const OMDb_API_KEY = "2526ef70";
     const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ=");
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
+    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LjggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi43LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
@@ -972,6 +1093,9 @@
         notificationDropdown: document.getElementById('notificationDropdown'),
         savePosterChange: document.getElementById('savePosterChange'),
         cancelPosterChange: document.getElementById('cancelPosterChange'),
+        detailsModal: document.getElementById('detailsModal'),
+        detailsModalContent: document.getElementById('detailsModalContent'),
+        detailsModalClose: document.getElementById('detailsModalClose'),
     };
     
     firebase.initializeApp(firebaseConfig);
@@ -1406,6 +1530,11 @@
       if (statContributorIds.has(media.id)) card.classList.add("is-stat-contributor");
       if (ignoredDuplicateIds.has(media.id)) card.classList.add("is-duplicate");
       
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.card-actions')) return; // Don't open modal if an action button is clicked
+        showDetailsModal(media.id);
+      });
+
       let ratingsHTML = "";
       if (media.imdbRating && media.imdbRating !== "N/A") {
         ratingsHTML += `<span class="rating-badge" title="IMDb Rating: ${media.imdbRating}"><img src="${IMDB_STAR_ICON}" class="rating-icon" alt="IMDb"> ${media.imdbRating}</span>`;
@@ -2276,6 +2405,92 @@
             console.error('Transaction failed:', error);
         });
     }
+    
+    // --- New Details Modal Functions ---
+
+    async function showDetailsModal(mediaId) {
+        const media = mediaList.find(m => m.id === mediaId);
+        if (!media || !media.imdbID) {
+            showNotification("Dettagli non disponibili (manca IMDb ID)", "warning");
+            return;
+        }
+
+        elements.detailsModal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+        elements.detailsModalContent.innerHTML = '<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>';
+
+        const details = await fetchTMDbDetails(media.imdbID);
+
+        if (details) {
+            populateDetailsModal(details, media);
+        } else {
+            elements.detailsModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli non trovati.</p>';
+        }
+    }
+
+    function populateDetailsModal(details, localMedia) {
+        const backdropUrl = details.backdrop_path ? `https://image.tmdb.org/t/p/w1280${details.backdrop_path}` : '';
+        const posterUrl = details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : localMedia.poster;
+        const genres = details.genres.map(g => g.name).join(', ');
+        
+        const castHTML = details.cast.slice(0, 12).map(actor => `
+            <div class="actor-card">
+                <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
+                <div class="actor-name">${actor.name}</div>
+                <div class="actor-character">${actor.character}</div>
+            </div>
+        `).join('');
+
+        elements.detailsModalContent.innerHTML = `
+            <div class="details-backdrop" style="background-image: url(${backdropUrl})"></div>
+            <div class="details-header">
+                <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
+                <div class="details-title-section">
+                    <h2 id="detailsModalTitle">${details.title}</h2>
+                    <p id="detailsModalTagline">${details.tagline || ''}</p>
+                    <div id="detailsModalMeta">
+                        <span><i class="fas fa-calendar-alt"></i> ${details.release_date.split('-')[0]}</span>
+                        <span><i class="fas fa-clock"></i> ${formatRuntime(details.runtime)}</span>
+                        <span><i class="fas fa-film"></i> ${genres}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="details-body">
+                <h3 class="details-section-title">Trama</h3>
+                <p id="detailsModalOverview">${details.overview || 'Trama non disponibile.'}</p>
+                <h3 class="details-section-title">Cast Principale</h3>
+                <div class="cast-scroller" id="detailsModalCast">
+                    ${castHTML}
+                </div>
+            </div>
+        `;
+    }
+
+    async function fetchTMDbDetails(imdbId) {
+        try {
+            const findRes = await fetch(`https://api.themoviedb.org/3/find/${imdbId}?api_key=${TMDB_KEY}&external_source=imdb_id&language=it-IT`);
+            if (!findRes.ok) return null;
+            const findData = await findRes.json();
+            const tmdbMovie = findData.movie_results[0];
+            if (!tmdbMovie) return null;
+
+            const [detailsRes, creditsRes] = await Promise.all([
+                fetch(`https://api.themoviedb.org/3/movie/${tmdbMovie.id}?api_key=${TMDB_KEY}&language=it-IT`),
+                fetch(`https://api.themoviedb.org/3/movie/${tmdbMovie.id}/credits?api_key=${TMDB_KEY}&language=it-IT`)
+            ]);
+            
+            if (!detailsRes.ok || !creditsRes.ok) return null;
+            
+            const details = await detailsRes.json();
+            const credits = await creditsRes.json();
+            
+            return { ...details, cast: credits.cast };
+        } catch (err) {
+            console.error("Error fetching TMDb details:", err);
+            return null;
+        }
+    }
+
 
     function setupEventListeners() {
       elements.mediaSectionsContainer.addEventListener("click", e => {
@@ -2298,6 +2513,7 @@
       elements.searchOMDbBtn.addEventListener("click", searchOMDb);
       document.addEventListener("click", e => {
         if (e.target === elements.posterModal) closeModal(elements.posterModal);
+        if (e.target === elements.detailsModal) closeModal(elements.detailsModal);
         if (!elements.notificationBellContainer.contains(e.target)) {
             elements.notificationDropdown.classList.remove('visible');
         }
@@ -2337,6 +2553,7 @@
       });
       elements.closeShareModalBtn.addEventListener("click", () => closeModal(elements.shareModal));
       elements.closeViewBtn.addEventListener("click", () => { window.location.href = window.location.pathname; });
+      elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
       
       // Event Listeners for Rewatch Modal
       document.querySelectorAll('.quick-rewatch-btn').forEach(btn => {
@@ -2435,9 +2652,14 @@
                     <div class="friend-id">${friend.id}</div>
                 </div>
                 <div class="management-card-actions">
+                    <button class="btn btn-secondary visit-friend-btn" data-id="${friend.id}" title="Visita Libreria"><i class="fas fa-eye"></i></button>
                     <button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button>
                 </div>`;
             card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
+            card.querySelector('.visit-friend-btn').addEventListener('click', (e) => {
+              const url = `${window.location.origin}${window.location.pathname}?view=${e.currentTarget.dataset.id}`;
+              window.open(url, '_blank');
+            });
             elements.friendsList.appendChild(card);
         });
     }
