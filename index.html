@@ -325,6 +325,11 @@
       box-sizing: border-box;
       height: 38px;
     }
+    .btn-small {
+        padding: 0.25rem 0.75rem;
+        height: auto;
+        font-size: 0.8rem;
+    }
     .btn:active { transform: translateY(1px); }
     .btn-primary { background: var(--primary); color: white; }
     .btn-secondary { background: var(--secondary); color: white; }
@@ -501,16 +506,26 @@
         display: none;
         border: 1px solid var(--border-color);
         overflow: hidden;
+        max-height: 400px;
+        flex-direction: column;
     }
-    .notification-dropdown.visible { display: block; }
+    .notification-dropdown.visible { display: flex; }
     .notification-header {
         padding: 0.75rem 1rem;
         font-weight: 600;
         border-bottom: 1px solid var(--border-color);
+        flex-shrink: 0;
     }
     .notification-list {
+        flex: 1;
         max-height: 300px;
         overflow-y: auto;
+    }
+    .notification-footer {
+        padding: 0.5rem;
+        text-align: center;
+        border-top: 1px solid var(--border-color);
+        flex-shrink: 0;
     }
     .notification-item {
         padding: 0.75rem 1rem;
@@ -599,22 +614,53 @@
 
 
     /* Poster modal */
-    .poster-modal {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.9); display: none; justify-content: center;
-      align-items: center; z-index: 1000; padding: 2rem;
+    #posterModal .modal-content {
+      max-width: 90vw;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto; /* FIX: Apply scrolling to the main modal content */
     }
     .poster-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 1rem; max-height: 80vh; overflow-y: auto; width: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+      padding: 0.5rem;
     }
     .poster-option {
-      cursor: pointer; transition: transform 0.2s; border: 2px solid transparent;
-      border-radius: 4px;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s;
+      border: 3px solid transparent;
+      border-radius: 8px;
+      overflow: hidden;
     }
     .poster-option:hover { transform: scale(1.05); }
     .poster-option.selected { border-color: var(--primary); }
-    .poster-option img { width: 100%; height: auto; border-radius: 4px; }
+    .poster-option img { width: 100%; height: auto; display: block; }
+    .poster-current-indicator {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        background: var(--success);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    .poster-language-badge {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
     
     /* Rewatch Modal */
     #rewatchModal .modal-content { max-width: 450px; text-align: center; }
@@ -690,31 +736,6 @@
     .btn i.fa-plus {
         position: relative;
         top: -1px;
-    }
-
-    /* Migration Progress Bar */
-    #migrationProgressContainer {
-        display: none;
-        padding: 1rem;
-    }
-    .progress-bar-container {
-        width: 100%;
-        height: 12px;
-        background-color: var(--border-color);
-        border-radius: 6px;
-        overflow: hidden;
-    }
-    .progress-bar {
-        width: 0%;
-        height: 100%;
-        background-color: var(--primary);
-        border-radius: 6px;
-        transition: width 0.3s ease-out;
-    }
-    #migrationStatusText {
-        margin-top: 0.5rem;
-        font-size: 0.8rem;
-        color: var(--text-secondary);
     }
   </style>
 </head>
@@ -804,21 +825,6 @@
           </div>
         </div>
         <div class="tab-content" id="manage-categories-tab">
-          <div style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; text-align: center; margin-bottom:1.5rem;">
-            <h4>Aggiorna Dati Esistenti</h4>
-            <p style="font-size: 0.9rem; color: var(--text-secondary);">
-              Usa questa funzione per scaricare le informazioni su saghe e date di uscita per i film già presenti nella tua libreria.
-            </p>
-            <button id="migrateSagaDataBtn" class="btn btn-warning">
-              <i class="fas fa-database"></i> Avvia Aggiornamento Dati
-            </button>
-            <div id="migrationProgressContainer">
-                <div class="progress-bar-container">
-                    <div id="progressBar" class="progress-bar"></div>
-                </div>
-                <div id="migrationStatusText"></div>
-            </div>
-          </div>
           <div class="management-section">
             <div class="management-form">
               <input type="text" id="newCategoryName" placeholder="Nuova categoria">
@@ -828,6 +834,14 @@
           </div>
         </div>
         <div class="tab-content" id="manage-friends-tab">
+            <div id="myIdContainer" class="management-section" style="display: none; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; text-align: center; margin-bottom: 1.5rem;">
+                <h4>Il tuo ID univoco</h4>
+                <p style="font-size: 0.9rem; color: var(--text-secondary);">Condividi questo ID con i tuoi amici per permettere loro di aggiungerti.</p>
+                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                    <input type="text" id="myIdInput" readonly style="text-align: center; background-color: var(--bg-color);">
+                    <button id="copyMyIdBtn" class="btn btn-primary"><i class="fas fa-copy"></i> Copia</button>
+                </div>
+            </div>
             <div class="management-section">
                 <div class="management-form">
                     <input type="text" id="friendIdInput" placeholder="Incolla l'ID di un amico">
@@ -875,7 +889,18 @@
 
   <div class="modal" id="shareModal"><div class="modal-content" style="max-width: 450px;"><h2>Condividi la tua libreria</h2><p>Chiunque abbia questo link potrà vedere la tua lista in tempo reale (sola lettura).</p><input type="text" id="shareLinkInput" class="share-link-input" readonly><div style="display: flex; gap: 0.5rem; margin-top: 1rem;"><button id="copyShareLinkBtn" class="btn btn-primary">Copia Link</button><button id="closeShareModalBtn" class="btn btn-danger">Chiudi</button></div></div></div>
   <div id="notification" class="notification"><span id="notificationText"></span></div>
-  <div id="posterModal" class="poster-modal"><div class="poster-grid" id="posterGrid"></div></div>
+  
+  <div class="modal" id="posterModal">
+      <div class="modal-content">
+          <h2 id="posterModalTitle">Cambia Copertina</h2>
+          <div class="poster-grid" id="posterGrid"></div>
+          <div class="modal-footer">
+              <button id="cancelPosterChange" class="btn btn-danger">Annulla</button>
+              <button id="savePosterChange" class="btn btn-primary">Salva Selezione</button>
+          </div>
+      </div>
+  </div>
+  
   <div class="modal" id="confirmModal">
     <div class="modal-content">
       <h2 id="confirmModalTitle"></h2>
@@ -895,8 +920,11 @@
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
+    const MAX_NOTIFICATIONS = 50;
+    const MAX_LOG_SIZE = 15;
+
     let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentOMDbSelection = null, currentUser = null, isViewMode = false, debounceTimeout, lazyLoadObserver, currentRewatchMediaId = null;
-    let followedFriends = [], lastCheckedTimestamps = {};
+    let followedFriends = [], lastCheckedTimestamps = {}, friendListeners = {};
     let statContributorIds = new Set();
     let ignoredDuplicateIds = new Set();
     const firebaseConfig = { apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk", authDomain: "gametrackerdb.firebaseapp.com", databaseURL: "https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gametrackerdb" };
@@ -935,17 +963,15 @@
         rewatchModal: document.getElementById("rewatchModal"), rewatchModalTitle: document.getElementById("rewatchModalTitle"),
         rewatchCountInput: document.getElementById("rewatchCountInput"), confirmRewatchBtn: document.getElementById("confirmRewatchBtn"),
         cancelRewatchBtn: document.getElementById("cancelRewatchBtn"),
-        migrateSagaDataBtn: document.getElementById("migrateSagaDataBtn"),
-        migrationProgressContainer: document.getElementById('migrationProgressContainer'),
-        progressBar: document.getElementById('progressBar'),
-        migrationStatusText: document.getElementById('migrationStatusText'),
         addFriendBtn: document.getElementById('addFriendBtn'),
         friendIdInput: document.getElementById('friendIdInput'),
         friendsList: document.getElementById('friendsList'),
         notificationBellContainer: document.getElementById('notificationBellContainer'),
         bellIcon: document.getElementById('bellIcon'),
         notificationBadge: document.getElementById('notificationBadge'),
-        notificationDropdown: document.getElementById('notificationDropdown')
+        notificationDropdown: document.getElementById('notificationDropdown'),
+        savePosterChange: document.getElementById('savePosterChange'),
+        cancelPosterChange: document.getElementById('cancelPosterChange'),
     };
     
     firebase.initializeApp(firebaseConfig);
@@ -959,7 +985,6 @@
       loadTheme();
       loadSortOrder();
       handleViewMode() || setupAuthListeners();
-      setInterval(checkForFriendUpdates, 300000); // Check for updates every 5 minutes
     }
     
     function hideLoader() {
@@ -999,6 +1024,21 @@
       populateAddMediaCategorySelect();
       renderCategoriesList();
       renderFriendsList();
+      
+      const myIdContainer = document.getElementById('myIdContainer');
+      const myIdInput = document.getElementById('myIdInput');
+      const copyMyIdBtn = document.getElementById('copyMyIdBtn');
+
+      if (currentUser && myIdContainer && myIdInput && copyMyIdBtn) {
+          myIdContainer.style.display = 'block';
+          myIdInput.value = currentUser.uid;
+          copyMyIdBtn.onclick = () => {
+              navigator.clipboard.writeText(currentUser.uid);
+              showNotification("Il tuo ID è stato copiato!", "success");
+          };
+      } else if (myIdContainer) {
+          myIdContainer.style.display = 'none';
+      }
       
       const addMediaTab = document.querySelector('.tab-btn[data-tab="add-media"]');
       if(addMediaTab.classList.contains('active')) {
@@ -1079,7 +1119,10 @@
           showNotification("Compila tutti i campi", "warning");
         }
       });
-      elements.logoutBtn.addEventListener("click", () => firebase.auth().signOut());
+      elements.logoutBtn.addEventListener("click", () => {
+          detachAllFriendListeners();
+          firebase.auth().signOut()
+      });
       
       firebase.auth().onAuthStateChanged(user => {
         if (isViewMode) return;
@@ -1121,27 +1164,33 @@
     }
 
     function loadData() {
-      if (!currentUser) return;
-      const path = `users/${currentUser.uid}`;
-      db.ref(path).once("value").then(snapshot => {
-        const data = snapshot.val() || {};
-        mediaList = (data.mediaTracker?.mediaList || []).map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
-        categories = data.mediaTracker?.categories || [...DEFAULT_CATEGORIES];
-        followedFriends = data.social?.followedFriends || [];
-        lastCheckedTimestamps = data.social?.lastCheckedTimestamps || {};
-        renderFullUI();
-        updateStats();
-        hideLoader();
-        checkForFriendUpdates();
+        if (!currentUser) return;
+        const path = `users/${currentUser.uid}`;
+        db.ref(path).once("value").then(snapshot => {
+            const data = snapshot.val() || {};
+            mediaList = (data.mediaTracker?.mediaList || []).map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+            categories = data.mediaTracker?.categories || [...DEFAULT_CATEGORIES];
+            followedFriends = data.social?.followedFriends || [];
+            lastCheckedTimestamps = data.social?.lastCheckedTimestamps || {};
 
-        // Attach real-time listener for future updates
-        db.ref(`${path}/mediaTracker/mediaList`).on("value", snap => {
-            let updatedData = snap.val() || [];
-            mediaList = updatedData.map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
-            renderMedia();
+            followedFriends.forEach(friend => {
+                if (!lastCheckedTimestamps[friend.id]) {
+                    lastCheckedTimestamps[friend.id] = new Date(0).toISOString();
+                }
+            });
+
+            renderFullUI();
             updateStats();
+            hideLoader();
+            setupFriendListeners();
+
+            db.ref(`${path}/mediaTracker/mediaList`).on("value", snap => {
+                let updatedData = snap.val() || [];
+                mediaList = updatedData.map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+                renderMedia();
+                updateStats();
+            });
         });
-      });
     }
 
     function loadLocalData() {
@@ -1157,15 +1206,19 @@
     }
 
     function saveData() {
-      if (isViewMode) return;
-      if (currentUser) {
-        const now = new Date().toISOString();
-        db.ref(`users/${currentUser.uid}/mediaTracker`).set({ mediaList, categories, lastModified: now }).catch(err => {
-          console.error("Error saving media data to Firebase:", err);
-        });
-      } else {
-        saveToLocal();
-      }
+        if (isViewMode) return;
+        if (currentUser) {
+            const now = new Date().toISOString();
+            db.ref(`users/${currentUser.uid}/mediaTracker`).update({
+                mediaList: mediaList,
+                categories: categories,
+                lastModified: now
+            }).catch(err => {
+                console.error("Error updating media data to Firebase:", err);
+            });
+        } else {
+            saveToLocal();
+        }
     }
 
     function saveSocialData() {
@@ -1269,10 +1322,12 @@
       });
       const fragments = {};
       categories.forEach(cat => fragments[cat] = document.createDocumentFragment());
+      
       filteredMedia.forEach(media => {
         const grid = fragments[media.category];
         if (grid) grid.appendChild(createMediaCard(media));
       });
+      
       categories.forEach(cat => {
         const grid = document.getElementById(`${cat}Grid`);
         if (grid) {
@@ -1685,6 +1740,8 @@
             media.isCountedAsWatchlist = false; 
         } else if (newCategory === 'watchlist') {
             media.isCountedAsWatchlist = true;
+            media.isCountedAsWatched = false;
+            media.rewatchCount = 0;
         }
 
         if (!DEFAULT_CATEGORIES.includes(oldCategory) && DEFAULT_CATEGORIES.includes(newCategory)) {
@@ -1698,6 +1755,7 @@
         logActivity('move', media.title, `da '${getCategoryName(oldCategory)}' a '${getCategoryName(newCategory)}'`);
         saveData();
         renderMedia();
+        updateStats();
         showNotification(`Film spostato in "${getCategoryName(newCategory)}"`, "success");
     }
 
@@ -1775,15 +1833,15 @@
       const media = mediaList.find(m => m.id === id);
       if (!media) return;
       const oldCard = document.querySelector(`.media-card[data-id="${id}"]`);
-      const grid = oldCard ? oldCard.parentElement : document.getElementById(`${media.category}Grid`);
-      if (!grid) return;
-      const newCard = createMediaCard(media);
-      if (oldCard) {
+      
+      const grid = oldCard ? oldCard.parentElement : null;
+      if (grid && grid.id === `${media.category}Grid`) {
+        const newCard = createMediaCard(media);
         grid.replaceChild(newCard, oldCard);
+        if (lazyLoadObserver) lazyLoadObserver.observe(newCard.querySelector(".lazy"));
       } else {
-        grid.appendChild(newCard);
+        renderMedia();
       }
-      if (lazyLoadObserver) lazyLoadObserver.observe(newCard.querySelector(".lazy"));
       updateCounts();
     }
 
@@ -1939,75 +1997,6 @@
         showNotification(`Film "${media.title}" aggiunto!`, "success");
     }
     
-    async function migrateExistingData() {
-        if (isViewMode) return;
-
-        const btn = elements.migrateSagaDataBtn;
-        btn.style.display = 'none';
-        elements.migrationProgressContainer.style.display = 'block';
-        elements.progressBar.style.width = '0%';
-
-        const moviesToUpdate = mediaList.filter(m => m.imdbID && typeof m.sagaName === 'undefined');
-
-        if (moviesToUpdate.length === 0) {
-            showNotification("Tutti i film sono già aggiornati!", "success");
-            btn.style.display = 'inline-flex';
-            elements.migrationProgressContainer.style.display = 'none';
-            return;
-        }
-
-        showNotification(`Aggiornamento di ${moviesToUpdate.length} film iniziato...`, "warning");
-
-        let updatedCount = 0;
-        let processedCount = 0;
-        
-        for (const movie of moviesToUpdate) {
-            try {
-                const findRes = await fetch(`https://api.themoviedb.org/3/find/${movie.imdbID}?api_key=${TMDB_KEY}&external_source=imdb_id`);
-                const findData = await findRes.json();
-                const tmdbMovie = findData.movie_results[0];
-
-                if (tmdbMovie) {
-                    const detailsRes = await fetch(`https://api.themoviedb.org/3/movie/${tmdbMovie.id}?api_key=${TMDB_KEY}`);
-                    const tmdbDetails = await detailsRes.json();
-                    
-                    if (tmdbDetails.belongs_to_collection) {
-                        movie.sagaName = tmdbDetails.belongs_to_collection.name;
-                        updatedCount++;
-                    } else {
-                        movie.sagaName = null;
-                    }
-
-                    if (tmdbDetails.release_date) {
-                        movie.releaseDate = tmdbDetails.release_date;
-                    } else {
-                        movie.releaseDate = null;
-                    }
-                }
-            } catch (err) {
-                console.error(`Errore durante l'aggiornamento di ${movie.title}:`, err);
-                movie.sagaName = null;
-                movie.releaseDate = null;
-            } finally {
-                processedCount++;
-                const percentage = Math.round((processedCount / moviesToUpdate.length) * 100);
-                elements.progressBar.style.width = `${percentage}%`;
-                elements.migrationStatusText.textContent = `Aggiornamento ${processedCount} di ${moviesToUpdate.length}...`;
-                await new Promise(res => setTimeout(res, 250)); 
-            }
-        }
-        
-        saveData();
-        renderMedia();
-        showNotification(`Aggiornamento completato! ${updatedCount} film appartengono a una saga.`, "success");
-        elements.migrationStatusText.textContent = 'Completato!';
-        
-        setTimeout(() => {
-            btn.style.display = 'inline-flex';
-            elements.migrationProgressContainer.style.display = 'none';
-        }, 2000);
-    }
-
     function exportData() {
       if (isViewMode) return;
       const data = { mediaList, categories, exportedAt: new Date().toISOString() };
@@ -2105,89 +2094,136 @@
       return hours > 0 ? `${hours}h ${mins > 0 ? `${mins}m` : ""}` : `${mins}m`;
     }
 
-    async function checkForRatingUpdates() {
-      const toUpdate = mediaList.filter(m => m.imdbID && (!m.imdbRating || m.imdbRating === "N/A"))
-        .sort((a, b) => (a.lastChecked || 0) - (b.lastChecked || 0))
-        .slice(0, 5);
-      for (const media of toUpdate) {
-        const details = await getOMDbMovieDetails(media.imdbID);
-        if (details && details.imdbRating && details.imdbRating !== "N/A") {
-          media.imdbRating = details.imdbRating;
-          media.rottenTomatoes = "";
-          for (const rating of details.Ratings || []) {
-            if (rating.Source === "Rotten Tomatoes") media.rottenTomatoes = rating.Value;
-          }
-          media.lastChecked = Date.now();
-          refreshSingleMedia(media.id);
-          showNotification(`Rating aggiornati per: ${media.title}`, "success");
-        }
-      }
-      saveData();
-    }
+    // --- Real-time Notification System ---
     
-    async function checkForFriendUpdates() {
-        if (!currentUser || followedFriends.length === 0) return;
-
-        let newUpdates = [];
-        for (const friend of followedFriends) {
-            const lastChecked = lastCheckedTimestamps[friend.id] || 0;
-            const logRef = db.ref(`users/${friend.id}/mediaTracker/activityLog`);
-            
-            try {
-                const snapshot = await logRef.once('value');
-                const activities = snapshot.val() || [];
-                const friendUpdates = activities.filter(act => new Date(act.timestamp) > new Date(lastChecked));
-                if (friendUpdates.length > 0) {
-                    newUpdates.push({ ...friend, activities: friendUpdates.reverse() });
-                }
-            } catch (error) {
-                console.error(`Could not check for updates for friend ${friend.id}:`, error);
-            }
-        }
-        renderNotifications(newUpdates);
+    function detachAllFriendListeners() {
+        Object.values(friendListeners).forEach(({ ref, listener }) => ref.off('value', listener));
+        friendListeners = {};
     }
 
-    function renderNotifications(updates) {
-        const count = updates.length;
+    function setupFriendListeners() {
+        if (!currentUser) return;
+        detachAllFriendListeners();
+
+        const friendActivityMap = new Map();
+
+        const processAndRenderNotifications = () => {
+            let allNewNotifications = [];
+            friendActivityMap.forEach(activities => {
+                allNewNotifications.push(...activities);
+            });
+            allNewNotifications.sort((a, b) => new Date(b.activity.timestamp) - new Date(a.activity.timestamp));
+            if (allNewNotifications.length > MAX_NOTIFICATIONS) {
+                allNewNotifications = allNewNotifications.slice(0, MAX_NOTIFICATIONS);
+            }
+            renderNotifications(allNewNotifications);
+        };
+        
+        followedFriends.forEach(friend => {
+            const ref = db.ref(`users/${friend.id}/mediaTracker/activityLog`);
+            const listener = snapshot => {
+                const activities = snapshot.val() || [];
+                const lastChecked = lastCheckedTimestamps[friend.id] || new Date(0).toISOString();
+                
+                const activityArray = Array.isArray(activities) ? activities : [];
+                const newActivities = activityArray
+                    .filter(act => act && new Date(act.timestamp) > new Date(lastChecked))
+                    .map(activity => ({
+                        friendId: friend.id,
+                        friendEmail: friend.email,
+                        activity: activity
+                    }));
+
+                friendActivityMap.set(friend.id, newActivities);
+                processAndRenderNotifications();
+            };
+            ref.on('value', listener);
+            friendListeners[friend.id] = { ref, listener };
+
+            if (!friend.email) {
+                db.ref(`users/${friend.id}/email`).once('value').then(emailSnapshot => {
+                    if (emailSnapshot.exists()) {
+                        friend.email = emailSnapshot.val();
+                        saveSocialData();
+                    }
+                });
+            }
+        });
+    }
+
+    function renderNotifications(notifications) {
+        const count = notifications.length;
+        
         elements.notificationBadge.textContent = count;
         elements.notificationBadge.classList.toggle('visible', count > 0);
-        elements.notificationDropdown.innerHTML = `<div class="notification-header">Notifiche Amici</div>`;
+        
+        while (elements.notificationDropdown.firstChild) {
+            elements.notificationDropdown.removeChild(elements.notificationDropdown.firstChild);
+        }
+        
+        const header = document.createElement('div');
+        header.className = 'notification-header';
+        header.textContent = 'Notifiche Amici';
+        elements.notificationDropdown.appendChild(header);
+        
         const list = document.createElement('div');
         list.className = 'notification-list';
 
         if (count > 0) {
-            updates.forEach(update => {
-                update.activities.forEach(activity => {
-                    const item = document.createElement('div');
-                    item.className = 'notification-item';
-                    item.dataset.id = update.id;
-                    item.innerHTML = `
-                        <i class="fas ${getActivityIcon(activity.type)}"></i>
-                        <span class="notification-item-text"><strong>${update.email}</strong> ${getActivityText(activity)}</span>`;
-                    item.addEventListener('click', () => {
-                        const friendId = item.dataset.id;
+            notifications.forEach(notification => {
+                if (!notification.activity) return; 
+                
+                const item = document.createElement('div');
+                item.className = 'notification-item';
+                item.dataset.friendId = notification.friendId;
+                
+                const icon = document.createElement('i');
+                icon.className = `fas ${getActivityIcon(notification.activity.type)}`;
+                
+                const text = document.createElement('span');
+                text.className = 'notification-item-text';
+                text.innerHTML = `<strong>${notification.friendEmail || 'Unknown User'}</strong> ${getActivityText(notification.activity)}`;
+                
+                item.appendChild(icon);
+                item.appendChild(text);
+                
+                item.addEventListener('click', () => {
+                    const friendId = item.dataset.friendId;
+                    if (friendId) {
                         const url = `${window.location.origin}${window.location.pathname}?view=${friendId}`;
                         window.open(url, '_blank');
-                        
-                        lastCheckedTimestamps[friendId] = new Date().toISOString();
-                        saveSocialData();
-                        
-                        document.querySelectorAll(`.notification-item[data-id="${friendId}"]`).forEach(el => el.remove());
-                        const newCount = document.querySelectorAll('.notification-item').length > 0 ? new Set([...document.querySelectorAll('.notification-item')].map(el => el.dataset.id)).size : 0;
-
-                        elements.notificationBadge.textContent = newCount;
-                        elements.notificationBadge.classList.toggle('visible', newCount > 0);
-                        if (newCount === 0) {
-                            list.innerHTML = '<div class="no-notifications">Nessuna nuova notifica</div>';
-                        }
-                    });
-                    list.appendChild(item);
+                    }
                 });
+                
+                list.appendChild(item);
             });
+            
+            const footer = document.createElement('div');
+            footer.className = 'notification-footer';
+            
+            const markAllBtn = document.createElement('button');
+            markAllBtn.className = 'btn btn-primary btn-small';
+            markAllBtn.innerHTML = '<i class="fas fa-check-double"></i> Segna tutte come lette';
+            markAllBtn.addEventListener('click', markAllNotificationsAsRead);
+            
+            footer.appendChild(markAllBtn);
+            elements.notificationDropdown.appendChild(list);
+            elements.notificationDropdown.appendChild(footer);
         } else {
-            list.innerHTML = '<div class="no-notifications">Nessuna nuova notifica</div>';
+            const emptyState = document.createElement('div');
+            emptyState.className = 'no-notifications';
+            emptyState.textContent = 'Nessuna nuova notifica';
+            list.appendChild(emptyState);
+            elements.notificationDropdown.appendChild(list);
         }
-        elements.notificationDropdown.appendChild(list);
+    }
+    
+    function markAllNotificationsAsRead() {
+        followedFriends.forEach(friend => {
+            lastCheckedTimestamps[friend.id] = new Date().toISOString();
+        });
+        saveSocialData();
+        renderNotifications([]);
     }
     
     function getActivityIcon(type) {
@@ -2212,20 +2248,32 @@
     
     function logActivity(type, movieTitle, details) {
         if (!currentUser) return;
+        const logRef = db.ref(`users/${currentUser.uid}/mediaTracker/activityLog`);
+        
         const newActivity = {
-            type,
-            movieTitle,
-            details,
+            type: type || 'unknown',
+            movieTitle: movieTitle || 'Unknown Title',
+            details: details || '',
             timestamp: new Date().toISOString()
         };
-        const logRef = db.ref(`users/${currentUser.uid}/mediaTracker/activityLog`);
-        logRef.once('value', snapshot => {
-            let log = snapshot.val() || [];
-            log.unshift(newActivity);
-            if (log.length > 10) {
-                log = log.slice(0, 10);
+        
+        logRef.transaction(currentLog => {
+            try {
+                let log = currentLog || [];
+                if (!Array.isArray(log)) {
+                    log = [];
+                }
+                log.unshift(newActivity);
+                if (log.length > MAX_LOG_SIZE) {
+                    return log.slice(0, MAX_LOG_SIZE);
+                }
+                return log;
+            } catch (error) {
+                console.error('Error updating activity log:', error);
+                return currentLog; 
             }
-            logRef.set(log);
+        }).catch(error => {
+            console.error('Transaction failed:', error);
         });
     }
 
@@ -2249,19 +2297,19 @@
       elements.addCategoryBtn.addEventListener("click", () => addCategory(elements.newCategoryName.value));
       elements.searchOMDbBtn.addEventListener("click", searchOMDb);
       document.addEventListener("click", e => {
-        if (e.target === elements.posterModal) {
-          const selected = document.querySelector(".poster-option.selected");
-          if (selected) {
-            changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url);
-          } else {
-            showNotification("Nessuna nuova copertina selezionata.", "warning");
-          }
-          elements.posterModal.style.display = "none";
-        }
-         if (!elements.notificationBellContainer.contains(e.target)) {
+        if (e.target === elements.posterModal) closeModal(elements.posterModal);
+        if (!elements.notificationBellContainer.contains(e.target)) {
             elements.notificationDropdown.classList.remove('visible');
         }
       });
+      elements.savePosterChange.addEventListener('click', () => {
+          const selected = document.querySelector(".poster-option.selected");
+          if (selected) {
+              changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url);
+          }
+          closeModal(elements.posterModal);
+      });
+      elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
       elements.exportBtn.addEventListener("click", exportData);
       elements.importBtn.addEventListener("click", () => elements.importFile.click());
       elements.importFile.addEventListener("change", e => importData(e.target.files[0]));
@@ -2289,7 +2337,6 @@
       });
       elements.closeShareModalBtn.addEventListener("click", () => closeModal(elements.shareModal));
       elements.closeViewBtn.addEventListener("click", () => { window.location.href = window.location.pathname; });
-      elements.migrateSagaDataBtn.addEventListener('click', migrateExistingData);
       
       // Event Listeners for Rewatch Modal
       document.querySelectorAll('.quick-rewatch-btn').forEach(btn => {
@@ -2352,6 +2399,7 @@
                 lastCheckedTimestamps[friendId] = new Date().toISOString();
                 saveSocialData();
                 renderFriendsList();
+                setupFriendListeners();
                 showNotification(`Amico ${friendEmail} aggiunto!`, "success");
                 elements.friendIdInput.value = "";
             } else {
@@ -2368,6 +2416,7 @@
         delete lastCheckedTimestamps[friendId];
         saveSocialData();
         renderFriendsList();
+        setupFriendListeners();
         showNotification("Amico rimosso.", "success");
     }
 
@@ -2394,32 +2443,44 @@
     }
 
     function showPosterModal(id) {
-      const media = mediaList.find(m => m.id === id);
-      if (!media || !media.imdbID) return showNotification("Nessun IMDb ID trovato per questo film.", "warning");
-      elements.posterModal.dataset.mediaId = id;
-      elements.posterGrid.innerHTML = "<p>Caricamento copertine...</p>";
-      elements.posterModal.style.display = "flex";
-      fetchPosters(media.imdbID).then(posters => {
-        if (posters.length === 0) {
-          elements.posterGrid.innerHTML = "<p>Nessuna copertina alternativa trovata</p>";
-          return;
-        }
-        elements.posterGrid.innerHTML = "";
-        posters.forEach(poster => {
-          const option = document.createElement("div");
-          option.className = "poster-option";
-          option.dataset.url = poster.url;
-          const img = document.createElement("img");
-          img.src = poster.url;
-          img.onerror = () => img.src = DEFAULT_POSTER;
-          option.appendChild(img);
-          option.addEventListener("click", () => {
-            document.querySelectorAll(".poster-option").forEach(o => o.classList.remove("selected"));
-            option.classList.add("selected");
-          });
-          elements.posterGrid.appendChild(option);
+        const media = mediaList.find(m => m.id === id);
+        if (!media || !media.imdbID) return showNotification("Nessun IMDb ID trovato per questo film.", "warning");
+        elements.posterModal.dataset.mediaId = id;
+        elements.posterGrid.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><i class="fas fa-spinner fa-2x loading-spinner"></i></div>';
+        elements.posterModal.style.display = "flex";
+
+        const currentPosterUrl = media.poster;
+
+        fetchPosters(media.imdbID).then(posters => {
+            if (posters.length === 0) {
+                elements.posterGrid.innerHTML = "<p>Nessuna copertina alternativa trovata</p>";
+                return;
+            }
+            elements.posterGrid.innerHTML = "";
+            posters.forEach(poster => {
+                const option = document.createElement("div");
+                option.className = "poster-option";
+                option.dataset.url = poster.url;
+
+                if (poster.url === currentPosterUrl) {
+                    option.innerHTML += `<div class="poster-current-indicator"><i class="fas fa-check"></i> Attuale</div>`;
+                }
+
+                const img = document.createElement("img");
+                img.src = poster.url;
+                img.onerror = () => img.src = DEFAULT_POSTER;
+                option.appendChild(img);
+                
+                const lang = poster.iso_639_1 || 'N/A';
+                option.innerHTML += `<div class="poster-language-badge">${lang}</div>`;
+
+                option.addEventListener("click", () => {
+                    document.querySelectorAll(".poster-option").forEach(o => o.classList.remove("selected"));
+                    option.classList.add("selected");
+                });
+                elements.posterGrid.appendChild(option);
+            });
         });
-      });
     }
 
     async function fetchPosters(imdbID) {
@@ -2430,9 +2491,19 @@
         if (!tmdbId) return [];
         const imagesResponse = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/images?api_key=${TMDB_KEY}`);
         const imagesData = await imagesResponse.json();
+        
+        const langScore = (lang) => {
+            if (lang === 'it') return 3;
+            if (lang === 'en') return 2;
+            if (lang === null) return 1;
+            return 0;
+        };
+
         return imagesData.posters
-          .slice(0, 20)
-          .map(p => ({ url: `https://image.tmdb.org/t/p/w500${p.file_path}` }));
+          .filter(p => ['it', 'en', null].includes(p.iso_639_1))
+          .sort((a, b) => langScore(b.iso_639_1) - langScore(a.iso_639_1))
+          .slice(0, 33)
+          .map(p => ({ url: `https://image.tmdb.org/t/p/w500${p.file_path}`, iso_639_1: p.iso_639_1 }));
       } catch (err) {
         console.error("Error fetching posters:", err);
         return [];
