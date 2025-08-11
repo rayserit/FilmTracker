@@ -383,12 +383,12 @@
       opacity: 0;
       transform: translateX(10px);
       transition: opacity 0.2s, transform 0.2s;
-      pointer-events: none; /* Let clicks pass through to card initially */
+      pointer-events: none;
     }
     .media-card:hover .card-actions {
       opacity: 1;
       transform: translateX(0);
-      pointer-events: all; /* Make buttons clickable on hover */
+      pointer-events: all;
     }
     .card-btn {
       width: 32px; height: 32px; border-radius: 50%; display: flex;
@@ -622,14 +622,13 @@
       max-height: 90vh;
       display: flex;
       flex-direction: column;
-      overflow-y: auto; /* FIX: Apply scrolling to the main modal content */
+      overflow-y: auto;
     }
     .poster-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       gap: 1rem;
       padding: 0.5rem;
-      /* flex: 1 was removed and min-height: 0 is no longer needed */
     }
     .poster-option {
       position: relative;
@@ -742,12 +741,19 @@
         top: -1px;
     }
     
-    /* Details Modal */
+    /* Details & Actor Modals */
     #detailsModal .modal-content {
       max-width: 900px;
       padding: 0;
       overflow: hidden;
     }
+    #actorModal .modal-content {
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #actorModal { z-index: 1001; }
+    
     .details-backdrop {
       width: 100%;
       height: 250px;
@@ -796,12 +802,15 @@
     }
     .details-body {
       padding: 0 1.5rem 1.5rem 1.5rem;
+      max-height: 50vh;
+      overflow-y: auto;
     }
     .details-section-title {
       font-weight: 600;
       border-bottom: 1px solid var(--border-color);
       padding-bottom: 0.5rem;
       margin-bottom: 1rem;
+      margin-top: 1.5rem;
     }
     #detailsModalOverview {
       line-height: 1.6;
@@ -816,6 +825,7 @@
       text-align: center;
       width: 100px;
       flex-shrink: 0;
+      cursor: pointer;
     }
     .actor-photo {
       width: 80px;
@@ -825,15 +835,14 @@
       margin-bottom: 0.5rem;
       background-color: var(--border-color);
     }
-    .actor-name {
+    .actor-name, .actor-character {
       font-size: 0.8rem;
-      font-weight: 600;
+      user-select: text; /* FIX: Allow text selection */
     }
     .actor-character {
-      font-size: 0.7rem;
       color: var(--text-secondary);
     }
-    #detailsModalClose {
+    .modal-close-btn {
       position: absolute;
       top: 1rem;
       right: 1rem;
@@ -847,7 +856,58 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      border: none;
     }
+
+    /* Actor Modal Specifics */
+    .actor-details-header {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .actor-details-photo {
+        width: 120px;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 8px;
+        flex-shrink: 0;
+    }
+    .actor-details-info ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .actor-details-info li {
+        margin-bottom: 0.5rem;
+    }
+    .btn-imdb {
+        background: #f5c518;
+        color: #000;
+        margin-top: 1rem;
+    }
+    .filmography-scroller {
+      display: flex;
+      overflow-x: auto;
+      gap: 1rem;
+      padding-bottom: 1rem;
+    }
+    .film-card-small {
+      width: 100px;
+      flex-shrink: 0;
+    }
+    .film-card-small img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .film-card-small-title {
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      white-space: normal;
+      text-align: center;
+    }
+
   </style>
 </head>
 <body class="dark user-select-none">
@@ -1012,14 +1072,23 @@
       </div>
   </div>
   
-    <div class="modal" id="detailsModal">
-        <div class="modal-content">
-            <i class="fas fa-times" id="detailsModalClose"></i>
-            <div id="detailsModalContent">
-                <!-- Content will be injected by JS -->
-            </div>
+  <div class="modal" id="detailsModal">
+    <div class="modal-content">
+        <button class="modal-close-btn" id="detailsModalClose"><i class="fas fa-times"></i></button>
+        <div id="detailsModalContent">
+            <!-- Content will be injected by JS -->
         </div>
     </div>
+  </div>
+  
+  <div class="modal" id="actorModal">
+    <div class="modal-content">
+        <button class="modal-close-btn" id="actorModalClose"><i class="fas fa-times"></i></button>
+        <div id="actorModalContent">
+            <!-- Content will be injected by JS -->
+        </div>
+    </div>
+  </div>
   
   <div class="modal" id="confirmModal">
     <div class="modal-content">
@@ -1096,6 +1165,9 @@
         detailsModal: document.getElementById('detailsModal'),
         detailsModalContent: document.getElementById('detailsModalContent'),
         detailsModalClose: document.getElementById('detailsModalClose'),
+        actorModal: document.getElementById('actorModal'),
+        actorModalContent: document.getElementById('actorModalContent'),
+        actorModalClose: document.getElementById('actorModalClose'),
     };
     
     firebase.initializeApp(firebaseConfig);
@@ -1531,7 +1603,7 @@
       if (ignoredDuplicateIds.has(media.id)) card.classList.add("is-duplicate");
       
       card.addEventListener('click', (e) => {
-        if (e.target.closest('.card-actions')) return; // Don't open modal if an action button is clicked
+        if (e.target.closest('.card-actions')) return;
         showDetailsModal(media.id);
       });
 
@@ -2406,7 +2478,7 @@
         });
     }
     
-    // --- New Details Modal Functions ---
+    // --- New Details & Actor Modal Functions ---
 
     async function showDetailsModal(mediaId) {
         const media = mediaList.find(m => m.id === mediaId);
@@ -2433,8 +2505,8 @@
         const posterUrl = details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : localMedia.poster;
         const genres = details.genres.map(g => g.name).join(', ');
         
-        const castHTML = details.cast.slice(0, 12).map(actor => `
-            <div class="actor-card">
+        const castHTML = details.cast.slice(0, 15).map(actor => `
+            <div class="actor-card" data-actor-id="${actor.id}">
                 <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
                 <div class="actor-name">${actor.name}</div>
                 <div class="actor-character">${actor.character}</div>
@@ -2464,6 +2536,12 @@
                 </div>
             </div>
         `;
+        
+        elements.detailsModalContent.querySelectorAll('.actor-card').forEach(card => {
+            card.addEventListener('click', () => {
+                showActorModal(card.dataset.actorId);
+            });
+        });
     }
 
     async function fetchTMDbDetails(imdbId) {
@@ -2491,6 +2569,71 @@
         }
     }
 
+    async function showActorModal(actorId) {
+        elements.actorModal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+        elements.actorModalContent.innerHTML = '<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>';
+        
+        const actorDetails = await fetchTMDbActorDetails(actorId);
+        
+        if(actorDetails) {
+            populateActorModal(actorDetails);
+        } else {
+            elements.actorModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli attore non trovati.</p>';
+        }
+    }
+    
+    async function fetchTMDbActorDetails(actorId) {
+        try {
+            const [detailsRes, creditsRes] = await Promise.all([
+                fetch(`https://api.themoviedb.org/3/person/${actorId}?api_key=${TMDB_KEY}&language=it-IT`),
+                fetch(`https://api.themoviedb.org/3/person/${actorId}/movie_credits?api_key=${TMDB_KEY}&language=it-IT`)
+            ]);
+            if (!detailsRes.ok || !creditsRes.ok) return null;
+            
+            const details = await detailsRes.json();
+            const credits = await creditsRes.json();
+
+            credits.cast.sort((a,b) => b.popularity - a.popularity);
+
+            return { ...details, movie_credits: credits };
+        } catch(err) {
+            console.error("Error fetching TMDb actor details:", err);
+            return null;
+        }
+    }
+
+    function populateActorModal(details) {
+        const photoUrl = details.profile_path ? `https://image.tmdb.org/t/p/w500${details.profile_path}` : DEFAULT_ACTOR_PHOTO;
+        const filmographyHTML = details.movie_credits.cast.slice(0, 15).map(film => `
+            <div class="film-card-small">
+                <img src="${film.poster_path ? `https://image.tmdb.org/t/p/w200${film.poster_path}` : DEFAULT_POSTER}" onerror="this.src='${DEFAULT_POSTER}'">
+                <div class="film-card-small-title">${film.title}</div>
+            </div>
+        `).join('');
+        
+        elements.actorModalContent.innerHTML = `
+            <div class="actor-details-header">
+                <img src="${photoUrl}" class="actor-details-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
+                <div class="actor-details-info">
+                    <h2>${details.name}</h2>
+                    <ul>
+                        <li><strong>Nascita:</strong> ${details.birthday ? new Date(details.birthday).toLocaleDateString('it-IT') : 'N/A'}</li>
+                        <li><strong>Luogo:</strong> ${details.place_of_birth || 'N/A'}</li>
+                    </ul>
+                    ${details.imdb_id ? `<a href="https://www.imdb.com/name/${details.imdb_id}/" target="_blank" class="btn btn-imdb"><i class="fab fa-imdb"></i> Vedi su IMDb</a>` : ''}
+                </div>
+            </div>
+            <div>
+                <h3 class="details-section-title">Biografia</h3>
+                <p>${details.biography || 'Biografia non disponibile.'}</p>
+                <h3 class="details-section-title">Filmografia Selezionata</h3>
+                <div class="filmography-scroller">
+                    ${filmographyHTML}
+                </div>
+            </div>
+        `;
+    }
 
     function setupEventListeners() {
       elements.mediaSectionsContainer.addEventListener("click", e => {
@@ -2514,6 +2657,7 @@
       document.addEventListener("click", e => {
         if (e.target === elements.posterModal) closeModal(elements.posterModal);
         if (e.target === elements.detailsModal) closeModal(elements.detailsModal);
+        if (e.target === elements.actorModal) closeModal(elements.actorModal);
         if (!elements.notificationBellContainer.contains(e.target)) {
             elements.notificationDropdown.classList.remove('visible');
         }
@@ -2554,6 +2698,7 @@
       elements.closeShareModalBtn.addEventListener("click", () => closeModal(elements.shareModal));
       elements.closeViewBtn.addEventListener("click", () => { window.location.href = window.location.pathname; });
       elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
+      elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
       
       // Event Listeners for Rewatch Modal
       document.querySelectorAll('.quick-rewatch-btn').forEach(btn => {
@@ -2652,7 +2797,7 @@
                     <div class="friend-id">${friend.id}</div>
                 </div>
                 <div class="management-card-actions">
-                    <button class="btn btn-secondary visit-friend-btn" data-id="${friend.id}" title="Visita Libreria"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-primary visit-friend-btn" data-id="${friend.id}" title="Visita Libreria"><i class="fas fa-eye"></i></button>
                     <button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button>
                 </div>`;
             card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
