@@ -1185,6 +1185,15 @@
         actorModalClose: document.getElementById('actorModalClose'),
     };
     
+    // START MODIFICATION: Default properties for media items
+    const defaultMediaProps = { 
+        isCountedAsWatched: false, 
+        isCountedAsWatchlist: false, 
+        rewatchCount: 0,
+        lastActivityAt: null 
+    };
+    // END MODIFICATION
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
@@ -1379,7 +1388,9 @@
         const path = `users/${currentUser.uid}`;
         db.ref(path).once("value").then(snapshot => {
             const data = snapshot.val() || {};
-            mediaList = (data.mediaTracker?.mediaList || []).map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+            // START MODIFICATION: Ensure all loaded media have the default properties
+            mediaList = (data.mediaTracker?.mediaList || []).map(item => ({ ...defaultMediaProps, ...item }));
+            // END MODIFICATION
             categories = data.mediaTracker?.categories || [...DEFAULT_CATEGORIES];
             followedFriends = data.social?.followedFriends || [];
             lastCheckedTimestamps = data.social?.lastCheckedTimestamps || {};
@@ -1397,7 +1408,9 @@
 
             db.ref(`${path}/mediaTracker/mediaList`).on("value", snap => {
                 let updatedData = snap.val() || [];
-                mediaList = updatedData.map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+                // START MODIFICATION: Ensure all updated media have the default properties
+                mediaList = updatedData.map(item => ({ ...defaultMediaProps, ...item }));
+                // END MODIFICATION
                 renderMedia();
                 updateStats();
             });
@@ -1407,7 +1420,9 @@
     function loadLocalData() {
       try {
         let storedMedia = JSON.parse(localStorage.getItem("mediaList")) || [];
-        mediaList = storedMedia.map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+        // START MODIFICATION: Ensure all local media have the default properties
+        mediaList = storedMedia.map(item => ({ ...defaultMediaProps, ...item }));
+        // END MODIFICATION
         categories = JSON.parse(localStorage.getItem("categories")) || [...DEFAULT_CATEGORIES];
         renderFullUI();
         updateStats();
@@ -1458,7 +1473,9 @@
         const data = snapshot.val();
         if (data) {
           let storedMedia = data.mediaList || [];
-          mediaList = storedMedia.map(item => ({ ...{ isCountedAsWatched: false, isCountedAsWatchlist: false, rewatchCount: 0 }, ...item }));
+          // START MODIFICATION: Ensure all viewed media have the default properties
+          mediaList = storedMedia.map(item => ({ ...defaultMediaProps, ...item }));
+          // END MODIFICATION
           categories = data.categories || [...DEFAULT_CATEGORIES];
           renderFullUI();
           updateStats();
@@ -1526,9 +1543,14 @@
                   return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
               case "year": 
                   return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+              // START MODIFICATION: Update sort logic for "added"
               case "added": 
               default: 
-                  return new Date(b.addedAt) - new Date(a.addedAt);
+                  // Use 'lastActivityAt' if it exists, otherwise use 'addedAt'.
+                  const timeA = a.lastActivityAt || a.addedAt;
+                  const timeB = b.lastActivityAt || b.addedAt;
+                  return new Date(timeB) - new Date(timeA);
+              // END MODIFICATION
           }
       });
       const fragments = {};
@@ -1944,6 +1966,7 @@
       menu.style.top = `${y}px`;
     }
     
+    // START MODIFICATION: Update move logic
     function moveMediaToCategory(id, newCategory) {
         const media = mediaList.find(m => m.id === id);
         if (!media) return;
@@ -1954,6 +1977,7 @@
         if (newCategory === 'watched') {
             media.isCountedAsWatched = true;
             media.isCountedAsWatchlist = false; 
+            media.lastActivityAt = new Date().toISOString(); // Update the activity timestamp
         } else if (newCategory === 'watchlist') {
             media.isCountedAsWatchlist = true;
             media.isCountedAsWatched = false;
@@ -1974,6 +1998,7 @@
         updateStats();
         showNotification(`Film spostato in "${getCategoryName(newCategory)}"`, "success");
     }
+    // END MODIFICATION
 
     function toggleCountedAsWatched(id) {
         const media = mediaList.find(m => m.id === id);
@@ -2151,11 +2176,13 @@
         const category = elements.addMediaCategorySelect.value;
         localStorage.setItem("lastUsedCategory", category);
         
+        // START MODIFICATION: Add lastActivityAt to new media object
         let media = {
             id: Date.now().toString(),
             title,
             category,
             addedAt: new Date().toISOString(),
+            lastActivityAt: category === 'watched' ? new Date().toISOString() : null,
             poster: "",
             rewatchCount: 0,
             isCountedAsWatched: category === "watched",
@@ -2168,6 +2195,7 @@
             sagaName: null,
             releaseDate: null
         };
+        // END MODIFICATION
 
         if (currentOMDbSelection) {
             media = {
