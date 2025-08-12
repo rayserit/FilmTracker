@@ -745,10 +745,10 @@
     #detailsModal .modal-content {
       max-width: 900px;
       padding: 0;
-      overflow: hidden;
+      overflow-y: auto;
     }
     #actorModal .modal-content {
-      max-width: 600px;
+      max-width: 700px;
       max-height: 80vh;
       overflow-y: auto;
     }
@@ -797,13 +797,21 @@
     #detailsModalMeta {
       margin-top: 0.5rem;
       display: flex;
+      flex-wrap: wrap;
       gap: 1rem;
       font-size: 0.9rem;
     }
+    .director-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+        cursor: pointer;
+    }
+    .director-link:hover {
+        text-decoration: underline;
+    }
     .details-body {
       padding: 0 1.5rem 1.5rem 1.5rem;
-      max-height: 50vh;
-      overflow-y: auto;
     }
     .details-section-title {
       font-weight: 600;
@@ -837,7 +845,7 @@
     }
     .actor-name, .actor-character {
       font-size: 0.8rem;
-      user-select: text; /* FIX: Allow text selection */
+      user-select: text;
     }
     .actor-character {
       color: var(--text-secondary);
@@ -864,6 +872,7 @@
         display: flex;
         gap: 1.5rem;
         margin-bottom: 1.5rem;
+        align-items: flex-start;
     }
     .actor-details-photo {
         width: 120px;
@@ -892,14 +901,20 @@
       padding-bottom: 1rem;
     }
     .film-card-small {
-      width: 100px;
+      width: 120px;
       flex-shrink: 0;
+      cursor: pointer;
     }
     .film-card-small img {
       width: 100%;
-      height: 150px;
+      height: 180px;
       object-fit: cover;
       border-radius: 4px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .film-card-small:hover img {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     .film-card-small-title {
       font-size: 0.8rem;
@@ -2061,7 +2076,9 @@
 
     function closeModal(modal) {
       modal.style.display = "none";
-      document.body.classList.remove("modal-open");
+      if (!document.querySelector('.modal[style*="display: flex"]')) {
+          document.body.classList.remove("modal-open");
+      }
     }
 
     async function searchOMDb() {
@@ -2494,19 +2511,21 @@
         const details = await fetchTMDbDetails(media.imdbID);
 
         if (details) {
-            populateDetailsModal(details, media);
+            populateDetailsModal(details);
         } else {
             elements.detailsModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli non trovati.</p>';
         }
     }
 
-    function populateDetailsModal(details, localMedia) {
+    function populateDetailsModal(details) {
         const backdropUrl = details.backdrop_path ? `https://image.tmdb.org/t/p/w1280${details.backdrop_path}` : '';
-        const posterUrl = details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : localMedia.poster;
+        const posterUrl = details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : DEFAULT_POSTER;
         const genres = details.genres.map(g => g.name).join(', ');
-        
+        const directors = details.crew.filter(member => member.job === 'Director');
+        const directorsHTML = directors.map(d => `<a href="#" class="director-link" data-person-id="${d.id}">${d.name}</a>`).join(', ');
+
         const castHTML = details.cast.slice(0, 15).map(actor => `
-            <div class="actor-card" data-actor-id="${actor.id}">
+            <div class="actor-card" data-person-id="${actor.id}">
                 <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
                 <div class="actor-name">${actor.name}</div>
                 <div class="actor-character">${actor.character}</div>
@@ -2524,6 +2543,7 @@
                         <span><i class="fas fa-calendar-alt"></i> ${details.release_date.split('-')[0]}</span>
                         <span><i class="fas fa-clock"></i> ${formatRuntime(details.runtime)}</span>
                         <span><i class="fas fa-film"></i> ${genres}</span>
+                        ${directorsHTML ? `<span><i class="fas fa-video"></i> Regia: ${directorsHTML}</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -2537,9 +2557,10 @@
             </div>
         `;
         
-        elements.detailsModalContent.querySelectorAll('.actor-card').forEach(card => {
-            card.addEventListener('click', () => {
-                showActorModal(card.dataset.actorId);
+        elements.detailsModalContent.querySelectorAll('.actor-card, .director-link').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                showActorModal(card.dataset.personId);
             });
         });
     }
@@ -2562,37 +2583,45 @@
             const details = await detailsRes.json();
             const credits = await creditsRes.json();
             
-            return { ...details, cast: credits.cast };
+            return { ...details, cast: credits.cast, crew: credits.crew };
         } catch (err) {
             console.error("Error fetching TMDb details:", err);
             return null;
         }
     }
 
-    async function showActorModal(actorId) {
+    async function showActorModal(personId) {
         elements.actorModal.style.display = 'flex';
         document.body.classList.add('modal-open');
         elements.actorModalContent.innerHTML = '<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>';
         
-        const actorDetails = await fetchTMDbActorDetails(actorId);
+        const actorDetails = await fetchTMDbActorDetails(personId);
         
         if(actorDetails) {
             populateActorModal(actorDetails);
         } else {
-            elements.actorModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli attore non trovati.</p>';
+            elements.actorModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli non trovati.</p>';
         }
     }
     
-    async function fetchTMDbActorDetails(actorId) {
+    async function fetchTMDbActorDetails(personId) {
         try {
             const [detailsRes, creditsRes] = await Promise.all([
-                fetch(`https://api.themoviedb.org/3/person/${actorId}?api_key=${TMDB_KEY}&language=it-IT`),
-                fetch(`https://api.themoviedb.org/3/person/${actorId}/movie_credits?api_key=${TMDB_KEY}&language=it-IT`)
+                fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${TMDB_KEY}&language=it-IT`),
+                fetch(`https://api.themoviedb.org/3/person/${personId}/movie_credits?api_key=${TMDB_KEY}&language=it-IT`)
             ]);
             if (!detailsRes.ok || !creditsRes.ok) return null;
             
-            const details = await detailsRes.json();
+            let details = await detailsRes.json();
             const credits = await creditsRes.json();
+
+            if (!details.biography) {
+                const enDetailsRes = await fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${TMDB_KEY}&language=en-US`);
+                if (enDetailsRes.ok) {
+                    const enDetails = await enDetailsRes.json();
+                    details.biography = enDetails.biography;
+                }
+            }
 
             credits.cast.sort((a,b) => b.popularity - a.popularity);
 
@@ -2605,12 +2634,14 @@
 
     function populateActorModal(details) {
         const photoUrl = details.profile_path ? `https://image.tmdb.org/t/p/w500${details.profile_path}` : DEFAULT_ACTOR_PHOTO;
-        const filmographyHTML = details.movie_credits.cast.slice(0, 15).map(film => `
-            <div class="film-card-small">
-                <img src="${film.poster_path ? `https://image.tmdb.org/t/p/w200${film.poster_path}` : DEFAULT_POSTER}" onerror="this.src='${DEFAULT_POSTER}'">
+        const filmographyHTML = details.movie_credits.cast.slice(0, 15).map(film => {
+            if (!film.poster_path) return '';
+            return `
+            <div class="film-card-small" data-tmdb-url="https://www.themoviedb.org/movie/${film.id}" title="${film.title}">
+                <img src="https://image.tmdb.org/t/p/w200${film.poster_path}" onerror="this.src='${DEFAULT_POSTER}'">
                 <div class="film-card-small-title">${film.title}</div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
         
         elements.actorModalContent.innerHTML = `
             <div class="actor-details-header">
@@ -2625,14 +2656,24 @@
                 </div>
             </div>
             <div>
-                <h3 class="details-section-title">Biografia</h3>
-                <p>${details.biography || 'Biografia non disponibile.'}</p>
                 <h3 class="details-section-title">Filmografia Selezionata</h3>
-                <div class="filmography-scroller">
+                <div class="filmography-scroller" id="filmographyScroller">
                     ${filmographyHTML}
                 </div>
+                <h3 class="details-section-title">Biografia</h3>
+                <p>${details.biography || 'Biografia non disponibile.'}</p>
             </div>
         `;
+        
+        const filmographyScroller = document.getElementById('filmographyScroller');
+        if(filmographyScroller) {
+            filmographyScroller.scrollLeft = 0;
+            filmographyScroller.querySelectorAll('.film-card-small').forEach(card => {
+                card.addEventListener('click', () => {
+                    window.open(card.dataset.tmdbUrl, '_blank');
+                });
+            });
+        }
     }
 
     function setupEventListeners() {
