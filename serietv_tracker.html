@@ -121,8 +121,20 @@
     .media-progress { margin-top: auto; padding-top: 0.75rem; }
     .progress-bar-container { width: 100%; background-color: var(--progress-bg); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 0.25rem; }
     .progress-bar { height: 100%; background-color: var(--progress-fill); border-radius: 4px; transition: width 0.3s ease-out; }
-    .progress-bar.abandoned { background-color: var(--danger); }
+    .progress-bar.dropped { background-color: var(--danger); }
     .progress-text { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
+    
+    .card-actions { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 0.5rem; opacity: 0; transform: translateX(10px); transition: opacity 0.2s, transform 0.2s; pointer-events: none; }
+    .media-card:hover .card-actions { opacity: 1; transform: translateX(0); pointer-events: all; }
+    .card-btn { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); color: white; border: none; cursor: pointer; font-size: 0.8rem; transition: background 0.2s; }
+    .card-btn:hover { background: rgba(0,0,0,0.8); }
+
+    .favorite-btn { position: absolute; top: 8px; left: 8px; width: 30px; height: 30px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; opacity: 0; }
+    .media-card:hover .favorite-btn { opacity: 1; }
+    .favorite-btn.is-favorite { color: #e74c3c; background: rgba(255,255,255,0.8); opacity: 1; }
+    #detailsModalFavoriteBtn { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); }
+    #detailsModalFavoriteBtn.is-favorite { background: #e74c3c; color: white; border-color: #e74c3c;}
+
 
     .media-section { background: var(--section-tint); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
     .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
@@ -206,7 +218,7 @@
     .episode-overview { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transition: filter 0.2s; }
     .episode-item.unseen .episode-overview, .episode-item.unseen .episode-still { filter: blur(4px); }
     .episode-item.unseen .episode-overview:hover, .episode-item.unseen .episode-still:hover { filter: blur(0px); }
-    .episode-title.spoiler { filter: blur(4px); }
+    .episode-title.spoiler { filter: blur(4px); user-select: none; }
     .episode-title.spoiler:hover { filter: blur(0px); }
     .episode-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--primary); margin-left: auto; flex-shrink: 0; }
 
@@ -290,11 +302,14 @@
     <div class="top-bar-left">
       <h1><i class="fas fa-tv"></i> Serie TV Tracker</h1>
       <div class="tracker-switch">
-        <a href="filmtracker.html" class="tracker-switch-btn" title="Vai a Film Tracker"><i class="fas fa-film"></i></a>
+        <a href="index.html" class="tracker-switch-btn" title="Vai a Film Tracker"><i class="fas fa-film"></i></a>
         <a href="serietv_tracker.html" class="tracker-switch-btn active" title="Vai a Serie TV Tracker"><i class="fas fa-tv"></i></a>
       </div>
       <input type="text" id="searchInput" class="search-box" placeholder="Cerca serie TV...">
-      <select id="categoryFilter" class="filter-select"><option value="all">Tutte le categorie</option></select>
+      <select id="categoryFilter" class="filter-select">
+          <option value="all">Tutte le categorie</option>
+          <option value="favorites">Solo Preferiti</option>
+      </select>
       <select id="sortFilter" class="filter-select">
         <option value="added" selected>Ultime attività</option>
         <option value="alpha">Alfabetico</option>
@@ -400,7 +415,7 @@
     const MAX_LOG_SIZE = 15;
     const MAX_NOTIFICATIONS = 50;
     
-    const DEFAULT_CATEGORIES = ["In Corso", "Completate", "Da Vedere", "Abbandonate"];
+    const DEFAULT_CATEGORIES = ["In Corso", "Completate", "Da Vedere", "In Pausa / Droppata"];
     let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentOMDbSelection = null, debounceTimeout, lazyLoadObserver, currentShowCache = null;
     let currentUser = null, isViewMode = false, followedFriends = [], friendListeners = {};
     let lastCheckedTimestamps = {};
@@ -408,7 +423,7 @@
     const getDefaultShowProps = () => ({
         category: 'Da Vedere', addedAt: new Date().toISOString(), lastActivityAt: null, poster: "", 
         year: "", imdbID: null, imdbRating: "N/A", rottenTomatoes: "N/A", status: "Unknown", 
-        episodeRuntime: 0, seasons: {}, progress: {}
+        episodeRuntime: 0, seasons: {}, progress: {}, isFavorite: false
     });
     
     const elements = { 
@@ -505,36 +520,72 @@
     function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(score.replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
     
     function updateStats() {
-        const stats = categories.reduce((acc, cat) => ({...acc, [cat.replace(' ', '')]: 0}), { total: 0, minutesWatched: 0, episodesWatched: 0 });
+        const stats = { total: 0, InCorso: 0, Completate: 0, DaVedere: 0, InPausaDroppata: 0, episodesWatched: 0, minutesWatched: 0 };
         mediaList.forEach(show => {
             stats.total++;
-            const categoryKey = show.category.replace(' ', '');
-            if (stats.hasOwnProperty(categoryKey)) stats[categoryKey]++;
+            const categoryKey = show.category.replace(/\s*\/\s*/g, '');
+            if (stats.hasOwnProperty(categoryKey)) {
+                stats[categoryKey]++;
+            }
             const { watchedEpisodes } = calculateProgress(show);
             stats.episodesWatched += watchedEpisodes;
             stats.minutesWatched += watchedEpisodes * (show.episodeRuntime || 0);
         });
         elements.statTotal.textContent = stats.total;
-        elements.statFollowing.textContent = stats.InCorso || 0;
-        elements.statCompleted.textContent = stats.Completate || 0;
-        elements.statToWatch.textContent = stats.DaVedere || 0;
+        elements.statFollowing.textContent = stats.InCorso;
+        elements.statCompleted.textContent = stats.Completate;
+        elements.statToWatch.textContent = stats.DaVedere;
         elements.statEpisodes.textContent = stats.episodesWatched;
         elements.statHours.textContent = `${Math.floor(stats.minutesWatched / 60)}h`;
     }
 
     function renderMedia() {
       const selectedCategory = elements.categoryFilter.value; const searchTerm = elements.searchInput.value.toLowerCase(); const sortBy = elements.sortFilter.value;
-      document.querySelectorAll(".media-section").forEach(s => { s.innerHTML = `<div class="section-header"><h2 class="section-title user-select-none">${s.dataset.category}</h2><span id="${s.dataset.category}Count" class="category-count"></span></div><div class="media-grid" id="${s.dataset.category}Grid"></div>`; });
-      let filteredMedia = mediaList.filter(m => (selectedCategory === 'all' || m.category === selectedCategory) && m.title.toLowerCase().includes(searchTerm));
+      document.querySelectorAll(".media-section").forEach(s => { s.innerHTML = `<div class="section-header"><h2 class="section-title user-select-none">${s.dataset.category}</h2><span id="${s.dataset.category.replace(/\s*\/\s*/g, '')}Count" class="category-count"></span></div><div class="media-grid" id="${s.dataset.category.replace(/\s*\/\s*/g, '')}Grid"></div>`; });
+      
+      let filteredMedia = [...mediaList];
+      if (selectedCategory === 'favorites') {
+          filteredMedia = filteredMedia.filter(m => m.isFavorite);
+      } else if (selectedCategory !== 'all') {
+          filteredMedia = filteredMedia.filter(m => m.category === selectedCategory);
+      }
+      if(searchTerm) {
+          filteredMedia = filteredMedia.filter(m => m.title.toLowerCase().includes(searchTerm));
+      }
+
       filteredMedia.sort((a, b) => { switch (sortBy) { case "alpha": return a.title.localeCompare(b.title); case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0); case "year": return (b.year.split('–')[0] || 0) - (a.year.split('–')[0] || 0); case "added": default: return new Date(b.lastActivityAt || b.addedAt) - new Date(a.lastActivityAt || a.addedAt); } });
-      filteredMedia.forEach(media => { const grid = document.getElementById(`${media.category}Grid`); if (grid) grid.appendChild(createMediaCard(media)); });
-      document.querySelectorAll(".media-grid").forEach(grid => { if (grid.children.length === 0) grid.innerHTML = `<div class="empty-state"><i class="fas fa-tv"></i><p>Nessuna serie TV qui.</p></div>`; const countEl = document.getElementById(`${grid.parentElement.dataset.category}Count`); if (countEl) countEl.textContent = grid.children.length; });
+      
+      const categoryGrids = categories.reduce((acc, cat) => ({ ...acc, [cat]: document.getElementById(`${cat.replace(/\s*\/\s*/g, '')}Grid`) }), {});
+      
+      filteredMedia.forEach(media => { 
+          const grid = categoryGrids[media.category];
+          if (grid) grid.appendChild(createMediaCard(media)); 
+      });
+
+      document.querySelectorAll(".media-grid").forEach(grid => { 
+          if (grid.children.length === 0 && selectedCategory !== 'favorites') {
+              grid.innerHTML = `<div class="empty-state"><i class="fas fa-tv"></i><p>Nessuna serie TV qui.</p></div>`; 
+          }
+          const categoryName = grid.parentElement.dataset.category;
+          const countEl = document.getElementById(`${categoryName.replace(/\s*\/\s*/g, '')}Count`); 
+          if (countEl) countEl.textContent = grid.children.length; 
+          if(grid.children.length === 0) grid.parentElement.style.display = 'none';
+          else grid.parentElement.style.display = 'block';
+      });
+
+      if (selectedCategory === 'favorites' && filteredMedia.length === 0) {
+          const container = elements.mediaSectionsContainer;
+          container.innerHTML = `<div class="media-section"><div class="empty-state"><i class="fas fa-heart-crack"></i><p>Nessun preferito aggiunto.</p></div></div>`;
+      }
       setupLazyLoading();
     }
 
     function createMediaCard(show) {
       const card = document.createElement("div"); card.className = "media-card"; card.dataset.id = show.id;
-      card.addEventListener('click', () => showDetailsModal(show.id));
+      card.addEventListener('click', (e) => {
+          if (e.target.closest('.favorite-btn') || e.target.closest('.card-actions')) return;
+          showDetailsModal(show.id)
+      });
       card.addEventListener('contextmenu', e => { e.preventDefault(); showContextMenu(show, {x: e.clientX, y: e.clientY}); });
       const { watchedEpisodes, totalEpisodes } = calculateProgress(show);
       const percentage = totalEpisodes > 0 ? (watchedEpisodes / totalEpisodes) * 100 : 0;
@@ -544,7 +595,25 @@
       if (show.imdbRating && show.imdbRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${show.imdbRating}</span>`; }
       if (rtState) { ratingsHTML += `<span class="rating-badge"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${show.rottenTomatoes}</span>`; }
 
-      card.innerHTML = `<div class="poster-container"><img data-src="${show.poster || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'"></div><div class="media-info"><h3 class="media-title" title="${show.title}">${show.title}</h3><div class="media-meta"><span>${show.year}</span></div><div class="media-ratings">${ratingsHTML}</div><div class="media-progress"><div class="progress-bar-container"><div class="progress-bar ${show.category === 'Abbandonate' ? 'abandoned' : ''}" style="width: ${percentage}%;"></div></div><div class="progress-text">${show.category === 'Abbandonate' ? `Visti ${watchedEpisodes} / ${totalEpisodes}` : `${watchedEpisodes} / ${totalEpisodes} ep.`}</div></div></div>`;
+      const actionsHTML = isViewMode ? '' : `
+        <div class="card-actions">
+            <button class="card-btn" data-action="move" title="Sposta in..."><i class="fas fa-folder-open"></i></button>
+            <button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button>
+        </div>`;
+
+      card.innerHTML = `
+        <div class="poster-container">
+            <img data-src="${show.poster || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'">
+            <button class="favorite-btn ${show.isFavorite ? 'is-favorite' : ''}" title="Aggiungi ai preferiti"><i class="fas fa-heart"></i></button>
+            ${actionsHTML}
+        </div>
+        <div class="media-info"><h3 class="media-title" title="${show.title}">${show.title}</h3><div class="media-meta"><span>${show.year}</span></div><div class="media-ratings">${ratingsHTML}</div><div class="media-progress"><div class="progress-bar-container"><div class="progress-bar ${show.category === 'In Pausa / Droppata' ? 'dropped' : ''}" style="width: ${percentage}%;"></div></div><div class="progress-text">${show.category === 'In Pausa / Droppata' ? `Visti ${watchedEpisodes} / ${totalEpisodes}` : `${watchedEpisodes} / ${totalEpisodes} ep.`}</div></div></div>`;
+      
+      card.querySelector('.favorite-btn').addEventListener('click', () => toggleFavorite(show.id));
+      if(!isViewMode) {
+          card.querySelector('[data-action="move"]').addEventListener("click", e => { e.stopPropagation(); showContextMenu(show, { x: e.clientX, y: e.clientY }); });
+          card.querySelector('[data-action="delete"]').addEventListener("click", e => { e.stopPropagation(); deleteShow(show.id); });
+      }
       return card;
     }
 
@@ -683,7 +752,10 @@
                 <div class="details-title-section">
                     <div id="detailsModalHeader-main">
                         <h2 id="detailsModalTitle">${tmdbDetails.name}</h2>
-                        <button id="showEpisodesBtn" class="btn btn-primary" style="flex-shrink: 0;"><i class="fas fa-list-check"></i> Gestisci Episodi</button>
+                        <div style="display: flex; gap: 0.5rem;">
+                             <button id="detailsModalFavoriteBtn" class="btn ${show.isFavorite ? 'is-favorite' : ''}" title="Aggiungi ai preferiti"><i class="fas fa-heart"></i></button>
+                             <button id="showEpisodesBtn" class="btn btn-primary" style="flex-shrink: 0;"><i class="fas fa-list-check"></i> Gestisci Episodi</button>
+                        </div>
                     </div>
                     <div id="detailsModalMeta">
                         <span><i class="fas fa-calendar-alt"></i> ${show.year}</span>
@@ -699,6 +771,7 @@
             </div>`;
         
         elements.detailsModalContent.querySelector('#showEpisodesBtn').addEventListener('click', showEpisodesModal);
+        elements.detailsModalContent.querySelector('#detailsModalFavoriteBtn').addEventListener('click', () => toggleFavorite(show.id));
         elements.detailsModalContent.querySelectorAll('.actor-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -762,14 +835,17 @@
         const seasonBlock = document.getElementById(`season-block-${seasonNumber}`);
         if (!seasonBlock) return;
         
-        setupLazyLoading(); // Ensure new images are lazy-loaded
+        setupLazyLoading();
         
         seasonBlock.querySelector('.season-header').addEventListener('click', e => { 
             if (!e.target.closest('.season-actions')) { 
                 const target = document.getElementById(`season-episodes-${seasonNumber}`);
                 const isExpanded = target.style.maxHeight && target.style.maxHeight !== '0px'; 
-                document.querySelectorAll('.season-episodes').forEach(el => el.style.maxHeight = null); 
-                if (!isExpanded) target.style.maxHeight = target.scrollHeight + 'px'; 
+                if (isExpanded) {
+                    target.style.maxHeight = null;
+                } else {
+                    target.style.maxHeight = target.scrollHeight + 'px';
+                }
             } 
         });
         
@@ -815,7 +891,7 @@
             
             const details = await detailsRes.json();
             const credits = await creditsRes.json();
-            credits.cast.sort((a,b) => b.popularity - a.popularity);
+            credits.cast.sort((a,b) => (b.vote_average || 0) - (a.vote_average || 0));
 
             return { ...details, tv_credits: credits };
         } catch(err) {
@@ -883,7 +959,6 @@
                 seasonBlock.parentNode.replaceChild(newBlock, seasonBlock);
                 setupSeasonEventListeners(seasonNumber);
                 
-                // Keep the accordion open
                 const episodesContainer = newBlock.querySelector('.season-episodes');
                 if(episodesContainer) episodesContainer.style.maxHeight = episodesContainer.scrollHeight + 'px';
             }
@@ -947,7 +1022,7 @@
 
     function updateShowCategoryAndTimestamps(show, forceLog = false) {
         show.lastActivityAt = new Date().toISOString(); 
-        if (show.category === 'Abbandonate') return;
+        if (show.category === 'In Pausa / Droppata') return;
         const { watchedEpisodes, totalEpisodes } = calculateProgress(show);
         const oldCategory = show.category;
 
@@ -976,25 +1051,50 @@
     }
     function showContextMenu(show, pos) {
       if (isViewMode) return;
-      document.querySelectorAll(".context-menu").forEach(m => m.remove()); const menu = document.createElement("div"); menu.className = "context-menu"; const hide = () => menu.remove(); setTimeout(() => document.addEventListener("click", hide, { once: true }), 0);
-      menu.innerHTML = `${categories.filter(c => c !== show.category).map(c => `<div class="context-menu-item" data-action="move" data-category="${c}"><i class="fas fa-fw fa-folder-open"></i> Sposta in ${c}</div>`).join('')}<div class="context-menu-divider"></div><div class="context-menu-item" data-action="poster"><i class="fas fa-fw fa-image"></i> Cambia Copertina</div><div class="context-menu-divider"></div><div class="context-menu-item" data-action="delete" style="color:var(--danger);"><i class="fas fa-fw fa-trash-can"></i> Elimina</div>`;
-      menu.style.left = `${pos.x}px`; menu.style.top = `${pos.y}px`; document.body.appendChild(menu); menu.classList.add('visible');
+      document.querySelectorAll(".context-menu").forEach(m => m.remove()); 
+      const menu = document.createElement("div"); 
+      menu.className = "context-menu"; 
+      const hide = () => menu.remove(); 
+      setTimeout(() => document.addEventListener("click", hide, { once: true }), 0);
+
+      let menuItemsHTML = categories
+        .filter(c => c !== show.category && c !== "In Corso")
+        .map(c => {
+            let icon = 'fa-folder-open';
+            if (c === 'Completate') icon = 'fa-check-double';
+            if (c === 'In Pausa / Droppata') icon = 'fa-pause-circle';
+            return `<div class="context-menu-item" data-action="move" data-category="${c}"><i class="fas fa-fw ${icon}"></i> Sposta in ${c}</div>`
+        }).join('');
+      
+      menu.innerHTML = `${menuItemsHTML}<div class="context-menu-divider"></div><div class="context-menu-item" data-action="poster"><i class="fas fa-fw fa-image"></i> Cambia Copertina</div><div class="context-menu-divider"></div><div class="context-menu-item" data-action="delete" style="color:var(--danger);"><i class="fas fa-fw fa-trash-can"></i> Elimina</div>`;
+      
+      menu.style.left = `${pos.x}px`; 
+      menu.style.top = `${pos.y}px`; 
+      document.body.appendChild(menu); 
+      menu.classList.add('visible');
+      
       menu.addEventListener('click', e => { 
           const target = e.target.closest('.context-menu-item'); 
           if (!target) return; 
           const { action, category } = target.dataset; 
           if (action === 'move') moveShowToCategory(show.id, category); 
           if (action === 'poster') showPosterModal(show.id); 
-          if (action === 'delete') {
-              showConfirmModal("Elimina Serie TV", `Sei sicuro di voler eliminare "${show.title}"?`, async () => { 
-                  await logActivity('delete_show', show.title, `dalla categoria '${show.category}'`);
-                  mediaList = mediaList.filter(m => m.id !== show.id); 
-                  await saveData(); 
-                  renderFullUI(); 
-              });
-          }
+          if (action === 'delete') deleteShow(show.id);
       });
     }
+
+    function deleteShow(showId) {
+        if (isViewMode) return;
+        const show = mediaList.find(m => m.id === showId);
+        if (!show) return;
+        showConfirmModal("Elimina Serie TV", `Sei sicuro di voler eliminare "${show.title}"?`, async () => { 
+            await logActivity('delete_show', show.title, `dalla categoria '${show.category}'`);
+            mediaList = mediaList.filter(m => m.id !== showId); 
+            await saveData(); 
+            renderFullUI(); 
+        });
+    }
+
     async function showPosterModal(id) {
         const show = mediaList.find(m => m.id === id);
         if (!show || !show.imdbID) return showNotification("IMDb ID non trovato.", "warning");
@@ -1030,7 +1130,7 @@
                 .filter(p => ['it', 'en', null].includes(p.iso_639_1))
                 .sort((a, b) => langScore(b.iso_639_1) - langScore(a.iso_639_1))
                 .slice(0, 30)
-                .map(p => ({ url: `https://image.tmdb.org/t/p/w500${p.file_path}`, iso_639_1: p.iso_639_1.toUpperCase() }));
+                .map(p => ({ url: `https://image.tmdb.org/t/p/w500${p.file_path}`, iso_639_1: p.iso_639_1 ? p.iso_639_1.toUpperCase() : null }));
         } catch (err) {
             console.error("Error fetching posters:", err);
             return [];
@@ -1044,7 +1144,11 @@
     function moveCategory(cat, direction) { const index = categories.indexOf(cat); const newIndex = index + direction; if (newIndex >= 0 && newIndex < categories.length) { [categories[index], categories[newIndex]] = [categories[newIndex], categories[index]]; saveData(); renderFullUI(); renderCategoriesList(); } }
     function resetApp() { if(isViewMode) return; showConfirmModal("Resetta Tracker", "Sei sicuro di voler resettare l'applicazione? Tutti i dati andranno persi.", () => { mediaList = []; categories = [...DEFAULT_CATEGORIES]; saveData(); renderFullUI(); showNotification("Tracker resettato con successo.", "success"); }); }
     function fixPosterUrl(url) { return (url && url.startsWith("https://")) ? url : DEFAULT_POSTER; }
-    function updateCategoryFilter() { elements.categoryFilter.innerHTML = `<option value="all">Tutte le categorie</option>${categories.map(cat => `<option value="${cat}">${cat}</option>`).join("")}`; }
+    function updateCategoryFilter() { 
+        const currentVal = elements.categoryFilter.value;
+        elements.categoryFilter.innerHTML = `<option value="all">Tutte le categorie</option><option value="favorites">Solo Preferiti</option>${categories.map(cat => `<option value="${cat}">${cat}</option>`).join("")}`; 
+        elements.categoryFilter.value = currentVal;
+    }
     function renderCategorySections() { elements.mediaSectionsContainer.innerHTML = categories.map(cat => `<div class="media-section" data-category="${cat}"></div>`).join(""); }
     function closeModal(modal) { modal.style.display = "none"; if (!document.querySelector('.modal[style*="flex"]')) document.body.classList.remove("modal-open"); }
     function showNotification(text, type = "success") { elements.notificationText.textContent = text; elements.notification.className = `notification ${type}`; elements.notification.style.display = "block"; setTimeout(() => elements.notification.style.display = "none", 3000); }
@@ -1346,6 +1450,27 @@
             card.querySelector('.visit-friend-btn').addEventListener('click', (e) => { window.open(`${window.location.origin}/filmtracker.html?view=${e.currentTarget.dataset.id}`, '_blank'); });
             elements.friendsList.appendChild(card);
         });
+    }
+
+    async function toggleFavorite(showId) {
+        if (isViewMode) return;
+        const show = mediaList.find(m => m.id === showId);
+        if (show) {
+            show.isFavorite = !show.isFavorite;
+            await saveData();
+            
+            const cardBtn = document.querySelector(`.media-card[data-id="${showId}"] .favorite-btn`);
+            if (cardBtn) cardBtn.classList.toggle('is-favorite', show.isFavorite);
+            
+            const modalBtn = document.getElementById('detailsModalFavoriteBtn');
+            if (modalBtn && elements.detailsModal.style.display === 'flex') {
+                modalBtn.classList.toggle('is-favorite', show.isFavorite);
+            }
+
+            if (elements.categoryFilter.value === 'favorites') {
+                renderMedia();
+            }
+        }
     }
 
     function setupEventListeners() {
