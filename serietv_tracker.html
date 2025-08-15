@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Serie TV Tracker</title>
+  
+  <link rel="icon" href="https://www.svgrepo.com/show/475620/tv-alt.svg" type="image/svg+xml">
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+  
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  
+  <style>
+    :root {
+      --primary: #2a9d8f;
+      --secondary: #4ecdc4;
+      --danger: #ff4444;
+      --success: #228b22;
+      --warning: #ffbe0b;
+      --bg-color: #f4f7fa;
+      --card-bg: white;
+      --text-color: #1a1a1a;
+      --text-secondary: #666;
+      --border-color: #e0e0e0;
+      --section-tint: rgba(42, 157, 143, 0.05);
+      --progress-bg: #e0e0e0;
+      --progress-fill: var(--primary);
+    }
+
+    body.dark {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #f5f5f5;
+      --text-secondary: #aaa;
+      --border-color: #333;
+      --section-tint: rgba(42, 157, 143, 0.08);
+      --progress-bg: #444;
+    }
+
+    .tracker-switch {
+        display: flex;
+        background-color: rgba(128,128,128,0.1);
+        border-radius: 8px;
+        padding: 4px;
+        border: 1px solid var(--border-color);
+    }
+    .tracker-switch-btn {
+        padding: 0.25rem 0.75rem;
+        text-decoration: none;
+        color: var(--text-secondary);
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+    .tracker-switch-btn.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tracker-switch-btn:not(.active):hover {
+        background-color: var(--section-tint);
+        color: var(--text-color);
+    }
+    
+    html { scroll-behavior: smooth; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-spinner { animation: spin 1s linear infinite; }
+    .user-select-none { -webkit-user-select: none; user-select: none; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0; padding: 1rem; background: var(--bg-color); color: var(--text-color);
+      transition: background 0.3s, color 0.3s;
+    }
+    
+    #appLoader {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color);
+        display: flex; justify-content: center; align-items: center; z-index: 2000; transition: opacity 0.3s;
+    }
+    #appLoader i { font-size: 3rem; color: var(--primary); }
+
+    .top-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+    .top-bar-left { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .top-bar-left h1 { margin: 0; font-size: 1.75rem; letter-spacing: -1px; color: var(--primary); }
+    .top-bar-right { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .search-box { max-width: 300px; }
+    .filter-select { max-width: 180px; }
+
+    .stats-panel { background-color: var(--section-tint); padding: 1rem; border-radius: 12px; margin-bottom: 2rem; }
+    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; }
+    .stat-item { background: var(--card-bg); padding: 1rem; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); transition: background 0.2s; }
+    .stat-item:hover { background: rgba(42, 157, 143, 0.1); }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--primary); }
+    .stat-label { font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.25rem; }
+
+    .media-card { background: var(--card-bg); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 180px; transition: all 0.2s ease-out; position: relative; border: 1px solid var(--border-color); animation: fadeIn 0.5s ease-out both; cursor: pointer; display: flex; flex-direction: column; }
+    .media-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+    .media-poster { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; object-position: center top; background-color: var(--border-color); display: block; }
+    .media-info { padding: 0.75rem; flex-grow: 1; display: flex; flex-direction: column; }
+    .media-title { font-size: 0.9rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-color); font-weight: 600; }
+    .media-meta { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .media-ratings { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .rating-badge { display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(0,0,0,0.05); padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; }
+    body.dark .rating-badge { background: rgba(255,255,255,0.08); }
+    .rating-icon { width: 14px; height: 14px; object-fit: contain; }
+    .media-progress { margin-top: auto; padding-top: 0.75rem; }
+    .progress-bar-container { width: 100%; background-color: var(--progress-bg); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 0.25rem; }
+    .progress-bar { height: 100%; background-color: var(--progress-fill); border-radius: 4px; transition: width 0.3s ease-out; }
+    .progress-bar.abandoned { background-color: var(--danger); }
+    .progress-text { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
+
+    .media-section { background: var(--section-tint); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin: 0 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); position: relative; }
+    .section-header::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100px; height: 2px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+    .section-title { color: var(--text-color); margin: 0; font-size: 1.25rem; letter-spacing: -0.5px; font-weight: 700; }
+    
+    .btn { padding: 0.5rem 1rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; box-sizing: border-box; height: 38px; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: var(--secondary); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-small { padding: 0.25rem 0.75rem; height: auto; font-size: 0.8rem; }
+
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; }
+    .modal-open { overflow: hidden; }
+    .modal-content { background: var(--card-bg); border-radius: 12px; padding: 1.5rem; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
+    
+    #mediaManagementModal .modal-content { max-width: 800px; }
+    #detailsModal { z-index: 1000; }
+    #detailsModal .modal-content { max-width: 900px; padding: 0; }
+    #episodesModal { z-index: 1001; }
+    #episodesModal .modal-content { max-width: 1200px; height: 90vh; }
+    #episodesModalContent { flex: 1; min-height: 0; overflow-y: auto; padding-right: 1rem; }
+    #episodesModal h2 { margin-top: 0; }
+    #actorModal { z-index: 1002; }
+    #actorModal .modal-content { max-width: 700px; max-height: 80vh; overflow-y: auto; }
+
+    input, select { padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); font-size: 1rem; box-sizing: border-box; margin: 0; height: 38px; transition: border-color 0.2s, box-shadow 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2); }
+    .omdb-results-container { max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; margin-top: 1rem; }
+    .omdb-result-item { display: flex; align-items: center; padding: 0.5rem; cursor: pointer; border-radius: 4px; margin-bottom: 0.25rem; }
+    .omdb-result-item:hover { background: rgba(0,0,0,0.05); }
+    .omdb-poster-small { width: 40px; height: 60px; object-fit: cover; margin-right: 0.75rem; border-radius: 4px; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); border: 2px dashed var(--border-color); border-radius: 8px; margin-top: 1rem; }
+    .empty-state > i { font-size: 2.5rem; margin-bottom: 1rem; }
+    
+    .notification { position: fixed; bottom: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 8px; background: var(--card-bg); box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1002; display: none; }
+    .notification.success { border-left: 4px solid var(--success); } .notification.error { border-left: 4px solid var(--danger); } .notification.warning { border-left: 4px solid var(--warning); }
+    .modal-footer { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; padding: 1.5rem 1.5rem 0 1.5rem; border-top: 1px solid var(--border-color); }
+    
+    .details-backdrop { width: 100%; height: 250px; background-size: cover; background-position: center 25%; position: relative; }
+    .details-backdrop::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, var(--card-bg) 0%, rgba(0,0,0,0.5) 100%); }
+    .details-header { position: relative; display: flex; padding: 1.5rem; margin-top: -100px; z-index: 2; }
+    #detailsModalPoster { width: 150px; height: 225px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0; margin-right: 1.5rem; }
+    .details-title-section { padding-top: 100px; }
+    #detailsModalTitle { margin: 0; font-size: 1.75rem; }
+    #detailsModalMeta { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.9rem; color: var(--text-secondary); }
+    .details-body { padding: 0 1.5rem 1.5rem 1.5rem; }
+    .details-section-title { font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1rem; margin-top: 1.5rem; }
+    #detailsModalOverview { line-height: 1.6; }
+    .modal-close-btn { position: absolute; top: 1rem; right: 1rem; z-index: 3; cursor: pointer; background: rgba(0,0,0,0.5); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; }
+    
+    .cast-scroller { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 1rem; }
+    .actor-card { text-align: center; width: 100px; flex-shrink: 0; cursor: pointer; }
+    .actor-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 0.5rem; background-color: var(--border-color); }
+    .actor-name, .actor-character { font-size: 0.8rem; user-select: text; }
+    .actor-character { color: var(--text-secondary); }
+
+    .seasons-container { display: flex; flex-direction: column; gap: 1rem; }
+    .season-header { background-color: var(--section-tint); padding: 0.75rem 1rem; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .season-header:hover { background-color: rgba(42, 157, 143, 0.15); }
+    .season-title-container { flex-grow: 1; }
+    .season-title { font-weight: 600; }
+    .season-progress-text { font-size: 0.8rem; color: var(--text-secondary); }
+    .season-actions .btn { width: 32px; height: 32px; padding: 0; font-size: 0.9rem; background-color: rgba(0,0,0,0.1); justify-content: center; }
+    body.dark .season-actions .btn { background-color: rgba(255,255,255,0.1); }
+    
+    .season-episodes { display: block; overflow: hidden; transition: max-height 0.4s ease-in-out; max-height: 0; }
+    .no-episodes-info { padding: 1rem; text-align: center; font-style: italic; color: var(--text-secondary); }
+    .episode-item { display: flex; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--border-color); align-items: center; }
+    .episode-item:last-child { border-bottom: none; }
+    .episode-still { width: 120px; height: 68px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background-color: var(--border-color); }
+    .episode-details { flex-grow: 1; min-width: 0; }
+    .episode-main-info { display: flex; align-items: baseline; gap: 0.5rem; }
+    .episode-number { font-weight: 600; color: var(--primary); }
+    .episode-title { font-weight: 500; }
+    .episode-overview { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .episode-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--primary); margin-left: auto; flex-shrink: 0; }
+
+    .management-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+    .tab-btn { padding: 0.75rem 1.5rem; background: transparent; border: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-content { display: none; } .tab-content.active { display: block; }
+    .management-list { max-height: 300px; overflow-y: auto; }
+    .management-card { display: flex; align-items: center; padding: 0.75rem; border-radius: 8px; background: var(--bg-color); margin-bottom: 0.5rem; }
+    .management-card > div { flex: 1; }
+    .management-card-actions { display: flex; gap: 0.5rem; }
+    .management-card-actions .btn { padding: 0; justify-content: center; height: 32px; width: 32px; background-color: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); }
+    .category-name, .friend-email { font-weight: 600; }
+    .friend-id { font-size: 0.8rem; color: var(--text-secondary); }
+
+    .context-menu { position: fixed; background: var(--card-bg); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1001; min-width: 240px; padding: 0.5rem 0; border: 1px solid var(--border-color); opacity: 0; transform: translateY(-10px); transition: opacity 0.15s, transform 0.15s; }
+    .context-menu.visible { opacity: 1; transform: translateY(0); }
+    .context-menu-item { padding: 0.75rem 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; }
+    .context-menu-item i.fa-fw { width: 20px; text-align: center; }
+    .context-menu-item:hover { background: var(--primary); color: white; }
+    .context-menu-divider { height: 1px; background: var(--border-color); margin: 0.25rem 0; }
+
+    #posterModal .modal-content { max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column; overflow-y: auto; }
+    .poster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; padding: 0.5rem; }
+    .poster-option { position: relative; cursor: pointer; transition: transform 0.2s; border: 3px solid transparent; border-radius: 8px; overflow: hidden; }
+    .poster-option:hover { transform: scale(1.05); }
+    .poster-option.selected { border-color: var(--primary); }
+    .poster-option img { width: 100%; height: auto; display: block; }
+
+    .auth-container { position: relative; }
+    .auth-form { position: absolute; top: calc(100% + 8px); right: 0; background: var(--card-bg); border-radius: 12px; padding: 1.5rem; width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1001; display: none; }
+    .auth-form.active { display: block; }
+    .auth-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
+    .auth-tab { padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid transparent; }
+    .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .auth-form-container { display: none; } .auth-form-container.active { display: block; }
+    .auth-form-container input { width: 100%; margin-bottom: 1rem; }
+    .auth-form-buttons { display: flex; justify-content: flex-end; margin-top: 1rem; }
+
+    .notification-bell-container { position: relative; }
+    .notification-badge { position: absolute; top: -5px; right: -5px; background-color: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: center; align-items: center; border: 2px solid var(--bg-color); transform: scale(0); transition: transform 0.2s ease-out; }
+    .notification-badge.visible { transform: scale(1); }
+    .notification-dropdown { position: absolute; top: calc(100% + 8px); right: 0; background: var(--card-bg); border-radius: 12px; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1001; display: none; border: 1px solid var(--border-color); overflow: hidden; max-height: 400px; flex-direction: column; }
+    .notification-dropdown.visible { display: flex; }
+    .notification-header { padding: 0.75rem 1rem; font-weight: 600; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+    .notification-list { flex: 1; max-height: 300px; overflow-y: auto; }
+    .notification-item { padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-size: 0.9rem; }
+    .notification-item:hover { background-color: var(--section-tint); }
+    .notification-item i { color: var(--primary); width: 16px; text-align: center; }
+    .notification-item-text { flex: 1; }
+    .no-notifications { padding: 1.5rem; text-align: center; color: var(--text-secondary); }
+    .notification-footer { padding: 0.5rem; text-align: center; border-top: 1px solid var(--border-color); flex-shrink: 0; }
+
+    .view-mode-banner { display: none; align-items: center; background: var(--primary); color: white; padding: 0.75rem 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; }
+  
+    .actor-details-header { display: flex; gap: 1.5rem; margin-bottom: 1.5rem; align-items: flex-start; }
+    .actor-details-photo { width: 120px; height: 180px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+    .actor-details-info ul { list-style: none; padding: 0; margin: 0; }
+    .actor-details-info li { margin-bottom: 0.5rem; }
+    .btn-imdb { background: #f5c518; color: #000; margin-top: 1rem; }
+    .filmography-scroller { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 1rem; }
+    .film-card-small { width: 120px; flex-shrink: 0; cursor: pointer; }
+    .film-card-small img { width: 100%; height: 180px; object-fit: cover; border-radius: 4px; transition: transform 0.2s, box-shadow 0.2s; }
+    .film-card-small:hover img { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .film-card-small-title { font-size: 0.8rem; margin-top: 0.5rem; white-space: normal; text-align: center; }
+
+  </style>
+</head>
+<body class="dark user-select-none">
+  
+  <div id="appLoader"><i class="fas fa-spinner loading-spinner"></i></div>
+
+  <div id="viewModeBanner" class="view-mode-banner">
+    <i class="fas fa-eye" style="margin-right: 0.75rem;"></i>
+    <span id="viewModeUserEmail">Stai visualizzando una libreria condivisa</span>
+    <button id="closeViewBtn" class="btn btn-danger" style="margin-left:auto"><i class="fas fa-times"></i> Esci</button>
+  </div>
+
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <h1><i class="fas fa-tv"></i> Serie TV Tracker</h1>
+      <div class="tracker-switch">
+        <a href="filmtracker.html" class="tracker-switch-btn" title="Vai a Film Tracker"><i class="fas fa-film"></i></a>
+        <a href="serietv_tracker.html" class="tracker-switch-btn active" title="Vai a Serie TV Tracker"><i class="fas fa-tv"></i></a>
+      </div>
+      <input type="text" id="searchInput" class="search-box" placeholder="Cerca serie TV...">
+      <select id="categoryFilter" class="filter-select"><option value="all">Tutte le categorie</option></select>
+      <select id="sortFilter" class="filter-select">
+        <option value="added" selected>Ultime attività</option>
+        <option value="alpha">Alfabetico</option>
+        <option value="rating">Valutazione</option>
+        <option value="year">Anno di uscita</option>
+      </select>
+    </div>
+    <div class="top-bar-right">
+        <button id="mediaManagementBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Gestione</button>
+        <div class="notification-bell-container" id="notificationBellContainer" style="display: none;">
+            <button id="bellIcon" class="btn btn-secondary" title="Notifiche"><i class="fas fa-bell"></i></button>
+            <div id="notificationBadge" class="notification-badge">0</div>
+            <div id="notificationDropdown" class="notification-dropdown"></div>
+        </div>
+        <button id="shareBtn" class="btn btn-secondary" title="Condividi Libreria"><i class="fas fa-share-alt"></i></button>
+        <button id="exportBtn" class="btn btn-secondary" title="Esporta Dati"><i class="fas fa-download"></i></button>
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+        <button id="importBtn" class="btn btn-secondary" title="Importa Dati"><i class="fas fa-upload"></i></button>
+        <button id="resetBtn" class="btn btn-secondary" title="Resetta Tracker"><i class="fas fa-undo"></i></button>
+        <button id="themeToggle" class="btn btn-secondary" title="Cambia Tema"><i class="fas fa-moon"></i></button>
+        
+        <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+        <div class="auth-container">
+            <button id="authToggle" class="btn btn-secondary"><i class="fas fa-user"></i> Login</button>
+            <div id="authForms" class="auth-form">
+              <div class="auth-tabs"><div class="auth-tab active" data-tab="login">Login</div><div class="auth-tab" data-tab="register">Registrati</div></div>
+              <div id="loginForm" class="auth-form-container active"><input type="email" id="loginEmail" placeholder="Email"><input type="password" id="loginPassword" placeholder="Password"><div class="auth-form-buttons"><button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button></div></div>
+              <div id="registerForm" class="auth-form-container"><input type="email" id="registerEmail" placeholder="Email"><input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)"><input type="password" id="registerConfirmPassword" placeholder="Conferma Password"><div class="auth-form-buttons"><button id="registerBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati</button></div></div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <div class="stats-panel">
+      <div class="stats-container">
+        <div class="stat-item"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Totale</div></div>
+        <div class="stat-item"><div class="stat-value" id="statFollowing">0</div><div class="stat-label">In Corso</div></div>
+        <div class="stat-item"><div class="stat-value" id="statCompleted">0</div><div class="stat-label">Completate</div></div>
+        <div class="stat-item"><div class="stat-value" id="statToWatch">0</div><div class="stat-label">Da Vedere</div></div>
+        <div class="stat-item"><div class="stat-value" id="statEpisodes">0</div><div class="stat-label">Episodi Visti</div></div>
+        <div class="stat-item"><div class="stat-value" id="statHours">0h</div><div class="stat-label">Tempo Visto</div></div>
+      </div>
+  </div>
+
+  <div id="mediaSectionsContainer"></div>
+  
+  <div class="modal" id="mediaManagementModal">
+    <div class="modal-content">
+        <div class="management-tabs">
+          <button class="tab-btn active" data-tab="add-media"><i class="fas fa-plus"></i> Aggiungi Serie</button>
+          <button class="tab-btn" data-tab="manage-categories"><i class="fas fa-list-ol"></i> Ordina Categorie</button>
+          <button class="tab-btn" data-tab="manage-friends"><i class="fas fa-user-friends"></i> Amici</button>
+        </div>
+        <div class="tab-content active" id="add-media-tab">
+            <h2>Aggiungi una nuova Serie TV</h2>
+            <div class="add-media-form">
+                <div class="form-row"><input type="text" id="mediaTitle" placeholder="Titolo serie TV..."><button id="searchOMDbBtn" class="btn btn-secondary"><i class="fas fa-search"></i> Cerca</button></div>
+                <div id="omdbResults" class="omdb-results-container"></div>
+            </div>
+        </div>
+        <div class="tab-content" id="manage-categories-tab">
+            <h2>Ordina Categorie</h2>
+            <p style="color: var(--text-secondary); margin-top: -1rem; margin-bottom: 1.5rem;">Usa le frecce per cambiare l'ordine di visualizzazione.</p>
+            <div class="management-list" id="categoriesList"></div>
+        </div>
+         <div class="tab-content" id="manage-friends-tab">
+             <div id="myIdContainer" style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; text-align: center; margin-bottom: 1.5rem;">
+                <h4>Il tuo ID univoco</h4>
+                <p style="font-size: 0.9rem; color: var(--text-secondary);">Condividi questo ID con i tuoi amici per permettergli di seguirti.</p>
+                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                    <input type="text" id="myIdInput" readonly style="text-align: center; background-color: var(--bg-color);">
+                    <button id="copyMyIdBtn" class="btn btn-primary"><i class="fas fa-copy"></i> Copia</button>
+                </div>
+            </div>
+            <div class="management-form">
+                <input type="text" id="friendIdInput" placeholder="Incolla l'ID di un amico">
+                <button id="addFriendBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Aggiungi</button>
+            </div>
+            <div class="management-list" id="friendsList"></div>
+        </div>
+        <div class="modal-footer" style="border-top: none; padding-top: 0; justify-content: flex-end;"><button id="closeManagementModal" class="btn btn-danger">Chiudi</button><button id="addShowBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi Serie</button></div>
+    </div>
+  </div>
+  
+  <div class="modal" id="detailsModal"><div class="modal-content"><button class="modal-close-btn" id="detailsModalClose"><i class="fas fa-times"></i></button><div id="detailsModalContent"></div></div></div>
+  <div class="modal" id="episodesModal"><div class="modal-content"><button class="modal-close-btn" id="episodesModalClose"><i class="fas fa-times"></i></button><div id="episodesModalContent"></div></div></div>
+  <div class="modal" id="actorModal"><div class="modal-content"><button class="modal-close-btn" id="actorModalClose"><i class="fas fa-times"></i></button><div id="actorModalContent"></div></div></div>
+  <div class="modal" id="posterModal"><div class="modal-content"><h2 id="posterModalTitle">Cambia Copertina</h2><div class="poster-grid" id="posterGrid"></div><div class="modal-footer" style="padding: 1.5rem 0 0 0;"><button id="cancelPosterChange" class="btn btn-danger">Annulla</button><button id="savePosterChange" class="btn btn-primary">Salva Selezione</button></div></div></div>
+  <div class="modal" id="confirmModal"><div class="modal-content" style="max-width: 400px;"><h2 id="confirmModalTitle"></h2><p id="confirmModalBody"></p><div id="confirmModalButtons" style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem;"><button id="confirmModalCancel" class="btn btn-secondary">Annulla</button><button id="confirmModalConfirm" class="btn btn-danger">Conferma</button></div></div></div>
+  <div class="modal" id="shareModal"><div class="modal-content" style="max-width: 450px;"><h2>Condividi la tua libreria</h2><p>Chiunque abbia questo link potrà vedere la tua lista in tempo reale (sola lettura).</p><input type="text" id="shareLinkInput" readonly style="width:100%"><div style="display: flex; gap: 0.5rem; margin-top: 1rem;"><button id="copyShareLinkBtn" class="btn btn-primary">Copia Link</button><button id="closeShareModalBtn" class="btn btn-danger">Chiudi</button></div></div></div>
+
+  <div id="notification" class="notification"><span id="notificationText"></span></div>
+
+  <script>
+    const OMDb_API_KEY = "2526ef70";
+    const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ=");
+    const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
+    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LjggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi43LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
+    const EMPTY_STILL_PLACEHOLDER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTY5IiB2aWV3Qm94PSIwIDAgMzAwIDE2OSI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNjkiIGZpbGw9IiNkZGQiLz48L3N2Zz4=";
+    const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
+    const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
+    const firebaseConfig = { apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk", authDomain: "gametrackerdb.firebaseapp.com", databaseURL: "https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gametrackerdb" };
+    const MAX_LOG_SIZE = 15;
+    const MAX_NOTIFICATIONS = 50;
+    
+    const DEFAULT_CATEGORIES = ["In Corso", "Completate", "Da Vedere", "Abbandonate"];
+    let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentOMDbSelection = null, debounceTimeout, lazyLoadObserver, currentShowCache = null;
+    let currentUser = null, isViewMode = false, followedFriends = [], friendListeners = {};
+    let lastCheckedTimestamps = {};
+    
+    const getDefaultShowProps = () => ({
+        category: 'Da Vedere', addedAt: new Date().toISOString(), lastActivityAt: null, poster: "", 
+        year: "", imdbID: null, imdbRating: "N/A", rottenTomatoes: "N/A", status: "Unknown", 
+        episodeRuntime: 0, seasons: {}, progress: {}
+    });
+    
+    const elements = { 
+        appLoader: document.getElementById("appLoader"), mediaManagementBtn: document.getElementById("mediaManagementBtn"), 
+        exportBtn: document.getElementById("exportBtn"), importBtn: document.getElementById("importBtn"), importFile: document.getElementById("importFile"), 
+        resetBtn: document.getElementById("resetBtn"), themeToggle: document.getElementById("themeToggle"), searchInput: document.getElementById("searchInput"), 
+        categoryFilter: document.getElementById("categoryFilter"), sortFilter: document.getElementById("sortFilter"), 
+        statTotal: document.getElementById("statTotal"), statFollowing: document.getElementById("statFollowing"),
+        statCompleted: document.getElementById("statCompleted"), statToWatch: document.getElementById("statToWatch"), 
+        statEpisodes: document.getElementById("statEpisodes"), statHours: document.getElementById("statHours"),
+        mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), mediaManagementModal: document.getElementById("mediaManagementModal"), 
+        mediaTitle: document.getElementById("mediaTitle"), searchOMDbBtn: document.getElementById("searchOMDbBtn"), omdbResults: document.getElementById("omdbResults"), 
+        addShowBtn: document.getElementById("addShowBtn"), closeManagementModal: document.getElementById("closeManagementModal"), notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"),
+        detailsModal: document.getElementById('detailsModal'), detailsModalContent: document.getElementById('detailsModalContent'), detailsModalClose: document.getElementById('detailsModalClose'),
+        episodesModal: document.getElementById('episodesModal'), episodesModalContent: document.getElementById('episodesModalContent'), episodesModalClose: document.getElementById('episodesModalClose'),
+        actorModal: document.getElementById('actorModal'), actorModalContent: document.getElementById('actorModalContent'), actorModalClose: document.getElementById('actorModalClose'),
+        posterModal: document.getElementById('posterModal'), posterGrid: document.getElementById('posterGrid'), savePosterChange: document.getElementById('savePosterChange'),
+        cancelPosterChange: document.getElementById('cancelPosterChange'), confirmModal: document.getElementById("confirmModal"), confirmModalTitle: document.getElementById("confirmModalTitle"),
+        confirmModalBody: document.getElementById("confirmModalBody"), confirmModalConfirm: document.getElementById("confirmModalConfirm"), confirmModalCancel: document.getElementById("confirmModalCancel"),
+        categoriesList: document.getElementById("categoriesList"),
+        authToggle: document.getElementById('authToggle'), authForms: document.getElementById('authForms'),
+        loginBtn: document.getElementById('loginBtn'), registerBtn: document.getElementById('registerBtn'),
+        logoutBtn: document.getElementById('logoutBtn'), userInfo: document.getElementById('userInfo'),
+        shareBtn: document.getElementById('shareBtn'), shareModal: document.getElementById('shareModal'),
+        copyShareLinkBtn: document.getElementById('copyShareLinkBtn'), closeShareModalBtn: document.getElementById('closeShareModalBtn'),
+        viewModeBanner: document.getElementById('viewModeBanner'), viewModeUserEmail: document.getElementById('viewModeUserEmail'), closeViewBtn: document.getElementById('closeViewBtn'),
+        addFriendBtn: document.getElementById('addFriendBtn'), friendsList: document.getElementById('friendsList'), friendIdInput: document.getElementById('friendIdInput'),
+        myIdInput: document.getElementById('myIdInput'), copyMyIdBtn: document.getElementById('copyMyIdBtn'),
+        notificationBellContainer: document.getElementById('notificationBellContainer'), bellIcon: document.getElementById('bellIcon'),
+        notificationDropdown: document.getElementById('notificationDropdown'),
+        notificationBadge: document.getElementById('notificationBadge')
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    
+    document.addEventListener("DOMContentLoaded", init);
+
+    function init() { setupEventListeners(); loadTheme(); loadSortOrder(); handleViewMode() || setupAuthListeners(); }
+    function hideLoader() { elements.appLoader.style.opacity = '0'; setTimeout(() => elements.appLoader.style.display = 'none', 300); }
+    
+    function loadData() {
+        if (!currentUser) return;
+        const path = `users/${currentUser.uid}`;
+        db.ref(`${path}/tvShowTracker`).on("value", snapshot => {
+            const data = snapshot.val() || {};
+            mediaList = (data.mediaList || []).map(item => ({ ...getDefaultShowProps(), ...item }));
+            categories = data.categories || [...DEFAULT_CATEGORIES];
+            if (!isViewMode) {
+                renderFullUI();
+                triggerDailyUpdateCheck();
+            }
+        });
+        db.ref(`${path}/social`).once("value", snapshot => {
+            const data = snapshot.val() || {};
+            followedFriends = data.followedFriends || [];
+            lastCheckedTimestamps = data.lastCheckedTimestamps || {};
+            if (!isViewMode) {
+                setupFriendListeners();
+                renderFriendsList();
+            }
+        });
+        hideLoader();
+    }
+
+    function loadLocalData() { 
+        try { 
+            mediaList = JSON.parse(localStorage.getItem("tvShowList") || "[]").map(item => ({ ...getDefaultShowProps(), ...item })); 
+            categories = JSON.parse(localStorage.getItem("tvShowCategories") || JSON.stringify(DEFAULT_CATEGORIES)); 
+            renderFullUI(); 
+        } catch (err) { 
+            mediaList = []; categories = [...DEFAULT_CATEGORIES]; 
+            renderFullUI(); 
+        } 
+    }
+    
+    async function saveData() { 
+        if (isViewMode) return;
+        if (currentUser) {
+            return db.ref(`users/${currentUser.uid}/tvShowTracker`).set({ mediaList, categories });
+        } else {
+            try { localStorage.setItem("tvShowList", JSON.stringify(mediaList)); localStorage.setItem("tvShowCategories", JSON.stringify(categories)); } catch (err) { showNotification("Errore nel salvataggio dei dati", "error"); } 
+            return Promise.resolve();
+        }
+    }
+    
+    function saveSocialData() {
+        if (isViewMode || !currentUser) return;
+        return db.ref(`users/${currentUser.uid}/social`).set({ followedFriends, lastCheckedTimestamps });
+    }
+
+    function renderFullUI() { renderCategorySections(); updateCategoryFilter(); renderMedia(); updateStats(); }
+    function calculateProgress(show) { const totalEpisodes = Object.values(show.seasons || {}).reduce((sum, season) => sum + (season.episodeCount || 0), 0); const watchedEpisodes = Object.keys(show.progress || {}).length; return { watchedEpisodes, totalEpisodes }; }
+    function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(score.replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
+    
+    function updateStats() {
+        const stats = categories.reduce((acc, cat) => ({...acc, [cat.replace(' ', '')]: 0}), { total: 0, minutesWatched: 0, episodesWatched: 0 });
+        mediaList.forEach(show => {
+            stats.total++;
+            const categoryKey = show.category.replace(' ', '');
+            if (stats.hasOwnProperty(categoryKey)) stats[categoryKey]++;
+            const { watchedEpisodes } = calculateProgress(show);
+            stats.episodesWatched += watchedEpisodes;
+            stats.minutesWatched += watchedEpisodes * (show.episodeRuntime || 0);
+        });
+        elements.statTotal.textContent = stats.total;
+        elements.statFollowing.textContent = stats.InCorso || 0;
+        elements.statCompleted.textContent = stats.Completate || 0;
+        elements.statToWatch.textContent = stats.DaVedere || 0;
+        elements.statEpisodes.textContent = stats.episodesWatched;
+        elements.statHours.textContent = `${Math.floor(stats.minutesWatched / 60)}h`;
+    }
+
+    function renderMedia() {
+      const selectedCategory = elements.categoryFilter.value; const searchTerm = elements.searchInput.value.toLowerCase(); const sortBy = elements.sortFilter.value;
+      document.querySelectorAll(".media-section").forEach(s => { s.innerHTML = `<div class="section-header"><h2 class="section-title user-select-none">${s.dataset.category}</h2><span id="${s.dataset.category}Count" class="category-count"></span></div><div class="media-grid" id="${s.dataset.category}Grid"></div>`; });
+      let filteredMedia = mediaList.filter(m => (selectedCategory === 'all' || m.category === selectedCategory) && m.title.toLowerCase().includes(searchTerm));
+      filteredMedia.sort((a, b) => { switch (sortBy) { case "alpha": return a.title.localeCompare(b.title); case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0); case "year": return (b.year.split('–')[0] || 0) - (a.year.split('–')[0] || 0); case "added": default: return new Date(b.lastActivityAt || b.addedAt) - new Date(a.lastActivityAt || a.addedAt); } });
+      filteredMedia.forEach(media => { const grid = document.getElementById(`${media.category}Grid`); if (grid) grid.appendChild(createMediaCard(media)); });
+      document.querySelectorAll(".media-grid").forEach(grid => { if (grid.children.length === 0) grid.innerHTML = `<div class="empty-state"><i class="fas fa-tv"></i><p>Nessuna serie TV qui.</p></div>`; const countEl = document.getElementById(`${grid.parentElement.dataset.category}Count`); if (countEl) countEl.textContent = grid.children.length; });
+      setupLazyLoading();
+    }
+
+    function createMediaCard(show) {
+      const card = document.createElement("div"); card.className = "media-card"; card.dataset.id = show.id;
+      card.addEventListener('click', () => showDetailsModal(show.id));
+      card.addEventListener('contextmenu', e => { e.preventDefault(); showContextMenu(show, {x: e.clientX, y: e.clientY}); });
+      const { watchedEpisodes, totalEpisodes } = calculateProgress(show);
+      const percentage = totalEpisodes > 0 ? (watchedEpisodes / totalEpisodes) * 100 : 0;
+      
+      const rtState = getRottenTomatoesState(show.rottenTomatoes);
+      let ratingsHTML = '';
+      if (show.imdbRating && show.imdbRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${show.imdbRating}</span>`; }
+      if (rtState) { ratingsHTML += `<span class="rating-badge"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${show.rottenTomatoes}</span>`; }
+
+      card.innerHTML = `<div class="poster-container"><img data-src="${show.poster || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'"></div><div class="media-info"><h3 class="media-title" title="${show.title}">${show.title}</h3><div class="media-meta"><span>${show.year}</span></div><div class="media-ratings">${ratingsHTML}</div><div class="media-progress"><div class="progress-bar-container"><div class="progress-bar ${show.category === 'Abbandonate' ? 'abandoned' : ''}" style="width: ${percentage}%;"></div></div><div class="progress-text">${show.category === 'Abbandonate' ? `Visti ${watchedEpisodes} / ${totalEpisodes}` : `${watchedEpisodes} / ${totalEpisodes} ep.`}</div></div></div>`;
+      return card;
+    }
+
+    function refreshSingleMedia(id) { const show = mediaList.find(m => m.id === id); if (!show) return; const oldCard = document.querySelector(`.media-card[data-id="${id}"]`); if (oldCard) { const newCard = createMediaCard(show); oldCard.parentElement.replaceChild(newCard, oldCard); if (lazyLoadObserver) lazyLoadObserver.observe(newCard.querySelector(".lazy")); } }
+    
+    async function addNewMedia(showDetails) {
+        let newShow = { 
+            ...getDefaultShowProps(), 
+            id: Date.now().toString(), 
+            title: showDetails.Title, 
+            imdbID: showDetails.imdbID, 
+            poster: fixPosterUrl(showDetails.Poster), 
+            addedAt: new Date().toISOString(), 
+            lastActivityAt: new Date().toISOString() 
+        };
+        showNotification("Recupero dettagli della serie...", "warning");
+        try {
+            const tmdbDetails = await fetchTMDbDetailsWithFallback(newShow.imdbID);
+            const omdbDetails = await getOMDbShowDetails(newShow.imdbID);
+
+            if (tmdbDetails) {
+                const firstYear = tmdbDetails.first_air_date ? tmdbDetails.first_air_date.split('-')[0] : '';
+                const lastYear = tmdbDetails.status === 'Ended' && tmdbDetails.last_air_date ? tmdbDetails.last_air_date.split('-')[0] : '';
+                newShow.year = firstYear && lastYear && firstYear !== lastYear ? `${firstYear}–${lastYear}` : firstYear;
+                newShow.status = tmdbDetails.status; newShow.episodeRuntime = tmdbDetails.episode_run_time[0] || 0; newShow.imdbRating = omdbDetails && omdbDetails.imdbRating !== "N/A" ? omdbDetails.imdbRating : (tmdbDetails.vote_average ? tmdbDetails.vote_average.toFixed(1) : "N/A");
+                const seasonPromises = tmdbDetails.seasons.filter(s => s.season_number > 0).map(s => fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, s.season_number));
+                const seasonsData = await Promise.all(seasonPromises);
+                seasonsData.forEach(season => { if (season) newShow.seasons[season.season_number] = { name: season.name, episodeCount: (season.episodes || []).length }; });
+            }
+            if (omdbDetails && omdbDetails.Ratings) {
+                const rt = omdbDetails.Ratings.find(r => r.Source === 'Rotten Tomatoes');
+                if (rt) newShow.rottenTomatoes = rt.Value;
+            }
+            
+            mediaList.push(newShow);
+            await logActivity('add_show', newShow.title, `alla categoria '${newShow.category}'`);
+            await saveData();
+            
+            renderFullUI();
+            showNotification(`"${newShow.title}" aggiunto!`, "success");
+            closeModal(elements.mediaManagementModal);
+        } catch (error) { 
+            console.error("Errore durante l'aggiunta della serie:", error);
+            showNotification("Errore nel recuperare i dettagli della serie.", "error");
+        }
+    }
+
+    async function getOMDbShowDetails(imdbId) { if (!imdbId) return null; const res = await fetch(`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&i=${imdbId}`); return res.ok ? await res.json() : null; }
+    
+    async function fetchTMDbDetailsWithFallback(imdbId) {
+        let details = await fetchTMDbShowDetails(imdbId, 'it-IT');
+        if (details && !details.overview) {
+            const en_details = await fetchTMDbShowDetails(imdbId, 'en-US');
+            if (en_details) details.overview = en_details.overview;
+        }
+        return details;
+    }
+    async function fetchTMDbShowDetails(imdbId, lang = 'it-IT') {
+        if (!imdbId) return null; 
+        const findRes = await fetch(`https://api.themoviedb.org/3/find/${imdbId}?api_key=${TMDB_KEY}&external_source=imdb_id`); 
+        if (!findRes.ok) return null; 
+        const findData = await findRes.json();
+        const tmdbShow = findData.tv_results[0];
+        if (!tmdbShow) return null; 
+        const detailsRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbShow.id}?api_key=${TMDB_KEY}&language=${lang}&append_to_response=credits`); 
+        return detailsRes.ok ? await detailsRes.json() : null;
+    }
+    
+    async function fetchTMDbSeasonDetailsWithFallback(tvId, seasonNumber) {
+        let season = await fetchTMDbSeasonDetails(tvId, seasonNumber, 'it-IT');
+        if (season && (!season.overview || season.episodes.some(e => !e.name || !e.overview))) {
+            const en_season = await fetchTMDbSeasonDetails(tvId, seasonNumber, 'en-US');
+            if(en_season) {
+                if(!season.overview) season.overview = en_season.overview;
+                season.episodes.forEach((ep, index) => {
+                    if(!ep.name) ep.name = en_season.episodes[index].name;
+                    if(!ep.overview) ep.overview = en_season.episodes[index].overview;
+                });
+            }
+        }
+        return season;
+    }
+    async function fetchTMDbSeasonDetails(tvId, seasonNumber, lang = 'it-IT') { 
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_KEY}&language=${lang}`); 
+        return res.ok ? await res.json() : null; 
+    }
+
+    async function showDetailsModal(showId) {
+        const show = mediaList.find(m => m.id === showId); if (!show) return;
+        elements.detailsModal.style.display = 'flex'; document.body.classList.add('modal-open');
+        elements.detailsModalContent.innerHTML = `<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>`;
+        const tmdbDetails = await fetchTMDbDetailsWithFallback(show.imdbID);
+        if (!tmdbDetails) { elements.detailsModalContent.innerHTML = "<p>Dettagli non trovati.</p>"; return; }
+        
+        let hasUpdates = false;
+        for (const tmdbSeason of tmdbDetails.seasons.filter(s => s.season_number > 0)) {
+            const localSeason = show.seasons[tmdbSeason.season_number];
+            if (!localSeason || localSeason.episodeCount !== tmdbSeason.episode_count) {
+                const seasonDetails = await fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, tmdbSeason.season_number);
+                if (seasonDetails) {
+                    show.seasons[tmdbSeason.season_number] = { name: seasonDetails.name, episodeCount: (seasonDetails.episodes || []).length };
+                    hasUpdates = true;
+                }
+            }
+        }
+
+        if (hasUpdates) {
+            await saveData();
+            renderMedia();
+            updateStats();
+            showNotification(`Dati aggiornati per ${show.title}!`, "success");
+        }
+        
+        const seasonPromises = Object.keys(show.seasons).map(num => fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, parseInt(num)));
+        currentShowCache = { show, tmdbDetails, seasonsWithEpisodes: await Promise.all(seasonPromises) };
+        populateDetailsModal();
+    }
+    
+    function populateDetailsModal() {
+        const { show, tmdbDetails } = currentShowCache;
+        const posterUrl = tmdbDetails.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbDetails.poster_path}` : show.poster;
+        const genres = tmdbDetails.genres.map(g => g.name).join(', ');
+
+        const castHTML = (tmdbDetails.credits?.cast || []).slice(0, 15).map(actor => `
+            <div class="actor-card" data-person-id="${actor.id}">
+                <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
+                <div class="actor-name">${actor.name}</div>
+                <div class="actor-character">${actor.character}</div>
+            </div>
+        `).join('');
+
+        elements.detailsModalContent.innerHTML = `
+            <div class="details-backdrop" style="background-image: url(${tmdbDetails.backdrop_path ? `https://image.tmdb.org/t/p/w1280${tmdbDetails.backdrop_path}` : ''})"></div>
+            <div class="details-header"><img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'"><div class="details-title-section"><h2 id="detailsModalTitle">${tmdbDetails.name}</h2><div id="detailsModalMeta"><span><i class="fas fa-calendar-alt"></i> ${show.year}</span><span><i class="fas fa-satellite-dish"></i> ${tmdbDetails.status}</span><span><i class="fas fa-star"></i> ${show.imdbRating}</span>${genres ? `<span><i class="fas fa-film"></i> ${genres}</span>` : ''}</div></div></div>
+            <div class="details-body">
+                <h3 class="details-section-title">Trama</h3><p id="detailsModalOverview">${tmdbDetails.overview || 'Trama non disponibile.'}</p>
+                ${castHTML ? `<h3 class="details-section-title">Cast Principale</h3><div class="cast-scroller">${castHTML}</div>` : ''}
+            </div>
+            <div class="modal-footer"><button id="showEpisodesBtn" class="btn btn-primary"><i class="fas fa-list-check"></i> Gestisci Episodi</button></div>`;
+        
+        elements.detailsModalContent.querySelector('#showEpisodesBtn').addEventListener('click', showEpisodesModal);
+        elements.detailsModalContent.querySelectorAll('.actor-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                showActorModal(card.dataset.personId);
+            });
+        });
+    }
+
+    function showEpisodesModal() { populateEpisodesModal(); elements.episodesModal.style.display = 'flex'; }
+    function populateEpisodesModal() {
+        const { show, seasonsWithEpisodes } = currentShowCache;
+        let seasonsHTML = seasonsWithEpisodes.map(season => {
+            if (!season) return '';
+            const watchedInSeason = Object.keys(show.progress).filter(key => key.startsWith(`${season.season_number}-`)).length;
+            const episodeCount = (season.episodes || []).length;
+            const hasEpisodes = episodeCount > 0;
+            const allSeasonEpisodes = hasEpisodes ? season.episodes.map(ep => `
+                <div class="episode-item">
+                    <img data-src="${ep.still_path ? `https://image.tmdb.org/t/p/w300${ep.still_path}` : EMPTY_STILL_PLACEHOLDER}" class="episode-still lazy" onerror="this.src='${EMPTY_STILL_PLACEHOLDER}'">
+                    <div class="episode-details">
+                        <div class="episode-main-info"><span class="episode-number">E${ep.episode_number}</span><span class="episode-title">${ep.name || `Episodio ${ep.episode_number}`}</span></div>
+                        <p class="episode-overview">${ep.overview || 'Nessuna trama disponibile.'}</p>
+                    </div>
+                    <input type="checkbox" id="ep-${show.id}-${season.season_number}-${ep.episode_number}" data-show-id="${show.id}" data-season="${season.season_number}" data-episode="${ep.episode_number}" ${show.progress[`${season.season_number}-${ep.episode_number}`] ? 'checked' : ''}>
+                </div>`).join('') : '<div class="no-episodes-info">Dettagli episodi non ancora disponibili.</div>';
+            return `<div class="season-block"><div class="season-header" data-season-target="${season.season_number}"><div class="season-title-container"><span class="season-title">${season.name}</span><div class="season-progress-text">${watchedInSeason} / ${episodeCount}</div></div><div class="season-actions">${hasEpisodes ? `<button class="btn season-mark-all-btn" title="Segna tutti come visti" data-show-id="${show.id}" data-season-number="${season.season_number}"><i class="fas fa-check-double"></i></button>` : ''}</div></div><div class="season-episodes" id="season-episodes-${season.season_number}">${allSeasonEpisodes}</div></div>`;
+        }).join('');
+        elements.episodesModalContent.innerHTML = `<h2>Progresso episodi: ${show.title}</h2><div class="seasons-container">${seasonsHTML}</div>`;
+        setupLazyLoading();
+        elements.episodesModalContent.querySelectorAll('.season-header').forEach(h => h.addEventListener('click', e => { if (!e.target.closest('.season-actions')) { const target = document.getElementById(`season-episodes-${h.dataset.seasonTarget}`); const isExpanded = target.style.maxHeight && target.style.maxHeight !== '0px'; document.querySelectorAll('.season-episodes').forEach(el => el.style.maxHeight = null); if (!isExpanded) target.style.maxHeight = target.scrollHeight + 'px'; } }));
+        elements.episodesModalContent.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.addEventListener('change', e => toggleEpisodeWatched(e.target.dataset.showId, e.target.dataset.season, e.target.dataset.episode, e.target.checked)));
+        elements.episodesModalContent.querySelectorAll('.season-mark-all-btn').forEach(btn => btn.addEventListener('click', e => markSeasonAsWatched(e.currentTarget.dataset.showId, e.currentTarget.dataset.seasonNumber)));
+    }
+    
+    async function showActorModal(personId) {
+        elements.actorModal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+        elements.actorModalContent.innerHTML = '<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>';
+        
+        const actorDetails = await fetchTMDbActorDetailsWithFallback(personId);
+        
+        if(actorDetails) {
+            populateActorModal(actorDetails);
+        } else {
+            elements.actorModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli attore non trovati.</p>';
+        }
+    }
+    
+    async function fetchTMDbActorDetailsWithFallback(personId) {
+        let details = await fetchTMDbActorDetails(personId, 'it-IT');
+        if (details && !details.biography) {
+            const en_details = await fetchTMDbActorDetails(personId, 'en-US');
+            if (en_details) details.biography = en_details.biography;
+        }
+        return details;
+    }
+
+    async function fetchTMDbActorDetails(personId, lang = 'it-IT') {
+        try {
+            const [detailsRes, creditsRes] = await Promise.all([
+                fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${TMDB_KEY}&language=${lang}`),
+                fetch(`https://api.themoviedb.org/3/person/${personId}/tv_credits?api_key=${TMDB_KEY}&language=${lang}`)
+            ]);
+            if (!detailsRes.ok || !creditsRes.ok) return null;
+            
+            const details = await detailsRes.json();
+            const credits = await creditsRes.json();
+            credits.cast.sort((a,b) => b.popularity - a.popularity);
+
+            return { ...details, tv_credits: credits };
+        } catch(err) {
+            console.error("Error fetching actor details:", err);
+            return null;
+        }
+    }
+
+    function populateActorModal(details) {
+        const photoUrl = details.profile_path ? `https://image.tmdb.org/t/p/w500${details.profile_path}` : DEFAULT_ACTOR_PHOTO;
+        const filmographyHTML = (details.tv_credits?.cast || []).slice(0, 15).map(show => {
+            if (!show.poster_path) return '';
+            return `
+            <div class="film-card-small" data-imdb-id="${show.id}" title="${show.name}">
+                <img src="https://image.tmdb.org/t/p/w200${show.poster_path}" onerror="this.src='${DEFAULT_POSTER}'">
+                <div class="film-card-small-title">${show.name}</div>
+            </div>`;
+        }).join('');
+        
+        elements.actorModalContent.innerHTML = `
+            <div class="actor-details-header">
+                <img src="${photoUrl}" class="actor-details-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
+                <div class="actor-details-info">
+                    <h2>${details.name}</h2>
+                    <ul>
+                        <li><strong>Nascita:</strong> ${details.birthday ? new Date(details.birthday).toLocaleDateString('it-IT') : 'N/A'}</li>
+                        <li><strong>Luogo:</strong> ${details.place_of_birth || 'N/A'}</li>
+                    </ul>
+                    ${details.imdb_id ? `<a href="https://www.imdb.com/name/${details.imdb_id}/" target="_blank" class="btn btn-imdb"><i class="fab fa-imdb"></i> Vedi su IMDb</a>` : ''}
+                </div>
+            </div>
+            <div>
+                ${filmographyHTML ? `<h3 class="details-section-title">Filmografia Selezionata (TV)</h3><div class="filmography-scroller">${filmographyHTML}</div>` : ''}
+                <h3 class="details-section-title">Biografia</h3>
+                <p>${details.biography || 'Biografia non disponibile.'}</p>
+            </div>
+        `;
+    }
+
+    async function markSeasonAsWatched(showId, seasonNumber) { 
+        const show = mediaList.find(m => m.id === showId); 
+        if (!show || !show.seasons[seasonNumber]) return; 
+        for (let i = 1; i <= show.seasons[seasonNumber].episodeCount; i++) {
+            show.progress[`${seasonNumber}-${i}`] = true; 
+        }
+        await logActivity('complete_season', show.title, `la stagione ${seasonNumber}`);
+        updateShowCategoryAndTimestamps(show, true); 
+        await saveData(); 
+        updateStats(); 
+        renderMedia(); 
+        currentShowCache.show = show; 
+        populateEpisodesModal(); 
+    }
+    function toggleEpisodeWatched(showId, season, episode, isWatched) {
+        const show = mediaList.find(m => m.id === showId); if (!show) return;
+        if (isWatched) show.progress[`${season}-${episode}`] = true; else delete show.progress[`${season}-${episode}`];
+        updateShowCategoryAndTimestamps(show);
+        saveData(); updateStats(); refreshSingleMedia(showId);
+        const openModal = document.querySelector('#episodesModal[style*="flex"]');
+        if (openModal) { const seasonHeader = openModal.querySelector(`.season-header[data-season-target="${season}"]`); if (seasonHeader) { const watchedInSeason = Object.keys(show.progress).filter(k => k.startsWith(`${season}-`)).length; seasonHeader.querySelector('.season-progress-text').textContent = `${watchedInSeason} / ${show.seasons[season].episodeCount}`; } }
+    }
+    function updateShowCategoryAndTimestamps(show, forceLog = false) {
+        show.lastActivityAt = new Date().toISOString(); 
+        if (show.category === 'Abbandonate') return;
+        const { watchedEpisodes, totalEpisodes } = calculateProgress(show);
+        const oldCategory = show.category;
+
+        if (watchedEpisodes === 0) show.category = "Da Vedere";
+        else if (watchedEpisodes >= totalEpisodes && totalEpisodes > 0) { 
+            show.category = "Completate"; 
+            if(oldCategory !== 'Completate' || forceLog) {
+                showNotification(`Hai completato ${show.title}!`, "success"); 
+                logActivity('complete_show', show.title, '');
+            }
+        }
+        else show.category = "In Corso";
+    }
+    async function moveShowToCategory(showId, newCategory) {
+        const show = mediaList.find(m => m.id === showId); 
+        if (show && show.category !== newCategory) { 
+            const oldCategory = show.category;
+            show.category = newCategory; 
+            if (newCategory === 'Completate') { Object.keys(show.seasons).forEach(seasonNum => { for (let i = 1; i <= show.seasons[seasonNum].episodeCount; i++) show.progress[`${seasonNum}-${i}`] = true; }); } 
+            show.lastActivityAt = new Date().toISOString(); 
+            await logActivity('move_show', show.title, `da '${oldCategory}' a '${newCategory}'`);
+            await saveData(); 
+            renderFullUI(); 
+            showNotification(`"${show.title}" spostato in ${newCategory}.`, "success"); 
+        }
+    }
+    function showContextMenu(show, pos) {
+      if (isViewMode) return;
+      document.querySelectorAll(".context-menu").forEach(m => m.remove()); const menu = document.createElement("div"); menu.className = "context-menu"; const hide = () => menu.remove(); setTimeout(() => document.addEventListener("click", hide, { once: true }), 0);
+      menu.innerHTML = `${categories.filter(c => c !== show.category).map(c => `<div class="context-menu-item" data-action="move" data-category="${c}"><i class="fas fa-fw fa-folder-open"></i> Sposta in ${c}</div>`).join('')}<div class="context-menu-divider"></div><div class="context-menu-item" data-action="poster"><i class="fas fa-fw fa-image"></i> Cambia Copertina</div><div class="context-menu-divider"></div><div class="context-menu-item" data-action="delete" style="color:var(--danger);"><i class="fas fa-fw fa-trash-can"></i> Elimina</div>`;
+      menu.style.left = `${pos.x}px`; menu.style.top = `${pos.y}px`; document.body.appendChild(menu); menu.classList.add('visible');
+      menu.addEventListener('click', e => { 
+          const target = e.target.closest('.context-menu-item'); 
+          if (!target) return; 
+          const { action, category } = target.dataset; 
+          if (action === 'move') moveShowToCategory(show.id, category); 
+          if (action === 'poster') showPosterModal(show.id); 
+          if (action === 'delete') {
+              showConfirmModal("Elimina Serie TV", `Sei sicuro di voler eliminare "${show.title}"?`, async () => { 
+                  await logActivity('delete_show', show.title, `dalla categoria '${show.category}'`);
+                  mediaList = mediaList.filter(m => m.id !== show.id); 
+                  await saveData(); 
+                  renderFullUI(); 
+              });
+          }
+      });
+    }
+    async function showPosterModal(id) { const show = mediaList.find(m => m.id === id); if (!show || !show.imdbID) return showNotification("IMDb ID non trovato.", "warning"); elements.posterModal.dataset.mediaId = id; elements.posterGrid.innerHTML = `<div style="text-align:center;"><i class="fas fa-spinner loading-spinner"></i></div>`; elements.posterModal.style.display = "flex"; const posters = await fetchPosters(show.imdbID); if (posters.length === 0) { elements.posterGrid.innerHTML = "<p>Nessuna copertina alternativa trovata.</p>"; return; } elements.posterGrid.innerHTML = posters.map(p => `<div class="poster-option" data-url="${p}"><img src="${p}" onerror="this.src='${DEFAULT_POSTER}'"></div>`).join(''); elements.posterGrid.querySelectorAll('.poster-option').forEach(el => el.addEventListener('click', () => { document.querySelectorAll(".poster-option.selected").forEach(s => s.classList.remove('selected')); el.classList.add('selected'); })); }
+    async function fetchPosters(imdbID) { try { const tmdbDetails = await fetchTMDbShowDetails(imdbID); if (!tmdbDetails) return []; const imagesRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbDetails.id}/images?api_key=${TMDB_KEY}`); const imagesData = await imagesRes.json(); return imagesData.posters.map(p => `https://image.tmdb.org/t/p/w500${p.file_path}`).slice(0, 30); } catch (err) { console.error("Error fetching posters:", err); return []; } }
+    function changePoster(id, url) { const show = mediaList.find(m => m.id === id); if (show) { show.poster = url; saveData(); refreshSingleMedia(id); closeModal(elements.posterModal); showNotification("Copertina aggiornata!", "success"); } }
+    function renderCategoriesList() {
+        elements.categoriesList.innerHTML = "";
+        categories.forEach((cat, index) => { const card = document.createElement("div"); card.className = "management-card"; card.innerHTML = `<div><span class="category-name">${cat}</span></div><div class="management-card-actions"><button class="btn move-up-btn" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button><button class="btn move-down-btn" ${index === categories.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button></div>`; card.querySelector('.move-up-btn').addEventListener('click', () => moveCategory(cat, -1)); card.querySelector('.move-down-btn').addEventListener('click', () => moveCategory(cat, 1)); elements.categoriesList.appendChild(card); });
+    }
+    function moveCategory(cat, direction) { const index = categories.indexOf(cat); const newIndex = index + direction; if (newIndex >= 0 && newIndex < categories.length) { [categories[index], categories[newIndex]] = [categories[newIndex], categories[index]]; saveData(); renderFullUI(); renderCategoriesList(); } }
+    function resetApp() { if(isViewMode) return; showConfirmModal("Resetta Tracker", "Sei sicuro di voler resettare l'applicazione? Tutti i dati andranno persi.", () => { mediaList = []; categories = [...DEFAULT_CATEGORIES]; saveData(); renderFullUI(); showNotification("Tracker resettato con successo.", "success"); }); }
+    function fixPosterUrl(url) { return (url && url.startsWith("https://")) ? url : DEFAULT_POSTER; }
+    function updateCategoryFilter() { elements.categoryFilter.innerHTML = `<option value="all">Tutte le categorie</option>${categories.map(cat => `<option value="${cat}">${cat}</option>`).join("")}`; }
+    function renderCategorySections() { elements.mediaSectionsContainer.innerHTML = categories.map(cat => `<div class="media-section" data-category="${cat}"></div>`).join(""); }
+    function closeModal(modal) { modal.style.display = "none"; if (!document.querySelector('.modal[style*="flex"]')) document.body.classList.remove("modal-open"); }
+    function showNotification(text, type = "success") { elements.notificationText.textContent = text; elements.notification.className = `notification ${type}`; elements.notification.style.display = "block"; setTimeout(() => elements.notification.style.display = "none", 3000); }
+    function showConfirmModal(title, body, onConfirm) { elements.confirmModalTitle.textContent = title; elements.confirmModalBody.textContent = body; elements.confirmModal.style.display = "flex"; const confirmHandler = () => { onConfirm(); closeModal(elements.confirmModal); cleanup(); }; const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); }; const cleanup = () => { elements.confirmModalConfirm.removeEventListener("click", confirmHandler); elements.confirmModalCancel.removeEventListener("click", cancelHandler); }; elements.confirmModalConfirm.addEventListener("click", confirmHandler); elements.confirmModalCancel.addEventListener("click", cancelHandler); }
+    function setupLazyLoading() { if (lazyLoadObserver) lazyLoadObserver.disconnect(); lazyLoadObserver = new IntersectionObserver((entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { const img = entry.target; img.src = img.dataset.src; img.classList.remove("lazy"); observer.unobserve(img); } }); }, { rootMargin: "200px" }); document.querySelectorAll(".lazy").forEach(img => lazyLoadObserver.observe(img)); }
+    function loadSortOrder() { elements.sortFilter.value = localStorage.getItem("tvShowSortOrder") || "added"; }
+    function loadTheme() { const theme = localStorage.getItem("theme") || "dark"; document.body.classList.toggle("dark", theme === "dark"); elements.themeToggle.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>`; }
+    async function searchOMDb() { const title = elements.mediaTitle.value.trim(); if (!title) return; elements.omdbResults.innerHTML = `<div style="text-align:center;"><i class="fas fa-spinner loading-spinner"></i></div>`; try { const res = await fetch(`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&s=${encodeURIComponent(title)}&type=series`); const data = await res.json(); if (data.Response === "True") { elements.omdbResults.innerHTML = data.Search.map(r => `<div class="omdb-result-item" data-imdb-id="${r.imdbID}" data-poster="${r.Poster}"><img src="${r.Poster}" class="omdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'"><div><strong>${r.Title}</strong><div>${r.Year}</div></div></div>`).join(''); document.querySelectorAll(".omdb-result-item").forEach(item => item.addEventListener("click", () => { currentOMDbSelection = { Title: item.querySelector("strong").textContent, Year: item.querySelector("div > div:last-child").textContent, imdbID: item.dataset.imdbId, Poster: item.dataset.poster }; elements.mediaTitle.value = currentOMDbSelection.Title; showNotification(`"${currentOMDbSelection.Title}" selezionato.`, "success"); })); } else { elements.omdbResults.innerHTML = `<p>${data.Error || "Nessun risultato"}</p>`; } } catch (err) { elements.omdbResults.innerHTML = "<p>Errore di rete</p>"; } }
+    
+    function triggerDailyUpdateCheck() {
+        const now = new Date().getTime();
+        const lastCheck = localStorage.getItem('lastShowUpdateCheck');
+        const TWELVE_HOURS = 12 * 60 * 60 * 1000;
+
+        if (!lastCheck || (now - lastCheck) > TWELVE_HOURS) {
+            console.log("Esecuzione del controllo giornaliero per aggiornamenti serie TV...");
+            checkForShowUpdates();
+            localStorage.setItem('lastShowUpdateCheck', now);
+        } else {
+            console.log("Controllo giornaliero non necessario.");
+        }
+    }
+
+    async function checkForShowUpdates() {
+        const showsToCheck = mediaList.filter(s => s.category === 'In Corso' && s.imdbID);
+        if (showsToCheck.length === 0) return;
+
+        showNotification("Controllo aggiornamenti per le serie in corso...", "warning");
+        let updatedShows = [];
+
+        for (const show of showsToCheck) {
+            try {
+                await new Promise(resolve => setTimeout(resolve, 250)); 
+                
+                const tmdbDetails = await fetchTMDbShowDetails(show.imdbID);
+                if (!tmdbDetails) continue;
+
+                let hasUpdates = false;
+                for (const tmdbSeason of tmdbDetails.seasons.filter(s => s.season_number > 0)) {
+                    const localSeason = show.seasons[tmdbSeason.season_number];
+                    if (!localSeason || localSeason.episodeCount !== tmdbSeason.episode_count) {
+                        const seasonDetails = await fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, tmdbSeason.season_number);
+                        if (seasonDetails) {
+                            show.seasons[tmdbSeason.season_number] = { name: seasonDetails.name, episodeCount: (seasonDetails.episodes || []).length };
+                            hasUpdates = true;
+                        }
+                    }
+                }
+                
+                if(hasUpdates) {
+                    updatedShows.push(show.title);
+                }
+
+            } catch (error) {
+                console.error(`Errore durante l'aggiornamento di ${show.title}:`, error);
+            }
+        }
+
+        if (updatedShows.length > 0) {
+            await saveData();
+            renderMedia();
+            updateStats();
+            showNotification(`${updatedShows.length} serie TV sono state aggiornate con nuovi episodi/stagioni!`, "success");
+        } else {
+             showNotification("Nessun nuovo aggiornamento trovato per le tue serie.", "success");
+        }
+    }
+
+    function setupAuthListeners() {
+        elements.authToggle.addEventListener("click", e => { e.stopPropagation(); elements.authForms.classList.toggle("active"); });
+        document.addEventListener("click", e => { if (!elements.authForms.contains(e.target) && !e.target.closest('.auth-container')) { elements.authForms.classList.remove("active"); }});
+        document.querySelectorAll(".auth-tab").forEach(tab => tab.addEventListener("click", () => {
+            document.querySelectorAll(".auth-tab, .auth-form-container").forEach(el => el.classList.remove("active"));
+            tab.classList.add("active");
+            document.getElementById(`${tab.dataset.tab}Form`).classList.add("active");
+        }));
+        elements.loginBtn.addEventListener('click', () => firebase.auth().signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value).catch(err => showNotification(err.message, "error")));
+        elements.registerBtn.addEventListener('click', () => {
+            const pass = document.getElementById('registerPassword').value;
+            if (pass !== document.getElementById('registerConfirmPassword').value) { showNotification("Le password non corrispondono.", "warning"); return; }
+            firebase.auth().createUserWithEmailAndPassword(document.getElementById('registerEmail').value, pass)
+                .then(cred => db.ref(`users/${cred.user.uid}/email`).set(cred.user.email))
+                .catch(err => showNotification(err.message, "error"));
+        });
+        elements.logoutBtn.addEventListener("click", () => {
+            detachAllFriendListeners();
+            firebase.auth().signOut()
+        });
+        firebase.auth().onAuthStateChanged(user => {
+            if (isViewMode) return;
+            currentUser = user;
+            updateAuthUI();
+            if (user) { 
+                loadData(); 
+            } else { 
+                loadLocalData(); 
+                hideLoader(); 
+            }
+        });
+    }
+    
+    function updateAuthUI() {
+        if(currentUser) {
+            elements.userInfo.style.display = "flex";
+            elements.authToggle.parentElement.style.display = "none";
+            elements.notificationBellContainer.style.display = 'block';
+        } else {
+            elements.userInfo.style.display = "none";
+            elements.authToggle.parentElement.style.display = "block";
+            elements.notificationBellContainer.style.display = 'none';
+        }
+    }
+
+    function handleViewMode() {
+      const viewId = new URLSearchParams(window.location.search).get("view");
+      if (!viewId) { hideLoader(); return false; }
+      isViewMode = true;
+      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, .auth-container, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
+      elements.viewModeBanner.style.display = "flex";
+      db.ref(`users/${viewId}/tvShowTracker`).on("value", snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          mediaList = (data.mediaList || []).map(item => ({...getDefaultShowProps(), ...item}));
+          categories = data.categories || [...DEFAULT_CATEGORIES];
+          renderFullUI();
+          db.ref(`users/${viewId}/email`).once("value", emailSnap => {
+            elements.viewModeUserEmail.textContent = `Stai visualizzando la libreria di ${emailSnap.val() || "un utente"}`;
+          });
+        } else { showNotification("Libreria condivisa non trovata.", "error"); }
+        hideLoader();
+      });
+      return true;
+    }
+    
+    function logActivity(type, title, details) {
+        if (!currentUser) return;
+        const logRef = db.ref(`users/${currentUser.uid}/activityLog`);
+        const newActivity = { type, title, details, timestamp: new Date().toISOString() };
+        
+        return logRef.transaction(currentLog => {
+            let log = Array.isArray(currentLog) ? currentLog : [];
+            log.unshift(newActivity);
+            return log.slice(0, MAX_LOG_SIZE);
+        });
+    }
+
+    function detachAllFriendListeners() {
+        Object.values(friendListeners).forEach(({ ref, listener }) => ref.off('value', listener));
+        friendListeners = {};
+    }
+    
+    function setupFriendListeners() {
+        if (!currentUser) return;
+        detachAllFriendListeners();
+        const friendActivityMap = new Map();
+        const processAndRenderNotifications = () => {
+            let allNewNotifications = Array.from(friendActivityMap.values()).flat();
+            allNewNotifications.sort((a, b) => new Date(b.activity.timestamp) - new Date(a.activity.timestamp));
+            renderNotifications(allNewNotifications.slice(0, MAX_NOTIFICATIONS));
+        };
+        
+        followedFriends.forEach(friend => {
+            const ref = db.ref(`users/${friend.id}/activityLog`);
+            const listener = snapshot => {
+                const activities = snapshot.val() || [];
+                const lastChecked = lastCheckedTimestamps[friend.id] || new Date(0).toISOString();
+                
+                const activityArray = Array.isArray(activities) ? activities : [];
+                const newActivities = activityArray
+                    .filter(act => act && new Date(act.timestamp) > new Date(lastChecked))
+                    .map(activity => ({ friendId: friend.id, friendEmail: friend.email, activity }));
+
+                friendActivityMap.set(friend.id, newActivities);
+                processAndRenderNotifications();
+            };
+            ref.on('value', listener);
+            friendListeners[friend.id] = { ref, listener };
+        });
+    }
+
+    function renderNotifications(notifications) {
+        const count = notifications.length;
+        elements.notificationBadge.textContent = count;
+        elements.notificationBadge.classList.toggle('visible', count > 0);
+        elements.notificationDropdown.innerHTML = '';
+        
+        const header = document.createElement('div'); header.className = 'notification-header'; header.textContent = 'Notifiche Amici';
+        const list = document.createElement('div'); list.className = 'notification-list';
+
+        if (count > 0) {
+            notifications.forEach(n => {
+                if (!n.activity) return;
+                const item = document.createElement('div');
+                item.className = 'notification-item';
+                item.dataset.friendId = n.friendId;
+                item.innerHTML = `
+                    <i class="fas ${getActivityIcon(n.activity.type)}"></i>
+                    <span class="notification-item-text">${getActivityText(n.friendEmail, n.activity)}</span>`;
+                
+                item.addEventListener('click', () => {
+                    const friendId = item.dataset.friendId;
+                    if (friendId) { window.open(`${window.location.origin}${window.location.pathname}?view=${friendId}`, '_blank'); }
+                });
+                list.appendChild(item);
+            });
+            
+            const footer = document.createElement('div'); footer.className = 'notification-footer';
+            const markAllBtn = document.createElement('button');
+            markAllBtn.className = 'btn btn-primary btn-small';
+            markAllBtn.innerHTML = '<i class="fas fa-check-double"></i> Segna tutte come lette';
+            markAllBtn.addEventListener('click', markAllNotificationsAsRead);
+            footer.appendChild(markAllBtn);
+            
+            elements.notificationDropdown.appendChild(header);
+            elements.notificationDropdown.appendChild(list);
+            elements.notificationDropdown.appendChild(footer);
+        } else {
+            const emptyState = document.createElement('div'); emptyState.className = 'no-notifications'; emptyState.textContent = 'Nessuna nuova notifica';
+            list.appendChild(emptyState);
+            elements.notificationDropdown.appendChild(header);
+            elements.notificationDropdown.appendChild(list);
+        }
+    }
+    
+    function markAllNotificationsAsRead() {
+        if (!currentUser) return;
+        followedFriends.forEach(f => lastCheckedTimestamps[f.id] = new Date().toISOString());
+        saveSocialData();
+        renderNotifications([]);
+    }
+
+    function getActivityIcon(type) {
+        if (type.startsWith('add_show')) return 'fa-plus-circle';
+        if (type.startsWith('move_show')) return 'fa-folder-open';
+        if (type.startsWith('delete_show')) return 'fa-trash-alt';
+        if (type.startsWith('complete_show')) return 'fa-tv';
+        if (type.startsWith('complete_season')) return 'fa-check-circle';
+        if (type === 'add') return 'fa-film';
+        if (type === 'move') return 'fa-folder-open';
+        if (type === 'delete') return 'fa-trash-alt';
+        if (type === 'rewatch') return 'fa-sync-alt';
+        return 'fa-info-circle';
+    }
+
+    function getActivityText(friendEmail, activity) {
+        const email = `<strong>${friendEmail || 'Utente'}</strong>`;
+        const title = `<strong>${activity.title}</strong>`;
+        switch (activity.type) {
+            case 'add_show': return `${email} ha aggiunto la serie ${title} ${activity.details}`;
+            case 'move_show': return `${email} ha spostato la serie ${title} ${activity.details}`;
+            case 'delete_show': return `${email} ha eliminato la serie ${title} ${activity.details}`;
+            case 'complete_show': return `${email} ha completato la serie ${title}! 🎉`;
+            case 'complete_season': return `${email} ha completato ${activity.details} di ${title}`;
+            case 'add': return `${email} ha aggiunto il film ${title} ${activity.details}`;
+            case 'move': return `${email} ha spostato il film ${title} ${activity.details}`;
+            case 'delete': return `${email} ha eliminato il film ${title} ${activity.details}`;
+            case 'rewatch': return `${email} ha aggiornato ${title} (${activity.details})`;
+            default: return `${email} ha aggiornato ${title}`;
+        }
+    }
+
+    async function addFriend() {
+        const friendId = elements.friendIdInput.value.trim();
+        if (!friendId || !currentUser) return;
+        if (friendId === currentUser.uid) { showNotification("Non puoi aggiungere te stesso.", "warning"); return; }
+        if (followedFriends.some(f => f.id === friendId)) { showNotification("Amico già presente in lista.", "warning"); return; }
+        const friendEmailRef = db.ref(`users/${friendId}/email`);
+        const snapshot = await friendEmailRef.once('value');
+        if (snapshot.exists()) {
+            followedFriends.push({ id: friendId, email: snapshot.val() });
+            lastCheckedTimestamps[friendId] = new Date().toISOString();
+            await saveSocialData();
+            renderFriendsList();
+            setupFriendListeners();
+            showNotification("Amico aggiunto!", "success");
+        } else {
+            showNotification("ID Utente non trovato.", "error");
+        }
+    }
+    
+    async function removeFriend(friendId) {
+        followedFriends = followedFriends.filter(f => f.id !== friendId);
+        delete lastCheckedTimestamps[friendId];
+        await saveSocialData();
+        renderFriendsList();
+        setupFriendListeners();
+    }
+
+    function renderFriendsList() {
+        if (!currentUser) { elements.friendsList.innerHTML = "<p>Devi essere loggato per usare questa funzione.</p>"; document.getElementById('myIdContainer').style.display = 'none'; return; }
+        document.getElementById('myIdContainer').style.display = 'block';
+        elements.myIdInput.value = currentUser.uid;
+        elements.friendsList.innerHTML = "";
+        if (followedFriends.length === 0) { elements.friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`; return; }
+        followedFriends.forEach(friend => {
+            const card = document.createElement("div"); card.className = "management-card";
+            card.innerHTML = `<div><div class="friend-email">${friend.email}</div><div class="friend-id">${friend.id}</div></div><div class="management-card-actions"><button class="btn visit-friend-btn" data-id="${friend.id}" title="Visita Libreria"><i class="fas fa-eye"></i></button><button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button></div>`;
+            card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
+            card.querySelector('.visit-friend-btn').addEventListener('click', (e) => { window.open(`${window.location.origin}/filmtracker.html?view=${e.currentTarget.dataset.id}`, '_blank'); });
+            elements.friendsList.appendChild(card);
+        });
+    }
+
+    function setupEventListeners() {
+      elements.mediaManagementBtn.addEventListener("click", () => { elements.mediaManagementModal.style.display = 'flex'; elements.mediaTitle.value = ''; elements.omdbResults.innerHTML = ''; currentOMDbSelection = null; renderCategoriesList(); renderFriendsList(); });
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active')); btn.classList.add('active'); document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active'); elements.addShowBtn.style.display = btn.dataset.tab === 'add-media' ? 'inline-flex' : 'none'; }));
+      elements.closeManagementModal.addEventListener("click", () => closeModal(elements.mediaManagementModal));
+      elements.addShowBtn.addEventListener('click', () => { if (!currentOMDbSelection) { showNotification("Cerca e seleziona una serie.", "warning"); return; } if (mediaList.some(m => m.imdbID === currentOMDbSelection.imdbID)) { showNotification("Serie già in lista.", "warning"); return; } addNewMedia(currentOMDbSelection); });
+      elements.searchOMDbBtn.addEventListener("click", searchOMDb);
+      elements.mediaTitle.addEventListener("keydown", e => { if(e.key === "Enter") searchOMDb(); });
+      elements.searchInput.addEventListener("input", () => { clearTimeout(debounceTimeout); debounceTimeout = setTimeout(renderMedia, 300); });
+      elements.categoryFilter.addEventListener("change", renderMedia);
+      elements.sortFilter.addEventListener("change", () => { localStorage.setItem("tvShowSortOrder", elements.sortFilter.value); renderMedia(); });
+      elements.themeToggle.addEventListener("click", () => { document.body.classList.toggle("dark"); localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light"); loadTheme(); });
+      elements.resetBtn.addEventListener('click', resetApp);
+      elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
+      elements.episodesModalClose.addEventListener('click', () => closeModal(elements.episodesModal));
+      elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
+      document.addEventListener("click", e => { if (e.target === elements.detailsModal) closeModal(elements.detailsModal); if (e.target === elements.episodesModal) closeModal(elements.episodesModal); if (e.target === elements.actorModal) closeModal(elements.actorModal); if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible'); });
+      elements.savePosterChange.addEventListener('click', () => { const selected = document.querySelector(".poster-option.selected"); if (selected) changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url); });
+      elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
+      elements.exportBtn.addEventListener('click', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ mediaList, categories }, null, 2)], {type: 'application/json'})); a.download = `serietv_tracker_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(a.href); });
+      elements.importBtn.addEventListener('click', () => elements.importFile.click());
+      elements.importFile.addEventListener('change', e => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = event => { try { const data = JSON.parse(event.target.result); if (data && Array.isArray(data.mediaList)) { showConfirmModal("Importa Dati", `Sovrascrivere i dati con ${data.mediaList.length} serie?`, () => { mediaList = data.mediaList.map(item => ({...getDefaultShowProps(), ...item})); categories = data.categories || [...DEFAULT_CATEGORIES]; saveData(); renderFullUI(); showNotification("Dati importati!", "success"); }); } else { showNotification("File non valido.", "error"); } } catch (error) { showNotification("Errore lettura file.", "error"); } }; reader.readAsText(file); e.target.value = ''; });
+      elements.shareBtn.addEventListener('click', () => { if (!currentUser) { showNotification("Devi essere loggato per condividere.", "warning"); return; } const link = `${window.location.origin}${window.location.pathname}?view=${currentUser.uid}`; elements.shareModal.querySelector('input').value = link; elements.shareModal.style.display = 'flex'; });
+      elements.closeShareModalBtn.addEventListener('click', () => closeModal(elements.shareModal));
+      elements.copyShareLinkBtn.addEventListener('click', (e) => { navigator.clipboard.writeText(e.target.closest('.modal-content').querySelector('input').value); showNotification("Link copiato!", "success"); });
+      elements.closeViewBtn.addEventListener('click', () => { window.location.href = window.location.pathname; });
+      elements.addFriendBtn.addEventListener('click', addFriend);
+      elements.copyMyIdBtn.addEventListener('click', () => { navigator.clipboard.writeText(elements.myIdInput.value); showNotification("ID copiato!", "success"); });
+      elements.bellIcon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          elements.notificationDropdown.classList.toggle('visible');
+      });
+    }
+  </script>
+</body>
+</html>
