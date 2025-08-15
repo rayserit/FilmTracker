@@ -302,7 +302,7 @@
     <div class="top-bar-left">
       <h1><i class="fas fa-tv"></i> Serie TV Tracker</h1>
       <div class="tracker-switch">
-        <a href="index.html" class="tracker-switch-btn" title="Vai a Film Tracker"><i class="fas fa-film"></i></a>
+        <a href="filmtracker.html" class="tracker-switch-btn" title="Vai a Film Tracker"><i class="fas fa-film"></i></a>
         <a href="serietv_tracker.html" class="tracker-switch-btn active" title="Vai a Serie TV Tracker"><i class="fas fa-tv"></i></a>
       </div>
       <input type="text" id="searchInput" class="search-box" placeholder="Cerca serie TV...">
@@ -537,6 +537,7 @@
             stats.episodesWatched += watchedEpisodes;
             stats.minutesWatched += watchedEpisodes * (show.episodeRuntime || 0);
         });
+
         elements.statTotal.textContent = stats.total;
         elements.statFollowing.textContent = stats.InCorso;
         elements.statCompleted.textContent = stats.Completate;
@@ -548,6 +549,7 @@
 
     function renderMedia() {
       const selectedCategory = elements.categoryFilter.value; const searchTerm = elements.searchInput.value.toLowerCase(); const sortBy = elements.sortFilter.value;
+      
       document.querySelectorAll(".media-section").forEach(s => { s.innerHTML = `<div class="section-header"><h2 class="section-title user-select-none">${s.dataset.category}</h2><span id="${sanitizeForId(s.dataset.category)}Count" class="category-count"></span></div><div class="media-grid" id="${sanitizeForId(s.dataset.category)}Grid"></div>`; });
       
       let filteredMedia = [...mediaList];
@@ -576,13 +578,29 @@
           const categoryName = grid.parentElement.dataset.category;
           const countEl = document.getElementById(`${sanitizeForId(categoryName)}Count`); 
           if (countEl) countEl.textContent = grid.children.length; 
-          if(grid.children.length === 0) grid.parentElement.style.display = 'none';
-          else grid.parentElement.style.display = 'block';
+          
+          if(grid.children.length === 0) {
+              if (selectedCategory === 'all' || selectedCategory === categoryName) {
+                  grid.parentElement.style.display = 'block'; // Mostra empty state
+              } else {
+                  grid.parentElement.style.display = 'none';
+              }
+          } else {
+              grid.parentElement.style.display = 'block';
+          }
       });
 
-      if (selectedCategory === 'favorites' && filteredMedia.length === 0) {
+      if (selectedCategory === 'favorites') {
           const container = elements.mediaSectionsContainer;
-          container.innerHTML = `<div class="media-section"><div class="empty-state"><i class="fas fa-heart-crack"></i><p>Nessun preferito aggiunto.</p></div></div>`;
+          if (filteredMedia.length === 0) {
+              container.innerHTML = `<div class="media-section"><div class="empty-state"><i class="fas fa-heart-crack"></i><p>Nessun preferito aggiunto.</p></div></div>`;
+          } else {
+              // Assicura che le sezioni vuote siano nascoste
+              categories.forEach(cat => {
+                  const grid = categoryGrids[cat];
+                  if(grid && grid.children.length === 0) grid.parentElement.style.display = 'none';
+              });
+          }
       }
       setupLazyLoading();
     }
@@ -616,7 +634,7 @@
         </div>
         <div class="media-info"><h3 class="media-title" title="${show.title}">${show.title}</h3><div class="media-meta"><span>${show.year}</span></div><div class="media-ratings">${ratingsHTML}</div><div class="media-progress"><div class="progress-bar-container"><div class="progress-bar ${show.category === 'In Pausa / Droppata' ? 'dropped' : ''}" style="width: ${percentage}%;"></div></div><div class="progress-text">${show.category === 'In Pausa / Droppata' ? `Visti ${watchedEpisodes} / ${totalEpisodes}` : `${watchedEpisodes} / ${totalEpisodes} ep.`}</div></div></div>`;
       
-      card.querySelector('.favorite-btn').addEventListener('click', () => toggleFavorite(show.id));
+      card.querySelector('.favorite-btn').addEventListener('click', (e) => { e.stopPropagation(); toggleFavorite(show.id); });
       if(!isViewMode) {
           card.querySelector('[data-action="move"]').addEventListener("click", e => { e.stopPropagation(); showContextMenu(show, { x: e.clientX, y: e.clientY }); });
           card.querySelector('[data-action="delete"]').addEventListener("click", e => { e.stopPropagation(); deleteShow(show.id); });
@@ -1452,9 +1470,16 @@
         if (followedFriends.length === 0) { elements.friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`; return; }
         followedFriends.forEach(friend => {
             const card = document.createElement("div"); card.className = "management-card";
-            card.innerHTML = `<div><div class="friend-email">${friend.email}</div><div class="friend-id">${friend.id}</div></div><div class="management-card-actions"><button class="btn visit-friend-btn" data-id="${friend.id}" title="Visita Libreria"><i class="fas fa-eye"></i></button><button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button></div>`;
+            card.innerHTML = `<div><div class="friend-email">${friend.email}</div><div class="friend-id">${friend.id}</div></div><div class="management-card-actions"><button class="btn visit-friend-films-btn" data-id="${friend.id}" title="Visita Libreria Film"><i class="fas fa-film"></i></button><button class="btn visit-friend-tv-btn" data-id="${friend.id}" title="Visita Libreria Serie TV"><i class="fas fa-tv"></i></button><button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button></div>`;
             card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
-            card.querySelector('.visit-friend-btn').addEventListener('click', (e) => { window.open(`${window.location.origin}/FilmTracker/serietv_tracker?view=${e.currentTarget.dataset.id}`, '_blank'); });
+            card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
+              const url = `${window.location.origin}/index.html?view=${e.currentTarget.dataset.id}`;
+              window.open(url, '_blank');
+            });
+            card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
+              const url = `${window.location.origin}/serietv_tracker.html?view=${e.currentTarget.dataset.id}`;
+              window.open(url, '_blank');
+            });
             elements.friendsList.appendChild(card);
         });
     }
