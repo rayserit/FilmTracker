@@ -346,9 +346,10 @@
   <div class="stats-panel">
       <div class="stats-container">
         <div class="stat-item"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Totale</div></div>
-        <div class="stat-item"><div class="stat-value" id="statFollowing">0</div><div class="stat-label">In Corso</div></div>
-        <div class="stat-item"><div class="stat-value" id="statCompleted">0</div><div class="stat-label">Completate</div></div>
-        <div class="stat-item"><div class="stat-value" id="statToWatch">0</div><div class="stat-label">Da Vedere</div></div>
+        <div class="stat-item"><div class="stat-value" id="statInCorso">0</div><div class="stat-label">In Corso</div></div>
+        <div class="stat-item"><div class="stat-value" id="statCompletate">0</div><div class="stat-label">Completate</div></div>
+        <div class="stat-item"><div class="stat-value" id="statDaVedere">0</div><div class="stat-label">Da Vedere</div></div>
+        <div class="stat-item"><div class="stat-value" id="statInPausaDroppata">0</div><div class="stat-label">In Pausa / Droppata</div></div>
         <div class="stat-item"><div class="stat-value" id="statEpisodes">0</div><div class="stat-label">Episodi Visti</div></div>
         <div class="stat-item"><div class="stat-value" id="statHours">0h</div><div class="stat-label">Tempo Visto</div></div>
       </div>
@@ -431,8 +432,9 @@
         exportBtn: document.getElementById("exportBtn"), importBtn: document.getElementById("importBtn"), importFile: document.getElementById("importFile"), 
         resetBtn: document.getElementById("resetBtn"), themeToggle: document.getElementById("themeToggle"), searchInput: document.getElementById("searchInput"), 
         categoryFilter: document.getElementById("categoryFilter"), sortFilter: document.getElementById("sortFilter"), 
-        statTotal: document.getElementById("statTotal"), statFollowing: document.getElementById("statFollowing"),
-        statCompleted: document.getElementById("statCompleted"), statToWatch: document.getElementById("statToWatch"), 
+        statTotal: document.getElementById("statTotal"), statFollowing: document.getElementById("statInCorso"),
+        statCompleted: document.getElementById("statCompletate"), statToWatch: document.getElementById("statDaVedere"), 
+        statPaused: document.getElementById("statInPausaDroppata"),
         statEpisodes: document.getElementById("statEpisodes"), statHours: document.getElementById("statHours"),
         mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), mediaManagementModal: document.getElementById("mediaManagementModal"), 
         mediaTitle: document.getElementById("mediaTitle"), searchOMDbBtn: document.getElementById("searchOMDbBtn"), omdbResults: document.getElementById("omdbResults"), 
@@ -519,11 +521,15 @@
     function calculateProgress(show) { const totalEpisodes = Object.values(show.seasons || {}).reduce((sum, season) => sum + (season.episodeCount || 0), 0); const watchedEpisodes = Object.keys(show.progress || {}).length; return { watchedEpisodes, totalEpisodes }; }
     function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(score.replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
     
+    function sanitizeForId(text) {
+        return text.replace(/\s*\/\s*|\s+/g, '');
+    }
+
     function updateStats() {
         const stats = { total: 0, InCorso: 0, Completate: 0, DaVedere: 0, InPausaDroppata: 0, episodesWatched: 0, minutesWatched: 0 };
         mediaList.forEach(show => {
             stats.total++;
-            const categoryKey = show.category.replace(/\s*\/\s*/g, '');
+            const categoryKey = sanitizeForId(show.category);
             if (stats.hasOwnProperty(categoryKey)) {
                 stats[categoryKey]++;
             }
@@ -535,13 +541,14 @@
         elements.statFollowing.textContent = stats.InCorso;
         elements.statCompleted.textContent = stats.Completate;
         elements.statToWatch.textContent = stats.DaVedere;
+        elements.statPaused.textContent = stats.InPausaDroppata;
         elements.statEpisodes.textContent = stats.episodesWatched;
         elements.statHours.textContent = `${Math.floor(stats.minutesWatched / 60)}h`;
     }
 
     function renderMedia() {
       const selectedCategory = elements.categoryFilter.value; const searchTerm = elements.searchInput.value.toLowerCase(); const sortBy = elements.sortFilter.value;
-      document.querySelectorAll(".media-section").forEach(s => { s.innerHTML = `<div class="section-header"><h2 class="section-title user-select-none">${s.dataset.category}</h2><span id="${s.dataset.category.replace(/\s*\/\s*/g, '')}Count" class="category-count"></span></div><div class="media-grid" id="${s.dataset.category.replace(/\s*\/\s*/g, '')}Grid"></div>`; });
+      document.querySelectorAll(".media-section").forEach(s => { s.innerHTML = `<div class="section-header"><h2 class="section-title user-select-none">${s.dataset.category}</h2><span id="${sanitizeForId(s.dataset.category)}Count" class="category-count"></span></div><div class="media-grid" id="${sanitizeForId(s.dataset.category)}Grid"></div>`; });
       
       let filteredMedia = [...mediaList];
       if (selectedCategory === 'favorites') {
@@ -555,7 +562,7 @@
 
       filteredMedia.sort((a, b) => { switch (sortBy) { case "alpha": return a.title.localeCompare(b.title); case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0); case "year": return (b.year.split('–')[0] || 0) - (a.year.split('–')[0] || 0); case "added": default: return new Date(b.lastActivityAt || b.addedAt) - new Date(a.lastActivityAt || a.addedAt); } });
       
-      const categoryGrids = categories.reduce((acc, cat) => ({ ...acc, [cat]: document.getElementById(`${cat.replace(/\s*\/\s*/g, '')}Grid`) }), {});
+      const categoryGrids = categories.reduce((acc, cat) => ({ ...acc, [cat]: document.getElementById(`${sanitizeForId(cat)}Grid`) }), {});
       
       filteredMedia.forEach(media => { 
           const grid = categoryGrids[media.category];
@@ -567,7 +574,7 @@
               grid.innerHTML = `<div class="empty-state"><i class="fas fa-tv"></i><p>Nessuna serie TV qui.</p></div>`; 
           }
           const categoryName = grid.parentElement.dataset.category;
-          const countEl = document.getElementById(`${categoryName.replace(/\s*\/\s*/g, '')}Count`); 
+          const countEl = document.getElementById(`${sanitizeForId(categoryName)}Count`); 
           if (countEl) countEl.textContent = grid.children.length; 
           if(grid.children.length === 0) grid.parentElement.style.display = 'none';
           else grid.parentElement.style.display = 'block';
@@ -1447,7 +1454,7 @@
             const card = document.createElement("div"); card.className = "management-card";
             card.innerHTML = `<div><div class="friend-email">${friend.email}</div><div class="friend-id">${friend.id}</div></div><div class="management-card-actions"><button class="btn visit-friend-btn" data-id="${friend.id}" title="Visita Libreria"><i class="fas fa-eye"></i></button><button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button></div>`;
             card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
-            card.querySelector('.visit-friend-btn').addEventListener('click', (e) => { window.open(`${window.location.origin}/filmtracker.html?view=${e.currentTarget.dataset.id}`, '_blank'); });
+            card.querySelector('.visit-friend-btn').addEventListener('click', (e) => { window.open(`${window.location.origin}/index.html?view=${e.currentTarget.dataset.id}`, '_blank'); });
             elements.friendsList.appendChild(card);
         });
     }
