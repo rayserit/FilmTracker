@@ -1479,11 +1479,11 @@
             card.innerHTML = `<div><div class="friend-email">${friend.email}</div><div class="friend-id">${friend.id}</div></div><div class="management-card-actions"><button class="btn visit-friend-films-btn" data-id="${friend.id}" title="Visita Libreria Film"><i class="fas fa-film"></i></button><button class="btn visit-friend-tv-btn" data-id="${friend.id}" title="Visita Libreria Serie TV"><i class="fas fa-tv"></i></button><button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button></div>`;
             card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
             card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
-              const url = `${window.location.origin}/index.html?view=${e.currentTarget.dataset.id}`;
+              const url = `${window.location.origin}/FilmTracker/index.html?view=${e.currentTarget.dataset.id}`;
               window.open(url, '_blank');
             });
             card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
-              const url = `${window.location.origin}/serietv_tracker.html?view=${e.currentTarget.dataset.id}`;
+              const url = `${window.location.origin}/FilmTracker/serietv_tracker.html?view=${e.currentTarget.dataset.id}`;
               window.open(url, '_blank');
             });
             elements.friendsList.appendChild(card);
