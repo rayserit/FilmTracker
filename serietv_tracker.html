@@ -230,9 +230,13 @@
     .management-card { display: flex; align-items: center; padding: 0.75rem; border-radius: 8px; background: var(--bg-color); margin-bottom: 0.5rem; }
     .management-card > div { flex: 1; }
     .management-card-actions { display: flex; gap: 0.5rem; }
-    .management-card-actions .btn { padding: 0; justify-content: center; height: 32px; width: 32px; background-color: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); }
+    .management-card-actions .btn { padding: 0; justify-content: center; height: 32px; width: 32px; background: linear-gradient(45deg, var(--primary), var(--secondary)); color: white; border: none; }
     .category-name, .friend-email { font-weight: 600; }
     .friend-id { font-size: 0.8rem; color: var(--text-secondary); }
+    #friendsList .management-card-actions .btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); }
+    #friendsList .management-card-actions .btn.visit-friend-films-btn:hover { background-color: var(--primary); color: white; border-color: var(--primary); }
+    #friendsList .management-card-actions .btn.visit-friend-tv-btn:hover { background-color: var(--secondary); color: white; border-color: var(--secondary); }
+    #friendsList .management-card-actions .btn.remove-friend-btn:hover { background-color: var(--danger); color: white; border-color: var(--danger); }
 
     .context-menu { position: fixed; background: var(--card-bg); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1001; min-width: 240px; padding: 0.5rem 0; border: 1px solid var(--border-color); opacity: 0; transform: translateY(-10px); transition: opacity 0.15s, transform 0.15s; }
     .context-menu.visible { opacity: 1; transform: translateY(0); }
@@ -377,7 +381,7 @@
             <div class="management-list" id="categoriesList"></div>
         </div>
          <div class="tab-content" id="manage-friends-tab">
-             <div id="myIdContainer" style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; text-align: center; margin-bottom: 1.5rem;">
+            <div id="myIdContainer" class="management-section" style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; text-align: center; margin-bottom: 1.5rem;">
                 <h4>Il tuo ID univoco</h4>
                 <p style="font-size: 0.9rem; color: var(--text-secondary);">Condividi questo ID con i tuoi amici per permettergli di seguirti.</p>
                 <div style="display: flex; gap: 0.5rem; justify-content: center;">
@@ -385,11 +389,13 @@
                     <button id="copyMyIdBtn" class="btn btn-primary"><i class="fas fa-copy"></i> Copia</button>
                 </div>
             </div>
-            <div class="management-form">
-                <input type="text" id="friendIdInput" placeholder="Incolla l'ID di un amico">
-                <button id="addFriendBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Aggiungi</button>
+            <div class="management-section">
+                <div class="management-form">
+                    <input type="text" id="friendIdInput" placeholder="Incolla l'ID di un amico">
+                    <button id="addFriendBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Aggiungi</button>
+                </div>
+                <div class="management-list" id="friendsList"></div>
             </div>
-            <div class="management-list" id="friendsList"></div>
         </div>
         <div class="modal-footer" style="border-top: none; padding-top: 0; justify-content: flex-end;"><button id="closeManagementModal" class="btn btn-danger">Chiudi</button><button id="addShowBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi Serie</button></div>
     </div>
@@ -1473,11 +1479,11 @@
             card.innerHTML = `<div><div class="friend-email">${friend.email}</div><div class="friend-id">${friend.id}</div></div><div class="management-card-actions"><button class="btn visit-friend-films-btn" data-id="${friend.id}" title="Visita Libreria Film"><i class="fas fa-film"></i></button><button class="btn visit-friend-tv-btn" data-id="${friend.id}" title="Visita Libreria Serie TV"><i class="fas fa-tv"></i></button><button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button></div>`;
             card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
             card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
-              const url = `${window.location.origin}/FilmTracker/index.html?view=${e.currentTarget.dataset.id}`;
+              const url = `${window.location.origin}/index.html?view=${e.currentTarget.dataset.id}`;
               window.open(url, '_blank');
             });
             card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
-              const url = `${window.location.origin}/FilmTracker/serietv_tracker.html?view=${e.currentTarget.dataset.id}`;
+              const url = `${window.location.origin}/serietv_tracker.html?view=${e.currentTarget.dataset.id}`;
               window.open(url, '_blank');
             });
             elements.friendsList.appendChild(card);
