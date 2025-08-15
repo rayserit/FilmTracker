@@ -48,6 +48,37 @@
     html {
       scroll-behavior: smooth;
     }
+    
+    /* NUOVO: Stile per lo Switch Tracker */
+    .tracker-switch {
+        display: flex;
+        background-color: rgba(128,128,128,0.1);
+        border-radius: 8px;
+        padding: 4px;
+        border: 1px solid var(--border-color);
+    }
+    .tracker-switch-btn {
+        padding: 0.25rem 0.75rem;
+        text-decoration: none;
+        color: var(--text-secondary);
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+    .tracker-switch-btn.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tracker-switch-btn:not(.active):hover {
+        background-color: var(--section-tint);
+        color: var(--text-color);
+    }
+    /* FINE NUOVO STILE */
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -77,7 +108,6 @@
       transition: background 0.3s, color 0.3s;
     }
     
-    /* App Loader */
     #appLoader {
         position: fixed;
         top: 0;
@@ -96,241 +126,47 @@
         color: var(--primary);
     }
 
-    /* Header & Controls */
-    .top-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    .top-bar-left {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex-wrap: wrap;
-    }
-    .top-bar-left h1 {
-        margin: 0;
-        font-size: 1.75rem;
-        letter-spacing: -1px;
-        color: var(--primary);
-    }
-    .top-bar-right {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-    }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+    .top-bar-left { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .top-bar-left h1 { margin: 0; font-size: 1.75rem; letter-spacing: -1px; color: var(--primary); }
+    .top-bar-right { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
     .search-box { max-width: 300px; }
     .filter-select { max-width: 180px; }
 
-    /* Stats Panel */
-    .stats-panel {
-        background-color: var(--section-tint);
-        padding: 1rem;
-        border-radius: 12px;
-        margin-bottom: 2rem;
-    }
-    .stats-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 1rem;
-    }
-    .stat-item {
-      background: var(--card-bg);
-      padding: 1rem;
-      border-radius: 8px;
-      text-align: center;
-      border: 1px solid var(--border-color);
-      transition: background 0.2s;
-    }
-    .stat-item:hover {
-        background: rgba(58, 134, 255, 0.1);
-    }
-    .stat-value {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: var(--primary);
-    }
-    .stat-label {
-        font-size: 0.8rem;
-        font-weight: 500;
-        color: var(--text-secondary);
-        margin-top: 0.25rem;
-    }
+    .stats-panel { background-color: var(--section-tint); padding: 1rem; border-radius: 12px; margin-bottom: 2rem; }
+    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; }
+    .stat-item { background: var(--card-bg); padding: 1rem; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); transition: background 0.2s; }
+    .stat-item:hover { background: rgba(58, 134, 255, 0.1); }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--primary); }
+    .stat-label { font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.25rem; }
 
-    /* Cards */
-    .media-card {
-      background: var(--card-bg);
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      width: 180px;
-      transition: all 0.2s ease-out;
-      position: relative;
-      border: 1px solid var(--border-color);
-      animation: fadeIn 0.5s ease-out both;
-      cursor: pointer;
-    }
+    .media-card { background: var(--card-bg); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 180px; transition: all 0.2s ease-out; position: relative; border: 1px solid var(--border-color); animation: fadeIn 0.5s ease-out both; cursor: pointer; }
+    .media-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+    body.dark .media-card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
+    .media-card.is-stat-contributor { border-top: 2px dashed var(--primary); }
+    .media-card.is-duplicate { opacity: 0.65; }
 
-    .media-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-    }
-    body.dark .media-card:hover {
-        box-shadow: 0 6px 16px rgba(0,0,0,0.3);
-    }
-    .media-card.is-stat-contributor {
-        border-top: 2px dashed var(--primary);
-    }
-    .media-card.is-duplicate {
-        opacity: 0.65;
-    }
-
-
-    .poster-container {
-        position: relative;
-    }
-    .poster-container::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 50%;
-        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-        pointer-events: none;
-    }
-
-    .media-poster {
-      width: 100%;
-      aspect-ratio: 2 / 3;
-      object-fit: cover;
-      object-position: center top;
-      background-color: var(--border-color);
-      display: block;
-    }
-
-    .media-info {
-      padding: 0.75rem;
-    }
-
-    .media-title {
-      font-size: 0.9rem;
-      margin: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: var(--text-color);
-      font-weight: 600;
-      letter-spacing: -0.25px;
-    }
-    
-    .media-meta {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      margin-top: 0.5rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: center;
-    }
-
-    .watch-status-icon sup {
-        font-size: 0.7rem;
-        font-weight: bold;
-        margin-left: 1px;
-    }
-
-    .media-ratings {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-      font-size: 0.75rem;
-    }
-    .rating-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      background: rgba(0, 0, 0, 0.1);
-      padding: 0.25rem 0.5rem;
-      border-radius: 12px;
-      font-size: 0.8rem;
-    }
+    .poster-container { position: relative; }
+    .poster-container::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 50%; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); pointer-events: none; }
+    .media-poster { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; object-position: center top; background-color: var(--border-color); display: block; }
+    .media-info { padding: 0.75rem; }
+    .media-title { font-size: 0.9rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-color); font-weight: 600; letter-spacing: -0.25px; }
+    .media-meta { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .watch-status-icon sup { font-size: 0.7rem; font-weight: bold; margin-left: 1px; }
+    .media-ratings { display: flex; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.75rem; }
+    .rating-badge { display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(0, 0, 0, 0.1); padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; }
     body.dark .rating-badge { background: rgba(255, 255, 255, 0.1); }
     .rating-icon { width: 16px; height: 16px; object-fit: contain; }
     
-    /* Sections */
-    .media-section {
-      background: var(--section-tint);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      transition: opacity 0.4s, transform 0.4s;
-    }
-     .media-section.hidden {
-      opacity: 0;
-      transform: scale(0.98);
-      height: 0;
-      overflow: hidden;
-      margin: 0;
-      padding: 0;
-      pointer-events: none;
-    }
-
-    .media-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 1.5rem;
-      margin-top: 1rem;
-    }
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 0 0 1rem 0;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid var(--border-color);
-      position: relative;
-    }
-    .section-header::after {
-        content: '';
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        width: 100px;
-        height: 2px;
-        background: linear-gradient(90deg, var(--primary), var(--secondary));
-    }
-
-    .section-title {
-      color: var(--text-color);
-      margin: 0;
-      font-size: 1.25rem;
-      letter-spacing: -0.5px;
-      font-weight: 700;
-    }
+    .media-section { background: var(--section-tint); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; transition: opacity 0.4s, transform 0.4s; }
+     .media-section.hidden { opacity: 0; transform: scale(0.98); height: 0; overflow: hidden; margin: 0; padding: 0; pointer-events: none; }
+    .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin: 0 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); position: relative; }
+    .section-header::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100px; height: 2px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+    .section-title { color: var(--text-color); margin: 0; font-size: 1.25rem; letter-spacing: -0.5px; font-weight: 700; }
     
-    .btn {
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      box-sizing: border-box;
-      height: 38px;
-    }
-    .btn-small {
-        padding: 0.25rem 0.75rem;
-        height: auto;
-        font-size: 0.8rem;
-    }
+    .btn { padding: 0.5rem 1rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; box-sizing: border-box; height: 38px; }
+    .btn-small { padding: 0.25rem 0.75rem; height: auto; font-size: 0.8rem; }
     .btn:active { transform: translateY(1px); }
     .btn-primary { background: var(--primary); color: white; }
     .btn-secondary { background: var(--secondary); color: white; }
@@ -339,274 +175,83 @@
     .btn-reset { background: var(--reset); color: white; }
     .btn-warning { background: var(--warning); color: #1a1a1a; }
 
-    /* Modals, Forms, etc. */
-    .modal {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.7); display: none;
-      justify-content: center; align-items: center; z-index: 1000;
-    }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-open { overflow: hidden; }
-    .modal-content {
-      background: var(--card-bg); border-radius: 12px;
-      padding: 1.5rem; width: 90%; max-width: 800px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    }
+    .modal-content { background: var(--card-bg); border-radius: 12px; padding: 1.5rem; width: 90%; max-width: 800px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
     
-    input, select {
-        padding: 0.5rem 0.75rem;
-        border: 1px solid var(--border-color);
-        border-radius: 8px; background: var(--bg-color);
-        color: var(--text-color); font-size: 1rem;
-        box-sizing: border-box; margin: 0; height: 38px;
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    input:focus, select:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
-    }
-
-    .omdb-results-container {
-      max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color);
-      border-radius: 8px; padding: 0.5rem; margin-top: 1rem;
-    }
+    input, select { padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); font-size: 1rem; box-sizing: border-box; margin: 0; height: 38px; transition: border-color 0.2s, box-shadow 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2); }
+    .omdb-results-container { max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; margin-top: 1rem; }
     .omdb-result-item:hover { background: rgba(0,0,0,0.05); }
 
-    /* Action Buttons on Card Hover */
-    .card-actions {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      opacity: 0;
-      transform: translateX(10px);
-      transition: opacity 0.2s, transform 0.2s;
-      pointer-events: none;
-    }
-    .media-card:hover .card-actions {
-      opacity: 1;
-      transform: translateX(0);
-      pointer-events: all;
-    }
-    .card-btn {
-      width: 32px; height: 32px; border-radius: 50%; display: flex;
-      align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.7); color: white; border: none;
-      cursor: pointer; font-size: 0.8rem;
-    }
+    .card-actions { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 0.5rem; opacity: 0; transform: translateX(10px); transition: opacity 0.2s, transform 0.2s; pointer-events: none; }
+    .media-card:hover .card-actions { opacity: 1; transform: translateX(0); pointer-events: all; }
+    .card-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.7); color: white; border: none; cursor: pointer; font-size: 0.8rem; }
     
-    /* Responsive */
-    @media (max-width: 1200px) {
-        .top-bar { flex-direction: column; align-items: stretch; }
-        .top-bar-right { justify-content: flex-start; }
-    }
-    @media (max-width: 768px) {
-        body { padding: 0.5rem; }
-        .top-bar { flex-direction: column; align-items: stretch; }
-        .media-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-    }
+    @media (max-width: 1200px) { .top-bar { flex-direction: column; align-items: stretch; } .top-bar-right { justify-content: flex-start; } }
+    @media (max-width: 768px) { body { padding: 0.5rem; } .top-bar { flex-direction: column; align-items: stretch; } .media-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } }
     
-    /* Context Menu */
-    .context-menu {
-        position: fixed; background: var(--card-bg); border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1001;
-        min-width: 240px; padding: 0.5rem 0; border: 1px solid var(--border-color);
-        opacity: 0; transform: translateY(-10px);
-        transition: opacity 0.15s, transform 0.15s;
-    }
+    .context-menu { position: fixed; background: var(--card-bg); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1001; min-width: 240px; padding: 0.5rem 0; border: 1px solid var(--border-color); opacity: 0; transform: translateY(-10px); transition: opacity 0.15s, transform 0.15s; }
     .context-menu.visible { opacity: 1; transform: translateY(0); }
-    .context-menu-item {
-        padding: 0.75rem 1rem; cursor: pointer; display: flex;
-        align-items: center; gap: 0.75rem; font-size: 0.9rem;
-    }
+    .context-menu-item { padding: 0.75rem 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; }
     .context-menu-item i { width: 18px; text-align: center; }
     .context-menu-item:hover { background: var(--primary); color: white; }
     .context-menu-divider { height: 1px; background: var(--border-color); margin: 0.25rem 0; }
     
-    .empty-state {
-      text-align: center; padding: 3rem 1rem; color: var(--text-secondary);
-      border: 2px dashed var(--border-color); border-radius: 8px;
-      margin-top: 1rem;
-    }
-    .empty-state > i {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
-    }
-    .add-film-from-empty {
-        margin-top: 1rem;
-        width: auto;
-        white-space: nowrap;
-    }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); border: 2px dashed var(--border-color); border-radius: 8px; margin-top: 1rem; }
+    .empty-state > i { font-size: 2.5rem; margin-bottom: 1rem; }
+    .add-film-from-empty { margin-top: 1rem; width: auto; white-space: nowrap; }
     
-    #confirmModal .modal-content { max-width: 400px; }
-    #confirmModalBody { margin: 1rem 0; }
+    #confirmModal .modal-content { max-width: 400px; } #confirmModalBody { margin: 1rem 0; }
     #confirmModalButtons { display: flex; justify-content: flex-end; gap: 0.5rem; }
 
-    /* Auth Forms */
-    .auth-container {
-        position: relative;
-    }
-    .auth-form {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 1.5rem;
-      width: 300px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      z-index: 1001;
-      display: none;
-    }
+    .auth-container { position: relative; }
+    .auth-form { position: absolute; top: calc(100% + 8px); right: 0; background: var(--card-bg); border-radius: 12px; padding: 1.5rem; width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1001; display: none; }
     .auth-form.active { display: block; }
     .auth-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
-    .auth-tab {
-        padding: 0.75rem 1rem; cursor: pointer; font-weight: 600;
-        color: var(--text-secondary); border-bottom: 2px solid transparent;
-    }
+    .auth-tab { padding: 0.75rem 1rem; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid transparent; }
     .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-    .auth-form-container { display: none; }
-    .auth-form-container.active { display: block; }
+    .auth-form-container { display: none; } .auth-form-container.active { display: block; }
     .auth-form-container input { width: 100%; margin-bottom: 1rem; }
     .auth-form-buttons { display: flex; justify-content: flex-end; margin-top: 1rem; }
 
-    /* Notification */
-    .notification-bell-container {
-        position: relative;
-    }
-    .notification-badge {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background-color: var(--danger);
-        color: white;
-        border-radius: 50%;
-        width: 18px;
-        height: 18px;
-        font-size: 0.7rem;
-        font-weight: 700;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border: 2px solid var(--bg-color);
-        transform: scale(0);
-        transition: transform 0.2s ease-out;
-    }
-    .notification-badge.visible {
-        transform: scale(1);
-    }
-    .notification-dropdown {
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        background: var(--card-bg);
-        border-radius: 12px;
-        width: 350px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        z-index: 1001;
-        display: none;
-        border: 1px solid var(--border-color);
-        overflow: hidden;
-        max-height: 400px;
-        flex-direction: column;
-    }
+    .notification-bell-container { position: relative; }
+    .notification-badge { position: absolute; top: -5px; right: -5px; background-color: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: center; align-items: center; border: 2px solid var(--bg-color); transform: scale(0); transition: transform 0.2s ease-out; }
+    .notification-badge.visible { transform: scale(1); }
+    .notification-dropdown { position: absolute; top: calc(100% + 8px); right: 0; background: var(--card-bg); border-radius: 12px; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1001; display: none; border: 1px solid var(--border-color); overflow: hidden; max-height: 400px; flex-direction: column; }
     .notification-dropdown.visible { display: flex; }
-    .notification-header {
-        padding: 0.75rem 1rem;
-        font-weight: 600;
-        border-bottom: 1px solid var(--border-color);
-        flex-shrink: 0;
-    }
-    .notification-list {
-        flex: 1;
-        max-height: 300px;
-        overflow-y: auto;
-    }
-    .notification-footer {
-        padding: 0.5rem;
-        text-align: center;
-        border-top: 1px solid var(--border-color);
-        flex-shrink: 0;
-    }
-    .notification-item {
-        padding: 0.75rem 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        cursor: pointer;
-        font-size: 0.9rem;
-    }
-    .notification-item:hover {
-        background-color: var(--section-tint);
-    }
-    .notification-item i {
-        color: var(--primary);
-        width: 16px;
-        text-align: center;
-    }
-    .notification-item-text {
-        flex: 1;
-    }
-    .no-notifications {
-        padding: 1.5rem;
-        text-align: center;
-        color: var(--text-secondary);
-    }
-    .notification {
-      position: fixed; bottom: 20px; right: 20px;
-      padding: 1rem 1.5rem; border-radius: 8px; background: var(--card-bg);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1002; display: none;
-    }
-    .notification.success { border-left: 4px solid var(--success); }
-    .notification.error { border-left: 4px solid var(--danger); }
-    .notification.warning { border-left: 4px solid var(--warning); }
+    .notification-header { padding: 0.75rem 1rem; font-weight: 600; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+    .notification-list { flex: 1; max-height: 300px; overflow-y: auto; }
+    .notification-footer { padding: 0.5rem; text-align: center; border-top: 1px solid var(--border-color); flex-shrink: 0; }
+    .notification-item { padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-size: 0.9rem; }
+    .notification-item:hover { background-color: var(--section-tint); }
+    .notification-item i { color: var(--primary); width: 16px; text-align: center; }
+    .notification-item-text { flex: 1; }
+    .no-notifications { padding: 1.5rem; text-align: center; color: var(--text-secondary); }
+    .notification { position: fixed; bottom: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 8px; background: var(--card-bg); box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1002; display: none; }
+    .notification.success { border-left: 4px solid var(--success); } .notification.error { border-left: 4px solid var(--danger); } .notification.warning { border-left: 4px solid var(--warning); }
 
-    /* Modal fixes */
     .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; }
-    .management-tabs {
-        display: flex;
-        border-bottom: 1px solid var(--border-color);
-        margin-bottom: 1.5rem;
-    }
-
-    .tab-btn {
-        padding: 0.75rem 1.5rem; background: transparent; border: none;
-        cursor: pointer; font-weight: 600; color: var(--text-secondary);
-        border-bottom: 2px solid transparent; transition: all 0.2s;
-        display: flex; align-items: center; gap: 0.5rem;
-    }
-
+    .management-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+    .tab-btn { padding: 0.75rem 1.5rem; background: transparent; border: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
     .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
     .tab-btn:hover:not(.active) { color: var(--text-color); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-content { display: none; } .tab-content.active { display: block; }
     .add-media-form { display: flex; flex-direction: column; gap: 1rem; }
     .form-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     .form-row input, .form-row select { flex: 1; min-width: 200px; }
     .form-row .btn { flex-shrink: 0; }
 
-    /* Category & Friend management */
-    .management-section {
-        margin-top: 1rem;
-    }
+    .management-section { margin-top: 1rem; }
     .management-form { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
     .management-form input { flex: 1; }
     .management-list { max-height: 300px; overflow-y: auto; }
-    .management-card {
-      display: flex; align-items: center; padding: 0.75rem;
-      border-radius: 8px; background: var(--bg-color); margin-bottom: 0.5rem;
-    }
+    .management-card { display: flex; align-items: center; padding: 0.75rem; border-radius: 8px; background: var(--bg-color); margin-bottom: 0.5rem; }
     .management-card > div { flex: 1; }
     .management-card-actions { display: flex; gap: 0.25rem; }
     .management-card-actions .btn { padding: 0.5rem; height: auto; }
-    .category-dot {
-      width: 16px; height: 16px; border-radius: 50%;
-      margin-right: 0.75rem; flex-shrink: 0;
-    }
-    .category-dot-watchlist { background: #00B4D8; }
-    .category-dot-watched { background: #228b22; }
+    .category-dot { width: 16px; height: 16px; border-radius: 50%; margin-right: 0.75rem; flex-shrink: 0; }
+    .category-dot-watchlist { background: #00B4D8; } .category-dot-watched { background: #228b22; }
     .category-dot-0 { background: #3A86FF; } .category-dot-1 { background: #FF006E; }
     .category-dot-2 { background: #8338EC; } .category-dot-3 { background: #FFBE0B; }
     .category-dot-4 { background: #FB5607; } .category-dot-5 { background: #00B4D8; }
@@ -615,313 +260,73 @@
     .friend-email { font-weight: 600; }
     .friend-id { font-size: 0.8rem; color: var(--text-secondary); }
 
-
-    /* Poster modal */
-    #posterModal .modal-content {
-      max-width: 90vw;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-    .poster-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 1rem;
-      padding: 0.5rem;
-    }
-    .poster-option {
-      position: relative;
-      cursor: pointer;
-      transition: transform 0.2s;
-      border: 3px solid transparent;
-      border-radius: 8px;
-      overflow: hidden;
-    }
+    #posterModal .modal-content { max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column; overflow-y: auto; }
+    .poster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; padding: 0.5rem; }
+    .poster-option { position: relative; cursor: pointer; transition: transform 0.2s; border: 3px solid transparent; border-radius: 8px; overflow: hidden; }
     .poster-option:hover { transform: scale(1.05); }
     .poster-option.selected { border-color: var(--primary); }
     .poster-option img { width: 100%; height: auto; display: block; }
-    .poster-current-indicator {
-        position: absolute;
-        top: 5px;
-        left: 5px;
-        background: var(--success);
-        color: white;
-        padding: 0.25rem 0.5rem;
-        border-radius: 12px;
-        font-size: 0.7rem;
-        font-weight: 600;
-    }
-    .poster-language-badge {
-        position: absolute;
-        bottom: 5px;
-        right: 5px;
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 0.25rem 0.5rem;
-        border-radius: 12px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
+    .poster-current-indicator { position: absolute; top: 5px; left: 5px; background: var(--success); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
+    .poster-language-badge { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
     
-    /* Rewatch Modal */
     #rewatchModal .modal-content { max-width: 450px; text-align: center; }
     #rewatchModalTitle { margin-top: 0; }
     #rewatchQuickButtons { display: flex; gap: 0.5rem; justify-content: center; margin: 1.5rem 0; }
-    .quick-rewatch-btn {
-        padding: 0;
-        width: 45px;
-        height: 45px;
-        justify-content: center;
-    }
+    .quick-rewatch-btn { padding: 0; width: 45px; height: 45px; justify-content: center; }
     .quick-rewatch-btn.active { background: var(--primary); color: white; }
     .custom-rewatch-container { display: flex; align-items: center; justify-content: center; gap: 1rem; }
 
-    /* Number input controls */
-    .number-input-wrapper {
-        position: relative;
-        display: flex;
-        align-items: center;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        overflow: hidden;
-        height: 38px;
-    }
-    .number-input-wrapper input {
-        border: none; text-align: center; flex: 1;
-        width: 100%; padding-right: 25px;
-        background: var(--card-bg);
-        -moz-appearance: textfield;
-    }
-    .number-input-wrapper input::-webkit-outer-spin-button,
-    .number-input-wrapper input::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    .number-input-controls {
-        position: absolute;
-        right: 1px; top: 1px; bottom: 1px;
-        display: flex;
-        flex-direction: column;
-        width: 24px;
-    }
-    .num-spinner-btn {
-        flex: 1; width: 100%; border: none;
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        cursor: pointer; font-size: 0.8rem; line-height: 1;
-        padding: 0; height: 50%;
-    }
+    .number-input-wrapper { position: relative; display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; height: 38px; }
+    .number-input-wrapper input { border: none; text-align: center; flex: 1; width: 100%; padding-right: 25px; background: var(--card-bg); -moz-appearance: textfield; }
+    .number-input-wrapper input::-webkit-outer-spin-button, .number-input-wrapper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .number-input-controls { position: absolute; right: 1px; top: 1px; bottom: 1px; display: flex; flex-direction: column; width: 24px; }
+    .num-spinner-btn { flex: 1; width: 100%; border: none; background-color: var(--bg-color); color: var(--text-color); cursor: pointer; font-size: 0.8rem; line-height: 1; padding: 0; height: 50%; }
     .num-spinner-btn:hover { background-color: var(--primary); color: white; }
     .num-spinner-btn.up { border-top-right-radius: 7px; }
     .num-spinner-btn.down { border-bottom-right-radius: 7px; }
 
-
-    /* OMDb results */
-    .omdb-result-item {
-      display: flex; align-items: center; padding: 0.5rem;
-      cursor: pointer; border-radius: 4px; margin-bottom: 0.25rem;
-    }
+    .omdb-result-item { display: flex; align-items: center; padding: 0.5rem; cursor: pointer; border-radius: 4px; margin-bottom: 0.25rem; }
     .omdb-result-item:hover { background: rgba(0,0,0,0.05); }
-    .omdb-poster-small {
-      width: 40px; height: 60px; object-fit: cover;
-      margin-right: 0.75rem; border-radius: 4px;
-    }
+    .omdb-poster-small { width: 40px; height: 60px; object-fit: cover; margin-right: 0.75rem; border-radius: 4px; }
 
-    /* View mode banner */
-    .view-mode-banner {
-      display: none; align-items: center; background: var(--primary); color: white;
-      padding: 0.75rem 1.5rem; margin-bottom: 1.5rem; border-radius: 8px;
-    }
+    .view-mode-banner { display: none; align-items: center; background: var(--primary); color: white; padding: 0.75rem 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; }
     .view-mode-banner i { margin-right: 0.75rem; }
-
-    .btn i.fa-plus {
-        position: relative;
-        top: -1px;
-    }
+    .btn i.fa-plus { position: relative; top: -1px; }
     
-    /* Details & Actor Modals */
-    #detailsModal .modal-content {
-      max-width: 900px;
-      padding: 0;
-      overflow-y: auto;
-    }
-    #actorModal .modal-content {
-      max-width: 700px;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
+    #detailsModal .modal-content { max-width: 900px; padding: 0; overflow-y: auto; }
+    #actorModal .modal-content { max-width: 700px; max-height: 80vh; overflow-y: auto; }
     #actorModal { z-index: 1001; }
     
-    .details-backdrop {
-      width: 100%;
-      height: 250px;
-      background-size: cover;
-      background-position: center 25%;
-      position: relative;
-    }
-    .details-backdrop::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(to top, var(--card-bg) 0%, rgba(0,0,0,0.5) 100%);
-    }
-    .details-header {
-      position: relative;
-      display: flex;
-      padding: 1.5rem;
-      margin-top: -100px;
-      z-index: 2;
-    }
-    #detailsModalPoster {
-      width: 150px;
-      height: 225px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      flex-shrink: 0;
-      margin-right: 1.5rem;
-    }
-    .details-title-section {
-      padding-top: 100px;
-    }
-    #detailsModalTitle {
-      margin: 0;
-      font-size: 1.75rem;
-    }
-    #detailsModalTagline {
-      font-style: italic;
-      color: var(--text-secondary);
-      margin-top: 0.25rem;
-    }
-    #detailsModalMeta {
-      margin-top: 0.5rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      font-size: 0.9rem;
-    }
-    .director-link {
-        color: var(--primary);
-        text-decoration: none;
-        font-weight: 500;
-        cursor: pointer;
-    }
-    .director-link:hover {
-        text-decoration: underline;
-    }
-    .details-body {
-      padding: 0 1.5rem 1.5rem 1.5rem;
-    }
-    .details-section-title {
-      font-weight: 600;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 0.5rem;
-      margin-bottom: 1rem;
-      margin-top: 1.5rem;
-    }
-    #detailsModalOverview {
-      line-height: 1.6;
-    }
-    .cast-scroller {
-      display: flex;
-      overflow-x: auto;
-      gap: 1rem;
-      padding-bottom: 1rem;
-    }
-    .actor-card {
-      text-align: center;
-      width: 100px;
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-    .actor-photo {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-bottom: 0.5rem;
-      background-color: var(--border-color);
-    }
-    .actor-name, .actor-character {
-      font-size: 0.8rem;
-      user-select: text;
-    }
-    .actor-character {
-      color: var(--text-secondary);
-    }
-    .modal-close-btn {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      z-index: 3;
-      cursor: pointer;
-      background: rgba(0,0,0,0.5);
-      color: white;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-    }
+    .details-backdrop { width: 100%; height: 250px; background-size: cover; background-position: center 25%; position: relative; }
+    .details-backdrop::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, var(--card-bg) 0%, rgba(0,0,0,0.5) 100%); }
+    .details-header { position: relative; display: flex; padding: 1.5rem; margin-top: -100px; z-index: 2; }
+    #detailsModalPoster { width: 150px; height: 225px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0; margin-right: 1.5rem; }
+    .details-title-section { padding-top: 100px; }
+    #detailsModalTitle { margin: 0; font-size: 1.75rem; }
+    #detailsModalTagline { font-style: italic; color: var(--text-secondary); margin-top: 0.25rem; }
+    #detailsModalMeta { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.9rem; }
+    .director-link { color: var(--primary); text-decoration: none; font-weight: 500; cursor: pointer; }
+    .director-link:hover { text-decoration: underline; }
+    .details-body { padding: 0 1.5rem 1.5rem 1.5rem; }
+    .details-section-title { font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1rem; margin-top: 1.5rem; }
+    #detailsModalOverview { line-height: 1.6; }
+    .cast-scroller { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 1rem; }
+    .actor-card { text-align: center; width: 100px; flex-shrink: 0; cursor: pointer; }
+    .actor-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 0.5rem; background-color: var(--border-color); }
+    .actor-name, .actor-character { font-size: 0.8rem; user-select: text; }
+    .actor-character { color: var(--text-secondary); }
+    .modal-close-btn { position: absolute; top: 1rem; right: 1rem; z-index: 3; cursor: pointer; background: rgba(0,0,0,0.5); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; }
 
-    /* Actor Modal Specifics */
-    .actor-details-header {
-        display: flex;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
-        align-items: flex-start;
-    }
-    .actor-details-photo {
-        width: 120px;
-        height: 180px;
-        object-fit: cover;
-        border-radius: 8px;
-        flex-shrink: 0;
-    }
-    .actor-details-info ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    .actor-details-info li {
-        margin-bottom: 0.5rem;
-    }
-    .btn-imdb {
-        background: #f5c518;
-        color: #000;
-        margin-top: 1rem;
-    }
-    .filmography-scroller {
-      display: flex;
-      overflow-x: auto;
-      gap: 1rem;
-      padding-bottom: 1rem;
-    }
-    .film-card-small {
-      width: 120px;
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-    .film-card-small img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      border-radius: 4px;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .film-card-small:hover img {
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    .film-card-small-title {
-      font-size: 0.8rem;
-      margin-top: 0.5rem;
-      white-space: normal;
-      text-align: center;
-    }
+    .actor-details-header { display: flex; gap: 1.5rem; margin-bottom: 1.5rem; align-items: flex-start; }
+    .actor-details-photo { width: 120px; height: 180px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+    .actor-details-info ul { list-style: none; padding: 0; margin: 0; }
+    .actor-details-info li { margin-bottom: 0.5rem; }
+    .btn-imdb { background: #f5c518; color: #000; margin-top: 1rem; }
+    .filmography-scroller { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 1rem; }
+    .film-card-small { width: 120px; flex-shrink: 0; cursor: pointer; }
+    .film-card-small img { width: 100%; height: 180px; object-fit: cover; border-radius: 4px; transition: transform 0.2s, box-shadow 0.2s; }
+    .film-card-small:hover img { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .film-card-small-title { font-size: 0.8rem; margin-top: 0.5rem; white-space: normal; text-align: center; }
 
   </style>
 </head>
@@ -942,6 +347,12 @@
   <div class="top-bar">
     <div class="top-bar-left">
       <h1><i class="fas fa-film"></i> Film Tracker</h1>
+      <!-- NUOVO: TRACKER SWITCH -->
+      <div class="tracker-switch">
+        <a href="filmtracker.html" class="tracker-switch-btn active"><i class="fas fa-film"></i> </a>
+        <a href="serietv_tracker.html" class="tracker-switch-btn"><i class="fas fa-tv"></i> </a>
+      </div>
+      <!-- FINE NUOVO ELEMENTO -->
       <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
       <select id="categoryFilter" class="filter-select">
         <option value="all">Tutte le categorie</option>
@@ -1185,14 +596,12 @@
         actorModalClose: document.getElementById('actorModalClose'),
     };
     
-    // START MODIFICATION: Default properties for media items
     const defaultMediaProps = { 
         isCountedAsWatched: false, 
         isCountedAsWatchlist: false, 
         rewatchCount: 0,
         lastActivityAt: null 
     };
-    // END MODIFICATION
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -1386,43 +795,30 @@
     function loadData() {
         if (!currentUser) return;
         const path = `users/${currentUser.uid}`;
-        db.ref(path).once("value").then(snapshot => {
-            const data = snapshot.val() || {};
-            // START MODIFICATION: Ensure all loaded media have the default properties
-            mediaList = (data.mediaTracker?.mediaList || []).map(item => ({ ...defaultMediaProps, ...item }));
-            // END MODIFICATION
-            categories = data.mediaTracker?.categories || [...DEFAULT_CATEGORIES];
-            followedFriends = data.social?.followedFriends || [];
-            lastCheckedTimestamps = data.social?.lastCheckedTimestamps || {};
-
-            followedFriends.forEach(friend => {
-                if (!lastCheckedTimestamps[friend.id]) {
-                    lastCheckedTimestamps[friend.id] = new Date(0).toISOString();
-                }
-            });
-
+        db.ref(`${path}/mediaTracker`).on("value", snap => {
+            const data = snap.val() || {};
+            mediaList = (data.mediaList || []).map(item => ({ ...defaultMediaProps, ...item }));
+            categories = data.categories || [...DEFAULT_CATEGORIES];
             renderFullUI();
             updateStats();
-            hideLoader();
-            setupFriendListeners();
-
-            db.ref(`${path}/mediaTracker/mediaList`).on("value", snap => {
-                let updatedData = snap.val() || [];
-                // START MODIFICATION: Ensure all updated media have the default properties
-                mediaList = updatedData.map(item => ({ ...defaultMediaProps, ...item }));
-                // END MODIFICATION
-                renderMedia();
-                updateStats();
-            });
         });
+
+        db.ref(`${path}/social`).once("value", snapshot => {
+            const data = snapshot.val() || {};
+            followedFriends = data.followedFriends || [];
+            lastCheckedTimestamps = data.lastCheckedTimestamps || {};
+            if (!isViewMode) {
+                setupFriendListeners();
+                renderFriendsList();
+            }
+        });
+        hideLoader();
     }
 
     function loadLocalData() {
       try {
         let storedMedia = JSON.parse(localStorage.getItem("mediaList")) || [];
-        // START MODIFICATION: Ensure all local media have the default properties
         mediaList = storedMedia.map(item => ({ ...defaultMediaProps, ...item }));
-        // END MODIFICATION
         categories = JSON.parse(localStorage.getItem("categories")) || [...DEFAULT_CATEGORIES];
         renderFullUI();
         updateStats();
@@ -1473,9 +869,7 @@
         const data = snapshot.val();
         if (data) {
           let storedMedia = data.mediaList || [];
-          // START MODIFICATION: Ensure all viewed media have the default properties
           mediaList = storedMedia.map(item => ({ ...defaultMediaProps, ...item }));
-          // END MODIFICATION
           categories = data.categories || [...DEFAULT_CATEGORIES];
           renderFullUI();
           updateStats();
@@ -1543,14 +937,11 @@
                   return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
               case "year": 
                   return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
-              // START MODIFICATION: Update sort logic for "added"
               case "added": 
               default: 
-                  // Use 'lastActivityAt' if it exists, otherwise use 'addedAt'.
                   const timeA = a.lastActivityAt || a.addedAt;
                   const timeB = b.lastActivityAt || b.addedAt;
                   return new Date(timeB) - new Date(timeA);
-              // END MODIFICATION
           }
       });
       const fragments = {};
@@ -1840,21 +1231,14 @@
       elements.confirmModalBody.textContent = body;
       elements.confirmModal.style.display = "flex";
       document.body.classList.add("modal-open");
-      const cancel = () => {
-        closeModal(elements.confirmModal);
-        cleanup();
-      };
-      const confirm = () => {
-        onConfirm();
-        closeModal(elements.confirmModal);
-        cleanup();
-      };
+      const confirmHandler = () => { onConfirm(); closeModal(elements.confirmModal); cleanup(); };
+      const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); };
       const cleanup = () => {
-        elements.confirmModalConfirm.removeEventListener("click", confirm);
-        elements.confirmModalCancel.removeEventListener("click", cancel);
+        elements.confirmModalConfirm.removeEventListener("click", confirmHandler);
+        elements.confirmModalCancel.removeEventListener("click", cancelHandler);
       };
-      elements.confirmModalConfirm.addEventListener("click", confirm);
-      elements.confirmModalCancel.addEventListener("click", cancel);
+      elements.confirmModalConfirm.addEventListener("click", confirmHandler);
+      elements.confirmModalCancel.addEventListener("click", cancelHandler);
     }
     
     function deleteCategory(cat) {
@@ -1966,18 +1350,17 @@
       menu.style.top = `${y}px`;
     }
     
-    // START MODIFICATION: Update move logic
     function moveMediaToCategory(id, newCategory) {
         const media = mediaList.find(m => m.id === id);
         if (!media) return;
 
         const oldCategory = media.category;
         media.category = newCategory;
+        media.lastActivityAt = new Date().toISOString();
 
         if (newCategory === 'watched') {
             media.isCountedAsWatched = true;
             media.isCountedAsWatchlist = false; 
-            media.lastActivityAt = new Date().toISOString(); // Update the activity timestamp
         } else if (newCategory === 'watchlist') {
             media.isCountedAsWatchlist = true;
             media.isCountedAsWatched = false;
@@ -1998,7 +1381,6 @@
         updateStats();
         showNotification(`Film spostato in "${getCategoryName(newCategory)}"`, "success");
     }
-    // END MODIFICATION
 
     function toggleCountedAsWatched(id) {
         const media = mediaList.find(m => m.id === id);
@@ -2059,6 +1441,7 @@
       const media = mediaList.find(m => m.id === id);
       if (!media) return;
       media.rewatchCount = count;
+      media.lastActivityAt = new Date().toISOString();
       if (count >= 0 && !media.isCountedAsWatched) {
         media.isCountedAsWatched = true;
         media.isCountedAsWatchlist = false;
@@ -2176,13 +1559,12 @@
         const category = elements.addMediaCategorySelect.value;
         localStorage.setItem("lastUsedCategory", category);
         
-        // START MODIFICATION: Add lastActivityAt to new media object
         let media = {
             id: Date.now().toString(),
             title,
             category,
             addedAt: new Date().toISOString(),
-            lastActivityAt: category === 'watched' ? new Date().toISOString() : null,
+            lastActivityAt: new Date().toISOString(),
             poster: "",
             rewatchCount: 0,
             isCountedAsWatched: category === "watched",
@@ -2195,7 +1577,6 @@
             sagaName: null,
             releaseDate: null
         };
-        // END MODIFICATION
 
         if (currentOMDbSelection) {
             media = {
@@ -2340,7 +1721,18 @@
       return hours > 0 ? `${hours}h ${mins > 0 ? `${mins}m` : ""}` : `${mins}m`;
     }
 
-    // --- Real-time Notification System ---
+    // --- LOG & NOTIFICATION SYSTEM (UNIFIED) ---
+    function logActivity(type, title, details) {
+        if (!currentUser) return;
+        const logRef = db.ref(`users/${currentUser.uid}/activityLog`);
+        const newActivity = { type, title, details, timestamp: new Date().toISOString() };
+        
+        return logRef.transaction(currentLog => {
+            let log = Array.isArray(currentLog) ? currentLog : [];
+            log.unshift(newActivity);
+            return log.slice(0, MAX_LOG_SIZE);
+        });
+    }
     
     function detachAllFriendListeners() {
         Object.values(friendListeners).forEach(({ ref, listener }) => ref.off('value', listener));
@@ -2354,19 +1746,13 @@
         const friendActivityMap = new Map();
 
         const processAndRenderNotifications = () => {
-            let allNewNotifications = [];
-            friendActivityMap.forEach(activities => {
-                allNewNotifications.push(...activities);
-            });
+            let allNewNotifications = Array.from(friendActivityMap.values()).flat();
             allNewNotifications.sort((a, b) => new Date(b.activity.timestamp) - new Date(a.activity.timestamp));
-            if (allNewNotifications.length > MAX_NOTIFICATIONS) {
-                allNewNotifications = allNewNotifications.slice(0, MAX_NOTIFICATIONS);
-            }
-            renderNotifications(allNewNotifications);
+            renderNotifications(allNewNotifications.slice(0, MAX_NOTIFICATIONS));
         };
         
         followedFriends.forEach(friend => {
-            const ref = db.ref(`users/${friend.id}/mediaTracker/activityLog`);
+            const ref = db.ref(`users/${friend.id}/activityLog`);
             const listener = snapshot => {
                 const activities = snapshot.val() || [];
                 const lastChecked = lastCheckedTimestamps[friend.id] || new Date(0).toISOString();
@@ -2374,157 +1760,102 @@
                 const activityArray = Array.isArray(activities) ? activities : [];
                 const newActivities = activityArray
                     .filter(act => act && new Date(act.timestamp) > new Date(lastChecked))
-                    .map(activity => ({
-                        friendId: friend.id,
-                        friendEmail: friend.email,
-                        activity: activity
-                    }));
+                    .map(activity => ({ friendId: friend.id, friendEmail: friend.email, activity }));
 
                 friendActivityMap.set(friend.id, newActivities);
                 processAndRenderNotifications();
             };
             ref.on('value', listener);
             friendListeners[friend.id] = { ref, listener };
-
-            if (!friend.email) {
-                db.ref(`users/${friend.id}/email`).once('value').then(emailSnapshot => {
-                    if (emailSnapshot.exists()) {
-                        friend.email = emailSnapshot.val();
-                        saveSocialData();
-                    }
-                });
-            }
         });
     }
 
     function renderNotifications(notifications) {
         const count = notifications.length;
-        
         elements.notificationBadge.textContent = count;
         elements.notificationBadge.classList.toggle('visible', count > 0);
         
-        while (elements.notificationDropdown.firstChild) {
-            elements.notificationDropdown.removeChild(elements.notificationDropdown.firstChild);
-        }
+        elements.notificationDropdown.innerHTML = '';
         
-        const header = document.createElement('div');
-        header.className = 'notification-header';
-        header.textContent = 'Notifiche Amici';
-        elements.notificationDropdown.appendChild(header);
-        
-        const list = document.createElement('div');
-        list.className = 'notification-list';
+        const header = document.createElement('div'); header.className = 'notification-header'; header.textContent = 'Notifiche Amici';
+        const list = document.createElement('div'); list.className = 'notification-list';
 
         if (count > 0) {
-            notifications.forEach(notification => {
-                if (!notification.activity) return; 
-                
+            notifications.forEach(n => {
+                if (!n.activity) return;
                 const item = document.createElement('div');
                 item.className = 'notification-item';
-                item.dataset.friendId = notification.friendId;
-                
-                const icon = document.createElement('i');
-                icon.className = `fas ${getActivityIcon(notification.activity.type)}`;
-                
-                const text = document.createElement('span');
-                text.className = 'notification-item-text';
-                text.innerHTML = `<strong>${notification.friendEmail || 'Unknown User'}</strong> ${getActivityText(notification.activity)}`;
-                
-                item.appendChild(icon);
-                item.appendChild(text);
+                item.dataset.friendId = n.friendId;
+                item.innerHTML = `
+                    <i class="fas ${getActivityIcon(n.activity.type)}"></i>
+                    <span class="notification-item-text">${getActivityText(n.friendEmail, n.activity)}</span>`;
                 
                 item.addEventListener('click', () => {
                     const friendId = item.dataset.friendId;
                     if (friendId) {
-                        const url = `${window.location.origin}${window.location.pathname}?view=${friendId}`;
-                        window.open(url, '_blank');
+                       window.open(`${window.location.origin}${window.location.pathname}?view=${friendId}`, '_blank');
                     }
                 });
-                
                 list.appendChild(item);
             });
             
-            const footer = document.createElement('div');
-            footer.className = 'notification-footer';
-            
+            const footer = document.createElement('div'); footer.className = 'notification-footer';
             const markAllBtn = document.createElement('button');
             markAllBtn.className = 'btn btn-primary btn-small';
             markAllBtn.innerHTML = '<i class="fas fa-check-double"></i> Segna tutte come lette';
             markAllBtn.addEventListener('click', markAllNotificationsAsRead);
-            
             footer.appendChild(markAllBtn);
+            
+            elements.notificationDropdown.appendChild(header);
             elements.notificationDropdown.appendChild(list);
             elements.notificationDropdown.appendChild(footer);
+
         } else {
-            const emptyState = document.createElement('div');
-            emptyState.className = 'no-notifications';
-            emptyState.textContent = 'Nessuna nuova notifica';
+            const emptyState = document.createElement('div'); emptyState.className = 'no-notifications'; emptyState.textContent = 'Nessuna nuova notifica';
             list.appendChild(emptyState);
+            elements.notificationDropdown.appendChild(header);
             elements.notificationDropdown.appendChild(list);
         }
     }
     
     function markAllNotificationsAsRead() {
-        followedFriends.forEach(friend => {
-            lastCheckedTimestamps[friend.id] = new Date().toISOString();
-        });
+        if (!currentUser) return;
+        followedFriends.forEach(f => lastCheckedTimestamps[f.id] = new Date().toISOString());
         saveSocialData();
         renderNotifications([]);
     }
-    
+
     function getActivityIcon(type) {
-        switch (type) {
-            case 'add': return 'fa-plus-circle';
-            case 'move': return 'fa-folder-open';
-            case 'rewatch': return 'fa-sync-alt';
-            case 'delete': return 'fa-trash-alt';
-            default: return 'fa-info-circle';
-        }
+        if (type === 'add') return 'fa-film';
+        if (type === 'move') return 'fa-folder-open';
+        if (type === 'delete') return 'fa-trash-alt';
+        if (type === 'rewatch') return 'fa-sync-alt';
+        // Compatibilità con TV Show Tracker
+        if (type.startsWith('add_show')) return 'fa-plus-circle';
+        if (type.startsWith('complete_show')) return 'fa-tv';
+        if (type.startsWith('complete_season')) return 'fa-check-circle';
+        return 'fa-info-circle';
     }
 
-    function getActivityText(activity) {
+    function getActivityText(friendEmail, activity) {
+        const email = `<strong>${friendEmail || 'Utente'}</strong>`;
+        const title = `<strong>${activity.title}</strong>`;
         switch (activity.type) {
-            case 'add': return `ha aggiunto <strong>${activity.movieTitle}</strong> ${activity.details}`;
-            case 'move': return `ha spostato <strong>${activity.movieTitle}</strong> ${activity.details}`;
-            case 'rewatch': return `ha aggiornato <strong>${activity.movieTitle}</strong> (${activity.details})`;
-            case 'delete': return `ha eliminato <strong>${activity.movieTitle}</strong> ${activity.details}`;
-            default: return `ha aggiornato <strong>${activity.movieTitle}</strong>`;
+            case 'add': return `${email} ha aggiunto il film ${title} ${activity.details}`;
+            case 'move': return `${email} ha spostato il film ${title} ${activity.details}`;
+            case 'delete': return `${email} ha eliminato il film ${title} ${activity.details}`;
+            case 'rewatch': return `${email} ha aggiornato ${title} (${activity.details})`;
+            // Compatibilità con TV Show Tracker
+            case 'add_show': return `${email} ha aggiunto la serie ${title} ${activity.details}`;
+            case 'move_show': return `${email} ha spostato la serie ${title} ${activity.details}`;
+            case 'delete_show': return `${email} ha eliminato la serie ${title} ${activity.details}`;
+            case 'complete_show': return `${email} ha completato la serie ${title}! 🎉`;
+            case 'complete_season': return `${email} ha completato ${activity.details} di ${title}`;
+            default: return `${email} ha aggiornato ${title}`;
         }
     }
     
-    function logActivity(type, movieTitle, details) {
-        if (!currentUser) return;
-        const logRef = db.ref(`users/${currentUser.uid}/mediaTracker/activityLog`);
-        
-        const newActivity = {
-            type: type || 'unknown',
-            movieTitle: movieTitle || 'Unknown Title',
-            details: details || '',
-            timestamp: new Date().toISOString()
-        };
-        
-        logRef.transaction(currentLog => {
-            try {
-                let log = currentLog || [];
-                if (!Array.isArray(log)) {
-                    log = [];
-                }
-                log.unshift(newActivity);
-                if (log.length > MAX_LOG_SIZE) {
-                    return log.slice(0, MAX_LOG_SIZE);
-                }
-                return log;
-            } catch (error) {
-                console.error('Error updating activity log:', error);
-                return currentLog; 
-            }
-        }).catch(error => {
-            console.error('Transaction failed:', error);
-        });
-    }
-    
-    // --- New Details & Actor Modal Functions ---
-
+    // --- DETAILS & ACTOR MODAL FUNCTIONS ---
     async function showDetailsModal(mediaId) {
         const media = mediaList.find(m => m.id === mediaId);
         if (!media || !media.imdbID) {
@@ -2703,7 +2034,51 @@
             });
         }
     }
+    
+    // --- FRIEND & SOCIAL FUNCTIONS (UNIFIED) ---
+    async function addFriend() {
+        const friendId = friendIdInput.value.trim();
+        if (!friendId || !currentUser) return;
+        if (friendId === currentUser.uid) { showNotification("Non puoi aggiungere te stesso.", "warning"); return; }
+        if (followedFriends.some(f => f.id === friendId)) { showNotification("Amico già presente in lista.", "warning"); return; }
+        const friendEmailRef = db.ref(`users/${friendId}/email`);
+        const snapshot = await friendEmailRef.once('value');
+        if (snapshot.exists()) {
+            followedFriends.push({ id: friendId, email: snapshot.val() });
+            lastCheckedTimestamps[friendId] = new Date().toISOString();
+            await saveSocialData();
+            renderFriendsList();
+            setupFriendListeners();
+            showNotification("Amico aggiunto!", "success");
+        } else {
+            showNotification("ID Utente non trovato.", "error");
+        }
+    }
+    
+    async function removeFriend(friendId) {
+        followedFriends = followedFriends.filter(f => f.id !== friendId);
+        delete lastCheckedTimestamps[friendId];
+        await saveSocialData();
+        renderFriendsList();
+        setupFriendListeners();
+    }
 
+    function renderFriendsList() {
+        if (!currentUser) { friendsList.innerHTML = "<p>Devi essere loggato per usare questa funzione.</p>"; document.getElementById('myIdContainer').style.display = 'none'; return; }
+        document.getElementById('myIdContainer').style.display = 'block';
+        myIdInput.value = currentUser.uid;
+        friendsList.innerHTML = "";
+        if (followedFriends.length === 0) { friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`; return; }
+        followedFriends.forEach(friend => {
+            const card = document.createElement("div"); card.className = "management-card";
+            card.innerHTML = `<div><div class="friend-email">${friend.email}</div><div class="friend-id">${friend.id}</div></div><div class="management-card-actions"><button class="btn btn-primary visit-friend-btn" data-id="${friend.id}" title="Visita Libreria"><i class="fas fa-eye"></i></button><button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button></div>`;
+            card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
+            card.querySelector('.visit-friend-btn').addEventListener('click', (e) => { window.open(`${window.location.origin}${window.location.pathname}?view=${e.currentTarget.dataset.id}`, '_blank'); });
+            friendsList.appendChild(card);
+        });
+    }
+
+    // --- EVENT LISTENERS ---
     function setupEventListeners() {
       elements.mediaSectionsContainer.addEventListener("click", e => {
         if (isViewMode) return;
@@ -2727,7 +2102,7 @@
         if (e.target === elements.posterModal) closeModal(elements.posterModal);
         if (e.target === elements.detailsModal) closeModal(elements.detailsModal);
         if (e.target === elements.actorModal) closeModal(elements.actorModal);
-        if (!elements.notificationBellContainer.contains(e.target)) {
+        if (!e.target.closest('.notification-bell-container')) {
             elements.notificationDropdown.classList.remove('visible');
         }
       });
@@ -2767,9 +2142,8 @@
       elements.closeShareModalBtn.addEventListener("click", () => closeModal(elements.shareModal));
       elements.closeViewBtn.addEventListener("click", () => { window.location.href = window.location.pathname; });
       elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
-      elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
+      actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
       
-      // Event Listeners for Rewatch Modal
       document.querySelectorAll('.quick-rewatch-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const count = parseInt(btn.dataset.count);
@@ -2807,7 +2181,6 @@
       });
       elements.cancelRewatchBtn.addEventListener('click', () => closeModal(elements.rewatchModal));
       
-      // Friends & Notifications
       elements.addFriendBtn.addEventListener('click', addFriend);
       elements.bellIcon.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -2815,70 +2188,7 @@
       });
     }
 
-    async function addFriend() {
-        const friendId = elements.friendIdInput.value.trim();
-        if (!friendId) return showNotification("Inserisci l'ID di un amico.", "warning");
-        if (friendId === currentUser.uid) return showNotification("Non puoi aggiungere te stesso.", "warning");
-        if (followedFriends.some(f => f.id === friendId)) return showNotification("Questo utente è già nella tua lista amici.", "warning");
-
-        const friendRef = db.ref(`users/${friendId}/email`);
-        try {
-            const snapshot = await friendRef.once('value');
-            if (snapshot.exists()) {
-                const friendEmail = snapshot.val();
-                followedFriends.push({ id: friendId, email: friendEmail });
-                lastCheckedTimestamps[friendId] = new Date().toISOString();
-                saveSocialData();
-                renderFriendsList();
-                setupFriendListeners();
-                showNotification(`Amico ${friendEmail} aggiunto!`, "success");
-                elements.friendIdInput.value = "";
-            } else {
-                showNotification("ID utente non trovato.", "error");
-            }
-        } catch (error) {
-            console.error("Error adding friend:", error);
-            showNotification("Impossibile aggiungere l'amico. Controlla l'ID e riprova.", "error");
-        }
-    }
-
-    function removeFriend(friendId) {
-        followedFriends = followedFriends.filter(f => f.id !== friendId);
-        delete lastCheckedTimestamps[friendId];
-        saveSocialData();
-        renderFriendsList();
-        setupFriendListeners();
-        showNotification("Amico rimosso.", "success");
-    }
-
-    function renderFriendsList() {
-        elements.friendsList.innerHTML = "";
-        if (followedFriends.length === 0) {
-            elements.friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`;
-            return;
-        }
-        followedFriends.forEach(friend => {
-            const card = document.createElement("div");
-            card.className = "management-card";
-            card.innerHTML = `
-                <div>
-                    <div class="friend-email">${friend.email}</div>
-                    <div class="friend-id">${friend.id}</div>
-                </div>
-                <div class="management-card-actions">
-                    <button class="btn btn-primary visit-friend-btn" data-id="${friend.id}" title="Visita Libreria"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button>
-                </div>`;
-            card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
-            card.querySelector('.visit-friend-btn').addEventListener('click', (e) => {
-              const url = `${window.location.origin}${window.location.pathname}?view=${e.currentTarget.dataset.id}`;
-              window.open(url, '_blank');
-            });
-            elements.friendsList.appendChild(card);
-        });
-    }
-
-    function showPosterModal(id) {
+    async function showPosterModal(id) {
         const media = mediaList.find(m => m.id === id);
         if (!media || !media.imdbID) return showNotification("Nessun IMDb ID trovato per questo film.", "warning");
         elements.posterModal.dataset.mediaId = id;
