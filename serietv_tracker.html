@@ -114,10 +114,17 @@
     .media-info { padding: 0.75rem; flex-grow: 1; display: flex; flex-direction: column; }
     .media-title { font-size: 0.9rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-color); font-weight: 600; }
     .media-meta { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .media-ratings { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;}
-    .rating-badge { display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(0,0,0,0.05); padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; }
+    
+    .media-ratings { display: flex; gap: 0.25rem; margin-top: 0.5rem; flex-wrap: nowrap; }
+    .rating-badge { display: inline-flex; align-items: center; gap: 0.2rem; background: rgba(0,0,0,0.05); padding: 0.2rem 0.4rem; border-radius: 12px; font-size: 0.75rem; }
+    
     body.dark .rating-badge { background: rgba(255,255,255,0.08); }
     .rating-icon { width: 14px; height: 14px; object-fit: contain; }
+    .rating-badge.metacritic { color: white; font-weight: bold; }
+    .rating-badge.metacritic.favorable { background: #66cc33; }
+    .rating-badge.metacritic.mixed { background: #ffcc33; }
+    .rating-badge.metacritic.unfavorable { background: #ff0000; }
+    
     .media-progress { margin-top: auto; padding-top: 0.75rem; }
     .progress-bar-container { width: 100%; background-color: var(--progress-bg); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 0.25rem; }
     .progress-bar { height: 100%; background-color: var(--progress-fill); border-radius: 4px; transition: width 0.3s ease-out; }
@@ -167,10 +174,10 @@
 
     input, select { padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); font-size: 1rem; box-sizing: border-box; margin: 0; height: 38px; transition: border-color 0.2s, box-shadow 0.2s; }
     input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2); }
-    .omdb-results-container { max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; margin-top: 1rem; }
-    .omdb-result-item { display: flex; align-items: center; padding: 0.5rem; cursor: pointer; border-radius: 4px; margin-bottom: 0.25rem; }
-    .omdb-result-item:hover { background: rgba(0,0,0,0.05); }
-    .omdb-poster-small { width: 40px; height: 60px; object-fit: cover; margin-right: 0.75rem; border-radius: 4px; }
+    .tmdb-results-container { max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; margin-top: 1rem; }
+    .tmdb-result-item { display: flex; align-items: center; padding: 0.5rem; cursor: pointer; border-radius: 4px; margin-bottom: 0.25rem; }
+    .tmdb-result-item:hover { background: rgba(0,0,0,0.05); }
+    .tmdb-poster-small { width: 40px; height: 60px; object-fit: cover; margin-right: 0.75rem; border-radius: 4px; }
 
     .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); border: 2px dashed var(--border-color); border-radius: 8px; margin-top: 1rem; }
     .empty-state > i { font-size: 2.5rem; margin-bottom: 1rem; }
@@ -185,6 +192,7 @@
     #detailsModalPoster { width: 150px; height: 225px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0; margin-right: 1.5rem; }
     .details-title-section { padding-top: 100px; display: flex; flex-direction: column; flex-grow: 1; }
     #detailsModalTitle { margin: 0; font-size: 1.75rem; }
+    .details-ratings-container { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
     #detailsModalHeader-main { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
     #detailsModalMeta { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.9rem; color: var(--text-secondary); }
     .details-body { padding: 0 1.5rem 1.5rem 1.5rem; }
@@ -235,8 +243,8 @@
     .category-name, .friend-email { font-weight: 600; }
     .friend-id { font-size: 0.8rem; color: var(--text-secondary); }
     #friendsList .management-card-actions .btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); }
-    #friendsList .management-card-actions .btn.visit-friend-films-btn:hover { background-color: var(--primary); color: white; border-color: var(--primary); }
-    #friendsList .management-card-actions .btn.visit-friend-tv-btn:hover { background-color: var(--secondary); color: white; border-color: var(--secondary); }
+    #friendsList .management-card-actions .btn.visit-friend-films-btn:hover { background-color: #3A86FF; color: white; border-color: #3A86FF; }
+    #friendsList .management-card-actions .btn.visit-friend-tv-btn:hover { background-color: var(--primary); color: white; border-color: var(--primary); }
     #friendsList .management-card-actions .btn.remove-friend-btn:hover { background-color: var(--danger); color: white; border-color: var(--danger); }
 
     .context-menu { position: fixed; background: var(--card-bg); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1001; min-width: 240px; padding: 0.5rem 0; border: 1px solid var(--border-color); opacity: 0; transform: translateY(-10px); transition: opacity 0.15s, transform 0.15s; }
@@ -372,8 +380,8 @@
         <div class="tab-content active" id="add-media-tab">
             <h2>Aggiungi una nuova Serie TV</h2>
             <div class="add-media-form">
-                <div class="form-row"><input type="text" id="mediaTitle" placeholder="Titolo serie TV..."><button id="searchOMDbBtn" class="btn btn-secondary"><i class="fas fa-search"></i> Cerca</button></div>
-                <div id="omdbResults" class="omdb-results-container"></div>
+                <div class="form-row"><input type="text" id="mediaTitle" placeholder="Titolo serie TV..."><button id="searchTMDbBtn" class="btn btn-secondary"><i class="fas fa-search"></i> Cerca</button></div>
+                <div id="tmdbResults" class="tmdb-results-container"></div>
             </div>
         </div>
         <div class="tab-content" id="manage-categories-tab">
@@ -414,27 +422,27 @@
   <script>
     const OMDb_API_KEY = "2526ef70";
     const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ=");
-    const MDBLIST_API_KEY = "dpn4z6po4da9jokcdaz4h66fc"; 
+    const MDBLIST_PROXY_URL = "https://serietvtracker.amrit-singh99mail-5e3.workers.dev"; 
     
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
     const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LjggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi43LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
     const EMPTY_STILL_PLACEHOLDER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTY5IiB2aWV3Qm94PSIwIDAgMzAwIDE2OSI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNjkiIGZpbGw9IiNkZGQiLz48L3N2Zz4=";
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
-    const POPCORN_ICON = "https://www.rottentomatoes.com/assets/pizza-pie/images/icons/popcorn/filled.3b1a2ce23a3.svg";
-    const LETTERBOXD_ICON = "https://letterboxd.com/static/img/favicon-16.png";
+    const POPCORN_ICONS = { positive: "https://upload.wikimedia.org/wikipedia/commons/d/da/Rotten_Tomatoes_positive_audience.svg", negative: "https://upload.wikimedia.org/wikipedia/commons/6/63/Rotten_Tomatoes_negative_audience.svg" };
+    const LETTERBOXD_ICON = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTH45TgrphrMnMTlMx9wpG_Jj7JoBzrI9zAfg&s";
     const firebaseConfig = { apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk", authDomain: "gametrackerdb.firebaseapp.com", databaseURL: "https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gametrackerdb" };
     const MAX_LOG_SIZE = 15;
     const MAX_NOTIFICATIONS = 50;
     
     const DEFAULT_CATEGORIES = ["In Corso", "Completate", "Da Vedere", "In Pausa / Droppata"];
-    let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentOMDbSelection = null, debounceTimeout, lazyLoadObserver, currentShowCache = null;
+    let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentTMDbSelection = null, debounceTimeout, lazyLoadObserver, currentShowCache = null;
     let currentUser = null, isViewMode = false, followedFriends = [], friendListeners = {};
     let lastCheckedTimestamps = {};
     
     const getDefaultShowProps = () => ({
         category: 'Da Vedere', addedAt: new Date().toISOString(), lastActivityAt: null, poster: "", 
-        year: "", imdbID: null, imdbRating: "N/A", rottenTomatoes: "N/A", popcornRating: "N/A", letterboxdRating: "N/A", status: "Unknown", 
+        year: "", imdbID: null, tmdbID: null, imdbRating: "N/A", rottenTomatoes: "N/A", popcornRating: "N/A", metacriticRating: "N/A", letterboxdRating: "N/A", status: "Unknown", 
         seasons: {}, progress: {}, isFavorite: false
     });
     
@@ -448,7 +456,7 @@
         statPaused: document.getElementById("statInPausaDroppata"),
         statEpisodes: document.getElementById("statEpisodes"), statHours: document.getElementById("statHours"),
         mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), mediaManagementModal: document.getElementById("mediaManagementModal"), 
-        mediaTitle: document.getElementById("mediaTitle"), searchOMDbBtn: document.getElementById("searchOMDbBtn"), omdbResults: document.getElementById("omdbResults"), 
+        mediaTitle: document.getElementById("mediaTitle"), searchTMDbBtn: document.getElementById("searchTMDbBtn"), tmdbResults: document.getElementById("tmdbResults"), 
         addShowBtn: document.getElementById("addShowBtn"), closeManagementModal: document.getElementById("closeManagementModal"), notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"),
         detailsModal: document.getElementById('detailsModal'), detailsModalContent: document.getElementById('detailsModalContent'), detailsModalClose: document.getElementById('detailsModalClose'),
         episodesModal: document.getElementById('episodesModal'), episodesModalContent: document.getElementById('episodesModalContent'), episodesModalClose: document.getElementById('episodesModalClose'),
@@ -534,8 +542,10 @@
         const watchedEpisodes = Object.keys(show.progress || {}).length; 
         return { watchedEpisodes, totalEpisodes }; 
     }
-    function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(score.replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
-    
+    function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
+    function getPopcornState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 60 ? "positive" : "negative"; }
+    function getMetacriticState(score) { if (!score || score === "N/A") return null; const value = parseInt(score); return isNaN(value) ? null : value >= 61 ? "favorable" : value >= 40 ? "mixed" : "unfavorable"; }
+
     function sanitizeForId(text) {
         return text.replace(/\s*\/\s*|\s+/g, '');
     }
@@ -645,11 +655,12 @@
       const percentage = totalEpisodes > 0 ? (watchedEpisodes / totalEpisodes) * 100 : 0;
       
       const rtState = getRottenTomatoesState(show.rottenTomatoes);
+      const popcornState = getPopcornState(show.popcornRating);
+
       let ratingsHTML = '';
       if (show.imdbRating && show.imdbRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${show.imdbRating}</span>`; }
       if (rtState) { ratingsHTML += `<span class="rating-badge"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${show.rottenTomatoes}</span>`; }
-      if (show.popcornRating && show.popcornRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${POPCORN_ICON}" class="rating-icon">&nbsp;${show.popcornRating}</span>`; }
-      if (show.letterboxdRating && show.letterboxdRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${show.letterboxdRating}</span>`; }
+      if (popcornState) { ratingsHTML += `<span class="rating-badge"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${show.popcornRating}</span>`; }
       
       const actionsHTML = isViewMode ? '' : `
         <div class="card-actions">
@@ -675,55 +686,71 @@
 
     function refreshSingleMedia(id) { const show = mediaList.find(m => m.id === id); if (!show) return; const oldCard = document.querySelector(`.media-card[data-id="${id}"]`); if (oldCard) { const newCard = createMediaCard(show); oldCard.parentElement.replaceChild(newCard, oldCard); if (lazyLoadObserver) lazyLoadObserver.observe(newCard.querySelector(".lazy")); } }
     
-    async function addNewMedia(showDetails) {
-        let newShow = { 
-            ...getDefaultShowProps(), 
-            id: Date.now().toString(), 
-            title: showDetails.Title, 
-            imdbID: showDetails.imdbID, 
-            poster: fixPosterUrl(showDetails.Poster), 
-            addedAt: new Date().toISOString(), 
-            lastActivityAt: new Date().toISOString() 
-        };
+    async function addNewMedia(tmdbId) {
         showNotification("Recupero dettagli della serie...", "warning");
         try {
-            const [tmdbDetails, omdbDetails, mdbListRatings] = await Promise.all([
-                fetchTMDbDetailsWithFallback(newShow.imdbID),
+            const tmdbDetails = await fetchFullTMDbDetails(tmdbId);
+            if (!tmdbDetails || !tmdbDetails.external_ids.imdb_id) {
+                showNotification("Dettagli della serie non trovati o IMDb ID mancante.", "error");
+                return;
+            }
+            
+            const imdbID = tmdbDetails.external_ids.imdb_id;
+            if (mediaList.some(m => m.imdbID === imdbID)) {
+                showNotification("Serie già presente in lista.", "warning");
+                return;
+            }
+
+            let newShow = { 
+                ...getDefaultShowProps(), 
+                id: Date.now().toString(), 
+                title: tmdbDetails.name, 
+                imdbID: imdbID,
+                tmdbID: tmdbId,
+                poster: tmdbDetails.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbDetails.poster_path}` : DEFAULT_POSTER,
+                addedAt: new Date().toISOString(), 
+                lastActivityAt: new Date().toISOString() 
+            };
+            
+            const [omdbDetails, mdbListRatings] = await Promise.all([
                 getOMDbShowDetails(newShow.imdbID),
                 fetchMDBListRatings(newShow.imdbID)
             ]);
 
-            if (tmdbDetails) {
-                const firstYear = tmdbDetails.first_air_date ? tmdbDetails.first_air_date.split('-')[0] : '';
-                const lastYear = tmdbDetails.status === 'Ended' && tmdbDetails.last_air_date ? tmdbDetails.last_air_date.split('-')[0] : '';
-                newShow.year = firstYear && lastYear && firstYear !== lastYear ? `${firstYear}–${lastYear}` : firstYear;
-                newShow.status = tmdbDetails.status;
-                newShow.imdbRating = omdbDetails?.imdbRating !== "N/A" ? omdbDetails.imdbRating : (tmdbDetails.vote_average ? tmdbDetails.vote_average.toFixed(1) : "N/A");
-                
-                const seasonPromises = tmdbDetails.seasons.filter(s => s.season_number > 0).map(s => fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, s.season_number));
-                const seasonsData = await Promise.all(seasonPromises);
-                seasonsData.forEach(season => { 
-                    if (season) {
-                        newShow.seasons[season.season_number] = { 
-                            name: season.name,
-                            episodes: (season.episodes || []).map(ep => ({
-                                name: ep.name,
-                                overview: ep.overview,
-                                episode_number: ep.episode_number,
-                                runtime: ep.runtime || 0,
-                                still_path: ep.still_path
-                            }))
-                        };
-                    }
-                });
-            }
+            const firstYear = tmdbDetails.first_air_date ? tmdbDetails.first_air_date.split('-')[0] : '';
+            const lastYear = tmdbDetails.status === 'Ended' && tmdbDetails.last_air_date ? tmdbDetails.last_air_date.split('-')[0] : '';
+            newShow.year = firstYear && lastYear && firstYear !== lastYear ? `${firstYear}–${lastYear}` : firstYear;
+            newShow.status = tmdbDetails.status;
+            newShow.imdbRating = omdbDetails?.imdbRating !== "N/A" ? omdbDetails.imdbRating : (tmdbDetails.vote_average ? tmdbDetails.vote_average.toFixed(1) : "N/A");
+            
+            const seasonPromises = tmdbDetails.seasons.filter(s => s.season_number > 0).map(s => fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, s.season_number));
+            const seasonsData = await Promise.all(seasonPromises);
+            seasonsData.forEach(season => { 
+                if (season) {
+                    newShow.seasons[season.season_number] = { 
+                        name: season.name,
+                        episodes: (season.episodes || []).map(ep => ({
+                            name: ep.name,
+                            overview: ep.overview,
+                            episode_number: ep.episode_number,
+                            runtime: ep.runtime || 0,
+                            still_path: ep.still_path
+                        }))
+                    };
+                }
+            });
+            
             if (mdbListRatings) {
-                const rtRating = mdbListRatings.find(r => r.source === 'rotten_tomatoes');
-                const popcornRating = mdbListRatings.find(r => r.source === 'rotten_tomatoes_audience');
+                const rtRating = mdbListRatings.find(r => r.source === 'tomatoes');
+                const popcornRating = mdbListRatings.find(r => r.source === 'tomatoesaudience');
                 const letterboxdRating = mdbListRatings.find(r => r.source === 'letterboxd');
+                const metacriticRating = mdbListRatings.find(r => r.source === 'metacritic');
+
                 if (rtRating) newShow.rottenTomatoes = rtRating.value;
                 if (popcornRating) newShow.popcornRating = popcornRating.value;
                 if (letterboxdRating) newShow.letterboxdRating = letterboxdRating.value;
+                if (metacriticRating) newShow.metacriticRating = metacriticRating.value;
+
             } else if (omdbDetails && omdbDetails.Ratings) {
                 const rt = omdbDetails.Ratings.find(r => r.Source === 'Rotten Tomatoes');
                 if (rt) newShow.rottenTomatoes = rt.Value;
@@ -745,21 +772,26 @@
     async function getOMDbShowDetails(imdbId) { if (!imdbId) return null; const res = await fetch(`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&i=${imdbId}`); return res.ok ? await res.json() : null; }
     
     async function fetchTMDbDetailsWithFallback(imdbId) {
-        let details = await fetchTMDbShowDetails(imdbId, 'it-IT');
+        let details = await fetchTMDbShowDetailsByIMDb(imdbId, 'it-IT');
         if (details && !details.overview) {
-            const en_details = await fetchTMDbShowDetails(imdbId, 'en-US');
+            const en_details = await fetchTMDbShowDetailsByIMDb(imdbId, 'en-US');
             if (en_details) details.overview = en_details.overview;
         }
         return details;
     }
-    async function fetchTMDbShowDetails(imdbId, lang = 'it-IT') {
+
+    async function fetchTMDbShowDetailsByIMDb(imdbId, lang = 'it-IT') {
         if (!imdbId) return null; 
         const findRes = await fetch(`https://api.themoviedb.org/3/find/${imdbId}?api_key=${TMDB_KEY}&external_source=imdb_id`); 
         if (!findRes.ok) return null; 
         const findData = await findRes.json();
         const tmdbShow = findData.tv_results[0];
         if (!tmdbShow) return null; 
-        const detailsRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbShow.id}?api_key=${TMDB_KEY}&language=${lang}&append_to_response=credits`); 
+        return await fetchFullTMDbDetails(tmdbShow.id, lang);
+    }
+    
+    async function fetchFullTMDbDetails(tmdbId, lang = 'it-IT') {
+        const detailsRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}?api_key=${TMDB_KEY}&language=${lang}&append_to_response=credits,external_ids`); 
         return detailsRes.ok ? await detailsRes.json() : null;
     }
     
@@ -783,9 +815,9 @@
     }
     
     async function fetchMDBListRatings(imdbId) {
-        if (!imdbId || !MDBLIST_API_KEY || MDBLIST_API_KEY === "INSERISCI_LA_TUA_CHIAVE_API_QUI") return null;
+        if (!imdbId || !MDBLIST_PROXY_URL || MDBLIST_PROXY_URL === "INCOLLA_L_URL_DEL_TUO_WORKER_QUI") return null;
         try {
-            const res = await fetch(`https://mdblist.com/api/?i=${imdbId}`, { headers: { 'x-api-key': MDBLIST_API_KEY } });
+            const res = await fetch(`${MDBLIST_PROXY_URL}?i=${imdbId}`);
             if (!res.ok) return null;
             const data = await res.json();
             return data.ratings || null;
@@ -836,8 +868,19 @@
     
     function populateDetailsModal() {
         const { show, tmdbDetails } = currentShowCache;
-        const posterUrl = tmdbDetails.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbDetails.poster_path}` : show.poster;
+        const posterUrl = show.poster || (tmdbDetails.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbDetails.poster_path}` : DEFAULT_POSTER);
         const genres = tmdbDetails.genres.map(g => g.name).join(', ');
+
+        const rtState = getRottenTomatoesState(show.rottenTomatoes);
+        const popcornState = getPopcornState(show.popcornRating);
+        const mcState = getMetacriticState(show.metacriticRating);
+
+        let ratingsHTML = '';
+        if (show.imdbRating && show.imdbRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${show.imdbRating}</span>`; }
+        if (rtState) { ratingsHTML += `<span class="rating-badge"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${show.rottenTomatoes}</span>`; }
+        if (popcornState) { ratingsHTML += `<span class="rating-badge"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${show.popcornRating}</span>`; }
+        if (mcState) { ratingsHTML += `<span class="rating-badge metacritic ${mcState}">${show.metacriticRating}</span>`; }
+        if (show.letterboxdRating && show.letterboxdRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${show.letterboxdRating}</span>`; }
 
         const castHTML = (tmdbDetails.credits?.cast || []).slice(0, 15).map(actor => `
             <div class="actor-card" data-person-id="${actor.id}">
@@ -853,8 +896,11 @@
                 <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
                 <div class="details-title-section">
                     <div id="detailsModalHeader-main">
-                        <h2 id="detailsModalTitle">${tmdbDetails.name}</h2>
-                        <div style="display: flex; gap: 0.5rem;">
+                        <div>
+                            <h2 id="detailsModalTitle">${tmdbDetails.name}</h2>
+                            <div class="details-ratings-container">${ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione disponibile</span>'}</div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-self: flex-start; flex-shrink: 0;">
                              <button id="detailsModalFavoriteBtn" class="btn ${show.isFavorite ? 'is-favorite' : ''}" title="Aggiungi ai preferiti"><i class="fas fa-heart"></i></button>
                              <button id="showEpisodesBtn" class="btn btn-primary" style="flex-shrink: 0;"><i class="fas fa-list-check"></i> Gestisci Episodi</button>
                         </div>
@@ -862,7 +908,6 @@
                     <div id="detailsModalMeta">
                         <span><i class="fas fa-calendar-alt"></i> ${show.year}</span>
                         <span><i class="fas fa-satellite-dish"></i> ${tmdbDetails.status}</span>
-                        <span><i class="fas fa-star"></i> ${show.imdbRating}</span>
                         ${genres ? `<span><i class="fas fa-film"></i> ${genres}</span>` : ''}
                     </div>
                 </div>
@@ -1233,7 +1278,7 @@
     }
     async function fetchPosters(imdbID) {
         try {
-            const tmdbDetails = await fetchTMDbShowDetails(imdbID);
+            const tmdbDetails = await fetchTMDbShowDetailsByIMDb(imdbID);
             if (!tmdbDetails) return [];
             const imagesRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbDetails.id}/images?api_key=${TMDB_KEY}`);
             const imagesData = await imagesRes.json();
@@ -1268,8 +1313,36 @@
     function setupLazyLoading() { if (lazyLoadObserver) lazyLoadObserver.disconnect(); lazyLoadObserver = new IntersectionObserver((entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { const img = entry.target; img.src = img.dataset.src; img.classList.remove("lazy"); observer.unobserve(img); } }); }, { rootMargin: "200px" }); document.querySelectorAll(".lazy").forEach(img => lazyLoadObserver.observe(img)); }
     function loadSortOrder() { elements.sortFilter.value = localStorage.getItem("tvShowSortOrder") || "added"; }
     function loadTheme() { const theme = localStorage.getItem("theme") || "dark"; document.body.classList.toggle("dark", theme === "dark"); elements.themeToggle.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>`; }
-    async function searchOMDb() { const title = elements.mediaTitle.value.trim(); if (!title) return; elements.omdbResults.innerHTML = `<div style="text-align:center;"><i class="fas fa-spinner loading-spinner"></i></div>`; try { const res = await fetch(`https://www.omdbapi.com/?apikey=${OMDb_API_KEY}&s=${encodeURIComponent(title)}&type=series`); const data = await res.json(); if (data.Response === "True") { elements.omdbResults.innerHTML = data.Search.map(r => `<div class="omdb-result-item" data-imdb-id="${r.imdbID}" data-poster="${r.Poster}"><img src="${r.Poster}" class="omdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'"><div><strong>${r.Title}</strong><div>${r.Year}</div></div></div>`).join(''); document.querySelectorAll(".omdb-result-item").forEach(item => item.addEventListener("click", () => { currentOMDbSelection = { Title: item.querySelector("strong").textContent, Year: item.querySelector("div > div:last-child").textContent, imdbID: item.dataset.imdbId, Poster: item.dataset.poster }; elements.mediaTitle.value = currentOMDbSelection.Title; showNotification(`"${currentOMDbSelection.Title}" selezionato.`, "success"); })); } else { elements.omdbResults.innerHTML = `<p>${data.Error || "Nessun risultato"}</p>`; } } catch (err) { elements.omdbResults.innerHTML = "<p>Errore di rete</p>"; } }
     
+    async function searchTMDb() {
+        const title = elements.mediaTitle.value.trim();
+        if (!title) return;
+        elements.tmdbResults.innerHTML = `<div style="text-align:center;"><i class="fas fa-spinner loading-spinner"></i></div>`;
+        try {
+            const res = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_KEY}&query=${encodeURIComponent(title)}&language=it-IT&include_adult=false`);
+            const data = await res.json();
+            if (data.results && data.results.length > 0) {
+                elements.tmdbResults.innerHTML = data.results.map(r => `
+                    <div class="tmdb-result-item" data-tmdb-id="${r.id}" data-title="${r.name}">
+                        <img src="${r.poster_path ? `https://image.tmdb.org/t/p/w200${r.poster_path}` : DEFAULT_POSTER}" class="tmdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'">
+                        <div>
+                            <strong>${r.name}</strong>
+                            <div>${r.first_air_date ? r.first_air_date.split('-')[0] : ''}</div>
+                        </div>
+                    </div>`).join('');
+                document.querySelectorAll(".tmdb-result-item").forEach(item => item.addEventListener("click", () => {
+                    currentTMDbSelection = { tmdbId: item.dataset.tmdbId, title: item.dataset.title };
+                    elements.mediaTitle.value = currentTMDbSelection.title;
+                    showNotification(`"${currentTMDbSelection.title}" selezionato.`, "success");
+                }));
+            } else {
+                elements.tmdbResults.innerHTML = `<p>Nessun risultato</p>`;
+            }
+        } catch (err) {
+            elements.tmdbResults.innerHTML = "<p>Errore di rete</p>";
+        }
+    }
+
     function triggerDailyUpdateCheck() {
         const now = new Date().getTime();
         const lastCheck = localStorage.getItem('lastShowUpdateCheck');
@@ -1295,7 +1368,7 @@
             try {
                 await new Promise(resolve => setTimeout(resolve, 250)); 
                 
-                const tmdbDetails = await fetchTMDbShowDetails(show.imdbID);
+                const tmdbDetails = await fetchTMDbShowDetailsByIMDb(show.imdbID);
                 if (!tmdbDetails) continue;
 
                 let hasUpdates = false;
@@ -1338,80 +1411,39 @@
         }
     }
     
-    async function fixExistingRuntimes() {
-        console.log("Avvio fix per runtime episodi...");
+    async function fixExistingRatings() {
+        console.log("Avvio fix per i ratings...");
         let updated = false;
         for (const show of mediaList) {
-            if ((!show.episodeRuntime || show.episodeRuntime === 0) && show.imdbID) {
+            if (show.imdbID && (!show.rottenTomatoes || !show.popcornRating || !show.metacriticRating)) {
                 try {
-                    const tmdbDetails = await fetchTMDbShowDetails(show.imdbID);
-                    if (tmdbDetails) {
-                        const runtime = (tmdbDetails.episode_run_time && tmdbDetails.episode_run_time.length > 0) 
-                            ? tmdbDetails.episode_run_time[0] 
-                            : (tmdbDetails.runtime || 45);
+                    const ratings = await fetchMDBListRatings(show.imdbID);
+                    if (ratings) {
+                        const rtRating = ratings.find(r => r.source === 'tomatoes');
+                        const popcornRating = ratings.find(r => r.source === 'tomatoesaudience');
+                        const letterboxdRating = ratings.find(r => r.source === 'letterboxd');
+                        const metacriticRating = ratings.find(r => r.source === 'metacritic');
                         
-                        if (runtime > 0) {
-                            show.episodeRuntime = runtime; // NOTA: questo è un runtime medio, per la massima precisione serve migrateAndFixData
-                            updated = true;
-                            console.log(`Updated runtime for ${show.title}: ${runtime} minutes`);
-                        }
+                        if (rtRating) show.rottenTomatoes = rtRating.value;
+                        if (popcornRating) show.popcornRating = popcornRating.value;
+                        if (letterboxdRating) show.letterboxdRating = letterboxdRating.value;
+                        if (metacriticRating) show.metacriticRating = metacriticRating.value;
+                        
+                        updated = true;
+                        console.log(`Updated ratings for ${show.title}`);
                     }
                     await new Promise(resolve => setTimeout(resolve, 250));
                 } catch (error) {
-                    console.error(`Error updating runtime for ${show.title}:`, error);
+                    console.error(`Error updating ratings for ${show.title}:`, error);
                 }
             }
         }
-        
-        if (updated) {
+        if(updated) {
             await saveData();
-            updateStats();
-            showNotification("Runtime medi aggiornati per le serie esistenti!", "success");
+            renderMedia();
+            showNotification("Ratings aggiornati per le serie esistenti!", "success");
         } else {
-            showNotification("Nessun runtime da aggiornare.", "warning");
-        }
-    }
-
-    async function migrateAndFixData() {
-        console.log("Avvio migrazione dati per runtime episodi...");
-        let updated = false;
-        for (const show of mediaList) {
-            if (!show.seasons || Object.values(show.seasons).some(s => !s.episodes)) {
-                try {
-                    const tmdbDetails = await fetchTMDbDetailsWithFallback(show.imdbID);
-                    if (tmdbDetails) {
-                        console.log(`Aggiornamento: ${show.title}`);
-                        const seasonPromises = tmdbDetails.seasons
-                            .filter(s => s.season_number > 0)
-                            .map(s => fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, s.season_number));
-                        const seasonsData = await Promise.all(seasonPromises);
-                        
-                        seasonsData.forEach(season => {
-                            if (season) {
-                                show.seasons[season.season_number] = {
-                                    name: season.name,
-                                    episodes: (season.episodes || []).map(ep => ({
-                                        name: ep.name,
-                                        overview: ep.overview,
-                                        episode_number: ep.episode_number,
-                                        runtime: ep.runtime || 0,
-                                        still_path: ep.still_path
-                                    }))
-                                };
-                            }
-                        });
-                        updated = true;
-                        await new Promise(resolve => setTimeout(resolve, 250)); // Delay
-                    }
-                } catch(e) { console.error(`Errore durante la migrazione di ${show.title}: ${e}`) }
-            }
-        }
-        if (updated) {
-            await saveData();
-            renderFullUI();
-            showNotification("Migrazione dei dati completata con successo!", "success");
-        } else {
-            showNotification("Nessun dato da migrare.", "warning");
+            showNotification("Nessun rating da aggiornare.", "warning");
         }
     }
 
@@ -1679,12 +1711,12 @@
     }
 
     function setupEventListeners() {
-      elements.mediaManagementBtn.addEventListener("click", () => { elements.mediaManagementModal.style.display = 'flex'; elements.mediaTitle.value = ''; elements.omdbResults.innerHTML = ''; currentOMDbSelection = null; renderCategoriesList(); renderFriendsList(); });
+      elements.mediaManagementBtn.addEventListener("click", () => { elements.mediaManagementModal.style.display = 'flex'; elements.mediaTitle.value = ''; elements.tmdbResults.innerHTML = ''; currentTMDbSelection = null; renderCategoriesList(); renderFriendsList(); });
       document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active')); btn.classList.add('active'); document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active'); elements.addShowBtn.style.display = btn.dataset.tab === 'add-media' ? 'inline-flex' : 'none'; }));
       elements.closeManagementModal.addEventListener("click", () => closeModal(elements.mediaManagementModal));
-      elements.addShowBtn.addEventListener('click', () => { if (!currentOMDbSelection) { showNotification("Cerca e seleziona una serie.", "warning"); return; } if (mediaList.some(m => m.imdbID === currentOMDbSelection.imdbID)) { showNotification("Serie già in lista.", "warning"); return; } addNewMedia(currentOMDbSelection); });
-      elements.searchOMDbBtn.addEventListener("click", searchOMDb);
-      elements.mediaTitle.addEventListener("keydown", e => { if(e.key === "Enter") searchOMDb(); });
+      elements.addShowBtn.addEventListener('click', () => { if (!currentTMDbSelection) { showNotification("Cerca e seleziona una serie.", "warning"); return; } addNewMedia(currentTMDbSelection.tmdbId); });
+      elements.searchTMDbBtn.addEventListener("click", searchTMDb);
+      elements.mediaTitle.addEventListener("keydown", e => { if(e.key === "Enter") searchTMDb(); });
       elements.searchInput.addEventListener("input", () => { clearTimeout(debounceTimeout); debounceTimeout = setTimeout(renderMedia, 300); });
       elements.categoryFilter.addEventListener("change", renderMedia);
       elements.sortFilter.addEventListener("change", () => { localStorage.setItem("tvShowSortOrder", elements.sortFilter.value); renderMedia(); });
