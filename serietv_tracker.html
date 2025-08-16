@@ -235,13 +235,22 @@
     .tab-btn { padding: 0.75rem 1.5rem; background: transparent; border: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
     .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
     .tab-content { display: none; } .tab-content.active { display: block; }
+    .management-form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .management-form input { flex: 1; }
     .management-list { max-height: 300px; overflow-y: auto; }
     .management-card { display: flex; align-items: center; padding: 0.75rem; border-radius: 8px; background: var(--bg-color); margin-bottom: 0.5rem; }
-    .management-card > div { flex: 1; }
+    .management-card > div:first-child { flex: 1; display: flex; align-items: center; }
     .management-card-actions { display: flex; gap: 0.5rem; }
-    .management-card-actions .btn { padding: 0; justify-content: center; height: 32px; width: 32px; background: linear-gradient(45deg, var(--primary), var(--secondary)); color: white; border: none; }
+    .management-card-actions .btn { padding: 0; justify-content: center; height: 32px; width: 32px; }
+    #categoriesList .management-card-actions .btn { background: var(--secondary); color: white; border: none; }
+    #categoriesList .management-card-actions .btn.btn-danger { background: var(--danger); }
+    #categoriesList .management-card-actions .btn:hover { opacity: 0.85; }
     .category-name, .friend-email { font-weight: 600; }
     .friend-id { font-size: 0.8rem; color: var(--text-secondary); }
+    .category-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 0.75rem; flex-shrink: 0; }
+    .category-dot-0 { background: #2a9d8f; } .category-dot-1 { background: #e76f51; } .category-dot-2 { background: #f4a261; } 
+    .category-dot-3 { background: #e9c46a; } .category-dot-4 { background: #8338ec; } .category-dot-5 { background: #3a86ff; }
+    
     #friendsList .management-card-actions .btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); }
     #friendsList .management-card-actions .btn.visit-friend-films-btn:hover { background-color: #3A86FF; color: white; border-color: #3A86FF; }
     #friendsList .management-card-actions .btn.visit-friend-tv-btn:hover { background-color: var(--primary); color: white; border-color: var(--primary); }
@@ -374,7 +383,7 @@
     <div class="modal-content">
         <div class="management-tabs">
           <button class="tab-btn active" data-tab="add-media"><i class="fas fa-plus"></i> Aggiungi Serie</button>
-          <button class="tab-btn" data-tab="manage-categories"><i class="fas fa-list-ol"></i> Ordina Categorie</button>
+          <button class="tab-btn" data-tab="manage-categories"><i class="fas fa-list-ol"></i> Gestisci Categorie</button>
           <button class="tab-btn" data-tab="manage-friends"><i class="fas fa-user-friends"></i> Amici</button>
         </div>
         <div class="tab-content active" id="add-media-tab">
@@ -385,8 +394,11 @@
             </div>
         </div>
         <div class="tab-content" id="manage-categories-tab">
-            <h2>Ordina Categorie</h2>
-            <p style="color: var(--text-secondary); margin-top: -1rem; margin-bottom: 1.5rem;">Usa le frecce per cambiare l'ordine di visualizzazione.</p>
+            <h2>Gestisci Categorie</h2>
+            <div class="management-form">
+                <input type="text" id="newCategoryName" placeholder="Nuova categoria">
+                <button id="addCategoryBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi</button>
+            </div>
             <div class="management-list" id="categoriesList"></div>
         </div>
          <div class="tab-content" id="manage-friends-tab">
@@ -406,7 +418,10 @@
                 <div class="management-list" id="friendsList"></div>
             </div>
         </div>
-        <div class="modal-footer" style="border-top: none; padding-top: 0; justify-content: flex-end;"><button id="closeManagementModal" class="btn btn-danger">Chiudi</button><button id="addShowBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi Serie</button></div>
+        <div class="modal-footer" style="border-top: none; padding-top: 0; justify-content: flex-end;">
+            <button id="closeManagementModal" class="btn btn-danger">Chiudi</button>
+            <button id="addShowBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi Serie</button>
+        </div>
     </div>
   </div>
   
@@ -425,7 +440,7 @@
     const MDBLIST_PROXY_URL = "https://serietvtracker.amrit-singh99mail-5e3.workers.dev"; 
     
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
-    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LjggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi43LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
+    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi43LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
     const EMPTY_STILL_PLACEHOLDER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTY5IiB2aWV3Qm94PSIwIDAgMzAwIDE2OSI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNjkiIGZpbGw9IiNkZGQiLz48L3N2Zz4=";
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
@@ -465,6 +480,7 @@
         cancelPosterChange: document.getElementById('cancelPosterChange'), confirmModal: document.getElementById("confirmModal"), confirmModalTitle: document.getElementById("confirmModalTitle"),
         confirmModalBody: document.getElementById("confirmModalBody"), confirmModalConfirm: document.getElementById("confirmModalConfirm"), confirmModalCancel: document.getElementById("confirmModalCancel"),
         categoriesList: document.getElementById("categoriesList"),
+        newCategoryName: document.getElementById("newCategoryName"), addCategoryBtn: document.getElementById("addCategoryBtn"),
         authToggle: document.getElementById('authToggle'), authForms: document.getElementById('authForms'),
         loginBtn: document.getElementById('loginBtn'), registerBtn: document.getElementById('registerBtn'),
         logoutBtn: document.getElementById('logoutBtn'), userInfo: document.getElementById('userInfo'),
@@ -536,7 +552,12 @@
         return db.ref(`users/${currentUser.uid}/social`).set({ followedFriends, lastCheckedTimestamps });
     }
 
-    function renderFullUI() { renderCategorySections(); updateCategoryFilter(); renderMedia(); updateStats(); }
+    function renderFullUI() { 
+        renderCategorySections(); 
+        updateCategoryFilter(); 
+        renderMedia(); 
+        updateStats(); 
+    }
     function calculateProgress(show) { 
         const totalEpisodes = Object.values(show.seasons || {}).reduce((sum, season) => sum + (season.episodes || []).length, 0); 
         const watchedEpisodes = Object.keys(show.progress || {}).length; 
@@ -547,7 +568,7 @@
     function getMetacriticState(score) { if (!score || score === "N/A") return null; const value = parseInt(score); return isNaN(value) ? null : value >= 61 ? "favorable" : value >= 40 ? "mixed" : "unfavorable"; }
 
     function sanitizeForId(text) {
-        return text.replace(/\s*\/\s*|\s+/g, '');
+        return text.replace(/[^a-zA-Z0-9]/g, '');
     }
 
     function updateStats() {
@@ -556,6 +577,9 @@
             stats.total++;
             const categoryKey = sanitizeForId(show.category);
             if (stats.hasOwnProperty(categoryKey)) {
+                stats[categoryKey]++;
+            } else { // Handle custom categories by adding them to a temporary stats object if needed
+                if (!stats[categoryKey]) stats[categoryKey] = 0;
                 stats[categoryKey]++;
             }
             
@@ -576,10 +600,10 @@
         });
 
         elements.statTotal.textContent = stats.total;
-        elements.statFollowing.textContent = stats.InCorso;
-        elements.statCompleted.textContent = stats.Completate;
-        elements.statToWatch.textContent = stats.DaVedere;
-        elements.statPaused.textContent = stats.InPausaDroppata;
+        elements.statFollowing.textContent = stats.InCorso || 0;
+        elements.statCompleted.textContent = stats.Completate || 0;
+        elements.statToWatch.textContent = stats.DaVedere || 0;
+        elements.statPaused.textContent = stats.InPausaDroppata || 0;
         elements.statEpisodes.textContent = stats.episodesWatched;
         
         const hours = Math.floor(stats.minutesWatched / 60);
@@ -588,61 +612,76 @@
     }
 
     function renderMedia() {
-      const selectedCategory = elements.categoryFilter.value; const searchTerm = elements.searchInput.value.toLowerCase(); const sortBy = elements.sortFilter.value;
-      
-      document.querySelectorAll(".media-section").forEach(s => { s.innerHTML = `<div class="section-header"><h2 class="section-title user-select-none">${s.dataset.category}</h2><span id="${sanitizeForId(s.dataset.category)}Count" class="category-count"></span></div><div class="media-grid" id="${sanitizeForId(s.dataset.category)}Grid"></div>`; });
-      
-      let filteredMedia = [...mediaList];
-      if (selectedCategory === 'favorites') {
-          filteredMedia = filteredMedia.filter(m => m.isFavorite);
-      } else if (selectedCategory !== 'all') {
-          filteredMedia = filteredMedia.filter(m => m.category === selectedCategory);
-      }
-      if(searchTerm) {
-          filteredMedia = filteredMedia.filter(m => m.title.toLowerCase().includes(searchTerm));
-      }
+        const selectedCategory = elements.categoryFilter.value;
+        const searchTerm = elements.searchInput.value.toLowerCase();
+        const sortBy = elements.sortFilter.value;
 
-      filteredMedia.sort((a, b) => { switch (sortBy) { case "alpha": return a.title.localeCompare(b.title); case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0); case "year": return (b.year.split('–')[0] || 0) - (a.year.split('–')[0] || 0); case "added": default: return new Date(b.lastActivityAt || b.addedAt) - new Date(a.lastActivityAt || a.addedAt); } });
-      
-      const categoryGrids = categories.reduce((acc, cat) => ({ ...acc, [cat]: document.getElementById(`${sanitizeForId(cat)}Grid`) }), {});
-      
-      filteredMedia.forEach(media => { 
-          const grid = categoryGrids[media.category];
-          if (grid) grid.appendChild(createMediaCard(media)); 
-      });
+        document.querySelectorAll(".media-section").forEach(s => s.style.display = 'block');
+        document.querySelectorAll(".media-grid").forEach(g => g.innerHTML = '');
 
-      document.querySelectorAll(".media-grid").forEach(grid => { 
-          if (grid.children.length === 0 && selectedCategory !== 'favorites') {
-              grid.innerHTML = `<div class="empty-state"><i class="fas fa-tv"></i><p>Nessuna serie TV qui.</p></div>`; 
-          }
-          const categoryName = grid.parentElement.dataset.category;
-          const countEl = document.getElementById(`${sanitizeForId(categoryName)}Count`); 
-          if (countEl) countEl.textContent = grid.children.length; 
-          
-          if(grid.children.length === 0) {
-              if (selectedCategory === 'all' || selectedCategory === categoryName) {
-                  grid.parentElement.style.display = 'block';
-              } else {
-                  grid.parentElement.style.display = 'none';
-              }
-          } else {
-              grid.parentElement.style.display = 'block';
-          }
-      });
+        let filteredMedia = [...mediaList];
 
-      if (selectedCategory === 'favorites') {
-          const container = elements.mediaSectionsContainer;
-          if (filteredMedia.length === 0) {
-              container.innerHTML = `<div class="media-section"><div class="empty-state"><i class="fas fa-heart-crack"></i><p>Nessun preferito aggiunto.</p></div></div>`;
-          } else {
-              categories.forEach(cat => {
-                  const grid = categoryGrids[cat];
-                  if(grid && grid.children.length === 0) grid.parentElement.style.display = 'none';
-              });
-          }
-      }
-      setupLazyLoading();
+        if (searchTerm) {
+            filteredMedia = filteredMedia.filter(m => m.title.toLowerCase().includes(searchTerm));
+        }
+        
+        if (selectedCategory === 'favorites') {
+            filteredMedia = filteredMedia.filter(m => m.isFavorite);
+        } else if (selectedCategory !== 'all') {
+            filteredMedia = filteredMedia.filter(m => m.category === selectedCategory);
+        }
+
+        filteredMedia.sort((a, b) => {
+            switch (sortBy) {
+                case "alpha": return a.title.localeCompare(b.title);
+                case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
+                case "year": return (b.year.split('–')[0] || 0) - (a.year.split('–')[0] || 0);
+                case "added":
+                default:
+                    return new Date(b.lastActivityAt || b.addedAt) - new Date(a.lastActivityAt || a.addedAt);
+            }
+        });
+
+        filteredMedia.forEach(media => {
+            const gridId = sanitizeForId(media.category) + "Grid";
+            const grid = document.getElementById(gridId);
+            if (grid) {
+                grid.appendChild(createMediaCard(media));
+            }
+        });
+        
+        let hasVisibleContent = false;
+        categories.forEach(category => {
+            const section = document.querySelector(`.media-section[data-category="${category}"]`);
+            if (!section) return;
+
+            const grid = section.querySelector('.media-grid');
+            const countEl = section.querySelector('.category-count');
+            
+            const count = grid.children.length;
+            if(countEl) countEl.textContent = count;
+
+            if (selectedCategory !== 'all' && selectedCategory !== 'favorites' && category !== selectedCategory) {
+                section.style.display = 'none';
+            } else if (count === 0 && selectedCategory === 'favorites') {
+                 section.style.display = 'none';
+            } else {
+                section.style.display = 'block';
+                hasVisibleContent = true;
+                 if (grid.children.length === 0) {
+                    grid.innerHTML = `<div class="empty-state"><i class="fas fa-tv"></i><p>Nessuna serie TV qui.</p></div>`;
+                }
+            }
+        });
+        
+        if (selectedCategory === 'favorites' && !filteredMedia.length) {
+            renderCategorySections(); // Clear existing sections
+            elements.mediaSectionsContainer.innerHTML = `<div class="media-section"><div class="empty-state"><i class="fas fa-heart-crack"></i><p>Nessun preferito aggiunto.</p></div></div>`;
+        }
+
+        setupLazyLoading();
     }
+
 
     function createMediaCard(show) {
       const card = document.createElement("div"); card.className = "media-card"; card.dataset.id = show.id;
@@ -684,7 +723,24 @@
       return card;
     }
 
-    function refreshSingleMedia(id) { const show = mediaList.find(m => m.id === id); if (!show) return; const oldCard = document.querySelector(`.media-card[data-id="${id}"]`); if (oldCard) { const newCard = createMediaCard(show); oldCard.parentElement.replaceChild(newCard, oldCard); if (lazyLoadObserver) lazyLoadObserver.observe(newCard.querySelector(".lazy")); } }
+    function refreshSingleMedia(id) { 
+        const show = mediaList.find(m => m.id === id);
+        if (!show) return;
+        const oldCard = document.querySelector(`.media-card[data-id="${id}"]`);
+        if (oldCard) {
+            const oldCategory = oldCard.closest('.media-section').dataset.category;
+            if (oldCategory !== show.category) {
+                renderMedia();
+            } else {
+                const newCard = createMediaCard(show);
+                oldCard.parentElement.replaceChild(newCard, oldCard);
+                if (lazyLoadObserver) lazyLoadObserver.observe(newCard.querySelector(".lazy"));
+            }
+        } else {
+            renderMedia();
+        }
+        updateStats();
+    }
     
     async function addNewMedia(tmdbId) {
         showNotification("Recupero dettagli della serie...", "warning");
@@ -1174,6 +1230,10 @@
     function updateShowCategoryAndTimestamps(show, forceLog = false) {
         show.lastActivityAt = new Date().toISOString(); 
         if (show.category === 'In Pausa / Droppata') return;
+        
+        const isCustomCategory = !DEFAULT_CATEGORIES.includes(show.category);
+        if (isCustomCategory) return;
+
         const { watchedEpisodes, totalEpisodes } = calculateProgress(show);
         const oldCategory = show.category;
 
@@ -1187,6 +1247,7 @@
         }
         else show.category = "In Corso";
     }
+
     async function moveShowToCategory(showId, newCategory) {
         const show = mediaList.find(m => m.id === showId); 
         if (show && show.category !== newCategory) { 
@@ -1206,6 +1267,7 @@
             showNotification(`"${show.title}" spostato in ${newCategory}.`, "success"); 
         }
     }
+    
     function showContextMenu(show, pos) {
       if (isViewMode) return;
       document.querySelectorAll(".context-menu").forEach(m => m.remove()); 
@@ -1214,30 +1276,44 @@
       const hide = () => menu.remove(); 
       setTimeout(() => document.addEventListener("click", hide, { once: true }), 0);
 
-      let menuItemsHTML = categories
-        .filter(c => c !== show.category && c !== "In Corso")
-        .map(c => {
-            let icon = 'fa-folder-open';
-            if (c === 'Completate') icon = 'fa-check-double';
-            if (c === 'In Pausa / Droppata') icon = 'fa-pause-circle';
-            return `<div class="context-menu-item" data-action="move" data-category="${c}"><i class="fas fa-fw ${icon}"></i> Sposta in ${c}</div>`
-        }).join('');
-      
-      menu.innerHTML = `${menuItemsHTML}<div class="context-menu-divider"></div><div class="context-menu-item" data-action="poster"><i class="fas fa-fw fa-image"></i> Cambia Copertina</div><div class="context-menu-divider"></div><div class="context-menu-item" data-action="delete" style="color:var(--danger);"><i class="fas fa-fw fa-trash-can"></i> Elimina</div>`;
-      
-      menu.style.left = `${pos.x}px`; 
-      menu.style.top = `${pos.y}px`; 
-      document.body.appendChild(menu); 
-      menu.classList.add('visible');
-      
-      menu.addEventListener('click', e => { 
-          const target = e.target.closest('.context-menu-item'); 
-          if (!target) return; 
-          const { action, category } = target.dataset; 
-          if (action === 'move') moveShowToCategory(show.id, category); 
-          if (action === 'poster') showPosterModal(show.id); 
-          if (action === 'delete') deleteShow(show.id);
+      const header = document.createElement("div");
+      header.className = "context-menu-item";
+      header.innerHTML = '<i class="fas fa-folder-open fa-fw"></i> <strong>Sposta in...</strong>';
+      header.style.cssText = "color: var(--text-secondary); cursor: default; background: rgba(128,128,128,0.1);";
+      menu.appendChild(header);
+
+      categories.filter(c => c !== show.category).forEach(cat => {
+          const item = document.createElement("div");
+          item.className = "context-menu-item";
+          const index = categories.indexOf(cat);
+          const dotClass = `category-dot-${index % 6}`;
+          item.innerHTML = `<span class="category-dot ${dotClass}"></span> ${cat}`;
+          item.addEventListener("click", () => { moveShowToCategory(show.id, cat); hide(); });
+          menu.appendChild(item);
       });
+      menu.appendChild(document.createElement("div")).className = "context-menu-divider";
+      
+      const changePosterItem = document.createElement("div");
+      changePosterItem.className = "context-menu-item";
+      changePosterItem.innerHTML = '<i class="fas fa-image fa-fw"></i> Cambia Copertina';
+      changePosterItem.addEventListener("click", () => { showPosterModal(show.id); hide(); });
+      menu.appendChild(changePosterItem);
+      
+      const deleteItem = document.createElement("div");
+      deleteItem.className = "context-menu-item";
+      deleteItem.innerHTML = '<i class="fas fa-trash fa-fw"></i> Elimina';
+      deleteItem.style.color = "var(--danger)";
+      deleteItem.addEventListener("click", () => { deleteShow(show.id); hide(); });
+      menu.appendChild(deleteItem);
+
+      document.body.appendChild(menu);
+      const rect = menu.getBoundingClientRect();
+      let x = pos.x, y = pos.y;
+      if (x + rect.width > window.innerWidth) x = window.innerWidth - rect.width - 5;
+      if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 5;
+      menu.style.left = `${x}px`;
+      menu.style.top = `${y}px`;
+      requestAnimationFrame(() => menu.classList.add('visible'));
     }
 
     function deleteShow(showId) {
@@ -1294,19 +1370,128 @@
         }
     }
     function changePoster(id, url) { const show = mediaList.find(m => m.id === id); if (show) { show.poster = url; saveData(); refreshSingleMedia(id); closeModal(elements.posterModal); showNotification("Copertina aggiornata!", "success"); } }
+    
     function renderCategoriesList() {
-        elements.categoriesList.innerHTML = "";
-        categories.forEach((cat, index) => { const card = document.createElement("div"); card.className = "management-card"; card.innerHTML = `<div><span class="category-name">${cat}</span></div><div class="management-card-actions"><button class="btn move-up-btn" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button><button class="btn move-down-btn" ${index === categories.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button></div>`; card.querySelector('.move-up-btn').addEventListener('click', () => moveCategory(cat, -1)); card.querySelector('.move-down-btn').addEventListener('click', () => moveCategory(cat, 1)); elements.categoriesList.appendChild(card); });
+        const list = elements.categoriesList;
+        list.innerHTML = "";
+        categories.forEach((cat, index) => {
+            const card = document.createElement("div");
+            card.className = "management-card";
+            const isDefault = DEFAULT_CATEGORIES.includes(cat);
+            const dotClass = `category-dot-${index % 6}`;
+            const count = mediaList.filter(m => m.category === cat).length;
+            card.innerHTML = `
+                <div>
+                    <span class="category-dot ${dotClass}"></span>
+                    <div>
+                        <div class="category-name">${cat}</div>
+                    </div>
+                </div>
+                <div class="management-card-actions">
+                    <button class="btn move-up-btn" ${index === 0 ? "disabled" : ""} title="Sposta su"><i class="fas fa-arrow-up"></i></button>
+                    <button class="btn move-down-btn" ${index === categories.length - 1 ? "disabled" : ""} title="Sposta giù"><i class="fas fa-arrow-down"></i></button>
+                    ${!isDefault ? `<button class="btn rename-category-btn" title="Rinomina"><i class="fas fa-pencil-alt"></i></button>
+                                   <button class="btn btn-danger delete-category-btn" title="Elimina"><i class="fas fa-trash"></i></button>` : ''}
+                </div>`;
+            card.querySelector('.move-up-btn').addEventListener('click', () => moveCategory(cat, -1));
+            card.querySelector('.move-down-btn').addEventListener('click', () => moveCategory(cat, 1));
+            if (!isDefault) {
+                card.querySelector('.delete-category-btn').addEventListener('click', () => deleteCategory(cat));
+                card.querySelector('.rename-category-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const nameEl = e.currentTarget.closest(".management-card").querySelector(".category-name");
+                    renameCategory(cat, nameEl);
+                });
+            }
+            list.appendChild(card);
+        });
     }
-    function moveCategory(cat, direction) { const index = categories.indexOf(cat); const newIndex = index + direction; if (newIndex >= 0 && newIndex < categories.length) { [categories[index], categories[newIndex]] = [categories[newIndex], categories[index]]; saveData(); renderFullUI(); renderCategoriesList(); } }
+
+    function renameCategory(oldName, nameEl) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = oldName;
+        input.className = "category-name-input"; 
+        nameEl.parentElement.replaceChild(input, nameEl);
+        input.focus();
+        const save = () => {
+            const newName = input.value.trim();
+            if (newName && newName !== oldName && !categories.includes(newName)) {
+                mediaList.forEach(m => { if (m.category === oldName) m.category = newName; });
+                categories[categories.indexOf(oldName)] = newName;
+                saveData();
+                renderFullUI();
+                renderCategoriesList();
+                showNotification(`Categoria rinominata in "${newName}"`, "success");
+            } else {
+                renderCategoriesList(); // Revert if invalid
+            }
+        };
+        input.addEventListener("blur", save);
+        input.addEventListener("keydown", e => { if (e.key === "Enter") input.blur(); });
+    }
+
+    function addCategory() {
+        const name = elements.newCategoryName.value.trim();
+        if (!name) return showNotification("Inserisci un nome per la categoria", "warning");
+        if (categories.some(c => c.toLowerCase() === name.toLowerCase())) {
+            return showNotification("Questa categoria esiste già.", "warning");
+        }
+        categories.push(name);
+        saveData();
+        renderFullUI();
+        renderCategoriesList(); 
+        elements.newCategoryName.value = "";
+        showNotification(`Categoria "${name}" aggiunta!`, "success");
+    }
+
+    function deleteCategory(cat) {
+        if (DEFAULT_CATEGORIES.includes(cat)) return;
+        showConfirmModal("Elimina Categoria", `Sei sicuro di voler eliminare "${cat}"? Le serie in questa categoria verranno spostate in "Da Vedere".`, () => {
+            mediaList.forEach(m => { if (m.category === cat) m.category = "Da Vedere"; });
+            categories = categories.filter(c => c !== cat);
+            saveData();
+            renderFullUI();
+            renderCategoriesList();
+            showNotification(`Categoria "${cat}" eliminata.`, "success");
+        });
+    }
+
+    function moveCategory(cat, direction) { 
+        const index = categories.indexOf(cat); 
+        const newIndex = index + direction; 
+        if (newIndex >= 0 && newIndex < categories.length) { 
+            [categories[index], categories[newIndex]] = [categories[newIndex], categories[index]]; 
+            saveData(); 
+            renderFullUI(); 
+            renderCategoriesList(); 
+        } 
+    }
+
     function resetApp() { if(isViewMode) return; showConfirmModal("Resetta Tracker", "Sei sicuro di voler resettare l'applicazione? Tutti i dati andranno persi.", () => { mediaList = []; categories = [...DEFAULT_CATEGORIES]; saveData(); renderFullUI(); showNotification("Tracker resettato con successo.", "success"); }); }
     function fixPosterUrl(url) { return (url && url.startsWith("https://")) ? url : DEFAULT_POSTER; }
+    
     function updateCategoryFilter() { 
         const currentVal = elements.categoryFilter.value;
         elements.categoryFilter.innerHTML = `<option value="all">Tutte le categorie</option><option value="favorites">Solo Preferiti</option>${categories.map(cat => `<option value="${cat}">${cat}</option>`).join("")}`; 
-        elements.categoryFilter.value = currentVal;
+        
+        if (Array.from(elements.categoryFilter.options).some(opt => opt.value === currentVal)) {
+            elements.categoryFilter.value = currentVal;
+        } else {
+            elements.categoryFilter.value = 'all';
+        }
     }
-    function renderCategorySections() { elements.mediaSectionsContainer.innerHTML = categories.map(cat => `<div class="media-section" data-category="${cat}"></div>`).join(""); }
+
+    function renderCategorySections() { 
+        elements.mediaSectionsContainer.innerHTML = categories.map(cat => `
+            <div class="media-section" data-category="${cat}">
+                <div class="section-header">
+                    <h2 class="section-title user-select-none">${cat}</h2>
+                    <span id="${sanitizeForId(cat)}Count" class="category-count"></span>
+                </div>
+                <div class="media-grid" id="${sanitizeForId(cat)}Grid"></div>
+            </div>`).join(""); 
+    }
     function closeModal(modal) { modal.style.display = "none"; if (!document.querySelector('.modal[style*="flex"]')) document.body.classList.remove("modal-open"); }
     function showNotification(text, type = "success") { elements.notificationText.textContent = text; elements.notification.className = `notification ${type}`; elements.notification.style.display = "block"; setTimeout(() => elements.notification.style.display = "none", 3000); }
     function showConfirmModal(title, body, onConfirm) { elements.confirmModalTitle.textContent = title; elements.confirmModalBody.textContent = body; elements.confirmModal.style.display = "flex"; const confirmHandler = () => { onConfirm(); closeModal(elements.confirmModal); cleanup(); }; const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); }; const cleanup = () => { elements.confirmModalConfirm.removeEventListener("click", confirmHandler); elements.confirmModalCancel.removeEventListener("click", cancelHandler); }; elements.confirmModalConfirm.addEventListener("click", confirmHandler); elements.confirmModalCancel.addEventListener("click", cancelHandler); }
@@ -1342,7 +1527,7 @@
             elements.tmdbResults.innerHTML = "<p>Errore di rete</p>";
         }
     }
-
+    
     function triggerDailyUpdateCheck() {
         const now = new Date().getTime();
         const lastCheck = localStorage.getItem('lastShowUpdateCheck');
@@ -1675,7 +1860,18 @@
         if (followedFriends.length === 0) { elements.friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`; return; }
         followedFriends.forEach(friend => {
             const card = document.createElement("div"); card.className = "management-card";
-            card.innerHTML = `<div><div class="friend-email">${friend.email}</div><div class="friend-id">${friend.id}</div></div><div class="management-card-actions"><button class="btn visit-friend-films-btn" data-id="${friend.id}" title="Visita Libreria Film"><i class="fas fa-film"></i></button><button class="btn visit-friend-tv-btn" data-id="${friend.id}" title="Visita Libreria Serie TV"><i class="fas fa-tv"></i></button><button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button></div>`;
+            card.innerHTML = `
+                <div>
+                    <div>
+                        <div class="friend-email">${friend.email}</div>
+                        <div class="friend-id">${friend.id}</div>
+                    </div>
+                </div>
+                <div class="management-card-actions">
+                    <button class="btn visit-friend-films-btn" data-id="${friend.id}" title="Visita Libreria Film"><i class="fas fa-film"></i></button>
+                    <button class="btn visit-friend-tv-btn" data-id="${friend.id}" title="Visita Libreria Serie TV"><i class="fas fa-tv"></i></button>
+                    <button class="btn btn-danger remove-friend-btn" data-id="${friend.id}" title="Rimuovi Amico"><i class="fas fa-trash"></i></button>
+                </div>`;
             card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
             card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
               const url = `${window.location.origin}/FilmTracker/index.html?view=${e.currentTarget.dataset.id}`;
@@ -1717,6 +1913,8 @@
       elements.addShowBtn.addEventListener('click', () => { if (!currentTMDbSelection) { showNotification("Cerca e seleziona una serie.", "warning"); return; } addNewMedia(currentTMDbSelection.tmdbId); });
       elements.searchTMDbBtn.addEventListener("click", searchTMDb);
       elements.mediaTitle.addEventListener("keydown", e => { if(e.key === "Enter") searchTMDb(); });
+      elements.addCategoryBtn.addEventListener("click", addCategory);
+      elements.newCategoryName.addEventListener("keydown", e => { if (e.key === "Enter") addCategory(); });
       elements.searchInput.addEventListener("input", () => { clearTimeout(debounceTimeout); debounceTimeout = setTimeout(renderMedia, 300); });
       elements.categoryFilter.addEventListener("change", renderMedia);
       elements.sortFilter.addEventListener("change", () => { localStorage.setItem("tvShowSortOrder", elements.sortFilter.value); renderMedia(); });
