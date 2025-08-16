@@ -114,7 +114,7 @@
     .media-info { padding: 0.75rem; flex-grow: 1; display: flex; flex-direction: column; }
     .media-title { font-size: 0.9rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-color); font-weight: 600; }
     .media-meta { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .media-ratings { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .media-ratings { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;}
     .rating-badge { display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(0,0,0,0.05); padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; }
     body.dark .rating-badge { background: rgba(255,255,255,0.08); }
     .rating-icon { width: 14px; height: 14px; object-fit: contain; }
@@ -414,11 +414,15 @@
   <script>
     const OMDb_API_KEY = "2526ef70";
     const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ=");
+    const MDBLIST_API_KEY = "dpn4z6po4da9jokcdaz4h66fc"; 
+    
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
     const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LjggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi43LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
     const EMPTY_STILL_PLACEHOLDER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTY5IiB2aWV3Qm94PSIwIDAgMzAwIDE2OSI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNjkiIGZpbGw9IiNkZGQiLz48L3N2Zz4=";
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
+    const POPCORN_ICON = "https://www.rottentomatoes.com/assets/pizza-pie/images/icons/popcorn/filled.3b1a2ce23a3.svg";
+    const LETTERBOXD_ICON = "https://letterboxd.com/static/img/favicon-16.png";
     const firebaseConfig = { apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk", authDomain: "gametrackerdb.firebaseapp.com", databaseURL: "https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gametrackerdb" };
     const MAX_LOG_SIZE = 15;
     const MAX_NOTIFICATIONS = 50;
@@ -430,8 +434,8 @@
     
     const getDefaultShowProps = () => ({
         category: 'Da Vedere', addedAt: new Date().toISOString(), lastActivityAt: null, poster: "", 
-        year: "", imdbID: null, imdbRating: "N/A", rottenTomatoes: "N/A", status: "Unknown", 
-        episodeRuntime: 0, seasons: {}, progress: {}, isFavorite: false
+        year: "", imdbID: null, imdbRating: "N/A", rottenTomatoes: "N/A", popcornRating: "N/A", letterboxdRating: "N/A", status: "Unknown", 
+        seasons: {}, progress: {}, isFavorite: false
     });
     
     const elements = { 
@@ -607,7 +611,7 @@
           
           if(grid.children.length === 0) {
               if (selectedCategory === 'all' || selectedCategory === categoryName) {
-                  grid.parentElement.style.display = 'block'; 
+                  grid.parentElement.style.display = 'block';
               } else {
                   grid.parentElement.style.display = 'none';
               }
@@ -644,7 +648,9 @@
       let ratingsHTML = '';
       if (show.imdbRating && show.imdbRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${show.imdbRating}</span>`; }
       if (rtState) { ratingsHTML += `<span class="rating-badge"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${show.rottenTomatoes}</span>`; }
-
+      if (show.popcornRating && show.popcornRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${POPCORN_ICON}" class="rating-icon">&nbsp;${show.popcornRating}</span>`; }
+      if (show.letterboxdRating && show.letterboxdRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${show.letterboxdRating}</span>`; }
+      
       const actionsHTML = isViewMode ? '' : `
         <div class="card-actions">
             <button class="card-btn" data-action="move" title="Sposta in..."><i class="fas fa-folder-open"></i></button>
@@ -681,15 +687,18 @@
         };
         showNotification("Recupero dettagli della serie...", "warning");
         try {
-            const tmdbDetails = await fetchTMDbDetailsWithFallback(newShow.imdbID);
-            const omdbDetails = await getOMDbShowDetails(newShow.imdbID);
+            const [tmdbDetails, omdbDetails, mdbListRatings] = await Promise.all([
+                fetchTMDbDetailsWithFallback(newShow.imdbID),
+                getOMDbShowDetails(newShow.imdbID),
+                fetchMDBListRatings(newShow.imdbID)
+            ]);
 
             if (tmdbDetails) {
                 const firstYear = tmdbDetails.first_air_date ? tmdbDetails.first_air_date.split('-')[0] : '';
                 const lastYear = tmdbDetails.status === 'Ended' && tmdbDetails.last_air_date ? tmdbDetails.last_air_date.split('-')[0] : '';
                 newShow.year = firstYear && lastYear && firstYear !== lastYear ? `${firstYear}–${lastYear}` : firstYear;
                 newShow.status = tmdbDetails.status;
-                newShow.imdbRating = omdbDetails && omdbDetails.imdbRating !== "N/A" ? omdbDetails.imdbRating : (tmdbDetails.vote_average ? tmdbDetails.vote_average.toFixed(1) : "N/A");
+                newShow.imdbRating = omdbDetails?.imdbRating !== "N/A" ? omdbDetails.imdbRating : (tmdbDetails.vote_average ? tmdbDetails.vote_average.toFixed(1) : "N/A");
                 
                 const seasonPromises = tmdbDetails.seasons.filter(s => s.season_number > 0).map(s => fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, s.season_number));
                 const seasonsData = await Promise.all(seasonPromises);
@@ -708,7 +717,14 @@
                     }
                 });
             }
-            if (omdbDetails && omdbDetails.Ratings) {
+            if (mdbListRatings) {
+                const rtRating = mdbListRatings.find(r => r.source === 'rotten_tomatoes');
+                const popcornRating = mdbListRatings.find(r => r.source === 'rotten_tomatoes_audience');
+                const letterboxdRating = mdbListRatings.find(r => r.source === 'letterboxd');
+                if (rtRating) newShow.rottenTomatoes = rtRating.value;
+                if (popcornRating) newShow.popcornRating = popcornRating.value;
+                if (letterboxdRating) newShow.letterboxdRating = letterboxdRating.value;
+            } else if (omdbDetails && omdbDetails.Ratings) {
                 const rt = omdbDetails.Ratings.find(r => r.Source === 'Rotten Tomatoes');
                 if (rt) newShow.rottenTomatoes = rt.Value;
             }
@@ -764,6 +780,19 @@
     async function fetchTMDbSeasonDetails(tvId, seasonNumber, lang = 'it-IT') { 
         const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_KEY}&language=${lang}`); 
         return res.ok ? await res.json() : null; 
+    }
+    
+    async function fetchMDBListRatings(imdbId) {
+        if (!imdbId || !MDBLIST_API_KEY || MDBLIST_API_KEY === "INSERISCI_LA_TUA_CHIAVE_API_QUI") return null;
+        try {
+            const res = await fetch(`https://mdblist.com/api/?i=${imdbId}`, { headers: { 'x-api-key': MDBLIST_API_KEY } });
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data.ratings || null;
+        } catch (error) {
+            console.error("Errore nel recupero dati da MDBList:", error);
+            return null;
+        }
     }
 
     async function showDetailsModal(showId) {
@@ -1308,6 +1337,83 @@
              showNotification("Nessun nuovo aggiornamento trovato per le tue serie.", "success");
         }
     }
+    
+    async function fixExistingRuntimes() {
+        console.log("Avvio fix per runtime episodi...");
+        let updated = false;
+        for (const show of mediaList) {
+            if ((!show.episodeRuntime || show.episodeRuntime === 0) && show.imdbID) {
+                try {
+                    const tmdbDetails = await fetchTMDbShowDetails(show.imdbID);
+                    if (tmdbDetails) {
+                        const runtime = (tmdbDetails.episode_run_time && tmdbDetails.episode_run_time.length > 0) 
+                            ? tmdbDetails.episode_run_time[0] 
+                            : (tmdbDetails.runtime || 45);
+                        
+                        if (runtime > 0) {
+                            show.episodeRuntime = runtime; // NOTA: questo è un runtime medio, per la massima precisione serve migrateAndFixData
+                            updated = true;
+                            console.log(`Updated runtime for ${show.title}: ${runtime} minutes`);
+                        }
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 250));
+                } catch (error) {
+                    console.error(`Error updating runtime for ${show.title}:`, error);
+                }
+            }
+        }
+        
+        if (updated) {
+            await saveData();
+            updateStats();
+            showNotification("Runtime medi aggiornati per le serie esistenti!", "success");
+        } else {
+            showNotification("Nessun runtime da aggiornare.", "warning");
+        }
+    }
+
+    async function migrateAndFixData() {
+        console.log("Avvio migrazione dati per runtime episodi...");
+        let updated = false;
+        for (const show of mediaList) {
+            if (!show.seasons || Object.values(show.seasons).some(s => !s.episodes)) {
+                try {
+                    const tmdbDetails = await fetchTMDbDetailsWithFallback(show.imdbID);
+                    if (tmdbDetails) {
+                        console.log(`Aggiornamento: ${show.title}`);
+                        const seasonPromises = tmdbDetails.seasons
+                            .filter(s => s.season_number > 0)
+                            .map(s => fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, s.season_number));
+                        const seasonsData = await Promise.all(seasonPromises);
+                        
+                        seasonsData.forEach(season => {
+                            if (season) {
+                                show.seasons[season.season_number] = {
+                                    name: season.name,
+                                    episodes: (season.episodes || []).map(ep => ({
+                                        name: ep.name,
+                                        overview: ep.overview,
+                                        episode_number: ep.episode_number,
+                                        runtime: ep.runtime || 0,
+                                        still_path: ep.still_path
+                                    }))
+                                };
+                            }
+                        });
+                        updated = true;
+                        await new Promise(resolve => setTimeout(resolve, 250)); // Delay
+                    }
+                } catch(e) { console.error(`Errore durante la migrazione di ${show.title}: ${e}`) }
+            }
+        }
+        if (updated) {
+            await saveData();
+            renderFullUI();
+            showNotification("Migrazione dei dati completata con successo!", "success");
+        } else {
+            showNotification("Nessun dato da migrare.", "warning");
+        }
+    }
 
     function setupAuthListeners() {
         elements.authToggle.addEventListener("click", e => { e.stopPropagation(); elements.authForms.classList.toggle("active"); });
@@ -1540,11 +1646,11 @@
             card.innerHTML = `<div><div class="friend-email">${friend.email}</div><div class="friend-id">${friend.id}</div></div><div class="management-card-actions"><button class="btn visit-friend-films-btn" data-id="${friend.id}" title="Visita Libreria Film"><i class="fas fa-film"></i></button><button class="btn visit-friend-tv-btn" data-id="${friend.id}" title="Visita Libreria Serie TV"><i class="fas fa-tv"></i></button><button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button></div>`;
             card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
             card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
-              const url = `${window.location.origin}/index.html?view=${e.currentTarget.dataset.id}`;
+              const url = `${window.location.origin}/FilmTracker/index.html?view=${e.currentTarget.dataset.id}`;
               window.open(url, '_blank');
             });
             card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
-              const url = `${window.location.origin}/serietv_tracker.html?view=${e.currentTarget.dataset.id}`;
+              const url = `${window.location.origin}/FilmTracker/serietv_tracker.html?view=${e.currentTarget.dataset.id}`;
               window.open(url, '_blank');
             });
             elements.friendsList.appendChild(card);
