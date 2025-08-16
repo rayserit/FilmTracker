@@ -382,7 +382,7 @@
             <div class="management-list" id="categoriesList"></div>
         </div>
          <div class="tab-content" id="manage-friends-tab">
-             <div id="myIdContainer" class="management-section" style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; text-align: center; margin-bottom: 1.5rem;">
+            <div id="myIdContainer" class="management-section" style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; text-align: center; margin-bottom: 1.5rem;">
                 <h4>Il tuo ID univoco</h4>
                 <p style="font-size: 0.9rem; color: var(--text-secondary);">Condividi questo ID con i tuoi amici per permettergli di seguirti.</p>
                 <div style="display: flex; gap: 0.5rem; justify-content: center;">
@@ -525,7 +525,11 @@
     }
 
     function renderFullUI() { renderCategorySections(); updateCategoryFilter(); renderMedia(); updateStats(); }
-    function calculateProgress(show) { const totalEpisodes = Object.values(show.seasons || {}).reduce((sum, season) => sum + (season.episodes || []).length, 0); const watchedEpisodes = Object.keys(show.progress || {}).length; return { watchedEpisodes, totalEpisodes }; }
+    function calculateProgress(show) { 
+        const totalEpisodes = Object.values(show.seasons || {}).reduce((sum, season) => sum + (season.episodes || []).length, 0); 
+        const watchedEpisodes = Object.keys(show.progress || {}).length; 
+        return { watchedEpisodes, totalEpisodes }; 
+    }
     function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(score.replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
     
     function sanitizeForId(text) {
@@ -603,7 +607,7 @@
           
           if(grid.children.length === 0) {
               if (selectedCategory === 'all' || selectedCategory === categoryName) {
-                  grid.parentElement.style.display = 'block';
+                  grid.parentElement.style.display = 'block'; 
               } else {
                   grid.parentElement.style.display = 'none';
               }
@@ -697,7 +701,8 @@
                                 name: ep.name,
                                 overview: ep.overview,
                                 episode_number: ep.episode_number,
-                                runtime: ep.runtime || 0
+                                runtime: ep.runtime || 0,
+                                still_path: ep.still_path
                             }))
                         };
                     }
@@ -780,7 +785,8 @@
                             name: ep.name,
                             overview: ep.overview,
                             episode_number: ep.episode_number,
-                            runtime: ep.runtime || 0
+                            runtime: ep.runtime || 0,
+                            still_path: ep.still_path
                         }))
                     };
                     hasUpdates = true;
@@ -1275,7 +1281,8 @@
                                     name: ep.name,
                                     overview: ep.overview,
                                     episode_number: ep.episode_number,
-                                    runtime: ep.runtime || 0
+                                    runtime: ep.runtime || 0,
+                                    still_path: ep.still_path
                                 }))
                             };
                             hasUpdates = true;
@@ -1533,11 +1540,11 @@
             card.innerHTML = `<div><div class="friend-email">${friend.email}</div><div class="friend-id">${friend.id}</div></div><div class="management-card-actions"><button class="btn visit-friend-films-btn" data-id="${friend.id}" title="Visita Libreria Film"><i class="fas fa-film"></i></button><button class="btn visit-friend-tv-btn" data-id="${friend.id}" title="Visita Libreria Serie TV"><i class="fas fa-tv"></i></button><button class="btn btn-danger remove-friend-btn" data-id="${friend.id}"><i class="fas fa-trash"></i></button></div>`;
             card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
             card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
-              const url = `${window.location.origin}/FilmTracker/index.html?view=${e.currentTarget.dataset.id}`;
+              const url = `${window.location.origin}/index.html?view=${e.currentTarget.dataset.id}`;
               window.open(url, '_blank');
             });
             card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
-              const url = `${window.location.origin}/FilmTracker/serietv_tracker.html?view=${e.currentTarget.dataset.id}`;
+              const url = `${window.location.origin}/serietv_tracker.html?view=${e.currentTarget.dataset.id}`;
               window.open(url, '_blank');
             });
             elements.friendsList.appendChild(card);
