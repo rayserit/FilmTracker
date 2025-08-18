@@ -34,7 +34,8 @@
       --border-color: #e0e0e0;
       --section-tint: rgba(42, 157, 143, 0.05);
       --progress-bg: #e0e0e0;
-      --progress-fill: var(--primary);
+      --progress-fill: #66cc00; /* Verde per serie in corso */
+      --progress-fill-ended: #9c04fc; /* Verde acqua per serie terminate */
       --film-accent: #3A86FF; /* Colore per notifiche Film Tracker */
     }
 
@@ -126,7 +127,8 @@
     
     .media-progress { margin-top: auto; padding-top: 0.75rem; }
     .progress-bar-container { width: 100%; background-color: var(--progress-bg); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 0.25rem; }
-    .progress-bar { height: 100%; background-color: var(--progress-fill); border-radius: 4px; transition: width 0.3s ease-out; }
+    .progress-bar { height: 100%; background-color: var(--progress-fill); border-radius: 4px; transition: width 0.3s ease-out, background-color 0.3s; }
+    .progress-bar.ended { background-color: var(--progress-fill-ended); }
     .progress-bar.dropped { background-color: var(--danger); }
     .progress-text { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
     
@@ -458,7 +460,7 @@
     const MAX_NOTIFICATIONS = 50;
     
     const DEFAULT_CATEGORIES = ["In Corso", "Completate", "Da Vedere", "In Pausa / Droppata"];
-    let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentTMDbSelection = null, debounceTimeout, lazyLoadObserver, currentShowCache = null;
+    let mediaList = [], categories = [], currentTMDbSelection = null, debounceTimeout, lazyLoadObserver, currentShowCache = null;
     let currentUser = null, isViewMode = false, followedFriends = [], friendListeners = {};
     let lastCheckedTimestamps = {};
     let statContributorIds = new Set();
@@ -518,7 +520,7 @@
         db.ref(`${path}/tvShowTracker`).on("value", snapshot => {
             const data = snapshot.val() || {};
             mediaList = (data.mediaList || []).map(item => ({ ...getDefaultShowProps(), ...item }));
-            categories = data.categories || [...DEFAULT_CATEGORIES];
+            categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => (typeof cat === 'string') ? { name: cat, hideProgress: false } : cat);
             if (!isViewMode) {
                 renderFullUI();
                 triggerDailyUpdateCheck();
@@ -539,10 +541,12 @@
     function loadLocalData() { 
         try { 
             mediaList = JSON.parse(localStorage.getItem("tvShowList") || "[]").map(item => ({ ...getDefaultShowProps(), ...item })); 
-            categories = JSON.parse(localStorage.getItem("tvShowCategories") || JSON.stringify(DEFAULT_CATEGORIES)); 
+            const storedCategories = JSON.parse(localStorage.getItem("tvShowCategories") || JSON.stringify(DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))));
+            categories = storedCategories.map(cat => (typeof cat === 'string') ? { name: cat, hideProgress: false } : cat);
             renderFullUI(); 
         } catch (err) { 
-            mediaList = []; categories = [...DEFAULT_CATEGORIES]; 
+            mediaList = []; 
+            categories = DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false })); 
             renderFullUI(); 
         } 
     }
@@ -552,7 +556,12 @@
         if (currentUser) {
             return db.ref(`users/${currentUser.uid}/tvShowTracker`).set({ mediaList, categories });
         } else {
-            try { localStorage.setItem("tvShowList", JSON.stringify(mediaList)); localStorage.setItem("tvShowCategories", JSON.stringify(categories)); } catch (err) { showNotification("Errore nel salvataggio dei dati", "error"); } 
+            try { 
+                localStorage.setItem("tvShowList", JSON.stringify(mediaList)); 
+                localStorage.setItem("tvShowCategories", JSON.stringify(categories)); 
+            } catch (err) { 
+                showNotification("Errore nel salvataggio dei dati", "error"); 
+            } 
             return Promise.resolve();
         }
     }
@@ -575,7 +584,6 @@
     }
     function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
     function getPopcornState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 60 ? "positive" : "negative"; }
-    function getMetacriticState(score) { if (!score || score === "N/A") return null; const value = parseInt(score); return isNaN(value) ? null : value >= 61 ? "favorable" : value >= 40 ? "mixed" : "unfavorable"; }
 
     function sanitizeForId(text) {
         return text.replace(/[^a-zA-Z0-9]/g, '');
@@ -677,8 +685,9 @@
         });
         
         let hasContent = false;
-        categories.forEach(category => {
-            const section = document.querySelector(`.media-section[data-category="${category}"]`);
+        categories.forEach(catObj => {
+            const categoryName = catObj.name;
+            const section = document.querySelector(`.media-section[data-category="${categoryName}"]`);
             if (!section) return;
 
             const grid = section.querySelector('.media-grid');
@@ -687,7 +696,7 @@
             const count = grid.children.length;
             if(countEl) countEl.textContent = count;
 
-            if (selectedCategory !== 'all' && selectedCategory !== 'favorites' && category !== selectedCategory) {
+            if (selectedCategory !== 'all' && selectedCategory !== 'favorites' && categoryName !== selectedCategory) {
                 section.style.display = 'none';
             } else if (count === 0 && selectedCategory === 'favorites') {
                  section.style.display = 'none';
@@ -730,7 +739,15 @@
       
       const rtState = getRottenTomatoesState(show.rottenTomatoes);
       const popcornState = getPopcornState(show.popcornRating);
-
+      
+      let progressBarClass = "progress-bar";
+      if (show.status === "Ended" || show.status === "Canceled") {
+          progressBarClass += " ended";
+      }
+      if (show.category === 'In Pausa / Droppata') {
+          progressBarClass += " dropped";
+      }
+      
       let ratingsHTML = '';
       if (show.imdbRating && show.imdbRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${show.imdbRating}</span>`; }
       if (rtState) { ratingsHTML += `<span class="rating-badge"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${show.rottenTomatoes}</span>`; }
@@ -740,6 +757,13 @@
         <div class="card-actions">
             <button class="card-btn" data-action="move" title="Sposta in..."><i class="fas fa-folder-open"></i></button>
             <button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button>
+        </div>`;
+      
+      const categoryObject = categories.find(c => c.name === show.category);
+      const progressHTML = (categoryObject && categoryObject.hideProgress) ? '' : `
+        <div class="media-progress">
+          <div class="progress-bar-container"><div class="${progressBarClass}" style="width: ${percentage}%;"></div></div>
+          <div class="progress-text">${show.category === 'In Pausa / Droppata' ? `Visti ${watchedEpisodes} / ${totalEpisodes}` : `${watchedEpisodes} / ${totalEpisodes} ep.`}</div>
         </div>`;
 
       card.innerHTML = `
@@ -754,10 +778,7 @@
             <span>${show.year}</span>
           </div>
           <div class="media-ratings">${ratingsHTML}</div>
-          <div class="media-progress">
-            <div class="progress-bar-container"><div class="progress-bar ${show.category === 'In Pausa / Droppata' ? 'dropped' : ''}" style="width: ${percentage}%;"></div></div>
-            <div class="progress-text">${show.category === 'In Pausa / Droppata' ? `Visti ${watchedEpisodes} / ${totalEpisodes}` : `${watchedEpisodes} / ${totalEpisodes} ep.`}</div>
-          </div>
+          ${progressHTML}
         </div>`;
       
       card.querySelector('.favorite-btn').addEventListener('click', (e) => { e.stopPropagation(); toggleFavorite(show.id); });
@@ -820,7 +841,7 @@
             
             const existingShow = mediaList.find(m => m.imdbID === imdbID);
             if (existingShow) {
-                newShow.progress = JSON.parse(JSON.stringify(existingShow.progress)); // Deep copy progress
+                newShow.progress = JSON.parse(JSON.stringify(existingShow.progress));
             }
 
             const [omdbDetails, mdbListRatings] = await Promise.all([
@@ -850,6 +871,14 @@
                     };
                 }
             });
+
+            if (category === "Completate" && !existingShow) {
+                Object.keys(newShow.seasons).forEach(seasonNum => {
+                    (newShow.seasons[seasonNum].episodes || []).forEach(ep => {
+                        newShow.progress[`${seasonNum}-${ep.episode_number}`] = true;
+                    });
+                });
+            }
             
             if (mdbListRatings) {
                 const rtRating = mdbListRatings.find(r => r.source === 'tomatoes');
@@ -1354,11 +1383,11 @@
       header.style.cssText = "color: var(--text-secondary); cursor: default; background: rgba(128,128,128,0.1);";
       menu.appendChild(header);
 
-      categories.filter(c => c !== show.category).forEach(cat => {
+      categories.map(c => c.name).filter(c => c !== show.category).forEach(cat => {
           const item = document.createElement("div");
           item.className = "context-menu-item";
-          const index = categories.indexOf(cat);
-          const dotClass = `category-dot-${index % 6}`;
+          const catIndex = categories.findIndex(c => c.name === cat);
+          const dotClass = `category-dot-${catIndex % 6}`;
           item.innerHTML = `<span class="category-dot ${dotClass}"></span> ${cat}`;
           item.addEventListener("click", () => { moveShowToCategory(show.id, cat); hide(); });
           menu.appendChild(item);
@@ -1446,37 +1475,51 @@
     function renderCategoriesList() {
         const list = elements.categoriesList;
         list.innerHTML = "";
-        categories.forEach((cat, index) => {
+        categories.forEach((catObj, index) => {
             const card = document.createElement("div");
             card.className = "management-card";
-            const isDefault = DEFAULT_CATEGORIES.includes(cat);
+            const isDefault = DEFAULT_CATEGORIES.includes(catObj.name);
             const dotClass = `category-dot-${index % 6}`;
-            const count = mediaList.filter(m => m.category === cat).length;
+            const count = mediaList.filter(m => m.category === catObj.name).length;
             card.innerHTML = `
                 <div>
                     <span class="category-dot ${dotClass}"></span>
                     <div>
-                        <div class="category-name">${cat}</div>
+                        <div class="category-name">${catObj.name}</div>
                     </div>
                 </div>
                 <div class="management-card-actions">
                     <button class="btn move-up-btn" ${index === 0 ? "disabled" : ""} title="Sposta su"><i class="fas fa-arrow-up"></i></button>
                     <button class="btn move-down-btn" ${index === categories.length - 1 ? "disabled" : ""} title="Sposta giù"><i class="fas fa-arrow-down"></i></button>
-                    ${!isDefault ? `<button class="btn rename-category-btn" title="Rinomina"><i class="fas fa-pencil-alt"></i></button>
-                                   <button class="btn btn-danger delete-category-btn" title="Elimina"><i class="fas fa-trash"></i></button>` : ''}
+                    ${!isDefault ? `
+                        <button class="btn toggle-progress-btn" title="Mostra/Nascondi progresso"><i class="fas ${catObj.hideProgress ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
+                        <button class="btn rename-category-btn" title="Rinomina"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="btn btn-danger delete-category-btn" title="Elimina"><i class="fas fa-trash"></i></button>
+                    ` : ''}
                 </div>`;
-            card.querySelector('.move-up-btn').addEventListener('click', () => moveCategory(cat, -1));
-            card.querySelector('.move-down-btn').addEventListener('click', () => moveCategory(cat, 1));
+            card.querySelector('.move-up-btn').addEventListener('click', () => moveCategory(catObj.name, -1));
+            card.querySelector('.move-down-btn').addEventListener('click', () => moveCategory(catObj.name, 1));
             if (!isDefault) {
-                card.querySelector('.delete-category-btn').addEventListener('click', () => deleteCategory(cat));
+                card.querySelector('.delete-category-btn').addEventListener('click', () => deleteCategory(catObj.name));
                 card.querySelector('.rename-category-btn').addEventListener('click', (e) => {
                     e.stopPropagation();
                     const nameEl = e.currentTarget.closest(".management-card").querySelector(".category-name");
-                    renameCategory(cat, nameEl);
+                    renameCategory(catObj.name, nameEl);
                 });
+                card.querySelector('.toggle-progress-btn').addEventListener('click', () => toggleCategoryProgress(catObj.name));
             }
             list.appendChild(card);
         });
+    }
+
+    function toggleCategoryProgress(catName) {
+        const category = categories.find(c => c.name === catName);
+        if(category) {
+            category.hideProgress = !category.hideProgress;
+            saveData();
+            renderCategoriesList();
+            renderMedia();
+        }
     }
 
     function renameCategory(oldName, nameEl) {
@@ -1488,9 +1531,10 @@
         input.focus();
         const save = () => {
             const newName = input.value.trim();
-            if (newName && newName !== oldName && !categories.includes(newName)) {
+            const catIndex = categories.findIndex(c => c.name === oldName);
+            if (newName && newName !== oldName && !categories.some(c => c.name === newName)) {
                 mediaList.forEach(m => { if (m.category === oldName) m.category = newName; });
-                categories[categories.indexOf(oldName)] = newName;
+                categories[catIndex].name = newName;
                 saveData();
                 renderFullUI();
                 renderCategoriesList();
@@ -1506,10 +1550,10 @@
     function addCategory() {
         const name = elements.newCategoryName.value.trim();
         if (!name) return showNotification("Inserisci un nome per la categoria", "warning");
-        if (categories.some(c => c.toLowerCase() === name.toLowerCase())) {
+        if (categories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
             return showNotification("Questa categoria esiste già.", "warning");
         }
-        categories.push(name);
+        categories.push({ name: name, hideProgress: false });
         saveData();
         renderFullUI();
         renderCategoriesList(); 
@@ -1517,20 +1561,20 @@
         showNotification(`Categoria "${name}" aggiunta!`, "success");
     }
 
-    function deleteCategory(cat) {
-        if (DEFAULT_CATEGORIES.includes(cat)) return;
-        showConfirmModal("Elimina Categoria", `Sei sicuro di voler eliminare la categoria "${cat}"? Le serie in questa categoria verranno spostate in "Da Vedere".`, () => {
-            mediaList.forEach(m => { if (m.category === cat) m.category = "Da Vedere"; });
-            categories = categories.filter(c => c !== cat);
+    function deleteCategory(catName) {
+        if (DEFAULT_CATEGORIES.includes(catName)) return;
+        showConfirmModal("Elimina Categoria", `Sei sicuro di voler eliminare la categoria "${catName}"? Le serie in questa categoria verranno spostate in "Da Vedere".`, () => {
+            mediaList.forEach(m => { if (m.category === catName) m.category = "Da Vedere"; });
+            categories = categories.filter(c => c.name !== catName);
             saveData();
             renderFullUI();
             renderCategoriesList();
-            showNotification(`Categoria "${cat}" eliminata.`, "success");
+            showNotification(`Categoria "${catName}" eliminata.`, "success");
         });
     }
 
-    function moveCategory(cat, direction) { 
-        const index = categories.indexOf(cat); 
+    function moveCategory(catName, direction) { 
+        const index = categories.findIndex(c => c.name === catName); 
         const newIndex = index + direction; 
         if (newIndex >= 0 && newIndex < categories.length) { 
             [categories[index], categories[newIndex]] = [categories[newIndex], categories[index]]; 
@@ -1540,12 +1584,12 @@
         } 
     }
 
-    function resetApp() { if(isViewMode) return; showConfirmModal("Resetta Tracker", "Sei sicuro di voler resettare l'applicazione? Tutti i dati andranno persi.", () => { mediaList = []; categories = [...DEFAULT_CATEGORIES]; saveData(); renderFullUI(); showNotification("Tracker resettato con successo.", "success"); }); }
+    function resetApp() { if(isViewMode) return; showConfirmModal("Resetta Tracker", "Sei sicuro di voler resettare l'applicazione? Tutti i dati andranno persi.", () => { mediaList = []; categories = DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false })); saveData(); renderFullUI(); showNotification("Tracker resettato con successo.", "success"); }); }
     function fixPosterUrl(url) { return (url && url.startsWith("https://")) ? url : DEFAULT_POSTER; }
     
     function updateCategoryFilter() { 
         const currentVal = elements.categoryFilter.value;
-        elements.categoryFilter.innerHTML = `<option value="all">Tutte le categorie</option><option value="favorites">Solo Preferiti</option>${categories.map(cat => `<option value="${cat}">${cat}</option>`).join("")}`; 
+        elements.categoryFilter.innerHTML = `<option value="all">Tutte le categorie</option><option value="favorites">Solo Preferiti</option>${categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join("")}`; 
         
         if (Array.from(elements.categoryFilter.options).some(opt => opt.value === currentVal)) {
             elements.categoryFilter.value = currentVal;
@@ -1556,22 +1600,22 @@
 
     function populateAddMediaCategorySelect() {
         const lastUsed = localStorage.getItem("lastUsedTvShowCategory");
-        elements.addMediaCategorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join("");
-        if (lastUsed && categories.includes(lastUsed)) {
+        elements.addMediaCategorySelect.innerHTML = categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join("");
+        if (lastUsed && categories.some(c => c.name === lastUsed)) {
             elements.addMediaCategorySelect.value = lastUsed;
-        } else if (categories.includes("Da Vedere")) {
+        } else if (categories.some(c => c.name === "Da Vedere")) {
             elements.addMediaCategorySelect.value = "Da Vedere";
         }
     }
 
     function renderCategorySections() { 
         elements.mediaSectionsContainer.innerHTML = categories.map(cat => `
-            <div class="media-section" data-category="${cat}">
+            <div class="media-section" data-category="${cat.name}">
                 <div class="section-header">
-                    <h2 class="section-title user-select-none">${cat}</h2>
-                    <span id="${sanitizeForId(cat)}Count" class="category-count"></span>
+                    <h2 class="section-title user-select-none">${cat.name}</h2>
+                    <span id="${sanitizeForId(cat.name)}Count" class="category-count"></span>
                 </div>
-                <div class="media-grid" id="${sanitizeForId(cat)}Grid"></div>
+                <div class="media-grid" id="${sanitizeForId(cat.name)}Grid"></div>
             </div>`).join(""); 
     }
     function closeModal(modal) { modal.style.display = "none"; if (!document.querySelector('.modal[style*="flex"]')) document.body.classList.remove("modal-open"); }
@@ -1769,7 +1813,7 @@
         const data = snapshot.val();
         if (data) {
           mediaList = (data.mediaList || []).map(item => ({...getDefaultShowProps(), ...item}));
-          categories = data.categories || [...DEFAULT_CATEGORIES];
+          categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => (typeof cat === 'string') ? { name: cat, hideProgress: false } : cat);
           renderFullUI();
           db.ref(`users/${viewId}/email`).once("value", emailSnap => {
             elements.viewModeUserEmail.textContent = `Stai visualizzando la libreria di ${emailSnap.val() || "un utente"}`;
@@ -2017,7 +2061,7 @@
       elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
       elements.exportBtn.addEventListener('click', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ mediaList, categories }, null, 2)], {type: 'application/json'})); a.download = `serietv_tracker_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(a.href); });
       elements.importBtn.addEventListener('click', () => elements.importFile.click());
-      elements.importFile.addEventListener('change', e => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = event => { try { const data = JSON.parse(event.target.result); if (data && Array.isArray(data.mediaList)) { showConfirmModal("Importa Dati", `Sovrascrivere i dati con ${data.mediaList.length} serie?`, () => { mediaList = data.mediaList.map(item => ({...getDefaultShowProps(), ...item})); categories = data.categories || [...DEFAULT_CATEGORIES]; saveData(); renderFullUI(); showNotification("Dati importati!", "success"); }); } else { showNotification("File non valido.", "error"); } } catch (error) { showNotification("Errore lettura file.", "error"); } }; reader.readAsText(file); e.target.value = ''; });
+      elements.importFile.addEventListener('change', e => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = event => { try { const data = JSON.parse(event.target.result); if (data && Array.isArray(data.mediaList)) { showConfirmModal("Importa Dati", `Sovrascrivere i dati con ${data.mediaList.length} serie?`, () => { mediaList = data.mediaList.map(item => ({...getDefaultShowProps(), ...item})); categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => typeof cat === 'string' ? {name: cat, hideProgress: false} : cat); saveData(); renderFullUI(); showNotification("Dati importati!", "success"); }); } else { showNotification("File non valido.", "error"); } } catch (error) { showNotification("Errore lettura file.", "error"); } }; reader.readAsText(file); e.target.value = ''; });
       elements.shareBtn.addEventListener('click', () => { if (!currentUser) { showNotification("Devi essere loggato per condividere.", "warning"); return; } const link = `${window.location.origin}${window.location.pathname.replace('index.html', 'serietv_tracker.html')}?view=${currentUser.uid}`; elements.shareModal.querySelector('input').value = link; elements.shareModal.style.display = 'flex'; });
       elements.closeShareModalBtn.addEventListener('click', () => closeModal(elements.shareModal));
       elements.copyShareLinkBtn.addEventListener('click', (e) => { navigator.clipboard.writeText(e.target.closest('.modal-content').querySelector('input').value); showNotification("Link copiato!", "success"); });
@@ -2031,4 +2075,3 @@
     }
   </script>
 </body>
-</html>
