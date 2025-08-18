@@ -798,9 +798,9 @@
             const imdbID = tmdbDetails.external_ids.imdb_id;
             const category = elements.addMediaCategorySelect.value;
             localStorage.setItem("lastUsedTvShowCategory", category);
-
-            if (DEFAULT_CATEGORIES.includes(category) && mediaList.some(m => m.imdbID === imdbID)) {
-                return showNotification("Questa serie è già in una categoria principale.", "warning");
+            
+            if (DEFAULT_CATEGORIES.includes(category) && mediaList.some(m => m.imdbID === imdbID && DEFAULT_CATEGORIES.includes(m.category))) {
+                 return showNotification("Questa serie è già in una categoria principale.", "warning");
             }
             if (mediaList.some(m => m.imdbID === imdbID && m.category === category)) {
                 return showNotification(`Questa serie è già in "${category}"`, "warning");
@@ -1203,18 +1203,22 @@
         const show = mediaList.find(m => m.id === showId);
         if (!show || !show.seasons[seasonNumber] || !show.seasons[seasonNumber].episodes) return;
 
-        show.seasons[seasonNumber].episodes.forEach(ep => {
-            const key = `${seasonNumber}-${ep.episode_number}`;
-            if (watch) show.progress[key] = true;
-            else delete show.progress[key];
+        const duplicates = mediaList.filter(d => d.imdbID === show.imdbID);
+
+        duplicates.forEach(dup => {
+            dup.seasons[seasonNumber].episodes.forEach(ep => {
+                const key = `${seasonNumber}-${ep.episode_number}`;
+                if (watch) dup.progress[key] = true;
+                else delete dup.progress[key];
+            });
+            updateShowCategoryAndTimestamps(dup, true);
         });
 
         if (watch) await logActivity('complete_season', show.title, `la stagione ${seasonNumber}`);
         
-        updateShowCategoryAndTimestamps(show, true);
         await saveData();
         updateStats();
-        refreshSingleMedia(showId);
+        duplicates.forEach(dup => refreshSingleMedia(dup.id));
         currentShowCache.show = show;
         
         const seasonBlock = document.getElementById(`season-block-${seasonNumber}`);
@@ -1234,16 +1238,21 @@
     function toggleEpisodeWatched(showId, season, episode, isWatched) {
         const show = mediaList.find(m => m.id === showId); 
         if (!show) return;
-
-        if (isWatched) show.progress[`${season}-${episode}`] = true; 
-        else delete show.progress[`${season}-${episode}`];
         
-        updateShowCategoryAndTimestamps(show);
+        const duplicates = mediaList.filter(d => d.imdbID === show.imdbID);
+
+        duplicates.forEach(dup => {
+            if (isWatched) dup.progress[`${season}-${episode}`] = true; 
+            else delete dup.progress[`${season}-${episode}`];
+            updateShowCategoryAndTimestamps(dup);
+        });
+        
         saveData(); 
         updateStats(); 
-        refreshSingleMedia(showId);
+        duplicates.forEach(dup => refreshSingleMedia(dup.id));
         currentShowCache.show = show;
         
+        // Update UI only in the currently open modal for responsiveness
         const item = document.querySelector(`.episode-item[data-show-id="${showId}"][data-season="${season}"][data-episode="${episode}"]`);
         if (item) item.classList.toggle('unseen', !isWatched);
         
@@ -1430,6 +1439,7 @@
     }
     function changePoster(id, url) { const show = mediaList.find(m => m.id === id); if (show) { show.poster = url; saveData(); refreshSingleMedia(id); closeModal(elements.posterModal); showNotification("Copertina aggiornata!", "success"); } }
     
+    // --- CUSTOM CATEGORY FUNCTIONS ---
     function renderCategoriesList() {
         const list = elements.categoriesList;
         list.innerHTML = "";
