@@ -818,6 +818,11 @@
                 lastActivityAt: new Date().toISOString() 
             };
             
+            const existingShow = mediaList.find(m => m.imdbID === imdbID);
+            if (existingShow) {
+                newShow.progress = JSON.parse(JSON.stringify(existingShow.progress)); // Deep copy progress
+            }
+
             const [omdbDetails, mdbListRatings] = await Promise.all([
                 getOMDbShowDetails(newShow.imdbID),
                 fetchMDBListRatings(newShow.imdbID)
@@ -1252,7 +1257,6 @@
         duplicates.forEach(dup => refreshSingleMedia(dup.id));
         currentShowCache.show = show;
         
-        // Update UI only in the currently open modal for responsiveness
         const item = document.querySelector(`.episode-item[data-show-id="${showId}"][data-season="${season}"][data-episode="${episode}"]`);
         if (item) item.classList.toggle('unseen', !isWatched);
         
@@ -1439,7 +1443,6 @@
     }
     function changePoster(id, url) { const show = mediaList.find(m => m.id === id); if (show) { show.poster = url; saveData(); refreshSingleMedia(id); closeModal(elements.posterModal); showNotification("Copertina aggiornata!", "success"); } }
     
-    // --- CUSTOM CATEGORY FUNCTIONS ---
     function renderCategoriesList() {
         const list = elements.categoriesList;
         list.innerHTML = "";
@@ -1516,7 +1519,7 @@
 
     function deleteCategory(cat) {
         if (DEFAULT_CATEGORIES.includes(cat)) return;
-        showConfirmModal("Elimina Categoria", `Sei sicuro di voler eliminare "${cat}"? Le serie in questa categoria verranno spostate in "Da Vedere".`, () => {
+        showConfirmModal("Elimina Categoria", `Sei sicuro di voler eliminare la categoria "${cat}"? Le serie in questa categoria verranno spostate in "Da Vedere".`, () => {
             mediaList.forEach(m => { if (m.category === cat) m.category = "Da Vedere"; });
             categories = categories.filter(c => c !== cat);
             saveData();
