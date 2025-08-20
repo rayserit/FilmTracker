@@ -571,6 +571,7 @@
     
     const elements = { 
         appLoader: document.getElementById("appLoader"),
+        trackerSwitch: document.querySelector(".tracker-switch"),
         authForms: document.getElementById("authForms"), authToggle: document.getElementById("authToggle"), 
         userInfo: document.getElementById("userInfo"), loginBtn: document.getElementById("loginBtn"), 
         loginEmail: document.getElementById("loginEmail"), loginPassword: document.getElementById("loginPassword"), 
@@ -891,10 +892,12 @@
       document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, .auth-container, #userInfo, .notification-bell-container, #updateExistingBtn").forEach(el => el.style.display = "none");
       elements.viewModeBanner.style.display = "flex";
       
-      const filmtrackerLink = elements.trackerSwitch.querySelector('a[href*="index.html"]');
-      const tvtrackerLink = elements.trackerSwitch.querySelector('a[href*="serietv_tracker.html"]');
-      filmtrackerLink.href = `index.html?view=${viewId}`;
-      tvtrackerLink.href = `serietv_tracker.html?view=${viewId}`;
+      if (elements.trackerSwitch) {
+        const filmtrackerLink = elements.trackerSwitch.querySelector('a[href*="index.html"]');
+        const tvtrackerLink = elements.trackerSwitch.querySelector('a[href*="serietv_tracker.html"]');
+        filmtrackerLink.href = `index.html?view=${viewId}`;
+        tvtrackerLink.href = `serietv_tracker.html?view=${viewId}`;
+      }
 
       db.ref(`users/${viewId}/mediaTracker`).on("value", snapshot => {
         const data = snapshot.val();
@@ -1076,6 +1079,10 @@
         if (e.target.closest('.card-actions') || e.target.closest('.favorite-btn')) return;
         showDetailsModal(media.id);
       });
+      card.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        showContextMenu(media, { x: e.clientX, y: e.clientY });
+      });
 
       let ratingsHTML = "";
       const rtState = getRottenTomatoesState(media.rottenTomatoes);
@@ -1090,7 +1097,7 @@
       let statusHTML = "";
       const isEffectivelyWatched = media.isCountedAsWatched || media.category === "watched";
       
-      if (isEffectivelyWatched) {
+      if (isEffectivelyWatched && media.rewatchCount > 0) {
           const totalViews = (media.rewatchCount || 0) + 1;
           const sup = totalViews > 1 ? `<sup>${totalViews}</sup>` : "";
           statusHTML = `<span class="watch-status-icon" title="Visto ${totalViews} volte"><i class="fas fa-eye"></i>${sup}</span>`;
