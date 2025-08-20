@@ -646,7 +646,19 @@
       setupManagementModal();
       loadTheme();
       loadSortOrder();
+      updateSwitcherLinksInViewMode();
       handleViewMode() || setupAuthListeners();
+    }
+
+    function updateSwitcherLinksInViewMode() {
+        const params = new URLSearchParams(window.location.search);
+        const viewId = params.get('view');
+        if (viewId) {
+            const filmTrackerLink = document.querySelector('.tracker-switch-btn[href="index.html"]');
+            const tvTrackerLink = document.querySelector('.tracker-switch-btn[href="serietv_tracker.html"]');
+            if (filmTrackerLink) filmTrackerLink.href = `index.html?view=${viewId}`;
+            if (tvTrackerLink) tvTrackerLink.href = `serietv_tracker.html?view=${viewId}`;
+        }
     }
     
     function hideLoader() {
@@ -1028,7 +1040,7 @@
             }
         });
         
-        const stats = { total: mediaList.length, watchlist: 0, watched: 0, rewatched: 0, minutes: 0 };
+        const stats = { watchlist: 0, watched: 0, rewatched: 0, minutes: 0 };
         statContributorIds.forEach(id => {
             const media = mediaList.find(m => m.id === id);
             if (!media) return;
@@ -1045,7 +1057,10 @@
 
         const hours = Math.floor(stats.minutes / 60);
         stats.minutes %= 60;
-        elements.statTotal.textContent = stats.total;
+        
+        // MODIFICA: Il totale ora conta solo i film unici.
+        elements.statTotal.textContent = statContributorIds.size;
+        
         elements.statWatchlist.textContent = stats.watchlist;
         elements.statWatched.textContent = stats.watched;
         elements.statRewatched.textContent = stats.rewatched;
@@ -1103,6 +1118,11 @@
         </div>
       `;
       if (!isViewMode) {
+          // MODIFICA: Aggiunto l'event listener per il click destro.
+          card.addEventListener('contextmenu', e => {
+              e.preventDefault();
+              showContextMenu(media, { x: e.clientX, y: e.clientY });
+          });
           card.querySelector('[data-action="move"]').addEventListener("click", e => {
             e.stopPropagation();
             showContextMenu(media, { x: e.clientX, y: e.clientY });
@@ -1253,7 +1273,7 @@
       elements.confirmModalTitle.textContent = title;
       elements.confirmModalBody.textContent = body;
       elements.confirmModal.style.display = "flex";
-      document.body.classList.add("modal-open");
+      document.body.classList.add('modal-open');
       const confirmHandler = () => { onConfirm(); closeModal(elements.confirmModal); cleanup(); };
       const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); };
       const cleanup = () => {
@@ -1779,19 +1799,15 @@
                 const item = document.createElement('div');
                 item.className = 'notification-item';
                 item.dataset.friendId = n.friendId;
-                // Controlla se l'attività è relativa a una serie TV
                 const isTV = n.activity.type.includes('show') || n.activity.type.includes('season');
                 item.innerHTML = `
                     <i class="fas ${getActivityIcon(n.activity.type)} ${isTV ? 'tv-notification' : 'film-notification'}"></i>
                     <span class="notification-item-text">${getActivityText(n.friendEmail, n.activity)}</span>`;
                 
-                // Event listener CORRETTO per il click
                 item.addEventListener('click', () => {
                     const friendId = item.dataset.friendId;
                     if (friendId) { 
-                        // Costruisce il percorso base rimuovendo il nome del file corrente
                         const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
-                        // Sceglie il file HTML corretto in base al tipo di notifica
                         const url = isTV 
                             ? `${baseUrl}/serietv_tracker.html?view=${friendId}`
                             : `${baseUrl}/index.html?view=${friendId}`;
