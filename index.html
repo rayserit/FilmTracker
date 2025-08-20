@@ -316,7 +316,14 @@
     #detailsModalPoster { width: 150px; height: 225px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0; margin-right: 1.5rem; }
     .details-title-section { padding-top: 100px; flex-grow: 1; }
     #detailsModalTitle { margin: 0; font-size: 1.75rem; }
-    #detailsModalTagline { font-style: italic; color: var(--text-secondary); margin-top: 0.25rem; }
+    /* NUOVE REGOLE CSS PER LA SPAZIATURA */
+    .details-ratings-container { 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 0.75rem; 
+        margin-top: 0.75rem; 
+    }
+    #detailsModalTagline { font-style: italic; color: var(--text-secondary); margin-top: 0.5rem; }
     #detailsModalMeta { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.9rem; }
     .director-link { color: var(--primary); text-decoration: none; font-weight: 500; cursor: pointer; }
     .director-link:hover { text-decoration: underline; }
@@ -1058,7 +1065,6 @@
         const hours = Math.floor(stats.minutes / 60);
         stats.minutes %= 60;
         
-        // MODIFICA: Il totale ora conta solo i film unici.
         elements.statTotal.textContent = statContributorIds.size;
         
         elements.statWatchlist.textContent = stats.watchlist;
@@ -1118,7 +1124,6 @@
         </div>
       `;
       if (!isViewMode) {
-          // MODIFICA: Aggiunto l'event listener per il click destro.
           card.addEventListener('contextmenu', e => {
               e.preventDefault();
               showContextMenu(media, { x: e.clientX, y: e.clientY });
