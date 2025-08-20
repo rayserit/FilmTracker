@@ -35,7 +35,7 @@
       --section-tint: rgba(42, 157, 143, 0.05);
       --progress-bg: #e0e0e0;
       --progress-fill: #66cc00; /* Verde per serie in corso */
-      --progress-fill-ended: #9c04fc; /* Verde acqua per serie terminate */
+      --progress-fill-ended: #9c04fc; /* Viola per serie terminate */
       --film-accent: #3A86FF; /* Colore per notifiche Film Tracker */
     }
 
@@ -106,7 +106,7 @@
     .stats-panel { background-color: var(--section-tint); padding: 1rem; border-radius: 12px; margin-bottom: 2rem; }
     .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; }
     .stat-item { background: var(--card-bg); padding: 1rem; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); transition: background 0.2s; }
-    .stat-item:hover { background: rgba(42, 157, 143, 0.1); }
+    .stat-item:hover { background: rgba(42, 157, 143, 0.15); }
     .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--primary); }
     .stat-label { font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.25rem; }
 
@@ -221,7 +221,7 @@
     .episode-item:last-child { border-bottom: none; }
     .episode-still { width: 120px; height: 68px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background-color: var(--border-color); transition: filter 0.2s; }
     .episode-details { flex-grow: 1; min-width: 0; }
-    .episode-main-info { display: flex; align-items: center; gap: 0.5rem; }
+    .episode-main-info { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
     .episode-number { font-weight: 600; color: var(--primary); }
     .episode-title { font-weight: 500; transition: filter 0.2s; }
     .episode-overview { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transition: filter 0.2s; }
@@ -231,6 +231,22 @@
     .episode-title.spoiler:hover { filter: blur(0px); }
     .episode-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--primary); margin-left: auto; flex-shrink: 0; }
     .episode-runtime { font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; }
+    .episode-air-date {
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 8px;
+        background-color: rgba(128,128,128,0.2);
+        color: var(--text-secondary);
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+    }
+    .episode-air-date.today {
+        background-color: #2ddc73;
+        color: #111;
+        box-shadow: 0 0 8px rgba(45, 220, 115, 0.7);
+    }
 
     .management-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
     .tab-btn { padding: 0.75rem 1.5rem; background: transparent; border: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
@@ -541,7 +557,7 @@
             categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => (typeof cat === 'string') ? { name: cat, hideProgress: false } : cat);
             if (!isViewMode) {
                 renderFullUI();
-                triggerDailyUpdateCheck();
+                triggerNewEpisodeCheck();
             }
         });
         db.ref(`${path}/social`).once("value", snapshot => {
@@ -641,8 +657,9 @@
             if (show.seasons) {
                 Object.keys(show.progress).forEach(progressKey => {
                     const [seasonNum, episodeNum] = progressKey.split('-').map(Number);
-                    if (show.seasons[seasonNum] && show.seasons[seasonNum].episodes) {
-                        const episode = show.seasons[seasonNum].episodes.find(e => e.episode_number === episodeNum);
+                    const season = show.seasons[seasonNum];
+                    if (season && season.episodes) {
+                        const episode = season.episodes.find(e => e.episode_number === episodeNum);
                         if (episode && episode.runtime) {
                             stats.minutesWatched += episode.runtime;
                         }
@@ -651,7 +668,6 @@
             }
         });
         
-        // MODIFICA: Il totale ora conta solo le serie uniche (con il tratteggio).
         elements.statTotal.textContent = statContributorIds.size;
         
         elements.statFollowing.textContent = stats.InCorso || 0;
@@ -886,7 +902,8 @@
                             overview: ep.overview,
                             episode_number: ep.episode_number,
                             runtime: ep.runtime || 0,
-                            still_path: ep.still_path
+                            still_path: ep.still_path,
+                            air_date: ep.air_date
                         }))
                     };
                 }
@@ -1007,7 +1024,8 @@
                             overview: ep.overview,
                             episode_number: ep.episode_number,
                             runtime: ep.runtime || 0,
-                            still_path: ep.still_path
+                            still_path: ep.still_path,
+                            air_date: ep.air_date
                         }))
                     };
                     hasUpdates = true;
@@ -1110,6 +1128,40 @@
         });
     }
 
+    function formatAirDate(airDateString) {
+        if (!airDateString) return '';
+
+        const airDate = new Date(airDateString);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); 
+        airDate.setHours(1, 0, 0, 0); // Set time to ensure correct day comparison across timezones
+
+        const diffTime = airDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 0) {
+            return ''; // Episodio già uscito, non mostrare nulla
+        }
+
+        const currentYear = today.getFullYear();
+        const airDateYear = airDate.getFullYear();
+
+        const options = { day: 'numeric', month: 'long' };
+        if (airDateYear > currentYear) {
+            options.year = 'numeric';
+        }
+        const formattedDate = airDate.toLocaleDateString('it-IT', options);
+
+        if (diffDays === 0) {
+            return `<span class="episode-air-date today">Esce oggi • 🗓️ ${formattedDate}</span>`;
+        } else if (diffDays === 1) {
+            return `<span class="episode-air-date">Esce domani • 🗓️ ${formattedDate}</span>`;
+        } else {
+            return `<span class="episode-air-date">Esce tra ${diffDays} giorni • 🗓️ ${formattedDate}</span>`;
+        }
+    }
+
+
     function createSeasonBlockHTML(show, season) {
         const seasonNumber = season.season_number;
         const episodes = season.episodes || [];
@@ -1143,6 +1195,7 @@
                         <span class="episode-number">E${ep.episode_number}</span>
                         <span class="episode-title ${titleSpoilerClass}">${ep.name || `Episodio ${ep.episode_number}`}</span>
                         ${ep.runtime ? `<span class="episode-runtime">(${ep.runtime}m)</span>` : ''}
+                        ${formatAirDate(ep.air_date)}
                     </div>
                     <p class="episode-overview">${ep.overview || 'Nessuna trama disponibile.'}</p>
                 </div>
@@ -1674,30 +1727,52 @@
         }
     }
     
-    function triggerDailyUpdateCheck() {
+    function triggerNewEpisodeCheck() {
         const now = new Date().getTime();
-        const lastCheck = localStorage.getItem('lastShowUpdateCheck');
-        const TWELVE_HOURS = 12 * 60 * 60 * 1000;
+        const lastCheck = localStorage.getItem('lastNewEpisodeCheck');
+        const SIX_HOURS = 6 * 60 * 60 * 1000;
 
-        if (!lastCheck || (now - lastCheck) > TWELVE_HOURS) {
-            console.log("Esecuzione del controllo giornaliero per aggiornamenti serie TV...");
-            checkForShowUpdates();
-            localStorage.setItem('lastShowUpdateCheck', now);
-        } else {
-            console.log("Controllo giornaliero non necessario.");
+        if (!lastCheck || (now - lastCheck) > SIX_HOURS) {
+            console.log("Esecuzione del controllo per nuovi episodi...");
+            checkForNewEpisodes();
+            checkForShowUpdates(); // Aggiorna anche i dati delle stagioni
+            localStorage.setItem('lastNewEpisodeCheck', now);
         }
     }
+    
+    function checkForNewEpisodes() {
+        const lastCheckString = localStorage.getItem('lastNewEpisodeCheck');
+        const lastCheckDate = lastCheckString ? new Date(parseInt(lastCheckString)) : new Date(Date.now() - 24 * 60 * 60 * 1000); 
+        const currentDate = new Date();
+        
+        const showsToCheck = mediaList.filter(s => s.category === 'In Corso');
+        
+        showsToCheck.forEach(show => {
+            Object.values(show.seasons).forEach(season => {
+                (season.episodes || []).forEach(ep => {
+                    if (ep.air_date) {
+                        const airDate = new Date(ep.air_date);
+                        if (airDate >= lastCheckDate && airDate <= currentDate) {
+                             if (!show.progress[`${season.season_number}-${ep.episode_number}`]) {
+                                setTimeout(() => showNotification(`È uscito un nuovo episodio di ${show.title}!`, 'success'), 500);
+                             }
+                        }
+                    }
+                });
+            });
+        });
+    }
+
 
     async function checkForShowUpdates() {
         const showsToCheck = mediaList.filter(s => s.category === 'In Corso' && s.imdbID);
         if (showsToCheck.length === 0) return;
 
-        showNotification("Controllo aggiornamenti per le serie in corso...", "warning");
         let updatedShows = [];
 
         for (const show of showsToCheck) {
             try {
-                await new Promise(resolve => setTimeout(resolve, 250)); 
+                await new Promise(resolve => setTimeout(resolve, 300)); 
                 
                 const tmdbDetails = await fetchTMDbShowDetailsByIMDb(show.imdbID);
                 if (!tmdbDetails) continue;
@@ -1715,7 +1790,8 @@
                                     overview: ep.overview,
                                     episode_number: ep.episode_number,
                                     runtime: ep.runtime || 0,
-                                    still_path: ep.still_path
+                                    still_path: ep.still_path,
+                                    air_date: ep.air_date
                                 }))
                             };
                             hasUpdates = true;
@@ -1737,47 +1813,9 @@
             renderMedia();
             updateStats();
             showNotification(`${updatedShows.length} serie TV sono state aggiornate con nuovi episodi/stagioni!`, "success");
-        } else {
-             showNotification("Nessun nuovo aggiornamento trovato per le tue serie.", "success");
         }
     }
     
-    async function fixExistingRatings() {
-        console.log("Avvio fix per i ratings...");
-        let updated = false;
-        for (const show of mediaList) {
-            if (show.imdbID && (!show.rottenTomatoes || !show.popcornRating || !show.metacriticRating)) {
-                try {
-                    const ratings = await fetchMDBListRatings(show.imdbID);
-                    if (ratings) {
-                        const rtRating = ratings.find(r => r.source === 'tomatoes');
-                        const popcornRating = ratings.find(r => r.source === 'tomatoesaudience');
-                        const letterboxdRating = ratings.find(r => r.source === 'letterboxd');
-                        const metacriticRating = ratings.find(r => r.source === 'metacritic');
-                        
-                        if (rtRating) show.rottenTomatoes = rtRating.value;
-                        if (popcornRating) show.popcornRating = popcornRating.value;
-                        if (letterboxdRating) show.letterboxdRating = letterboxdRating.value;
-                        if (metacriticRating) show.metacriticRating = metacriticRating.value;
-                        
-                        updated = true;
-                        console.log(`Updated ratings for ${show.title}`);
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 250));
-                } catch (error) {
-                    console.error(`Error updating ratings for ${show.title}:`, error);
-                }
-            }
-        }
-        if(updated) {
-            await saveData();
-            renderMedia();
-            showNotification("Ratings aggiornati per le serie esistenti!", "success");
-        } else {
-            showNotification("Nessun rating da aggiornare.", "warning");
-        }
-    }
-
     function setupAuthListeners() {
         elements.authToggle.addEventListener("click", e => { e.stopPropagation(); elements.authForms.classList.toggle("active"); });
         document.addEventListener("click", e => { if (!elements.authForms.contains(e.target) && !e.target.closest('.auth-container')) { elements.authForms.classList.remove("active"); }});
