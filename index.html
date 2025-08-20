@@ -147,7 +147,6 @@
     .media-info { padding: 0.75rem; flex-grow: 1; display: flex; flex-direction: column; }
     .media-title { font-size: 0.9rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-color); font-weight: 600; }
     .media-meta { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
-    .watch-status-icon sup { font-size: 0.7rem; font-weight: bold; margin-left: 1px; }
     
     .media-ratings { display: flex; gap: 0.25rem; margin-top: 0.5rem; flex-wrap: nowrap; }
     .rating-badge { display: inline-flex; align-items: center; gap: 0.2rem; background: rgba(0,0,0,0.05); padding: 0.2rem 0.4rem; border-radius: 12px; font-size: 0.75rem; }
@@ -571,7 +570,6 @@
     
     const elements = { 
         appLoader: document.getElementById("appLoader"),
-        trackerSwitch: document.querySelector(".tracker-switch"),
         authForms: document.getElementById("authForms"), authToggle: document.getElementById("authToggle"), 
         userInfo: document.getElementById("userInfo"), loginBtn: document.getElementById("loginBtn"), 
         loginEmail: document.getElementById("loginEmail"), loginPassword: document.getElementById("loginPassword"), 
@@ -713,6 +711,7 @@
 
     function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
     function getPopcornState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 60 ? "positive" : "negative"; }
+    function getMetacriticState(score) { if (!score || score === "N/A") return null; const value = parseInt(score); return isNaN(value) ? null : value >= 61 ? "favorable" : value >= 40 ? "mixed" : "unfavorable"; }
 
     function setupAuthListeners() {
       elements.authToggle.addEventListener("click", e => {
@@ -891,14 +890,6 @@
       isViewMode = true;
       document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, .auth-container, #userInfo, .notification-bell-container, #updateExistingBtn").forEach(el => el.style.display = "none");
       elements.viewModeBanner.style.display = "flex";
-      
-      if (elements.trackerSwitch) {
-        const filmtrackerLink = elements.trackerSwitch.querySelector('a[href*="index.html"]');
-        const tvtrackerLink = elements.trackerSwitch.querySelector('a[href*="serietv_tracker.html"]');
-        filmtrackerLink.href = `index.html?view=${viewId}`;
-        tvtrackerLink.href = `serietv_tracker.html?view=${viewId}`;
-      }
-
       db.ref(`users/${viewId}/mediaTracker`).on("value", snapshot => {
         const data = snapshot.val();
         if (data) {
@@ -1037,7 +1028,7 @@
             }
         });
         
-        const stats = { total: statContributorIds.size, watchlist: 0, watched: 0, rewatched: 0, minutes: 0 };
+        const stats = { total: mediaList.length, watchlist: 0, watched: 0, rewatched: 0, minutes: 0 };
         statContributorIds.forEach(id => {
             const media = mediaList.find(m => m.id === id);
             if (!media) return;
@@ -1054,7 +1045,7 @@
 
         const hours = Math.floor(stats.minutes / 60);
         stats.minutes %= 60;
-        elements.statTotal.textContent = mediaList.length;
+        elements.statTotal.textContent = stats.total;
         elements.statWatchlist.textContent = stats.watchlist;
         elements.statWatched.textContent = stats.watched;
         elements.statRewatched.textContent = stats.rewatched;
@@ -1079,10 +1070,6 @@
         if (e.target.closest('.card-actions') || e.target.closest('.favorite-btn')) return;
         showDetailsModal(media.id);
       });
-      card.addEventListener('contextmenu', e => {
-        e.preventDefault();
-        showContextMenu(media, { x: e.clientX, y: e.clientY });
-      });
 
       let ratingsHTML = "";
       const rtState = getRottenTomatoesState(media.rottenTomatoes);
@@ -1093,17 +1080,6 @@
       if (popcornState) { ratingsHTML += `<span class="rating-badge"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`; }
       
       const ratingsSection = ratingsHTML ? `<div class="media-ratings">${ratingsHTML}</div>` : "";
-      
-      let statusHTML = "";
-      const isEffectivelyWatched = media.isCountedAsWatched || media.category === "watched";
-      
-      if (isEffectivelyWatched && media.rewatchCount > 0) {
-          const totalViews = (media.rewatchCount || 0) + 1;
-          const sup = totalViews > 1 ? `<sup>${totalViews}</sup>` : "";
-          statusHTML = `<span class="watch-status-icon" title="Visto ${totalViews} volte"><i class="fas fa-eye"></i>${sup}</span>`;
-      } else if (media.isCountedAsWatchlist && media.category !== "watchlist") {
-          statusHTML = `<span class="watchlist-status-icon" title="In lista Da Vedere"><i class="fas fa-list-alt"></i></span>`;
-      }
       
       const actionsHTML = isViewMode ? '' : `
         <div class="card-actions">
@@ -1122,7 +1098,6 @@
           <div class="media-meta">
             ${media.year ? `<span>${media.year}</span>` : ""}
             ${media.runtime ? `<span><i class="fas fa-clock"></i> ${formatRuntime(media.runtime)}</span>` : ""}
-            ${statusHTML}
           </div>
           ${ratingsSection}
         </div>
@@ -1804,15 +1779,23 @@
                 const item = document.createElement('div');
                 item.className = 'notification-item';
                 item.dataset.friendId = n.friendId;
+                // Controlla se l'attività è relativa a una serie TV
                 const isTV = n.activity.type.includes('show') || n.activity.type.includes('season');
                 item.innerHTML = `
                     <i class="fas ${getActivityIcon(n.activity.type)} ${isTV ? 'tv-notification' : 'film-notification'}"></i>
                     <span class="notification-item-text">${getActivityText(n.friendEmail, n.activity)}</span>`;
                 
+                // Event listener CORRETTO per il click
                 item.addEventListener('click', () => {
                     const friendId = item.dataset.friendId;
-                    if (friendId) {
-                       window.open(`${window.location.origin}${window.location.pathname}?view=${friendId}`, '_blank');
+                    if (friendId) { 
+                        // Costruisce il percorso base rimuovendo il nome del file corrente
+                        const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+                        // Sceglie il file HTML corretto in base al tipo di notifica
+                        const url = isTV 
+                            ? `${baseUrl}/serietv_tracker.html?view=${friendId}`
+                            : `${baseUrl}/index.html?view=${friendId}`;
+                       window.open(url, '_blank');
                     }
                 });
                 list.appendChild(item);
