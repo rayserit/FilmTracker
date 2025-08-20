@@ -511,7 +511,7 @@
     
     document.addEventListener("DOMContentLoaded", init);
 
-    function init() { setupEventListeners(); loadTheme(); loadSortOrder(); handleViewMode() || setupAuthListeners(); }
+    function init() { setupEventListeners(); loadTheme(); loadSortOrder(); updateSwitcherLinksInViewMode(); handleViewMode() || setupAuthListeners(); }
     function hideLoader() { elements.appLoader.style.opacity = '0'; setTimeout(() => elements.appLoader.style.display = 'none', 300); }
     
     function loadData() {
@@ -2017,6 +2017,26 @@
             elements.friendsList.appendChild(card);
         });
     }
+    
+function updateSwitcherLinksInViewMode() {
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+
+    // Se il parametro 'view' esiste nell'URL
+    if (viewId) {
+        // Seleziona i due pulsanti dello switcher
+        const filmTrackerLink = document.querySelector('.tracker-switch-btn[href="index.html"]');
+        const tvTrackerLink = document.querySelector('.tracker-switch-btn[href="serietv_tracker.html"]');
+
+        // Aggiorna il loro attributo href per includere il viewId
+        if (filmTrackerLink) {
+            filmTrackerLink.href = `index.html?view=${viewId}`;
+        }
+        if (tvTrackerLink) {
+            tvTrackerLink.href = `serietv_tracker.html?view=${viewId}`;
+        }
+    }
+}
 
     async function toggleFavorite(showId) {
         if (isViewMode) return;
