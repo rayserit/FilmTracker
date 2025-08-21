@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Serie TV Tracker</title>
   
-  <link rel="icon" href="https://www.svgrepo.com/show/475620/tv-alt.svg" type="image/svg+xml">
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="%232a9d8f" d="M592 0H48A48 48 0 0 0 0 48v320a48 48 0 0 0 48 48h160v32a32 32 0 0 0 32 32h160a32 32 0 0 0 32-32v-32h160a48 48 0 0 0 48-48V48a48 48 0 0 0-48-48zm-16 352H64V64h512zM272 448h96v-32h-96z"/></svg>' type="image/svg+xml">
   
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -150,7 +150,7 @@
     .section-header::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100px; height: 2px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
     .section-title { color: var(--text-color); margin: 0; font-size: 1.25rem; letter-spacing: -0.5px; font-weight: 700; }
     
-    .btn { padding: 0.5rem 1rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; box-sizing: border-box; height: 38px; }
+    .btn { padding: 0.5rem 1rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; box-sizing: border-box; height: 38px; }
     .btn:active { transform: translateY(1px); }
     .btn-primary { background: var(--primary); color: white; }
     .btn-secondary { background: var(--secondary); color: white; }
@@ -172,6 +172,8 @@
     #episodesModal h2 { margin-top: 0; }
     #actorModal { z-index: 1002; }
     #actorModal .modal-content { max-width: 700px; max-height: 80vh; overflow-y: auto; }
+    #rewatchModal { z-index: 1003; }
+    #rewatchModal .modal-content { max-width: 450px; text-align: center; }
 
     input, select { padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); font-size: 1rem; box-sizing: border-box; margin: 0; height: 38px; transition: border-color 0.2s, box-shadow 0.2s; }
     input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2); }
@@ -213,6 +215,7 @@
     .season-title-container { flex-grow: 1; }
     .season-title { font-weight: 600; }
     .season-progress-text { font-size: 0.8rem; color: var(--text-secondary); }
+    .season-actions { display: flex; align-items: center; gap: 0.5rem; }
     .season-actions .btn { width: 32px; height: 32px; padding: 0; font-size: 0.9rem; justify-content: center; }
     
     .season-episodes { display: block; overflow: hidden; transition: max-height 0.4s ease-in-out; max-height: 0; }
@@ -229,7 +232,11 @@
     .episode-item.unseen .episode-overview:hover, .episode-item.unseen .episode-still:hover { filter: blur(0px); }
     .episode-title.spoiler { filter: blur(4px); user-select: none; }
     .episode-title.spoiler:hover { filter: blur(0px); }
-    .episode-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--primary); margin-left: auto; flex-shrink: 0; }
+    .episode-controls { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
+    .episode-rewatch-btn { position: relative; padding: 0; width: 28px; height: 28px; background-color: rgba(128,128,128,0.1); border: 1px solid var(--border-color); color: var(--text-secondary); border-radius: 50%; }
+    .episode-rewatch-btn .rewatch-count { position: absolute; top: -5px; right: -5px; background-color: var(--primary); color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: center; align-items: center; border: 1px solid var(--card-bg); }
+    .episode-rewatch-btn:hover { background-color: var(--primary); color: white; }
+    .episode-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--primary); flex-shrink: 0; }
     .episode-runtime { font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; }
     .episode-air-date {
         font-size: 0.7rem;
@@ -247,6 +254,20 @@
         color: #111;
         box-shadow: 0 0 8px rgba(45, 220, 115, 0.7);
     }
+    
+    #rewatchModal .modal-footer { margin-top: 1.5rem; }
+    #rewatchModal .custom-rewatch-container { margin-top: 1.5rem; justify-content: center; display: flex; align-items: center; }
+    #rewatchQuickButtons { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
+    .quick-rewatch-btn { padding: 0; width: 45px; height: 45px; justify-content: center; }
+    .quick-rewatch-btn.active { background: var(--primary); color: white; }
+    .number-input-wrapper { position: relative; display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; height: 38px; }
+    .number-input-wrapper input { border: none; text-align: center; flex: 1; width: 100%; padding-right: 25px; background: var(--card-bg); -moz-appearance: textfield; }
+    .number-input-wrapper input::-webkit-outer-spin-button, .number-input-wrapper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .number-input-controls { position: absolute; right: 1px; top: 1px; bottom: 1px; display: flex; flex-direction: column; width: 24px; }
+    .num-spinner-btn { flex: 1; width: 100%; border: none; background-color: var(--bg-color); color: var(--text-color); cursor: pointer; font-size: 0.8rem; line-height: 1; padding: 0; height: 50%; }
+    .num-spinner-btn:hover { background-color: var(--primary); color: white; }
+    .num-spinner-btn.up { border-top-right-radius: 7px; }
+    .num-spinner-btn.down { border-bottom-right-radius: 7px; }
 
     .management-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
     .tab-btn { padding: 0.75rem 1.5rem; background: transparent; border: none; cursor: pointer; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
@@ -455,9 +476,38 @@
   <div class="modal" id="posterModal"><div class="modal-content"><h2 id="posterModalTitle">Cambia Copertina</h2><div class="poster-grid" id="posterGrid"></div><div class="modal-footer" style="padding: 1.5rem 0 0 0;"><button id="cancelPosterChange" class="btn btn-danger">Annulla</button><button id="savePosterChange" class="btn btn-primary">Salva Selezione</button></div></div></div>
   <div class="modal" id="confirmModal"><div class="modal-content" style="max-width: 400px;"><h2 id="confirmModalTitle"></h2><p id="confirmModalBody"></p><div id="confirmModalButtons" style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem;"><button id="confirmModalCancel" class="btn btn-secondary">Annulla</button><button id="confirmModalConfirm" class="btn btn-danger">Conferma</button></div></div></div>
   <div class="modal" id="shareModal"><div class="modal-content" style="max-width: 450px;"><h2>Condividi la tua libreria</h2><p>Chiunque abbia questo link potrà vedere la tua lista in tempo reale (sola lettura).</p><input type="text" id="shareLinkInput" readonly style="width:100%"><div style="display: flex; gap: 0.5rem; margin-top: 1rem;"><button id="copyShareLinkBtn" class="btn btn-primary">Copia Link</button><button id="closeShareModalBtn" class="btn btn-danger">Chiudi</button></div></div></div>
+  
+  <div class="modal" id="rewatchModal">
+    <div class="modal-content">
+        <h2 id="rewatchModalTitle">Modifica Rewatch</h2>
+        <p>Specifica il numero di volte che hai rivisto (0 = visto una sola volta).</p>
+        <div id="rewatchQuickButtons">
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="0">0</button>
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="1">1</button>
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="2">2</button>
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="3">3</button>
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="4">4</button>
+            <button class="btn btn-secondary quick-rewatch-btn" data-count="5">5</button>
+        </div>
+        <div class="custom-rewatch-container">
+            <label for="rewatchCountInput">Numero custom:</label>
+            <div class="number-input-wrapper" style="width: 120px;">
+                <input type="number" id="rewatchCountInput" min="0" value="0">
+                <div class="number-input-controls">
+                    <button class="num-spinner-btn up" data-target="rewatchCountInput">+</button>
+                    <button class="num-spinner-btn down" data-target="rewatchCountInput">-</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="cancelRewatchBtn" class="btn btn-danger">Annulla</button>
+            <button id="confirmRewatchBtn" class="btn btn-primary">Salva</button>
+        </div>
+    </div>
+  </div>
 
   <div id="notification" class="notification"><span id="notificationText"></span></div>
-
+  
   <script>
     const OMDb_API_KEY = "2526ef70";
     const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ=");
@@ -481,11 +531,12 @@
     let lastCheckedTimestamps = {};
     let statContributorIds = new Set();
     let ignoredDuplicateIds = new Set();
+    let currentRewatchContext = {};
     
     const getDefaultShowProps = () => ({
         category: 'Da Vedere', addedAt: new Date().toISOString(), lastActivityAt: null, poster: "", 
         year: "", imdbID: null, tmdbID: null, imdbRating: "N/A", rottenTomatoes: "N/A", popcornRating: "N/A", metacriticRating: "N/A", letterboxdRating: "N/A", status: "Unknown", 
-        seasons: {}, progress: {}, isFavorite: false
+        seasons: {}, progress: {}, rewatches: {}, isFavorite: false
     });
     
     const elements = { 
@@ -519,7 +570,10 @@
         myIdInput: document.getElementById('myIdInput'), copyMyIdBtn: document.getElementById('copyMyIdBtn'),
         notificationBellContainer: document.getElementById('notificationBellContainer'), bellIcon: document.getElementById('bellIcon'),
         notificationDropdown: document.getElementById('notificationDropdown'),
-        notificationBadge: document.getElementById('notificationBadge')
+        notificationBadge: document.getElementById('notificationBadge'),
+        rewatchModal: document.getElementById("rewatchModal"), rewatchModalTitle: document.getElementById("rewatchModalTitle"),
+        rewatchCountInput: document.getElementById("rewatchCountInput"), confirmRewatchBtn: document.getElementById("confirmRewatchBtn"),
+        cancelRewatchBtn: document.getElementById("cancelRewatchBtn"),
     };
     
     firebase.initializeApp(firebaseConfig);
@@ -659,9 +713,10 @@
                     const [seasonNum, episodeNum] = progressKey.split('-').map(Number);
                     const season = show.seasons[seasonNum];
                     if (season && season.episodes) {
-                        const episode = season.episodes.find(e => e.episode_number === episodeNum);
+                        const episode = season.episodes.find(e => e.episode_number == episodeNum);
                         if (episode && episode.runtime) {
-                            stats.minutesWatched += episode.runtime;
+                            const rewatches = show.rewatches?.[progressKey] || 0;
+                            stats.minutesWatched += episode.runtime * (1 + rewatches);
                         }
                     }
                 });
@@ -669,7 +724,6 @@
         });
         
         elements.statTotal.textContent = statContributorIds.size;
-        
         elements.statFollowing.textContent = stats.InCorso || 0;
         elements.statCompleted.textContent = stats.Completate || 0;
         elements.statToWatch.textContent = stats.DaVedere || 0;
@@ -878,6 +932,7 @@
             const existingShow = mediaList.find(m => m.imdbID === imdbID);
             if (existingShow) {
                 newShow.progress = JSON.parse(JSON.stringify(existingShow.progress));
+                newShow.rewatches = JSON.parse(JSON.stringify(existingShow.rewatches || {}));
             }
 
             const [omdbDetails, mdbListRatings] = await Promise.all([
@@ -969,7 +1024,7 @@
     
     async function fetchFullTMDbDetails(tmdbId, lang = 'it-IT') {
         const detailsRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}?api_key=${TMDB_KEY}&language=${lang}&append_to_response=credits,external_ids`); 
-        return detailsRes.ok ? await detailsRes.json() : null;
+        return detailsRes.ok ? await detailsRes.json() : null; 
     }
     
     async function fetchTMDbSeasonDetailsWithFallback(tvId, seasonNumber) {
@@ -1131,18 +1186,17 @@
     function formatAirDate(airDateString) {
         if (!airDateString) return '';
 
-        const airDate = new Date(airDateString);
+        const airDate = new Date(airDateString + 'T00:00:00');
         const today = new Date();
         today.setHours(0, 0, 0, 0); 
-        airDate.setHours(1, 0, 0, 0); // Set time to ensure correct day comparison across timezones
 
-        const diffTime = airDate - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays < 0) {
-            return ''; // Episodio già uscito, non mostrare nulla
+        if (airDate < today) {
+            return '';
         }
 
+        const diffTime = airDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
         const currentYear = today.getFullYear();
         const airDateYear = airDate.getFullYear();
 
@@ -1173,10 +1227,13 @@
         const markAllButtonHTML = isSeasonComplete 
             ? `<button class="btn btn-warning season-toggle-all-btn" title="Segna tutti come non visti" data-show-id="${show.id}" data-season-number="${seasonNumber}" data-action="unwatch"><i class="fas fa-times"></i></button>`
             : `<button class="btn btn-success season-toggle-all-btn" title="Segna tutti come visti" data-show-id="${show.id}" data-season-number="${seasonNumber}" data-action="watch"><i class="fas fa-check-double"></i></button>`;
+        
+        const seasonRewatchBtnHTML = `<button class="btn btn-secondary season-rewatch-btn" title="Imposta rewatch per la stagione" data-show-id="${show.id}" data-season-number="${seasonNumber}"><i class="fas fa-sync-alt"></i></button>`;
 
         let firstUnwatchedFound = false;
         const allSeasonEpisodes = hasEpisodes ? episodes.map(ep => {
             const isWatched = show.progress[`${seasonNumber}-${ep.episode_number}`];
+            const rewatchCount = show.rewatches?.[`${seasonNumber}-${ep.episode_number}`] || 0;
             let titleSpoilerClass = '';
             
             if (!isWatched) {
@@ -1199,11 +1256,17 @@
                     </div>
                     <p class="episode-overview">${ep.overview || 'Nessuna trama disponibile.'}</p>
                 </div>
-                <input type="checkbox" id="ep-${show.id}-${seasonNumber}-${ep.episode_number}" data-show-id="${show.id}" data-season="${seasonNumber}" data-episode="${ep.episode_number}" ${isWatched ? 'checked' : ''}>
+                <div class="episode-controls">
+                    <button class="btn btn-small episode-rewatch-btn" title="Modifica rewatch episodio" data-show-id="${show.id}" data-season-number="${seasonNumber}" data-episode-number="${ep.episode_number}">
+                        <i class="fas fa-eye"></i>
+                        ${rewatchCount > 0 ? `<span class="rewatch-count">${rewatchCount}</span>` : ''}
+                    </button>
+                    <input type="checkbox" id="ep-${show.id}-${seasonNumber}-${ep.episode_number}" data-show-id="${show.id}" data-season="${seasonNumber}" data-episode="${ep.episode_number}" ${isWatched ? 'checked' : ''}>
+                </div>
             </div>`;
         }).join('') : '<div class="no-episodes-info">Dettagli episodi non ancora disponibili.</div>';
 
-        return `<div class="season-block" id="season-block-${seasonNumber}"><div class="season-header" data-season-target="${seasonNumber}"><div class="season-title-container"><span class="season-title">${season.name}</span><div class="season-progress-text">${watchedInSeason} / ${episodeCount}</div></div><div class="season-actions">${hasEpisodes ? markAllButtonHTML : ''}</div></div><div class="season-episodes" id="season-episodes-${seasonNumber}">${allSeasonEpisodes}</div></div>`;
+        return `<div class="season-block" id="season-block-${seasonNumber}"><div class="season-header" data-season-target="${seasonNumber}"><div class="season-title-container"><span class="season-title">${season.name}</span><div class="season-progress-text">${watchedInSeason} / ${episodeCount}</div></div><div class="season-actions">${hasEpisodes ? seasonRewatchBtnHTML + markAllButtonHTML : ''}</div></div><div class="season-episodes" id="season-episodes-${seasonNumber}">${allSeasonEpisodes}</div></div>`;
     }
     
     function setupSeasonEventListeners(seasonNumber) {
@@ -1233,6 +1296,20 @@
                 toggleSeasonWatched(showId, seasonNumber, action === 'watch');
             });
         }
+
+        const seasonRewatchBtn = seasonBlock.querySelector('.season-rewatch-btn');
+        if(seasonRewatchBtn) {
+            seasonRewatchBtn.addEventListener('click', (e) => {
+                const { showId, seasonNumber } = e.currentTarget.dataset;
+                openRewatchModal({ showId, seasonNumber });
+            });
+        }
+        seasonBlock.querySelectorAll('.episode-rewatch-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const { showId, seasonNumber, episodeNumber } = e.currentTarget.dataset;
+                openRewatchModal({ showId, seasonNumber, episodeNumber });
+            });
+        });
     }
     
     async function showActorModal(personId) {
@@ -1543,7 +1620,20 @@
             return [];
         }
     }
-    function changePoster(id, url) { const show = mediaList.find(m => m.id === id); if (show) { show.poster = url; saveData(); refreshSingleMedia(id); closeModal(elements.posterModal); showNotification("Copertina aggiornata!", "success"); } }
+    
+    function changePoster(id, url) {
+        const show = mediaList.find(m => m.id === id);
+        if (show) {
+            const duplicates = mediaList.filter(s => s.imdbID === show.imdbID);
+            duplicates.forEach(dup => {
+                dup.poster = url;
+            });
+            saveData();
+            renderMedia();
+            closeModal(elements.posterModal);
+            showNotification("Copertina aggiornata per tutte le copie!", "success");
+        }
+    }
     
     function renderCategoriesList() {
         const list = elements.categoriesList;
@@ -1735,7 +1825,7 @@
         if (!lastCheck || (now - lastCheck) > SIX_HOURS) {
             console.log("Esecuzione del controllo per nuovi episodi...");
             checkForNewEpisodes();
-            checkForShowUpdates(); // Aggiorna anche i dati delle stagioni
+            checkForShowUpdates();
             localStorage.setItem('lastNewEpisodeCheck', now);
         }
     }
@@ -1762,7 +1852,6 @@
             });
         });
     }
-
 
     async function checkForShowUpdates() {
         const showsToCheck = mediaList.filter(s => s.category === 'In Corso' && s.imdbID);
@@ -2096,6 +2185,94 @@
             }
         }
     }
+    
+    function openRewatchModal(context) {
+        currentRewatchContext = context;
+        const { showId, seasonNumber, episodeNumber } = context;
+        const show = mediaList.find(s => s.id === showId);
+        if(!show) return;
+
+        let currentCount = 0;
+        let title = "";
+
+        if (episodeNumber) {
+            const episodeKey = `${seasonNumber}-${episodeNumber}`;
+            currentCount = show.rewatches?.[episodeKey] || 0;
+            const episode = show.seasons?.[seasonNumber]?.episodes.find(e => e.episode_number == episodeNumber);
+            title = episode ? `S${seasonNumber} E${episodeNumber} - ${episode.name}` : `Episodio S${seasonNumber}E${episodeNumber}`;
+        } else {
+            title = `Stagione ${seasonNumber}`;
+        }
+        
+        elements.rewatchModalTitle.textContent = `Rewatch: ${title}`;
+        elements.rewatchCountInput.value = currentCount;
+        updateRewatchModalButtons(currentCount);
+
+        elements.rewatchModal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+    }
+
+    async function setRewatchCount(count) {
+        const { showId, seasonNumber, episodeNumber } = currentRewatchContext;
+        const show = mediaList.find(s => s.id === showId);
+        if (!show) return;
+
+        const duplicates = mediaList.filter(d => d.imdbID === show.imdbID);
+
+        duplicates.forEach(dup => {
+            if (!dup.rewatches) dup.rewatches = {};
+
+            if (episodeNumber) {
+                const key = `${seasonNumber}-${episodeNumber}`;
+                if (count > 0) {
+                    dup.rewatches[key] = count;
+                    if (!dup.progress[key]) dup.progress[key] = true;
+                }
+                else delete dup.rewatches[key];
+            } else {
+                const season = dup.seasons[seasonNumber];
+                if (season && season.episodes) {
+                    season.episodes.forEach(ep => {
+                        const key = `${seasonNumber}-${ep.episode_number}`;
+                        if (count > 0) {
+                            dup.rewatches[key] = count;
+                            if (!dup.progress[key]) dup.progress[key] = true;
+                        }
+                        else delete dup.rewatches[key];
+                    });
+                }
+            }
+            updateShowCategoryAndTimestamps(dup);
+        });
+
+        await saveData();
+        updateStats();
+        
+        const seasonBlock = document.getElementById(`season-block-${seasonNumber}`);
+        if(seasonBlock) {
+            const isExpanded = seasonBlock.querySelector('.season-episodes').style.maxHeight !== '0px';
+            const newSeasonHTML = createSeasonBlockHTML(show, { ...show.seasons[seasonNumber], season_number: seasonNumber });
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newSeasonHTML;
+            const newBlock = tempDiv.firstChild;
+            seasonBlock.parentNode.replaceChild(newBlock, seasonBlock);
+            setupSeasonEventListeners(seasonNumber);
+            
+            if (isExpanded) {
+                const episodesContainer = newBlock.querySelector('.season-episodes');
+                if(episodesContainer) episodesContainer.style.maxHeight = episodesContainer.scrollHeight + 'px';
+            }
+        }
+
+        closeModal(elements.rewatchModal);
+        showNotification("Conteggio rewatch aggiornato!", "success");
+    }
+
+    function updateRewatchModalButtons(count) {
+        document.querySelectorAll('#rewatchModal .quick-rewatch-btn').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.count) === count);
+        });
+    }
 
     function setupEventListeners() {
       elements.mediaManagementBtn.addEventListener("click", () => { elements.mediaManagementModal.style.display = 'flex'; elements.mediaTitle.value = ''; elements.tmdbResults.innerHTML = ''; currentTMDbSelection = null; renderCategoriesList(); renderFriendsList(); populateAddMediaCategorySelect();});
@@ -2114,7 +2291,7 @@
       elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
       elements.episodesModalClose.addEventListener('click', () => closeModal(elements.episodesModal));
       elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
-      document.addEventListener("click", e => { if (e.target === elements.detailsModal) closeModal(elements.detailsModal); if (e.target === elements.episodesModal) closeModal(elements.episodesModal); if (e.target === elements.actorModal) closeModal(elements.actorModal); if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible'); });
+      document.addEventListener("click", e => { if (e.target === elements.detailsModal) closeModal(elements.detailsModal); if (e.target === elements.episodesModal) closeModal(elements.episodesModal); if (e.target === elements.actorModal) closeModal(elements.actorModal); if (e.target === elements.rewatchModal) closeModal(elements.rewatchModal); if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible'); });
       elements.savePosterChange.addEventListener('click', () => { const selected = document.querySelector(".poster-option.selected"); if (selected) changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url); });
       elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
       elements.exportBtn.addEventListener('click', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ mediaList, categories }, null, 2)], {type: 'application/json'})); a.download = `serietv_tracker_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(a.href); });
@@ -2129,6 +2306,30 @@
       elements.bellIcon.addEventListener('click', (e) => {
           e.stopPropagation();
           elements.notificationDropdown.classList.toggle('visible');
+      });
+      
+      elements.confirmRewatchBtn.addEventListener('click', () => {
+          const newCount = parseInt(elements.rewatchCountInput.value);
+          if (!isNaN(newCount) && newCount >= 0) {
+              setRewatchCount(newCount);
+          } else {
+              showNotification("Inserisci un numero valido (0 o superiore).", "warning");
+          }
+      });
+      elements.cancelRewatchBtn.addEventListener('click', () => closeModal(elements.rewatchModal));
+      document.querySelectorAll('#rewatchModal .quick-rewatch-btn').forEach(btn => btn.addEventListener('click', () => { const count = parseInt(btn.dataset.count); elements.rewatchCountInput.value = count; updateRewatchModalButtons(count); }));
+      elements.rewatchCountInput.addEventListener('input', () => { const count = parseInt(elements.rewatchCountInput.value); updateRewatchModalButtons(count); });
+      document.querySelectorAll("#rewatchModal .num-spinner-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+          const target = document.getElementById(e.currentTarget.dataset.target);
+          if (target) {
+            let value = parseInt(target.value) || 0;
+            value += e.currentTarget.classList.contains("up") ? 1 : -1;
+            if (value < 0) value = 0;
+            target.value = value;
+            updateRewatchModalButtons(value);
+          }
+        });
       });
     }
   </script>
