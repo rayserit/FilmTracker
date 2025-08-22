@@ -908,7 +908,7 @@
       const viewId = new URLSearchParams(window.location.search).get("view");
       if (!viewId) return false;
       isViewMode = true;
-      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, .auth-container, #userInfo, .notification-bell-container, #updateExistingBtn").forEach(el => el.style.display = "none");
+      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, .auth-container, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
       elements.viewModeBanner.style.display = "flex";
       db.ref(`users/${viewId}/mediaTracker`).on("value", snapshot => {
         const data = snapshot.val();
@@ -2052,9 +2052,7 @@
                     details.biography = enDetails.biography;
                 }
             }
-
-            credits.cast.sort((a,b) => (b.vote_average || 0) - (a.vote_average || 0));
-
+            
             return { ...details, movie_credits: credits };
         } catch(err) {
             console.error("Error fetching TMDb actor details:", err);
@@ -2064,15 +2062,42 @@
 
     function populateActorModal(details) {
         const photoUrl = details.profile_path ? `https://image.tmdb.org/t/p/w500${details.profile_path}` : DEFAULT_ACTOR_PHOTO;
-        const filmographyHTML = details.movie_credits.cast.slice(0, 15).map(film => {
-            if (!film.poster_path) return '';
-            return `
-            <div class="film-card-small" data-tmdb-url="https://www.themoviedb.org/movie/${film.id}" title="${film.title}">
-                <img src="https://image.tmdb.org/t/p/w200${film.poster_path}" onerror="this.src='${DEFAULT_POSTER}'">
-                <div class="film-card-small-title">${film.title}</div>
-            </div>`;
-        }).join('');
         
+        let filmographyHTML = '';
+        let filmographyTitle = 'Filmografia Selezionata';
+
+        if (details.known_for_department === 'Directing') {
+            filmographyTitle = 'Filmografia Selezionata (Regista)';
+            const directedFilms = [];
+            const processedIds = new Set();
+            details.movie_credits.crew.forEach(film => {
+                if (film.job === 'Director' && !processedIds.has(film.id)) {
+                    directedFilms.push(film);
+                    processedIds.add(film.id);
+                }
+            });
+            directedFilms.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+            filmographyHTML = directedFilms.slice(0, 15).map(film => {
+                if (!film.poster_path) return '';
+                return `
+                <div class="film-card-small" data-tmdb-url="https://www.themoviedb.org/movie/${film.id}" title="${film.title}">
+                    <img src="https://image.tmdb.org/t/p/w200${film.poster_path}" onerror="this.src='${DEFAULT_POSTER}'">
+                    <div class="film-card-small-title">${film.title}</div>
+                </div>`;
+            }).join('');
+        } else {
+            filmographyTitle = 'Filmografia Selezionata (Attore)';
+            details.movie_credits.cast.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+            filmographyHTML = details.movie_credits.cast.slice(0, 15).map(film => {
+                if (!film.poster_path) return '';
+                return `
+                <div class="film-card-small" data-tmdb-url="https://www.themoviedb.org/movie/${film.id}" title="${film.title}">
+                    <img src="https://image.tmdb.org/t/p/w200${film.poster_path}" onerror="this.src='${DEFAULT_POSTER}'">
+                    <div class="film-card-small-title">${film.title}</div>
+                </div>`;
+            }).join('');
+        }
+
         elements.actorModalContent.innerHTML = `
             <div class="actor-details-header">
                 <img src="${photoUrl}" class="actor-details-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
@@ -2086,7 +2111,7 @@
                 </div>
             </div>
             <div>
-                <h3 class="details-section-title">Filmografia Selezionata</h3>
+                <h3 class="details-section-title">${filmographyTitle}</h3>
                 <div class="filmography-scroller" id="filmographyScroller">
                     ${filmographyHTML}
                 </div>
