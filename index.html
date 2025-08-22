@@ -5,8 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Film Tracker</title>
   
-  <!-- MODIFICA: Favicon aggiornata con icona Font Awesome e colore personalizzato -->
-  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%233A86FF" d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM48 368v32c0 8.8 7.2 16 16 16H96V368H48zm368-48h64V272h-64v48zm0-80h64V192h-64v48zm0-80h64V112h-64v48zM48 112v48H128V112H48zM128 368H224V272H128v96zm128 0h96V272H256v96zm128 0h96V272H384v96zM128 240H384V192H128v48z"/></svg>' type="image/svg+xml">
+<!-- Icona per segnalibri (Favicon) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path fill='%233A86FF' d='M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM48 368v32c0 8.8 7.2 16 16 16H96c8.8 0 16-7.2 16-16V368c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zm368-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V368c0-8.8-7.2-16-16-16H416zM48 240v32c0 8.8 7.2 16 16 16H96c8.8 0 16-7.2 16-16V240c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zm368-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V240c0-8.8-7.2-16-16-16H416zM48 112v32c0 8.8 7.2 16 16 16H96c8.8 0 16-7.2 16-16V112c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zm368-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V112c0-8.8-7.2-16-16-16H416zM128 128v64c0 17.7 14.3 32 32 32H352c17.7 0 32-14.3 32-32V128c0-17.7-14.3-32-32-32H160c-17.7 0-32 14.3-32 32zm32 128c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32H352c17.7 0 32-14.3 32-32V288c0-17.7-14.3-32-32-32H160z'/></svg>">
+
+<!-- Icona per Apple devices -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path fill='%233A86FF' d='M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM48 368v32c0 8.8 7.2 16 16 16H96c8.8 0 16-7.2 16-16V368c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zm368-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V368c0-8.8-7.2-16-16-16H416zM48 240v32c0 8.8 7.2 16 16 16H96c8.8 0 16-7.2 16-16V240c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zm368-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V240c0-8.8-7.2-16-16-16H416zM48 112v32c0 8.8 7.2 16 16 16H96c8.8 0 16-7.2 16-16V112c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zm368-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V112c0-8.8-7.2-16-16-16H416zM128 128v64c0 17.7 14.3 32 32 32H352c17.7 0 32-14.3 32-32V128c0-17.7-14.3-32-32-32H160c-17.7 0-32 14.3-32 32zm32 128c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32H352c17.7 0 32-14.3 32-32V288c0-17.7-14.3-32-32-32H160z'/></svg>">
+
+<!-- Icona per Windows -->
+<meta name="msapplication-TileImage" content="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path fill='%233A86FF' d='M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM48 368v32c0 8.8 7.2 16 16 16H96c8.8 0 16-7.2 16-16V368c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zm368-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V368c0-8.8-7.2-16-16-16H416zM48 240v32c0 8.8 7.2 16 16 16H96c8.8 0 16-7.2 16-16V240c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zm368-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V240c0-8.8-7.2-16-16-16H416zM48 112v32c0 8.8 7.2 16 16 16H96c8.8 0 16-7.2 16-16V112c0-8.8-7.2-16-16-16H64c-8.8 0-16 7.2-16 16zm368-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V112c0-8.8-7.2-16-16-16H416zM128 128v64c0 17.7 14.3 32 32 32H352c17.7 0 32-14.3 32-32V128c0-17.7-14.3-32-32-32H160c-17.7 0-32 14.3-32 32zm32 128c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32H352c17.7 0 32-14.3 32-32V288c0-17.7-14.3-32-32-32H160z'/></svg>">
   
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -390,8 +396,6 @@
         <button id="exportBtn" class="btn btn-secondary" title="Esporta Dati (.json)"><i class="fas fa-download"></i></button>
         <input type="file" id="importFile" accept=".json" style="display: none;">
         <button id="importBtn" class="btn btn-secondary" title="Importa Dati (.json)"><i class="fas fa-upload"></i></button>
-        <!-- MODIFICA: Testo e icona del pulsante di aggiornamento -->
-        <button id="updateExistingBtn" class="btn btn-secondary" title="Converti Titoli in Inglese"><i class="fas fa-language"></i></button>
         <button id="resetBtn" class="btn btn-secondary" title="Resetta Applicazione"><i class="fas fa-undo"></i></button>
         <button id="themeToggle" class="btn btn-secondary" title="Cambia Tema"><i class="fas fa-moon"></i></button>
         <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
@@ -583,7 +587,6 @@
         shareBtn: document.getElementById("shareBtn"), exportBtn: document.getElementById("exportBtn"), 
         importBtn: document.getElementById("importBtn"), importFile: document.getElementById("importFile"), 
         resetBtn: document.getElementById("resetBtn"), themeToggle: document.getElementById("themeToggle"), 
-        updateExistingBtn: document.getElementById("updateExistingBtn"),
         searchInput: document.getElementById("searchInput"), categoryFilter: document.getElementById("categoryFilter"), 
         sortFilter: document.getElementById("sortFilter"), statTotal: document.getElementById("statTotal"), 
         statWatchlist: document.getElementById("statWatchlist"), statWatched: document.getElementById("statWatched"), 
@@ -638,7 +641,7 @@
         metacriticRating: "N/A", 
         letterboxdRating: "N/A",
         tmdbID: null,
-        italianTitle: null // MODIFICA: Aggiunto nuovo campo per il titolo italiano
+        italianTitle: null
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -832,7 +835,7 @@
         elements.authToggle.parentElement.style.display = "block";
         elements.notificationBellContainer.style.display = 'none';
         document.querySelectorAll("#mediaManagementBtn, #shareBtn").forEach(btn => btn.disabled = true);
-        document.querySelectorAll("#exportBtn, #importBtn, #resetBtn, #updateExistingBtn").forEach(btn => btn.disabled = false);
+        document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(btn => btn.disabled = false);
       }
     }
 
@@ -2060,7 +2063,7 @@
     }
 
     function populateActorModal(details) {
-        const photoUrl = details.profile_path ? `https://image.tmdb.org/t/p/w500${details.profile_path}` : DEFAULT_POSTER;
+        const photoUrl = details.profile_path ? `https://image.tmdb.org/t/p/w500${details.profile_path}` : DEFAULT_ACTOR_PHOTO;
         const filmographyHTML = details.movie_credits.cast.slice(0, 15).map(film => {
             if (!film.poster_path) return '';
             return `
@@ -2186,7 +2189,6 @@
       elements.exportBtn.addEventListener("click", exportData);
       elements.importBtn.addEventListener("click", () => elements.importFile.click());
       elements.importFile.addEventListener("change", e => importData(e.target.files[0]));
-      elements.updateExistingBtn.addEventListener("click", convertTitlesToEnglish);
       elements.resetBtn.addEventListener("click", resetApp);
       elements.themeToggle.addEventListener("click", toggleTheme);
       elements.searchInput.addEventListener("input", () => {
@@ -2333,57 +2335,6 @@
         saveData();
         refreshSingleMedia(id);
       }
-    }
-
-    async function convertTitlesToEnglish() {
-        if (isViewMode) return;
-        const filmsToUpdate = mediaList.filter(m => m.imdbID && (!m.italianTitle || m.title === m.italianTitle));
-        
-        if (filmsToUpdate.length === 0) {
-            return showNotification("Tutti i titoli sono già in inglese.", "success");
-        }
-        
-        showConfirmModal("Converti Titoli", `Stai per convertire ${filmsToUpdate.length} titoli di film in inglese. Questa operazione è irreversibile. Continuare?`, async () => {
-            document.body.classList.add('modal-open');
-            elements.updateProgressModal.style.display = 'flex';
-            elements.updateProgressTitle.textContent = "Conversione Titoli...";
-            let updatedCount = 0;
-
-            for (let i = 0; i < filmsToUpdate.length; i++) {
-                const media = filmsToUpdate[i];
-                const progress = ((i + 1) / filmsToUpdate.length) * 100;
-                elements.updateProgressBarFill.style.width = `${progress}%`;
-                elements.updateProgressText.textContent = `Conversione ${i + 1} di ${filmsToUpdate.length}: ${media.title}...`;
-
-                try {
-                    const tmdbId = media.tmdbID || (await fetchTMDbDetails(media.imdbID))?.id;
-                    if (tmdbId) {
-                        const [enDetails, itDetails] = await Promise.all([
-                            fetchFullTMDbDetails(tmdbId, 'en-US'),
-                            fetchFullTMDbDetails(tmdbId, 'it-IT')
-                        ]);
-                        if (enDetails && itDetails) {
-                            media.title = enDetails.title;
-                            media.italianTitle = itDetails.title;
-                            updatedCount++;
-                        }
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                } catch(err) {
-                    console.error(`Impossibile convertire ${media.title}:`, err);
-                }
-            }
-            
-            closeModal(elements.updateProgressModal);
-
-            if (updatedCount > 0) {
-                saveData();
-                renderFullUI();
-                showNotification(`${updatedCount} titoli sono stati convertiti con successo!`, "success");
-            } else {
-                showNotification("Nessun titolo è stato convertito. Riprova più tardi.", "warning");
-            }
-        });
     }
 
     async function toggleFavorite(mediaId) {
