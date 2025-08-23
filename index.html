@@ -1895,8 +1895,9 @@
         elements.detailsModal.style.display = 'flex';
         document.body.classList.add('modal-open');
         elements.detailsModalContent.innerHTML = '<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>';
-
-        const details = await fetchTMDbDetails(media.imdbID, 'en-US');
+        
+        // CORREZIONE: Richiede sempre i dati in italiano per avere la descrizione corretta
+        const details = await fetchTMDbDetails(media.imdbID, 'it-IT');
 
         if (details) {
             populateDetailsModal(details, media);
@@ -1935,7 +1936,7 @@
             <div class="details-header">
                 <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
                 <div class="details-title-section">
-                    <h2 id="detailsModalTitle">${details.title}</h2>
+                    <h2 id="detailsModalTitle">${media.title}</h2>
                     <div class="details-ratings-container">${ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione disponibile</span>'}</div>
                     <p id="detailsModalTagline">${details.tagline || ''}</p>
                     <div id="detailsModalMeta">
