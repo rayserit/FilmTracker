@@ -174,6 +174,8 @@
     #actorModal .modal-content { max-width: 700px; max-height: 80vh; overflow-y: auto; }
     #rewatchModal { z-index: 1003; }
     #rewatchModal .modal-content { max-width: 450px; text-align: center; }
+    #updateProgressModal .modal-content { max-width: 500px; text-align: center; }
+
 
     input, select { padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); font-size: 1rem; box-sizing: border-box; margin: 0; height: 38px; transition: border-color 0.2s, box-shadow 0.2s; }
     input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.2); }
@@ -216,7 +218,7 @@
     .season-title { font-weight: 600; }
     .season-progress-text { font-size: 0.8rem; color: var(--text-secondary); }
     .season-actions { display: flex; align-items: center; gap: 0.5rem; }
-    .season-actions .btn { width: 32px; height: 32px; padding: 0; font-size: 0.9rem; justify-content: center; }
+    .season-actions .btn { width: 32px; height: 32px; padding: 0; font-size: 0.9rem; }
     
     .season-episodes { display: block; overflow: hidden; transition: max-height 0.4s ease-in-out; max-height: 0; }
     .no-episodes-info { padding: 1rem; text-align: center; font-style: italic; color: var(--text-secondary); }
@@ -349,6 +351,10 @@
     .form-row { display: flex; gap: 0.75rem; align-items: center; }
     .form-row input[type="text"] { flex-grow: 1; }
 
+    #updateProgressModal .modal-content { max-width: 500px; text-align: center; }
+    #updateProgressBar { width: 100%; height: 20px; background-color: var(--border-color); border-radius: 10px; overflow: hidden; margin: 1rem 0; }
+    #updateProgressBarFill { width: 0%; height: 100%; background-color: var(--primary); transition: width 0.2s; }
+    #updateProgressText { font-size: 0.9rem; color: var(--text-secondary); }
   </style>
 </head>
 <body class="dark user-select-none">
@@ -391,6 +397,7 @@
         <button id="exportBtn" class="btn btn-secondary" title="Esporta Dati"><i class="fas fa-download"></i></button>
         <input type="file" id="importFile" accept=".json" style="display: none;">
         <button id="importBtn" class="btn btn-secondary" title="Importa Dati"><i class="fas fa-upload"></i></button>
+        <button id="convertTitlesBtn" class="btn btn-secondary" title="Converti Titoli in Inglese"><i class="fas fa-language"></i></button>
         <button id="resetBtn" class="btn btn-secondary" title="Resetta Tracker"><i class="fas fa-undo"></i></button>
         <button id="themeToggle" class="btn btn-secondary" title="Cambia Tema"><i class="fas fa-moon"></i></button>
         
@@ -505,6 +512,16 @@
         </div>
     </div>
   </div>
+  
+  <div class="modal" id="updateProgressModal">
+    <div class="modal-content">
+        <h2 id="updateProgressTitle">Aggiornamento in corso...</h2>
+        <div id="updateProgressBar">
+            <div id="updateProgressBarFill"></div>
+        </div>
+        <p id="updateProgressText">Inizializzazione...</p>
+    </div>
+  </div>
 
   <div id="notification" class="notification"><span id="notificationText"></span></div>
   
@@ -536,7 +553,7 @@
     const getDefaultShowProps = () => ({
         category: 'Da Vedere', addedAt: new Date().toISOString(), lastActivityAt: null, poster: "", 
         year: "", imdbID: null, tmdbID: null, imdbRating: "N/A", rottenTomatoes: "N/A", popcornRating: "N/A", metacriticRating: "N/A", letterboxdRating: "N/A", status: "Unknown", 
-        seasons: {}, progress: {}, rewatches: {}, isFavorite: false
+        seasons: {}, progress: {}, rewatches: {}, isFavorite: false, italianTitle: null
     });
     
     const elements = { 
@@ -574,6 +591,11 @@
         rewatchModal: document.getElementById("rewatchModal"), rewatchModalTitle: document.getElementById("rewatchModalTitle"),
         rewatchCountInput: document.getElementById("rewatchCountInput"), confirmRewatchBtn: document.getElementById("confirmRewatchBtn"),
         cancelRewatchBtn: document.getElementById("cancelRewatchBtn"),
+        convertTitlesBtn: document.getElementById('convertTitlesBtn'),
+        updateProgressModal: document.getElementById('updateProgressModal'),
+        updateProgressBarFill: document.getElementById('updateProgressBarFill'),
+        updateProgressText: document.getElementById('updateProgressText'),
+        updateProgressTitle: document.getElementById('updateProgressTitle')
     };
     
     firebase.initializeApp(firebaseConfig);
@@ -746,7 +768,10 @@
         let filteredMedia = [...mediaList];
 
         if (searchTerm) {
-            filteredMedia = filteredMedia.filter(m => m.title.toLowerCase().includes(searchTerm));
+            filteredMedia = filteredMedia.filter(m => 
+                m.title.toLowerCase().includes(searchTerm) ||
+                (m.italianTitle && m.italianTitle.toLowerCase().includes(searchTerm))
+            );
         }
         
         if (selectedCategory === 'favorites') {
@@ -901,12 +926,16 @@
     async function addNewMedia(tmdbId) {
         showNotification("Recupero dettagli della serie...", "warning");
         try {
-            const tmdbDetails = await fetchFullTMDbDetails(tmdbId);
-            if (!tmdbDetails || !tmdbDetails.external_ids.imdb_id) {
+            const [enDetails, itDetails] = await Promise.all([
+                fetchFullTMDbDetails(tmdbId, 'en-US'),
+                fetchFullTMDbDetails(tmdbId, 'it-IT')
+            ]);
+            
+            if (!enDetails || !enDetails.external_ids.imdb_id) {
                 return showNotification("Dettagli della serie non trovati o IMDb ID mancante.", "error");
             }
             
-            const imdbID = tmdbDetails.external_ids.imdb_id;
+            const imdbID = enDetails.external_ids.imdb_id;
             const category = elements.addMediaCategorySelect.value;
             localStorage.setItem("lastUsedTvShowCategory", category);
             
@@ -920,11 +949,12 @@
             let newShow = { 
                 ...getDefaultShowProps(), 
                 id: Date.now().toString(), 
-                title: tmdbDetails.name, 
+                title: enDetails.name,
+                italianTitle: itDetails ? itDetails.name : enDetails.name,
                 imdbID: imdbID,
                 tmdbID: tmdbId,
                 category: category,
-                poster: tmdbDetails.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbDetails.poster_path}` : DEFAULT_POSTER,
+                poster: enDetails.poster_path ? `https://image.tmdb.org/t/p/w500${enDetails.poster_path}` : DEFAULT_POSTER,
                 addedAt: new Date().toISOString(), 
                 lastActivityAt: new Date().toISOString() 
             };
@@ -940,13 +970,13 @@
                 fetchMDBListRatings(newShow.imdbID)
             ]);
 
-            const firstYear = tmdbDetails.first_air_date ? tmdbDetails.first_air_date.split('-')[0] : '';
-            const lastYear = tmdbDetails.status === 'Ended' && tmdbDetails.last_air_date ? tmdbDetails.last_air_date.split('-')[0] : '';
+            const firstYear = enDetails.first_air_date ? enDetails.first_air_date.split('-')[0] : '';
+            const lastYear = enDetails.status === 'Ended' && enDetails.last_air_date ? enDetails.last_air_date.split('-')[0] : '';
             newShow.year = firstYear && lastYear && firstYear !== lastYear ? `${firstYear}–${lastYear}` : firstYear;
-            newShow.status = tmdbDetails.status;
-            newShow.imdbRating = omdbDetails?.imdbRating !== "N/A" ? omdbDetails.imdbRating : (tmdbDetails.vote_average ? tmdbDetails.vote_average.toFixed(1) : "N/A");
+            newShow.status = enDetails.status;
+            newShow.imdbRating = omdbDetails?.imdbRating !== "N/A" ? omdbDetails.imdbRating : (enDetails.vote_average ? enDetails.vote_average.toFixed(1) : "N/A");
             
-            const seasonPromises = tmdbDetails.seasons.filter(s => s.season_number > 0).map(s => fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, s.season_number));
+            const seasonPromises = enDetails.seasons.filter(s => s.season_number > 0).map(s => fetchTMDbSeasonDetailsWithFallback(enDetails.id, s.season_number));
             const seasonsData = await Promise.all(seasonPromises);
             seasonsData.forEach(season => { 
                 if (season) {
@@ -1022,9 +1052,9 @@
         return await fetchFullTMDbDetails(tmdbShow.id, lang);
     }
     
-    async function fetchFullTMDbDetails(tmdbId, lang = 'it-IT') {
+    async function fetchFullTMDbDetails(tmdbId, lang = 'en-US') {
         const detailsRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}?api_key=${TMDB_KEY}&language=${lang}&append_to_response=credits,external_ids`); 
-        return detailsRes.ok ? await detailsRes.json() : null; 
+        return detailsRes.ok ? await detailsRes.json() : null;
     }
     
     async function fetchTMDbSeasonDetailsWithFallback(tvId, seasonNumber) {
@@ -1129,7 +1159,7 @@
                 <div class="details-title-section">
                     <div id="detailsModalHeader-main">
                         <div>
-                            <h2 id="detailsModalTitle">${details.name}</h2>
+                            <h2 id="detailsModalTitle">${media.title}</h2>
                             <div class="details-ratings-container">${ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione disponibile</span>'}</div>
                         </div>
                         <div style="display: flex; gap: 0.5rem; align-self: flex-start; flex-shrink: 0;">
@@ -1407,6 +1437,7 @@
         
         const seasonBlock = document.getElementById(`season-block-${seasonNumber}`);
         if(seasonBlock) {
+            const isExpanded = seasonBlock.querySelector('.season-episodes').style.maxHeight !== '0px';
             const newSeasonHTML = createSeasonBlockHTML(show, { ...show.seasons[seasonNumber], season_number: seasonNumber });
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = newSeasonHTML;
@@ -1414,8 +1445,10 @@
             seasonBlock.parentNode.replaceChild(newBlock, seasonBlock);
             setupSeasonEventListeners(seasonNumber);
             
-            const episodesContainer = newBlock.querySelector('.season-episodes');
-            if(episodesContainer) episodesContainer.style.maxHeight = episodesContainer.scrollHeight + 'px';
+            if (isExpanded) {
+                const episodesContainer = newBlock.querySelector('.season-episodes');
+                if(episodesContainer) episodesContainer.style.maxHeight = episodesContainer.scrollHeight + 'px';
+            }
         }
     }
 
@@ -1800,14 +1833,14 @@
                     <div class="tmdb-result-item" data-tmdb-id="${r.id}" data-title="${r.name}">
                         <img src="${r.poster_path ? `https://image.tmdb.org/t/p/w200${r.poster_path}` : DEFAULT_POSTER}" class="tmdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'">
                         <div>
-                            <strong>${r.name}</strong>
-                            <div>${r.first_air_date ? r.first_air_date.split('-')[0] : ''}</div>
+                            <strong>${r.name}</strong> (${r.first_air_date ? r.first_air_date.split('-')[0] : 'N/D'})
+                            <div style="font-size:0.8rem; color: var(--text-secondary)">${r.original_name}</div>
                         </div>
                     </div>`).join('');
                 document.querySelectorAll(".tmdb-result-item").forEach(item => item.addEventListener("click", () => {
-                    currentTMDbSelection = { tmdbId: item.dataset.tmdbId, title: item.dataset.title };
-                    elements.mediaTitle.value = currentTMDbSelection.title;
-                    showNotification(`"${currentTMDbSelection.title}" selezionato.`, "success");
+                    currentTMDbSelection = { tmdbId: item.dataset.tmdbId };
+                    elements.mediaTitle.value = item.dataset.title;
+                    showNotification(`"${item.dataset.title}" selezionato.`, "success");
                 }));
             } else {
                 elements.tmdbResults.innerHTML = `<p>Nessun risultato</p>`;
@@ -1954,7 +1987,7 @@
       const viewId = new URLSearchParams(window.location.search).get("view");
       if (!viewId) { hideLoader(); return false; }
       isViewMode = true;
-      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, .auth-container, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
+      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, #convertTitlesBtn, .auth-container, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
       elements.viewModeBanner.style.display = "flex";
       db.ref(`users/${viewId}/tvShowTracker`).on("value", snapshot => {
         const data = snapshot.val();
@@ -2249,8 +2282,8 @@
         updateStats();
         
         const seasonBlock = document.getElementById(`season-block-${seasonNumber}`);
-        if(seasonBlock) {
-            const isExpanded = seasonBlock.querySelector('.season-episodes').style.maxHeight !== '0px';
+        if(seasonBlock && elements.episodesModal.style.display === 'flex') {
+            const isExpanded = seasonBlock.querySelector('.season-episodes').style.maxHeight && seasonBlock.querySelector('.season-episodes').style.maxHeight !== '0px';
             const newSeasonHTML = createSeasonBlockHTML(show, { ...show.seasons[seasonNumber], season_number: seasonNumber });
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = newSeasonHTML;
@@ -2268,9 +2301,61 @@
         showNotification("Conteggio rewatch aggiornato!", "success");
     }
 
+
     function updateRewatchModalButtons(count) {
         document.querySelectorAll('#rewatchModal .quick-rewatch-btn').forEach(btn => {
             btn.classList.toggle('active', parseInt(btn.dataset.count) === count);
+        });
+    }
+
+    async function convertTitlesToEnglish() {
+        if (isViewMode) return;
+        const showsToUpdate = mediaList.filter(s => s.imdbID && (!s.italianTitle || s.title === s.italianTitle));
+        
+        if (showsToUpdate.length === 0) {
+            return showNotification("Tutti i titoli sono già in inglese.", "success");
+        }
+        
+        showConfirmModal("Converti Titoli", `Stai per convertire ${showsToUpdate.length} titoli di serie in inglese. L'operazione è irreversibile. Continuare?`, async () => {
+            document.body.classList.add('modal-open');
+            elements.updateProgressModal.style.display = 'flex';
+            elements.updateProgressTitle.textContent = "Conversione Titoli...";
+            let updatedCount = 0;
+
+            for (let i = 0; i < showsToUpdate.length; i++) {
+                const show = showsToUpdate[i];
+                const progress = ((i + 1) / showsToUpdate.length) * 100;
+                elements.updateProgressBarFill.style.width = `${progress}%`;
+                elements.updateProgressText.textContent = `Conversione ${i + 1} di ${showsToUpdate.length}: ${show.title}...`;
+
+                try {
+                    const tmdbId = show.tmdbID || (await fetchTMDbShowDetailsByIMDb(show.imdbID))?.id;
+                    if (tmdbId) {
+                        const [enDetails, itDetails] = await Promise.all([
+                            fetchFullTMDbDetails(tmdbId, 'en-US'),
+                            fetchFullTMDbDetails(tmdbId, 'it-IT')
+                        ]);
+                        if (enDetails && itDetails) {
+                            show.title = enDetails.name;
+                            show.italianTitle = itDetails.name;
+                            updatedCount++;
+                        }
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                } catch(err) {
+                    console.error(`Impossibile convertire ${show.title}:`, err);
+                }
+            }
+            
+            closeModal(elements.updateProgressModal);
+
+            if (updatedCount > 0) {
+                await saveData();
+                renderFullUI();
+                showNotification(`${updatedCount} titoli sono stati convertiti con successo!`, "success");
+            } else {
+                showNotification("Nessun titolo è stato convertito. Riprova più tardi.", "warning");
+            }
         });
     }
 
@@ -2288,6 +2373,7 @@
       elements.sortFilter.addEventListener("change", () => { localStorage.setItem("tvShowSortOrder", elements.sortFilter.value); renderMedia(); });
       elements.themeToggle.addEventListener("click", () => { document.body.classList.toggle("dark"); localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light"); loadTheme(); });
       elements.resetBtn.addEventListener('click', resetApp);
+      elements.convertTitlesBtn.addEventListener('click', convertTitlesToEnglish);
       elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
       elements.episodesModalClose.addEventListener('click', () => closeModal(elements.episodesModal));
       elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
