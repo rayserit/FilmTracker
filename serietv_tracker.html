@@ -357,6 +357,181 @@
     #updateProgressBarFill { width: 0%; height: 100%; background-color: var(--primary); transition: width 0.2s; }
     #updateProgressText { font-size: 0.9rem; color: var(--text-secondary); }
   </style>
+  
+  <!-- START: Mobile-Friendly CSS Rules -->
+  <style>
+    @media (max-width: 768px) {
+      body {
+        padding: 0.5rem;
+        -webkit-text-size-adjust: 100%; /* Prevents text zooming on iOS */
+      }
+      .top-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .top-bar-left, .top-bar-right {
+        width: 100%;
+        gap: 0.5rem;
+      }
+      .top-bar-right {
+        justify-content: flex-start;
+      }
+      .top-bar-left h1 {
+        font-size: 1.5rem;
+      }
+      .search-box, .filter-select {
+        max-width: none;
+        width: 100%;
+      }
+      .stats-container {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 0.5rem;
+      }
+      .stat-value {
+        font-size: 1.5rem;
+      }
+      .stat-item {
+        padding: 0.5rem;
+      }
+      .media-section {
+        padding: 1rem;
+      }
+      .media-grid {
+        /* Adjust to better fit 2 columns on most phones */
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+      }
+      .media-card {
+        width: auto; /* Let the grid control the width */
+      }
+      
+      /* Modal Adjustments */
+      .modal-content {
+        padding: 1rem;
+        max-height: 85vh;
+        overflow-y: auto;
+      }
+      .modal-footer {
+        flex-wrap: wrap;
+        justify-content: stretch;
+      }
+      .modal-footer .btn {
+        flex-grow: 1;
+      }
+
+      /* Details Modal */
+      #detailsModal .modal-content {
+        padding: 0;
+      }
+      .details-header {
+        flex-direction: column;
+        align-items: center;
+        margin-top: -80px;
+        padding: 1rem;
+        text-align: center;
+      }
+      #detailsModalPoster {
+        width: 120px;
+        height: 180px;
+        margin-right: 0;
+        margin-bottom: 1rem;
+      }
+      .details-title-section {
+        padding-top: 80px;
+        width: 100%;
+      }
+      #detailsModalHeader-main {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+      }
+      #detailsModalTitle {
+        font-size: 1.5rem;
+      }
+      .details-ratings-container {
+        justify-content: center;
+      }
+      #detailsModalMeta {
+        justify-content: center;
+        gap: 0.5rem 1rem;
+      }
+      .details-body {
+        padding: 0 1rem 1rem 1rem;
+      }
+
+      /* Episodes Modal */
+      #episodesModal .modal-content {
+          height: 85vh;
+      }
+      #episodesModalContent {
+          padding-right: 0.5rem;
+      }
+      .episode-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+      .episode-still {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+      }
+      .episode-controls {
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-end;
+      }
+      .season-header {
+        flex-wrap: wrap;
+      }
+
+      /* Management Modal */
+      .management-tabs {
+          overflow-x: auto;
+          white-space: nowrap;
+          -ms-overflow-style: none; /* IE and Edge */
+          scrollbar-width: none; /* Firefox */
+      }
+      .management-tabs::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Opera */
+      }
+      .form-row {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.5rem;
+      }
+      .form-row > * {
+        width: 100%;
+      }
+      .management-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+      }
+      .management-card-actions {
+        justify-content: flex-end;
+      }
+      
+      /* Actor Modal */
+      .actor-details-header {
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+      }
+      .actor-details-info ul {
+          display: inline-block;
+          text-align: left;
+      }
+
+      /* Notification */
+      .notification {
+        width: calc(100% - 2rem);
+        bottom: 1rem;
+        right: 1rem;
+      }
+    }
+  </style>
+  <!-- END: Mobile-Friendly CSS Rules -->
 </head>
 <body class="dark user-select-none">
   
@@ -532,7 +707,7 @@
     const MDBLIST_PROXY_URL = "https://serietvtracker.amrit-singh99mail-5e3.workers.dev"; 
     
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
-    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi47LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
+    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi43LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
     const EMPTY_STILL_PLACEHOLDER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTY5IiB2aWV3Qm94PSIwIDAgMzAwIDE2OSI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNjkiIGZpbGw9IiNkZGQiLz48L3N2Zz4=";
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
