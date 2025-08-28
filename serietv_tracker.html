@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -160,12 +159,11 @@
     .btn-danger { background: var(--danger); color: white; }
     .btn-small { padding: 0.25rem 0.75rem; height: auto; font-size: 0.8rem; }
 
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-open { overflow: hidden; }
     .modal-content { background: var(--card-bg); border-radius: 12px; padding: 1.5rem; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
     
     #mediaManagementModal .modal-content { max-width: 800px; }
-    #detailsModal { z-index: 1000; }
     #detailsModal .modal-content { max-width: 900px; padding: 0; }
     #episodesModal { z-index: 1001; }
     #episodesModal .modal-content { max-width: 1200px; height: 90vh; }
@@ -356,6 +354,121 @@
     #updateProgressBar { width: 100%; height: 20px; background-color: var(--border-color); border-radius: 10px; overflow: hidden; margin: 1rem 0; }
     #updateProgressBarFill { width: 0%; height: 100%; background-color: var(--primary); transition: width 0.2s; }
     #updateProgressText { font-size: 0.9rem; color: var(--text-secondary); }
+
+    /* START: Bottom Navigation Bar Styles */
+    .bottom-nav {
+      display: none; /* Hidden by default, shown in media query */
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background-color: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      z-index: 999;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .bottom-nav-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-grow: 1;
+      height: 100%;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .bottom-nav-btn i {
+      font-size: 1.25rem;
+      margin-bottom: 0.2rem;
+    }
+    .bottom-nav-btn.active, .bottom-nav-btn:hover {
+      color: var(--primary);
+    }
+    .bottom-nav-btn.add-btn {
+      color: white;
+      background-color: var(--primary);
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 12px rgba(42, 157, 143, 0.4);
+      flex-grow: 0;
+    }
+    .bottom-nav-btn.add-btn i {
+      font-size: 1.5rem;
+      margin: 0;
+    }
+    .notification-badge-mobile {
+        position: absolute;
+        top: 2px;
+        right: 15px;
+        background-color: var(--danger);
+        color: white;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 2px solid var(--card-bg);
+        transform: scale(0);
+        transition: transform 0.2s ease-out;
+    }
+    .notification-badge-mobile.visible {
+        transform: scale(1);
+    }
+    /* END: Bottom Navigation Bar Styles */
+    
+    /* START: Mobile Menu and Notifications Modals Styles */
+    #mobileMenuModal .modal-content {
+      max-width: 320px;
+      padding: 1rem;
+    }
+    .mobile-menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .mobile-menu-list .btn {
+      width: 100%;
+      justify-content: flex-start;
+      background-color: var(--section-tint);
+      color: var(--text-color);
+    }
+    .mobile-menu-list .btn i {
+      width: 24px;
+      text-align: center;
+      color: var(--primary);
+    }
+
+    #mobileNotificationsModal {
+      align-items: flex-end; /* Position modal at the bottom */
+      background: transparent;
+    }
+    #mobileNotificationsModal .modal-content {
+      width: 100%;
+      max-width: none;
+      height: 75vh;
+      border-radius: 16px 16px 0 0;
+      margin: 0;
+      box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+      transform: translateY(100%);
+      transition: transform 0.3s ease-out;
+    }
+    #mobileNotificationsModal.visible .modal-content {
+        transform: translateY(0);
+    }
+    /* END: Mobile Menu and Notifications Modals Styles */
   </style>
   
   <!-- START: Mobile-Friendly CSS Rules -->
@@ -363,6 +476,7 @@
     @media (max-width: 768px) {
       body {
         padding: 0.5rem;
+        padding-bottom: 70px; /* Space for bottom nav bar */
         -webkit-text-size-adjust: 100%; /* Prevents text zooming on iOS */
       }
       .top-bar {
@@ -373,8 +487,9 @@
         width: 100%;
         gap: 0.5rem;
       }
+      /* Hide ALL utility buttons on mobile top bar */
       .top-bar-right {
-        justify-content: flex-start;
+        display: none;
       }
       .top-bar-left h1 {
         font-size: 1.5rem;
@@ -397,14 +512,19 @@
         padding: 1rem;
       }
       .media-grid {
-        /* Adjust to better fit 2 columns on most phones */
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 1rem;
+        /* Adjust to better fit 3 columns on most phones */
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 0.75rem;
       }
       .media-card {
         width: auto; /* Let the grid control the width */
       }
-      
+      /* Compact card content for smaller size */
+      .media-info { padding: 0.5rem; }
+      .media-title { font-size: 0.8rem; }
+      .media-meta, .media-ratings { display: none; } /* Hide for space */
+      .progress-text { font-size: 0.7rem; }
+
       /* Modal Adjustments */
       .modal-content {
         padding: 1rem;
@@ -420,115 +540,44 @@
       }
 
       /* Details Modal */
-      #detailsModal .modal-content {
-        padding: 0;
-      }
-      .details-header {
-        flex-direction: column;
-        align-items: center;
-        margin-top: -80px;
-        padding: 1rem;
-        text-align: center;
-      }
-      #detailsModalPoster {
-        width: 120px;
-        height: 180px;
-        margin-right: 0;
-        margin-bottom: 1rem;
-      }
-      .details-title-section {
-        padding-top: 80px;
-        width: 100%;
-      }
-      #detailsModalHeader-main {
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-      }
-      #detailsModalTitle {
-        font-size: 1.5rem;
-      }
-      .details-ratings-container {
-        justify-content: center;
-      }
-      #detailsModalMeta {
-        justify-content: center;
-        gap: 0.5rem 1rem;
-      }
-      .details-body {
-        padding: 0 1rem 1rem 1rem;
-      }
+      #detailsModal .modal-content { padding: 0; }
+      .details-header { flex-direction: column; align-items: center; margin-top: -80px; padding: 1rem; text-align: center; }
+      #detailsModalPoster { width: 120px; height: 180px; margin-right: 0; margin-bottom: 1rem; }
+      .details-title-section { padding-top: 80px; width: 100%; }
+      #detailsModalHeader-main { flex-direction: column; align-items: center; gap: 1rem; }
+      #detailsModalTitle { font-size: 1.5rem; }
+      .details-ratings-container { justify-content: center; }
+      #detailsModalMeta { justify-content: center; gap: 0.5rem 1rem; }
+      .details-body { padding: 0 1rem 1rem 1rem; }
 
       /* Episodes Modal */
-      #episodesModal .modal-content {
-          height: 85vh;
-      }
-      #episodesModalContent {
-          padding-right: 0.5rem;
-      }
-      .episode-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
-      .episode-still {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 16 / 9;
-      }
-      .episode-controls {
-        width: 100%;
-        margin-left: 0;
-        justify-content: flex-end;
-      }
-      .season-header {
-        flex-wrap: wrap;
-      }
+      #episodesModal .modal-content { height: 85vh; }
+      #episodesModalContent { padding-right: 0.5rem; }
+      .episode-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+      .episode-still { width: 100%; height: auto; aspect-ratio: 16 / 9; }
+      .episode-controls { width: 100%; margin-left: 0; justify-content: flex-end; }
+      .season-header { flex-wrap: wrap; }
 
       /* Management Modal */
-      .management-tabs {
-          overflow-x: auto;
-          white-space: nowrap;
-          -ms-overflow-style: none; /* IE and Edge */
-          scrollbar-width: none; /* Firefox */
-      }
-      .management-tabs::-webkit-scrollbar {
-          display: none; /* Chrome, Safari, Opera */
-      }
-      .form-row {
-          flex-direction: column;
-          align-items: stretch;
-          gap: 0.5rem;
-      }
-      .form-row > * {
-        width: 100%;
-      }
-      .management-card {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.5rem;
-      }
-      .management-card-actions {
-        justify-content: flex-end;
-      }
+      .management-tabs { overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; }
+      .management-tabs::-webkit-scrollbar { display: none; }
+      .form-row { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+      .form-row > * { width: 100%; }
+      .management-card { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+      .management-card-actions { justify-content: flex-end; }
       
       /* Actor Modal */
-      .actor-details-header {
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-      }
-      .actor-details-info ul {
-          display: inline-block;
-          text-align: left;
-      }
+      .actor-details-header { flex-direction: column; align-items: center; text-align: center; }
+      .actor-details-info ul { display: inline-block; text-align: left; }
 
       /* Notification */
-      .notification {
-        width: calc(100% - 2rem);
-        bottom: 1rem;
-        right: 1rem;
-      }
+      .notification { width: calc(100% - 2rem); bottom: 1rem; left: 1rem; right: auto; margin-bottom: 60px; }
+
+      /* Show Bottom Nav Bar */
+      .bottom-nav { display: flex; }
+      
+      /* Hide desktop-only elements on mobile */
+      #notificationDropdown { display: none; }
     }
   </style>
   <!-- END: Mobile-Friendly CSS Rules -->
@@ -545,7 +594,7 @@
 
   <div class="top-bar">
     <div class="top-bar-left">
-      <h1><i class="fas fa-tv"></i> Serie TV Tracker</h1>
+      <h1 id="topBarTitle"><i class="fas fa-tv"></i> Serie TV Tracker</h1>
       <div class="tracker-switch">
         <a href="index.html" class="tracker-switch-btn" title="Vai a Film Tracker"><i class="fas fa-film"></i></a>
         <a href="serietv_tracker.html" class="tracker-switch-btn active" title="Vai a Serie TV Tracker"><i class="fas fa-tv"></i></a>
@@ -699,8 +748,65 @@
     </div>
   </div>
 
+  <!-- Mobile "More Options" Modal -->
+  <div class="modal" id="mobileMenuModal">
+      <div class="modal-content">
+          <h2 style="text-align: center; margin-top: 0;">Altre Opzioni</h2>
+          <div class="mobile-menu-list">
+              <button class="btn" id="mobileMenuUserActionBtn"><i class="fas fa-user"></i><span>Login / Registrati</span></button>
+              <button class="btn" id="mobileMenuShareBtn"><i class="fas fa-share-alt"></i>Condividi Libreria</button>
+              <button class="btn" id="mobileMenuExportBtn"><i class="fas fa-download"></i>Esporta Dati</button>
+              <button class="btn" id="mobileMenuImportBtn"><i class="fas fa-upload"></i>Importa Dati</button>
+              <button class="btn" id="mobileMenuConvertBtn"><i class="fas fa-language"></i>Converti Titoli</button>
+              <button class="btn" id="mobileMenuThemeBtn"><i class="fas fa-moon"></i>Cambia Tema</button>
+              <button class="btn" id="mobileMenuResetBtn" style="color: var(--danger);"><i class="fas fa-undo" style="color: var(--danger);"></i>Resetta Tracker</button>
+          </div>
+          <div class="modal-footer" style="border: none; padding-bottom: 0;">
+            <button id="mobileMenuCloseBtn" class="btn btn-danger">Chiudi</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- Mobile Notifications Modal -->
+  <div class="modal" id="mobileNotificationsModal">
+      <div class="modal-content">
+          <div class="notification-header" style="text-align:center; position:relative;">
+              Notifiche Amici
+              <button class="modal-close-btn" id="mobileNotificationsCloseBtn" style="background:none; color:var(--text-color); top:0.5rem; right:0.5rem;"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="notification-list" id="notificationListMobile"></div>
+          <div class="notification-footer">
+              <button id="markAllReadMobileBtn" class="btn btn-primary btn-small"><i class="fas fa-check-double"></i> Segna tutte come lette</button>
+          </div>
+      </div>
+  </div>
+
   <div id="notification" class="notification"><span id="notificationText"></span></div>
   
+  <!-- Bottom Navigation Bar for Mobile -->
+  <div class="bottom-nav" id="bottomNav">
+      <button class="bottom-nav-btn active" id="bottomNavHome" title="Liste">
+          <i class="fas fa-list-ul"></i>
+          <span>Liste</span>
+      </button>
+      <button class="bottom-nav-btn" id="bottomNavSearch" title="Cerca">
+          <i class="fas fa-search"></i>
+          <span>Cerca</span>
+      </button>
+      <button class="bottom-nav-btn add-btn" id="bottomNavAdd" title="Aggiungi Serie">
+          <i class="fas fa-plus"></i>
+      </button>
+      <button class="bottom-nav-btn" id="bottomNavNotifications" title="Notifiche">
+          <i class="fas fa-bell"></i>
+          <span class="notification-badge-mobile" id="notificationBadgeMobile">0</span>
+          <span>Notifiche</span>
+      </button>
+      <button class="bottom-nav-btn" id="bottomNavManage" title="Altro">
+          <i class="fas fa-ellipsis-h"></i>
+          <span>Altro</span>
+      </button>
+  </div>
+
   <script>
     const OMDb_API_KEY = "2526ef70";
     const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ=");
@@ -771,7 +877,28 @@
         updateProgressModal: document.getElementById('updateProgressModal'),
         updateProgressBarFill: document.getElementById('updateProgressBarFill'),
         updateProgressText: document.getElementById('updateProgressText'),
-        updateProgressTitle: document.getElementById('updateProgressTitle')
+        updateProgressTitle: document.getElementById('updateProgressTitle'),
+        // Bottom Nav Bar Elements
+        bottomNavAdd: document.getElementById('bottomNavAdd'),
+        bottomNavManage: document.getElementById('bottomNavManage'),
+        bottomNavSearch: document.getElementById('bottomNavSearch'),
+        bottomNavNotifications: document.getElementById('bottomNavNotifications'),
+        bottomNavHome: document.getElementById('bottomNavHome'),
+        notificationBadgeMobile: document.getElementById('notificationBadgeMobile'),
+        // Mobile Modals and Buttons
+        mobileMenuModal: document.getElementById('mobileMenuModal'),
+        mobileMenuCloseBtn: document.getElementById('mobileMenuCloseBtn'),
+        mobileMenuUserActionBtn: document.getElementById('mobileMenuUserActionBtn'),
+        mobileMenuShareBtn: document.getElementById('mobileMenuShareBtn'),
+        mobileMenuExportBtn: document.getElementById('mobileMenuExportBtn'),
+        mobileMenuImportBtn: document.getElementById('mobileMenuImportBtn'),
+        mobileMenuConvertBtn: document.getElementById('mobileMenuConvertBtn'),
+        mobileMenuThemeBtn: document.getElementById('mobileMenuThemeBtn'),
+        mobileMenuResetBtn: document.getElementById('mobileMenuResetBtn'),
+        mobileNotificationsModal: document.getElementById('mobileNotificationsModal'),
+        mobileNotificationsCloseBtn: document.getElementById('mobileNotificationsCloseBtn'),
+        notificationListMobile: document.getElementById('notificationListMobile'),
+        markAllReadMobileBtn: document.getElementById('markAllReadMobileBtn')
     };
     
     firebase.initializeApp(firebaseConfig);
@@ -1162,7 +1289,6 @@
             newShow.year = firstYear && lastYear && firstYear !== lastYear ? `${firstYear}–${lastYear}` : firstYear;
             newShow.status = enDetails.status;
             
-            // CORREZIONE ERRORE: Usare optional chaining (?.) per accedere a omdbDetails in modo sicuro
             newShow.imdbRating = (omdbDetails?.imdbRating && omdbDetails.imdbRating !== "N/A") ? omdbDetails.imdbRating : (enDetails.vote_average ? enDetails.vote_average.toFixed(1) : "N/A");
             
             const seasonPromises = enDetails.seasons.filter(s => s.season_number > 0).map(s => fetchTMDbSeasonDetailsWithFallback(enDetails.id, s.season_number));
@@ -1202,7 +1328,7 @@
                 if (letterboxdRating) newShow.letterboxdRating = letterboxdRating.value;
                 if (metacriticRating) newShow.metacriticRating = metacriticRating.value;
 
-            } else if (omdbDetails && omdbDetails.Ratings) { // Questo controllo è già sicuro
+            } else if (omdbDetails && omdbDetails.Ratings) {
                 const rt = omdbDetails.Ratings.find(r => r.Source === 'Rotten Tomatoes');
                 if (rt) newShow.rottenTomatoes = rt.Value;
             }
@@ -1369,7 +1495,7 @@
                         </div>
                         <div style="display: flex; gap: 0.5rem; align-self: flex-start; flex-shrink: 0;">
                              <button id="detailsModalFavoriteBtn" class="btn ${media.isFavorite ? 'is-favorite' : ''}" title="Aggiungi ai preferiti"><i class="fas fa-heart"></i></button>
-                             <button id="showEpisodesBtn" class="btn btn-primary" style="flex-shrink: 0;"><i class="fas fa-list-check"></i> Gestisci Episodi</button>
+                             <button id="showEpisodesBtn" class="btn btn-primary" style="flex-shrink: 0;"><i class="fas fa-list-check"></i> Episodi</button>
                         </div>
                     </div>
                     <div id="detailsModalMeta">
@@ -2021,12 +2147,24 @@
                 <div class="media-grid" id="${sanitizeForId(cat.name)}Grid"></div>
             </div>`).join(""); 
     }
-    function closeModal(modal) { modal.style.display = "none"; if (!document.querySelector('.modal[style*="flex"]')) document.body.classList.remove("modal-open"); }
+    function closeModal(modal) {
+      if (modal.id === 'mobileNotificationsModal') {
+        modal.classList.remove('visible');
+        setTimeout(() => {
+          modal.style.display = "none";
+        }, 300); // Match transition duration
+      } else {
+        modal.style.display = "none";
+      }
+      if (!document.querySelector('.modal[style*="flex"]')) {
+        document.body.classList.remove("modal-open");
+      }
+    }
     function showNotification(text, type = "success") { elements.notificationText.textContent = text; elements.notification.className = `notification ${type}`; elements.notification.style.display = "block"; setTimeout(() => elements.notification.style.display = "none", 3000); }
     function showConfirmModal(title, body, onConfirm) { elements.confirmModalTitle.textContent = title; elements.confirmModalBody.textContent = body; elements.confirmModal.style.display = "flex"; const confirmHandler = () => { onConfirm(); closeModal(elements.confirmModal); cleanup(); }; const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); }; const cleanup = () => { elements.confirmModalConfirm.removeEventListener("click", confirmHandler); elements.confirmModalCancel.removeEventListener("click", cancelHandler); }; elements.confirmModalConfirm.addEventListener("click", confirmHandler); elements.confirmModalCancel.addEventListener("click", cancelHandler); }
     function setupLazyLoading() { if (lazyLoadObserver) lazyLoadObserver.disconnect(); lazyLoadObserver = new IntersectionObserver((entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { const img = entry.target; img.src = img.dataset.src; img.classList.remove("lazy"); observer.unobserve(img); } }); }, { rootMargin: "200px" }); document.querySelectorAll(".lazy").forEach(img => lazyLoadObserver.observe(img)); }
     function loadSortOrder() { elements.sortFilter.value = localStorage.getItem("tvShowSortOrder") || "added"; }
-    function loadTheme() { const theme = localStorage.getItem("theme") || "dark"; document.body.classList.toggle("dark", theme === "dark"); elements.themeToggle.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>`; }
+    function loadTheme() { const theme = localStorage.getItem("theme") || "dark"; document.body.classList.toggle("dark", theme === "dark"); elements.themeToggle.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>`; elements.mobileMenuThemeBtn.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>Cambia Tema`; }
     
     async function searchTMDb() {
         const title = elements.mediaTitle.value.trim();
@@ -2179,14 +2317,25 @@
     }
     
     function updateAuthUI() {
+        const userActionBtn = elements.mobileMenuUserActionBtn.querySelector('span');
         if(currentUser) {
             elements.userInfo.style.display = "flex";
             elements.authToggle.parentElement.style.display = "none";
             elements.notificationBellContainer.style.display = 'block';
+            if (userActionBtn) {
+              userActionBtn.textContent = 'Logout';
+              elements.mobileMenuUserActionBtn.style.color = 'var(--danger)';
+              elements.mobileMenuUserActionBtn.querySelector('i').style.color = 'var(--danger)';
+            }
         } else {
             elements.userInfo.style.display = "none";
             elements.authToggle.parentElement.style.display = "block";
             elements.notificationBellContainer.style.display = 'none';
+            if (userActionBtn) {
+              userActionBtn.textContent = 'Login / Registrati';
+              elements.mobileMenuUserActionBtn.style.color = '';
+              elements.mobileMenuUserActionBtn.querySelector('i').style.color = '';
+            }
         }
     }
 
@@ -2194,6 +2343,8 @@
       const viewId = new URLSearchParams(window.location.search).get("view");
       if (!viewId) { hideLoader(); return false; }
       isViewMode = true;
+      document.body.style.paddingBottom = '0';
+      document.getElementById('bottomNav').style.display = 'none';
       document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, #convertTitlesBtn, .auth-container, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
       elements.viewModeBanner.style.display = "flex";
       db.ref(`users/${viewId}/tvShowTracker`).on("value", snapshot => {
@@ -2256,17 +2407,10 @@
             friendListeners[friend.id] = { ref, listener };
         });
     }
-
-    function renderNotifications(notifications) {
-        const count = notifications.length;
-        elements.notificationBadge.textContent = count;
-        elements.notificationBadge.classList.toggle('visible', count > 0);
-        elements.notificationDropdown.innerHTML = '';
-        
-        const header = document.createElement('div'); header.className = 'notification-header'; header.textContent = 'Notifiche Amici';
-        const list = document.createElement('div'); list.className = 'notification-list';
-
-        if (count > 0) {
+    
+    function populateNotificationList(listElement, notifications) {
+        listElement.innerHTML = ''; // Clear previous notifications
+        if (notifications.length > 0) {
             notifications.forEach(n => {
                 if (!n.activity) return;
                 const item = document.createElement('div');
@@ -2287,32 +2431,47 @@
                        window.open(url, '_blank');
                     }
                 });
-                list.appendChild(item);
+                listElement.appendChild(item);
             });
-            
-            const footer = document.createElement('div'); footer.className = 'notification-footer';
-            const markAllBtn = document.createElement('button');
-            markAllBtn.className = 'btn btn-primary btn-small';
-            markAllBtn.innerHTML = '<i class="fas fa-check-double"></i> Segna tutte come lette';
-            markAllBtn.addEventListener('click', markAllNotificationsAsRead);
-            footer.appendChild(markAllBtn);
-            
-            elements.notificationDropdown.appendChild(header);
-            elements.notificationDropdown.appendChild(list);
-            elements.notificationDropdown.appendChild(footer);
         } else {
-            const emptyState = document.createElement('div'); emptyState.className = 'no-notifications'; emptyState.textContent = 'Nessuna nuova notifica';
-            list.appendChild(emptyState);
-            elements.notificationDropdown.appendChild(header);
-            elements.notificationDropdown.appendChild(list);
+            const emptyState = document.createElement('div');
+            emptyState.className = 'no-notifications';
+            emptyState.textContent = 'Nessuna nuova notifica';
+            listElement.appendChild(emptyState);
         }
     }
+
+    function renderNotifications(notifications) {
+        const count = notifications.length;
+
+        // Desktop Dropdown
+        elements.notificationBadge.textContent = count;
+        elements.notificationBadge.classList.toggle('visible', count > 0);
+        const desktopList = elements.notificationDropdown.querySelector('.notification-list');
+        if (!desktopList) { // Initial setup for desktop dropdown
+            elements.notificationDropdown.innerHTML = `
+                <div class="notification-header">Notifiche Amici</div>
+                <div class="notification-list"></div>
+                <div class="notification-footer">
+                    <button class="btn btn-primary btn-small" id="markReadAllDesktop"><i class="fas fa-check-double"></i> Segna tutte come lette</button>
+                </div>`;
+            document.getElementById('markReadAllDesktop').addEventListener('click', markAllNotificationsAsRead);
+        }
+        populateNotificationList(elements.notificationDropdown.querySelector('.notification-list'), notifications);
+
+        // Mobile Modal
+        elements.notificationBadgeMobile.textContent = count;
+        elements.notificationBadgeMobile.classList.toggle('visible', count > 0);
+        populateNotificationList(elements.notificationListMobile, notifications);
+    }
+
     
     function markAllNotificationsAsRead() {
         if (!currentUser) return;
         followedFriends.forEach(f => lastCheckedTimestamps[f.id] = new Date().toISOString());
         saveSocialData();
-        renderNotifications([]);
+        renderNotifications([]); // This will clear both desktop and mobile
+        closeModal(elements.mobileNotificationsModal);
     }
 
     function getActivityIcon(type) {
@@ -2584,7 +2743,7 @@
       elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
       elements.episodesModalClose.addEventListener('click', () => closeModal(elements.episodesModal));
       elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
-      document.addEventListener("click", e => { if (e.target === elements.detailsModal) closeModal(elements.detailsModal); if (e.target === elements.episodesModal) closeModal(elements.episodesModal); if (e.target === elements.actorModal) closeModal(elements.actorModal); if (e.target === elements.rewatchModal) closeModal(elements.rewatchModal); if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible'); });
+      document.addEventListener("click", e => { if (e.target === elements.detailsModal) closeModal(elements.detailsModal); if (e.target === elements.episodesModal) closeModal(elements.episodesModal); if (e.target === elements.actorModal) closeModal(elements.actorModal); if (e.target === elements.rewatchModal) closeModal(elements.rewatchModal); if (e.target === elements.mobileMenuModal) closeModal(elements.mobileMenuModal); if (e.target === elements.mobileNotificationsModal) closeModal(elements.mobileNotificationsModal); if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible'); });
       elements.savePosterChange.addEventListener('click', () => { const selected = document.querySelector(".poster-option.selected"); if (selected) changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url); });
       elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
       elements.exportBtn.addEventListener('click', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ mediaList, categories }, null, 2)], {type: 'application/json'})); a.download = `serietv_tracker_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(a.href); });
@@ -2596,34 +2755,32 @@
       elements.closeViewBtn.addEventListener('click', () => { window.location.href = window.location.pathname; });
       elements.addFriendBtn.addEventListener('click', addFriend);
       elements.copyMyIdBtn.addEventListener('click', () => { navigator.clipboard.writeText(elements.myIdInput.value); showNotification("ID copiato!", "success"); });
-      elements.bellIcon.addEventListener('click', (e) => {
-          e.stopPropagation();
-          elements.notificationDropdown.classList.toggle('visible');
-      });
+      elements.bellIcon.addEventListener('click', (e) => { e.stopPropagation(); elements.notificationDropdown.classList.toggle('visible'); });
       
-      elements.confirmRewatchBtn.addEventListener('click', () => {
-          const newCount = parseInt(elements.rewatchCountInput.value);
-          if (!isNaN(newCount) && newCount >= 0) {
-              setRewatchCount(newCount);
-          } else {
-              showNotification("Inserisci un numero valido (0 o superiore).", "warning");
-          }
-      });
+      elements.confirmRewatchBtn.addEventListener('click', () => { const newCount = parseInt(elements.rewatchCountInput.value); if (!isNaN(newCount) && newCount >= 0) { setRewatchCount(newCount); } else { showNotification("Inserisci un numero valido (0 o superiore).", "warning"); } });
       elements.cancelRewatchBtn.addEventListener('click', () => closeModal(elements.rewatchModal));
       document.querySelectorAll('#rewatchModal .quick-rewatch-btn').forEach(btn => btn.addEventListener('click', () => { const count = parseInt(btn.dataset.count); elements.rewatchCountInput.value = count; updateRewatchModalButtons(count); }));
       elements.rewatchCountInput.addEventListener('input', () => { const count = parseInt(elements.rewatchCountInput.value); updateRewatchModalButtons(count); });
-      document.querySelectorAll("#rewatchModal .num-spinner-btn").forEach(btn => {
-        btn.addEventListener("click", e => {
-          const target = document.getElementById(e.currentTarget.dataset.target);
-          if (target) {
-            let value = parseInt(target.value) || 0;
-            value += e.currentTarget.classList.contains("up") ? 1 : -1;
-            if (value < 0) value = 0;
-            target.value = value;
-            updateRewatchModalButtons(value);
-          }
-        });
-      });
+      document.querySelectorAll("#rewatchModal .num-spinner-btn").forEach(btn => { btn.addEventListener("click", e => { const target = document.getElementById(e.currentTarget.dataset.target); if (target) { let value = parseInt(target.value) || 0; value += e.currentTarget.classList.contains("up") ? 1 : -1; if (value < 0) value = 0; target.value = value; updateRewatchModalButtons(value); } }); });
+      
+      // --- Bottom Nav Bar Listeners ---
+      elements.bottomNavHome.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      elements.bottomNavSearch.addEventListener('click', () => { elements.searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => elements.searchInput.focus(), 300); });
+      elements.bottomNavAdd.addEventListener('click', () => { elements.mediaManagementBtn.click(); document.querySelector('.tab-btn[data-tab="add-media"]').click(); });
+      elements.bottomNavManage.addEventListener('click', () => { elements.mobileMenuModal.style.display = 'flex'; });
+      elements.bottomNavNotifications.addEventListener('click', () => { elements.mobileNotificationsModal.style.display = 'flex'; requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
+      
+      // --- Mobile Modals Listeners ---
+      elements.mobileMenuCloseBtn.addEventListener('click', () => closeModal(elements.mobileMenuModal));
+      elements.mobileNotificationsCloseBtn.addEventListener('click', () => closeModal(elements.mobileNotificationsModal));
+      elements.markAllReadMobileBtn.addEventListener('click', markAllNotificationsAsRead);
+      elements.mobileMenuUserActionBtn.addEventListener('click', () => { (currentUser) ? elements.logoutBtn.click() : elements.authToggle.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuShareBtn.addEventListener('click', () => { elements.shareBtn.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuExportBtn.addEventListener('click', () => { elements.exportBtn.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuImportBtn.addEventListener('click', () => { elements.importBtn.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuConvertBtn.addEventListener('click', () => { elements.convertTitlesBtn.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuThemeBtn.addEventListener('click', () => { elements.themeToggle.click(); });
+      elements.mobileMenuResetBtn.addEventListener('click', () => { elements.resetBtn.click(); closeModal(elements.mobileMenuModal); });
     }
   </script>
 </body>
