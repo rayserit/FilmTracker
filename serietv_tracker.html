@@ -430,9 +430,23 @@
     /* END: Bottom Navigation Bar Styles */
     
     /* START: Mobile Menu and Notifications Modals Styles */
-    #mobileMenuModal .modal-content {
-      max-width: 320px;
-      padding: 1rem;
+    #mobileMenuModal .modal-content, #filterSortModal .modal-content {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      max-width: none;
+      border-radius: 16px 16px 0 0;
+      margin: 0;
+      box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+      transform: translateY(100%);
+      transition: transform 0.3s ease-out;
+    }
+    #mobileMenuModal, #filterSortModal {
+      align-items: flex-end;
+      background: rgba(0,0,0,0.4);
+    }
+    #mobileMenuModal.visible .modal-content, #filterSortModal.visible .modal-content {
+        transform: translateY(0);
     }
     .mobile-menu-list {
       display: flex;
@@ -453,7 +467,7 @@
 
     #mobileNotificationsModal {
       align-items: flex-end; /* Position modal at the bottom */
-      background: transparent;
+      background: rgba(0,0,0,0.4);
     }
     #mobileNotificationsModal .modal-content {
       width: 100%;
@@ -468,6 +482,10 @@
     #mobileNotificationsModal.visible .modal-content {
         transform: translateY(0);
     }
+
+    .filter-modal-section { margin-bottom: 1rem; }
+    .filter-modal-section label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+    .filter-modal-section select { width: 100%; }
     /* END: Mobile Menu and Notifications Modals Styles */
   </style>
   
@@ -483,61 +501,60 @@
         flex-direction: column;
         align-items: stretch;
       }
-      .top-bar-left, .top-bar-right {
-        width: 100%;
-        gap: 0.5rem;
+      .top-bar-left {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
       }
-      /* Hide ALL utility buttons on mobile top bar */
+      .top-bar-left #topBarTitle {
+        display: none; /* Hide title to make space */
+      }
       .top-bar-right {
         display: none;
       }
-      .top-bar-left h1 {
-        font-size: 1.5rem;
-      }
-      .search-box, .filter-select {
-        max-width: none;
-        width: 100%;
-      }
+      .search-box { flex-grow: 1; }
+      .filter-select { display: none; } /* Hide original filters */
+
       .stats-container {
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-        gap: 0.5rem;
+          display: flex;
+          overflow-x: auto;
+          gap: 0.75rem;
+          padding-bottom: 0.5rem; /* Space for scrollbar */
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
       }
-      .stat-value {
-        font-size: 1.5rem;
+      .stats-container::-webkit-scrollbar {
+          display: none; /* Chrome, Safari */
       }
       .stat-item {
-        padding: 0.5rem;
+        flex-shrink: 0;
+        min-width: 120px;
+        padding: 0.75rem;
       }
-      .media-section {
-        padding: 1rem;
-      }
+      .stat-value { font-size: 1.5rem; }
+
+      .media-section { padding: 1rem; }
       .media-grid {
-        /* Adjust to better fit 3 columns on most phones */
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         gap: 0.75rem;
       }
-      .media-card {
-        width: auto; /* Let the grid control the width */
-      }
-      /* Compact card content for smaller size */
+      .media-card { width: auto; }
       .media-info { padding: 0.5rem; }
-      .media-title { font-size: 0.8rem; }
-      .media-meta, .media-ratings { display: none; } /* Hide for space */
-      .progress-text { font-size: 0.7rem; }
+      .media-title { font-size: 0.8rem; white-space: normal; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; }
+      .media-meta {
+          margin-top: 4px;
+          justify-content: space-between;
+          font-size: 0.7rem;
+      }
+      .media-ratings { display: none; }
+      .progress-bar-container { height: 4px; }
+      .progress-text { font-size: 0.7rem; display: flex; justify-content: space-between; }
+      .progress-text .media-year-compact { color: var(--text-secondary); }
 
       /* Modal Adjustments */
-      .modal-content {
-        padding: 1rem;
-        max-height: 85vh;
-        overflow-y: auto;
-      }
-      .modal-footer {
-        flex-wrap: wrap;
-        justify-content: stretch;
-      }
-      .modal-footer .btn {
-        flex-grow: 1;
-      }
+      .modal-content { padding: 1rem; max-height: 85vh; overflow-y: auto; }
+      .modal-footer { flex-wrap: wrap; justify-content: stretch; }
+      .modal-footer .btn { flex-grow: 1; }
 
       /* Details Modal */
       #detailsModal .modal-content { padding: 0; }
@@ -575,6 +592,7 @@
 
       /* Show Bottom Nav Bar */
       .bottom-nav { display: flex; }
+      #mobileFilterBtn { display: inline-flex; }
       
       /* Hide desktop-only elements on mobile */
       #notificationDropdown { display: none; }
@@ -599,7 +617,8 @@
         <a href="index.html" class="tracker-switch-btn" title="Vai a Film Tracker"><i class="fas fa-film"></i></a>
         <a href="serietv_tracker.html" class="tracker-switch-btn active" title="Vai a Serie TV Tracker"><i class="fas fa-tv"></i></a>
       </div>
-      <input type="text" id="searchInput" class="search-box" placeholder="Cerca serie TV...">
+      <input type="text" id="searchInput" class="search-box" placeholder="Cerca...">
+      <button id="mobileFilterBtn" class="btn btn-secondary" style="display: none;"><i class="fas fa-filter"></i></button>
       <select id="categoryFilter" class="filter-select">
           <option value="all">Tutte le categorie</option>
           <option value="favorites">Solo Preferiti</option>
@@ -780,6 +799,30 @@
           </div>
       </div>
   </div>
+  
+  <!-- Mobile Filter & Sort Modal -->
+  <div class="modal" id="filterSortModal">
+    <div class="modal-content">
+        <h2 style="text-align: center; margin-top: 0;">Filtra e Ordina</h2>
+        <div class="filter-modal-section">
+            <label for="mobileCategoryFilter">Categoria</label>
+            <select id="mobileCategoryFilter" class="filter-select"></select>
+        </div>
+        <div class="filter-modal-section">
+            <label for="mobileSortFilter">Ordina per</label>
+            <select id="mobileSortFilter" class="filter-select">
+                <option value="added" selected>Ultime attività</option>
+                <option value="alpha">Alfabetico</option>
+                <option value="rating">Valutazione</option>
+                <option value="year">Anno di uscita</option>
+            </select>
+        </div>
+        <div class="modal-footer" style="border: none; padding-bottom: 0;">
+            <button id="applyFiltersBtn" class="btn btn-primary">Applica</button>
+        </div>
+    </div>
+  </div>
+
 
   <div id="notification" class="notification"><span id="notificationText"></span></div>
   
@@ -898,7 +941,13 @@
         mobileNotificationsModal: document.getElementById('mobileNotificationsModal'),
         mobileNotificationsCloseBtn: document.getElementById('mobileNotificationsCloseBtn'),
         notificationListMobile: document.getElementById('notificationListMobile'),
-        markAllReadMobileBtn: document.getElementById('markAllReadMobileBtn')
+        markAllReadMobileBtn: document.getElementById('markAllReadMobileBtn'),
+        // Filter Modal
+        filterSortModal: document.getElementById('filterSortModal'),
+        mobileFilterBtn: document.getElementById('mobileFilterBtn'),
+        mobileCategoryFilter: document.getElementById('mobileCategoryFilter'),
+        mobileSortFilter: document.getElementById('mobileSortFilter'),
+        applyFiltersBtn: document.getElementById('applyFiltersBtn')
     };
     
     firebase.initializeApp(firebaseConfig);
@@ -1181,7 +1230,10 @@
       const progressHTML = (categoryObject && categoryObject.hideProgress) ? '' : `
         <div class="media-progress">
           <div class="progress-bar-container"><div class="${progressBarClass}" style="width: ${percentage}%;"></div></div>
-          <div class="progress-text">${show.category === 'In Pausa / Droppata' ? `Visti ${watchedEpisodes} / ${totalEpisodes}` : `${watchedEpisodes} / ${totalEpisodes} ep.`}</div>
+          <div class="progress-text">
+            <span>${watchedEpisodes}/${totalEpisodes}</span>
+            <span class="media-year-compact">${show.year}</span>
+          </div>
         </div>`;
 
       card.innerHTML = `
@@ -2116,15 +2168,19 @@
     function resetApp() { if(isViewMode) return; showConfirmModal("Resetta Tracker", "Sei sicuro di voler resettare l'applicazione? Tutti i dati andranno persi.", () => { mediaList = []; categories = DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false })); saveData(); renderFullUI(); showNotification("Tracker resettato con successo.", "success"); }); }
     function fixPosterUrl(url) { return (url && url.startsWith("https://")) ? url : DEFAULT_POSTER; }
     
-    function updateCategoryFilter() { 
-        const currentVal = elements.categoryFilter.value;
-        elements.categoryFilter.innerHTML = `<option value="all">Tutte le categorie</option><option value="favorites">Solo Preferiti</option>${categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join("")}`; 
-        
-        if (Array.from(elements.categoryFilter.options).some(opt => opt.value === currentVal)) {
-            elements.categoryFilter.value = currentVal;
+    function populateCategoryFilter(selectElement) {
+        const currentVal = selectElement.value;
+        selectElement.innerHTML = `<option value="all">Tutte le categorie</option><option value="favorites">Solo Preferiti</option>${categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join("")}`;
+        if (Array.from(selectElement.options).some(opt => opt.value === currentVal)) {
+            selectElement.value = currentVal;
         } else {
-            elements.categoryFilter.value = 'all';
+            selectElement.value = 'all';
         }
+    }
+
+    function updateCategoryFilter() { 
+        populateCategoryFilter(elements.categoryFilter);
+        populateCategoryFilter(elements.mobileCategoryFilter);
     }
 
     function populateAddMediaCategorySelect() {
@@ -2148,11 +2204,9 @@
             </div>`).join(""); 
     }
     function closeModal(modal) {
-      if (modal.id === 'mobileNotificationsModal') {
+      if (modal.classList.contains('visible')) {
         modal.classList.remove('visible');
-        setTimeout(() => {
-          modal.style.display = "none";
-        }, 300); // Match transition duration
+        setTimeout(() => { modal.style.display = "none"; }, 300); // Match transition duration
       } else {
         modal.style.display = "none";
       }
@@ -2743,7 +2797,7 @@
       elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
       elements.episodesModalClose.addEventListener('click', () => closeModal(elements.episodesModal));
       elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
-      document.addEventListener("click", e => { if (e.target === elements.detailsModal) closeModal(elements.detailsModal); if (e.target === elements.episodesModal) closeModal(elements.episodesModal); if (e.target === elements.actorModal) closeModal(elements.actorModal); if (e.target === elements.rewatchModal) closeModal(elements.rewatchModal); if (e.target === elements.mobileMenuModal) closeModal(elements.mobileMenuModal); if (e.target === elements.mobileNotificationsModal) closeModal(elements.mobileNotificationsModal); if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible'); });
+      document.addEventListener("click", e => { if (e.target === elements.detailsModal) closeModal(elements.detailsModal); if (e.target === elements.episodesModal) closeModal(elements.episodesModal); if (e.target === elements.actorModal) closeModal(elements.actorModal); if (e.target === elements.rewatchModal) closeModal(elements.rewatchModal); if (e.target === elements.mobileMenuModal) closeModal(elements.mobileMenuModal); if (e.target === elements.mobileNotificationsModal) closeModal(elements.mobileNotificationsModal); if (e.target === elements.filterSortModal) closeModal(elements.filterSortModal); if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible'); });
       elements.savePosterChange.addEventListener('click', () => { const selected = document.querySelector(".poster-option.selected"); if (selected) changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url); });
       elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
       elements.exportBtn.addEventListener('click', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ mediaList, categories }, null, 2)], {type: 'application/json'})); a.download = `serietv_tracker_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(a.href); });
@@ -2767,7 +2821,7 @@
       elements.bottomNavHome.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
       elements.bottomNavSearch.addEventListener('click', () => { elements.searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => elements.searchInput.focus(), 300); });
       elements.bottomNavAdd.addEventListener('click', () => { elements.mediaManagementBtn.click(); document.querySelector('.tab-btn[data-tab="add-media"]').click(); });
-      elements.bottomNavManage.addEventListener('click', () => { elements.mobileMenuModal.style.display = 'flex'; });
+      elements.bottomNavManage.addEventListener('click', () => { elements.mobileMenuModal.style.display = 'flex'; requestAnimationFrame(() => elements.mobileMenuModal.classList.add('visible')); });
       elements.bottomNavNotifications.addEventListener('click', () => { elements.mobileNotificationsModal.style.display = 'flex'; requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
       
       // --- Mobile Modals Listeners ---
@@ -2781,6 +2835,21 @@
       elements.mobileMenuConvertBtn.addEventListener('click', () => { elements.convertTitlesBtn.click(); closeModal(elements.mobileMenuModal); });
       elements.mobileMenuThemeBtn.addEventListener('click', () => { elements.themeToggle.click(); });
       elements.mobileMenuResetBtn.addEventListener('click', () => { elements.resetBtn.click(); closeModal(elements.mobileMenuModal); });
+
+      // --- Filter Modal Listeners ---
+      elements.mobileFilterBtn.addEventListener('click', () => {
+          elements.mobileCategoryFilter.value = elements.categoryFilter.value;
+          elements.mobileSortFilter.value = elements.sortFilter.value;
+          elements.filterSortModal.style.display = 'flex';
+          requestAnimationFrame(() => elements.filterSortModal.classList.add('visible'));
+      });
+      elements.applyFiltersBtn.addEventListener('click', () => {
+          elements.categoryFilter.value = elements.mobileCategoryFilter.value;
+          elements.sortFilter.value = elements.mobileSortFilter.value;
+          localStorage.setItem("tvShowSortOrder", elements.sortFilter.value);
+          renderMedia();
+          closeModal(elements.filterSortModal);
+      });
     }
   </script>
 </body>
