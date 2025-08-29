@@ -102,6 +102,7 @@
     .top-bar-right { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
     .search-box { max-width: 300px; }
     .filter-select { max-width: 180px; }
+    #mobileFilterBtn { display: none; } /* Hide mobile filter button on desktop */
 
     .stats-panel { background-color: var(--section-tint); padding: 1rem; border-radius: 12px; margin-bottom: 2rem; }
     .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; }
@@ -131,6 +132,7 @@
     .progress-bar.ended { background-color: var(--progress-fill-ended); }
     .progress-bar.dropped { background-color: var(--danger); }
     .progress-text { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
+    .progress-text .media-year-compact { display: none; } /* Hide compact year on desktop */
     
     .card-actions { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 0.5rem; opacity: 0; transform: translateX(10px); transition: opacity 0.2s, transform 0.2s; pointer-events: none; }
     .media-card:hover .card-actions { opacity: 1; transform: translateX(0); pointer-events: all; }
@@ -513,7 +515,9 @@
         display: none;
       }
       .search-box { flex-grow: 1; }
-      .filter-select { display: none; } /* Hide original filters */
+      .top-bar-left > .filter-select { 
+        display: none; 
+      }
 
       .stats-container {
           display: flex;
@@ -541,15 +545,11 @@
       .media-card { width: auto; }
       .media-info { padding: 0.5rem; }
       .media-title { font-size: 0.8rem; white-space: normal; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; }
-      .media-meta {
-          margin-top: 4px;
-          justify-content: space-between;
-          font-size: 0.7rem;
-      }
+      .media-meta { display: none; }
       .media-ratings { display: none; }
       .progress-bar-container { height: 4px; }
       .progress-text { font-size: 0.7rem; display: flex; justify-content: space-between; }
-      .progress-text .media-year-compact { color: var(--text-secondary); }
+      .progress-text .media-year-compact { display: inline; color: var(--text-secondary); }
 
       /* Modal Adjustments */
       .modal-content { padding: 1rem; max-height: 85vh; overflow-y: auto; }
@@ -618,7 +618,7 @@
         <a href="serietv_tracker.html" class="tracker-switch-btn active" title="Vai a Serie TV Tracker"><i class="fas fa-tv"></i></a>
       </div>
       <input type="text" id="searchInput" class="search-box" placeholder="Cerca...">
-      <button id="mobileFilterBtn" class="btn btn-secondary" style="display: none;"><i class="fas fa-filter"></i></button>
+      <button id="mobileFilterBtn" class="btn btn-secondary"><i class="fas fa-filter"></i></button>
       <select id="categoryFilter" class="filter-select">
           <option value="all">Tutte le categorie</option>
           <option value="favorites">Solo Preferiti</option>
@@ -806,11 +806,11 @@
         <h2 style="text-align: center; margin-top: 0;">Filtra e Ordina</h2>
         <div class="filter-modal-section">
             <label for="mobileCategoryFilter">Categoria</label>
-            <select id="mobileCategoryFilter" class="filter-select"></select>
+            <select id="mobileCategoryFilter"></select>
         </div>
         <div class="filter-modal-section">
             <label for="mobileSortFilter">Ordina per</label>
-            <select id="mobileSortFilter" class="filter-select">
+            <select id="mobileSortFilter">
                 <option value="added" selected>Ultime attività</option>
                 <option value="alpha">Alfabetico</option>
                 <option value="rating">Valutazione</option>
