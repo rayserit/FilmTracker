@@ -558,6 +558,10 @@
 
       /* Details Modal */
       #detailsModal .modal-content { padding: 0; }
+      #detailsModalHeader-main > div:last-child {
+          flex-wrap: wrap;
+          justify-content: center;
+      }
       .details-header { flex-direction: column; align-items: center; margin-top: -80px; padding: 1rem; text-align: center; }
       #detailsModalPoster { width: 120px; height: 180px; margin-right: 0; margin-bottom: 1rem; }
       .details-title-section { padding-top: 80px; width: 100%; }
@@ -1475,19 +1479,30 @@
         }
         return details;
     }
-
-    async function showDetailsModal(showId) {
-        const show = mediaList.find(m => m.id === showId); if (!show) return;
-        elements.detailsModal.style.display = 'flex'; document.body.classList.add('modal-open');
+    
+    async function forceRefreshShow(showId) {
+        const show = mediaList.find(m => m.id === showId);
+        if (!show) return;
+        show.seasons = {}; // This will force a re-fetch of all season data on the next details view
+        showDetailsModal(showId);
+    }
+    
+    async function showDetailsModal(showId, force = false) {
+        const show = mediaList.find(m => m.id === showId); 
+        if (!show) return;
+        
+        elements.detailsModal.style.display = 'flex'; 
+        document.body.classList.add('modal-open');
         elements.detailsModalContent.innerHTML = `<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>`;
         
         const tmdbDetails = await fetchBestTMDbDetails(show);
+        if (!tmdbDetails) { 
+            elements.detailsModalContent.innerHTML = "<p>Dettagli non trovati.</p>"; 
+            return; 
+        }
 
-        if (!tmdbDetails) { elements.detailsModalContent.innerHTML = "<p>Dettagli non trovati.</p>"; return; }
-        
         let hasUpdates = false;
         
-        // Update year format for existing shows
         const firstYear = tmdbDetails.first_air_date ? tmdbDetails.first_air_date.split('-')[0] : '';
         const status = tmdbDetails.status;
         const lastYear = (status === 'Ended' || status === 'Canceled') && tmdbDetails.last_air_date ? tmdbDetails.last_air_date.split('-')[0] : '';
@@ -1502,9 +1517,14 @@
             hasUpdates = true;
         }
 
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
         for (const tmdbSeason of tmdbDetails.seasons.filter(s => s.season_number > 0)) {
             const localSeason = show.seasons[tmdbSeason.season_number];
-            if (!localSeason || (localSeason.episodes || []).length !== tmdbSeason.episode_count) {
+            const hasRecentEpisodes = (tmdbSeason.episodes || []).some(ep => ep.air_date && new Date(ep.air_date) >= sevenDaysAgo);
+
+            if (!localSeason || (localSeason.episodes || []).length !== tmdbSeason.episode_count || hasRecentEpisodes) {
                 const seasonDetails = await fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, tmdbSeason.season_number);
                 if (seasonDetails) {
                     show.seasons[tmdbSeason.season_number] = { 
@@ -1569,6 +1589,7 @@
                         </div>
                         <div style="display: flex; gap: 0.5rem; align-self: flex-start; flex-shrink: 0;">
                              <button id="detailsModalFavoriteBtn" class="btn ${media.isFavorite ? 'is-favorite' : ''}" title="Aggiungi ai preferiti"><i class="fas fa-heart"></i></button>
+                             <button id="refreshShowBtn" class="btn btn-secondary" title="Aggiorna Dati Serie"><i class="fas fa-sync-alt"></i></button>
                              <button id="showEpisodesBtn" class="btn btn-primary" style="flex-shrink: 0;"><i class="fas fa-list-check"></i> Episodi</button>
                         </div>
                     </div>
@@ -1596,6 +1617,7 @@
             });
         });
         
+        elements.detailsModalContent.querySelector('#refreshShowBtn').addEventListener('click', () => forceRefreshShow(media.id));
         elements.detailsModalContent.querySelector('#showEpisodesBtn').addEventListener('click', () => showEpisodesModal(media));
         elements.detailsModalContent.querySelector('#detailsModalFavoriteBtn').addEventListener('click', () => toggleFavorite(media.id));
     }
