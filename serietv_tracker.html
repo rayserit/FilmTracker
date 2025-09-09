@@ -545,7 +545,7 @@
       .media-card { width: auto; }
       .media-info { padding: 0.5rem; }
       .media-title { font-size: 0.8rem; white-space: normal; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; }
-      .media-meta { display: none; }
+      .media-meta { display: none; } /* Hide original meta */
       .media-ratings { display: none; }
       .progress-bar-container { height: 4px; }
       .progress-text { font-size: 0.7rem; display: flex; justify-content: space-between; }
@@ -641,7 +641,6 @@
         <button id="exportBtn" class="btn btn-secondary" title="Esporta Dati"><i class="fas fa-download"></i></button>
         <input type="file" id="importFile" accept=".json" style="display: none;">
         <button id="importBtn" class="btn btn-secondary" title="Importa Dati"><i class="fas fa-upload"></i></button>
-        <button id="convertTitlesBtn" class="btn btn-secondary" title="Converti Titoli in Inglese"><i class="fas fa-language"></i></button>
         <button id="resetBtn" class="btn btn-secondary" title="Resetta Tracker"><i class="fas fa-undo"></i></button>
         <button id="themeToggle" class="btn btn-secondary" title="Cambia Tema"><i class="fas fa-moon"></i></button>
         
@@ -776,7 +775,6 @@
               <button class="btn" id="mobileMenuShareBtn"><i class="fas fa-share-alt"></i>Condividi Libreria</button>
               <button class="btn" id="mobileMenuExportBtn"><i class="fas fa-download"></i>Esporta Dati</button>
               <button class="btn" id="mobileMenuImportBtn"><i class="fas fa-upload"></i>Importa Dati</button>
-              <button class="btn" id="mobileMenuConvertBtn"><i class="fas fa-language"></i>Converti Titoli</button>
               <button class="btn" id="mobileMenuThemeBtn"><i class="fas fa-moon"></i>Cambia Tema</button>
               <button class="btn" id="mobileMenuResetBtn" style="color: var(--danger);"><i class="fas fa-undo" style="color: var(--danger);"></i>Resetta Tracker</button>
           </div>
@@ -916,7 +914,6 @@
         rewatchModal: document.getElementById("rewatchModal"), rewatchModalTitle: document.getElementById("rewatchModalTitle"),
         rewatchCountInput: document.getElementById("rewatchCountInput"), confirmRewatchBtn: document.getElementById("confirmRewatchBtn"),
         cancelRewatchBtn: document.getElementById("cancelRewatchBtn"),
-        convertTitlesBtn: document.getElementById('convertTitlesBtn'),
         updateProgressModal: document.getElementById('updateProgressModal'),
         updateProgressBarFill: document.getElementById('updateProgressBarFill'),
         updateProgressText: document.getElementById('updateProgressText'),
@@ -935,7 +932,6 @@
         mobileMenuShareBtn: document.getElementById('mobileMenuShareBtn'),
         mobileMenuExportBtn: document.getElementById('mobileMenuExportBtn'),
         mobileMenuImportBtn: document.getElementById('mobileMenuImportBtn'),
-        mobileMenuConvertBtn: document.getElementById('mobileMenuConvertBtn'),
         mobileMenuThemeBtn: document.getElementById('mobileMenuThemeBtn'),
         mobileMenuResetBtn: document.getElementById('mobileMenuResetBtn'),
         mobileNotificationsModal: document.getElementById('mobileNotificationsModal'),
@@ -986,6 +982,7 @@
             if (!isViewMode) {
                 renderFullUI();
                 triggerNewEpisodeCheck();
+                updateAllShowsInBackground();
             }
         });
         db.ref(`${path}/social`).once("value", snapshot => {
@@ -1006,6 +1003,7 @@
             const storedCategories = JSON.parse(localStorage.getItem("tvShowCategories") || JSON.stringify(DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))));
             categories = storedCategories.map(cat => (typeof cat === 'string') ? { name: cat, hideProgress: false } : cat);
             renderFullUI(); 
+            updateAllShowsInBackground();
         } catch (err) { 
             mediaList = []; 
             categories = DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false })); 
@@ -1337,10 +1335,18 @@
             }
 
             const firstYear = enDetails.first_air_date ? enDetails.first_air_date.split('-')[0] : '';
-            const lastYear = enDetails.status === 'Ended' && enDetails.last_air_date ? enDetails.last_air_date.split('-')[0] : '';
-            newShow.year = firstYear && lastYear && firstYear !== lastYear ? `${firstYear}–${lastYear}` : firstYear;
-            newShow.status = enDetails.status;
+            const status = enDetails.status;
+            const lastYear = (status === 'Ended' || status === 'Canceled') && enDetails.last_air_date ? enDetails.last_air_date.split('-')[0] : '';
+
+            if (firstYear && lastYear && firstYear !== lastYear) {
+                newShow.year = `${firstYear}–${lastYear}`;
+            } else if (firstYear && (status === 'Returning Series' || status === 'In Production' || status === 'Planned')) {
+                newShow.year = `${firstYear} – In corso`;
+            } else {
+                newShow.year = firstYear;
+            }
             
+            newShow.status = status;
             newShow.imdbRating = (omdbDetails?.imdbRating && omdbDetails.imdbRating !== "N/A") ? omdbDetails.imdbRating : (enDetails.vote_average ? enDetails.vote_average.toFixed(1) : "N/A");
             
             const seasonPromises = enDetails.seasons.filter(s => s.season_number > 0).map(s => fetchTMDbSeasonDetailsWithFallback(enDetails.id, s.season_number));
@@ -1480,6 +1486,22 @@
         if (!tmdbDetails) { elements.detailsModalContent.innerHTML = "<p>Dettagli non trovati.</p>"; return; }
         
         let hasUpdates = false;
+        
+        // Update year format for existing shows
+        const firstYear = tmdbDetails.first_air_date ? tmdbDetails.first_air_date.split('-')[0] : '';
+        const status = tmdbDetails.status;
+        const lastYear = (status === 'Ended' || status === 'Canceled') && tmdbDetails.last_air_date ? tmdbDetails.last_air_date.split('-')[0] : '';
+        let newYear = firstYear;
+        if (firstYear && lastYear && firstYear !== lastYear) {
+            newYear = `${firstYear}–${lastYear}`;
+        } else if (firstYear && (status === 'Returning Series' || status === 'In Production' || status === 'Planned')) {
+            newYear = `${firstYear} – In corso`;
+        }
+        if(show.year !== newYear) {
+            show.year = newYear;
+            hasUpdates = true;
+        }
+
         for (const tmdbSeason of tmdbDetails.seasons.filter(s => s.season_number > 0)) {
             const localSeason = show.seasons[tmdbSeason.season_number];
             if (!localSeason || (localSeason.episodes || []).length !== tmdbSeason.episode_count) {
@@ -1935,6 +1957,19 @@
         }
     }
     
+    async function markAsCompleted(showId) {
+        const show = mediaList.find(m => m.id === showId);
+        if (show && show.category !== 'Completate') {
+            const oldCategory = show.category;
+            show.category = 'Completate';
+            show.lastActivityAt = new Date().toISOString();
+            await logActivity('mark_completed', show.title, `dalla categoria '${oldCategory}'`);
+            await saveData();
+            renderFullUI();
+            showNotification(`"${show.title}" segnato come completato.`, "success");
+        }
+    }
+
     function showContextMenu(show, pos) {
       if (isViewMode) return;
       document.querySelectorAll(".context-menu").forEach(m => m.remove()); 
@@ -1959,6 +1994,14 @@
           menu.appendChild(item);
       });
       menu.appendChild(document.createElement("div")).className = "context-menu-divider";
+      
+      if (show.category !== 'Completate') {
+          const markCompletedItem = document.createElement("div");
+          markCompletedItem.className = "context-menu-item";
+          markCompletedItem.innerHTML = '<i class="fas fa-check-double fa-fw"></i> Segna come completata';
+          markCompletedItem.addEventListener("click", () => { markAsCompleted(show.id); hide(); });
+          menu.appendChild(markCompletedItem);
+      }
       
       const changePosterItem = document.createElement("div");
       changePosterItem.className = "context-menu-item";
@@ -2257,7 +2300,6 @@
         if (!lastCheck || (now - lastCheck) > SIX_HOURS) {
             console.log("Esecuzione del controllo per nuovi episodi...");
             checkForNewEpisodes();
-            checkForShowUpdates();
             localStorage.setItem('lastNewEpisodeCheck', now);
         }
     }
@@ -2285,56 +2327,58 @@
         });
     }
 
-    async function checkForShowUpdates() {
-        const showsToCheck = mediaList.filter(s => s.category === 'In Corso' && (s.imdbID || s.tmdbID));
-        if (showsToCheck.length === 0) return;
+    async function updateAllShowsInBackground() {
+        const now = new Date().getTime();
+        const lastUpdate = localStorage.getItem('lastBackgroundUpdate');
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-        let updatedShows = [];
+        if (lastUpdate && (now - lastUpdate) < TWENTY_FOUR_HOURS) {
+            console.log("Aggiornamento in background saltato: non ancora trascorse 24 ore.");
+            return;
+        }
 
-        for (const show of showsToCheck) {
+        console.log("Avvio aggiornamento in background...");
+        const showsToUpdate = mediaList.filter(s => s.category === 'In Corso' || (s.year && !s.year.includes('–')));
+        if (showsToUpdate.length === 0) return;
+
+        let hasAnyUpdates = false;
+
+        for (const show of showsToUpdate) {
             try {
-                await new Promise(resolve => setTimeout(resolve, 300)); 
-                
                 const tmdbDetails = await fetchBestTMDbDetails(show);
                 if (!tmdbDetails) continue;
+                
+                const firstYear = tmdbDetails.first_air_date ? tmdbDetails.first_air_date.split('-')[0] : '';
+                const status = tmdbDetails.status;
+                const lastYear = (status === 'Ended' || status === 'Canceled') && tmdbDetails.last_air_date ? tmdbDetails.last_air_date.split('-')[0] : '';
+                let newYear = firstYear;
 
-                let hasUpdates = false;
-                for (const tmdbSeason of tmdbDetails.seasons.filter(s => s.season_number > 0)) {
-                    const localSeason = show.seasons[tmdbSeason.season_number];
-                    if (!localSeason || (localSeason.episodes || []).length !== tmdbSeason.episode_count) {
-                        const seasonDetails = await fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, tmdbSeason.season_number);
-                        if (seasonDetails) {
-                            show.seasons[tmdbSeason.season_number] = { 
-                                name: seasonDetails.name, 
-                                episodes: (seasonDetails.episodes || []).map(ep => ({
-                                    name: ep.name,
-                                    overview: ep.overview,
-                                    episode_number: ep.episode_number,
-                                    runtime: ep.runtime || 0,
-                                    still_path: ep.still_path,
-                                    air_date: ep.air_date
-                                }))
-                            };
-                            hasUpdates = true;
-                        }
-                    }
+                if (firstYear && lastYear && firstYear !== lastYear) {
+                    newYear = `${firstYear}–${lastYear}`;
+                } else if (firstYear && (status === 'Returning Series' || status === 'In Production' || status === 'Planned')) {
+                    newYear = `${firstYear} – In corso`;
                 }
                 
-                if(hasUpdates) {
-                    updatedShows.push(show.title);
+                if (show.year !== newYear || show.status !== status) {
+                    show.year = newYear;
+                    show.status = status;
+                    hasAnyUpdates = true;
                 }
-
+                
+                await new Promise(resolve => setTimeout(resolve, 350)); // API rate limiting
             } catch (error) {
-                console.error(`Errore durante l'aggiornamento di ${show.title}:`, error);
+                console.error(`Errore durante l'aggiornamento di ${show.title} in background:`, error);
             }
         }
 
-        if (updatedShows.length > 0) {
+        if (hasAnyUpdates) {
+            console.log("Aggiornamenti trovati, salvataggio e re-renderizzazione...");
             await saveData();
             renderMedia();
-            updateStats();
-            showNotification(`${updatedShows.length} serie TV sono state aggiornate con nuovi episodi/stagioni!`, "success");
+            showNotification("La tua libreria è stata aggiornata in background.", "success");
         }
+        
+        localStorage.setItem('lastBackgroundUpdate', now);
     }
     
     function setupAuthListeners() {
@@ -2399,7 +2443,7 @@
       isViewMode = true;
       document.body.style.paddingBottom = '0';
       document.getElementById('bottomNav').style.display = 'none';
-      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, #convertTitlesBtn, .auth-container, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
+      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, .auth-container, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
       elements.viewModeBanner.style.display = "flex";
       db.ref(`users/${viewId}/tvShowTracker`).on("value", snapshot => {
         const data = snapshot.val();
@@ -2532,7 +2576,7 @@
         if (type.startsWith('add_show')) return 'fa-plus-circle';
         if (type.startsWith('move_show')) return 'fa-folder-open';
         if (type.startsWith('delete_show')) return 'fa-trash-alt';
-        if (type.startsWith('complete_show')) return 'fa-tv';
+        if (type.startsWith('complete_show') || type === 'mark_completed') return 'fa-check-double';
         if (type.startsWith('complete_season')) return 'fa-check-circle';
         if (type === 'add') return 'fa-film';
         if (type === 'move') return 'fa-folder-open';
@@ -2549,6 +2593,7 @@
             case 'move_show': return `${email} ha spostato la serie ${title} ${activity.details}`;
             case 'delete_show': return `${email} ha eliminato la serie ${title} ${activity.details}`;
             case 'complete_show': return `${email} ha completato la serie ${title}! 🎉`;
+            case 'mark_completed': return `${email} ha segnato ${title} come completato.`;
             case 'complete_season': return `${email} ha completato ${activity.details} di ${title}`;
             case 'add': return `${email} ha aggiunto il film ${title} ${activity.details}`;
             case 'move': return `${email} ha spostato il film ${title} ${activity.details}`;
@@ -2728,57 +2773,6 @@
         });
     }
 
-    async function convertTitlesToEnglish() {
-        if (isViewMode) return;
-        const showsToUpdate = mediaList.filter(s => (s.imdbID || s.tmdbID) && (!s.italianTitle || s.title === s.italianTitle));
-        
-        if (showsToUpdate.length === 0) {
-            return showNotification("Tutti i titoli sono già in inglese.", "success");
-        }
-        
-        showConfirmModal("Converti Titoli", `Stai per convertire ${showsToUpdate.length} titoli di serie in inglese. L'operazione è irreversibile. Continuare?`, async () => {
-            document.body.classList.add('modal-open');
-            elements.updateProgressModal.style.display = 'flex';
-            elements.updateProgressTitle.textContent = "Conversione Titoli...";
-            let updatedCount = 0;
-
-            for (let i = 0; i < showsToUpdate.length; i++) {
-                const show = showsToUpdate[i];
-                const progress = ((i + 1) / showsToUpdate.length) * 100;
-                elements.updateProgressBarFill.style.width = `${progress}%`;
-                elements.updateProgressText.textContent = `Conversione ${i + 1} di ${showsToUpdate.length}: ${show.title}...`;
-
-                try {
-                    const tmdbId = show.tmdbID || (await fetchTMDbShowDetailsByIMDb(show.imdbID))?.id;
-                    if (tmdbId) {
-                        const [enDetails, itDetails] = await Promise.all([
-                            fetchFullTMDbDetails(tmdbId, 'en-US'),
-                            fetchFullTMDbDetails(tmdbId, 'it-IT')
-                        ]);
-                        if (enDetails && itDetails) {
-                            show.title = enDetails.name;
-                            show.italianTitle = itDetails.name;
-                            updatedCount++;
-                        }
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                } catch(err) {
-                    console.error(`Impossibile convertire ${show.title}:`, err);
-                }
-            }
-            
-            closeModal(elements.updateProgressModal);
-
-            if (updatedCount > 0) {
-                await saveData();
-                renderFullUI();
-                showNotification(`${updatedCount} titoli sono stati convertiti con successo!`, "success");
-            } else {
-                showNotification("Nessun titolo è stato convertito. Riprova più tardi.", "warning");
-            }
-        });
-    }
-
     function setupEventListeners() {
       elements.mediaManagementBtn.addEventListener("click", () => { elements.mediaManagementModal.style.display = 'flex'; elements.mediaTitle.value = ''; elements.tmdbResults.innerHTML = ''; currentTMDbSelection = null; renderCategoriesList(); renderFriendsList(); populateAddMediaCategorySelect();});
       document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active')); btn.classList.add('active'); document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active'); elements.addShowBtn.style.display = btn.dataset.tab === 'add-media' ? 'inline-flex' : 'none'; }));
@@ -2793,7 +2787,6 @@
       elements.sortFilter.addEventListener("change", () => { localStorage.setItem("tvShowSortOrder", elements.sortFilter.value); renderMedia(); });
       elements.themeToggle.addEventListener("click", () => { document.body.classList.toggle("dark"); localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light"); loadTheme(); });
       elements.resetBtn.addEventListener('click', resetApp);
-      elements.convertTitlesBtn.addEventListener('click', convertTitlesToEnglish);
       elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
       elements.episodesModalClose.addEventListener('click', () => closeModal(elements.episodesModal));
       elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
@@ -2832,7 +2825,6 @@
       elements.mobileMenuShareBtn.addEventListener('click', () => { elements.shareBtn.click(); closeModal(elements.mobileMenuModal); });
       elements.mobileMenuExportBtn.addEventListener('click', () => { elements.exportBtn.click(); closeModal(elements.mobileMenuModal); });
       elements.mobileMenuImportBtn.addEventListener('click', () => { elements.importBtn.click(); closeModal(elements.mobileMenuModal); });
-      elements.mobileMenuConvertBtn.addEventListener('click', () => { elements.convertTitlesBtn.click(); closeModal(elements.mobileMenuModal); });
       elements.mobileMenuThemeBtn.addEventListener('click', () => { elements.themeToggle.click(); });
       elements.mobileMenuResetBtn.addEventListener('click', () => { elements.resetBtn.click(); closeModal(elements.mobileMenuModal); });
 
