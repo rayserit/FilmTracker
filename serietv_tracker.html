@@ -1486,7 +1486,7 @@
         const show = mediaList.find(m => m.id === showId);
         if (!show) return;
         show.seasons = {}; // This will force a re-fetch of all season data on the next details view
-        await showDetailsModal(showId, true); // Pass a flag to indicate a forced refresh
+        await showDetailsModal(showId); // Pass a flag to indicate a forced refresh
     }
     
     async function showDetailsModal(showId, force = false) {
@@ -1527,7 +1527,7 @@
             const localSeason = show.seasons[seasonNumber];
             
             const airDate = tmdbSeason.air_date ? new Date(tmdbSeason.air_date) : null;
-            const hasRecentEpisodes = airDate && airDate >= sevenDaysAgo;
+            const hasRecentEpisodes = airDate && airDate >= sevenDaysAgo && airDate <= now;
 
             if (force || !localSeason || (localSeason.episodes || []).length !== tmdbSeason.episode_count || hasRecentEpisodes) {
                 const seasonDetails = await fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, seasonNumber);
@@ -2364,13 +2364,13 @@
             return;
         }
 
-        console.log("Avvio aggiornamento in background...");
         const showsToUpdate = mediaList.filter(s => s.category === 'In Corso' && s.tmdbID);
         if (showsToUpdate.length === 0) {
-          localStorage.setItem('lastBackgroundUpdate', now);
-          return;
+            localStorage.setItem('lastBackgroundUpdate', now);
+            return;
         }
-
+        
+        console.log(`Avvio aggiornamento in background per ${showsToUpdate.length} serie...`);
         elements.updateProgressModal.style.display = 'flex';
         elements.updateProgressTitle.textContent = "Aggiornamento Giornaliero";
         let hasAnyUpdates = false;
@@ -2380,17 +2380,20 @@
             const progress = ((i + 1) / showsToUpdate.length) * 100;
             elements.updateProgressBarFill.style.width = `${progress}%`;
             elements.updateProgressText.textContent = `Controllo ${i + 1} di ${showsToUpdate.length}: ${show.title}...`;
-
+            
             try {
-                const tmdbDetails = await fetchFullTMDbDetails(show.tmdbID, 'en-US');
-                if(!tmdbDetails) continue;
+                const tmdbDetails = await fetchFullTMDbDetails(show.tmdbID, 'en-US'); // Use 'en-US' for reliable dates
+                if (!tmdbDetails) continue;
 
                 let needsFullUpdate = false;
                 const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-                for(const season of tmdbDetails.seasons) {
-                    if (season.air_date && new Date(season.air_date) >= sevenDaysAgo) {
-                        needsFullUpdate = true;
-                        break;
+                for (const season of tmdbDetails.seasons) {
+                    if (season.air_date) {
+                        const seasonAirDate = new Date(season.air_date);
+                        if (seasonAirDate >= sevenDaysAgo && seasonAirDate <= now) {
+                            needsFullUpdate = true;
+                            break;
+                        }
                     }
                 }
                 
@@ -2398,9 +2401,9 @@
                     console.log(`Aggiornamento forzato per ${show.title} a causa di attività recente.`);
                     show.seasons = {}; // Force refetch
                     await showDetailsModal(show.id);
-                    hasAnyUpdates = true; 
+                    hasAnyUpdates = true;
                 }
-
+                
                 await new Promise(resolve => setTimeout(resolve, 350));
             } catch (error) {
                 console.error(`Errore durante l'aggiornamento di ${show.title} in background:`, error);
