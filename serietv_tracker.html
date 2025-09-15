@@ -1486,10 +1486,10 @@
         const show = mediaList.find(m => m.id === showId);
         if (!show) return;
         show.seasons = {}; // This will force a re-fetch of all season data on the next details view
-        showDetailsModal(showId);
+        await showDetailsModal(showId, true); // Pass a flag to indicate a forced refresh
     }
     
-    async function showDetailsModal(showId) {
+    async function showDetailsModal(showId, force = false) {
         const show = mediaList.find(m => m.id === showId); 
         if (!show) return;
         
@@ -1529,7 +1529,7 @@
             const airDate = tmdbSeason.air_date ? new Date(tmdbSeason.air_date) : null;
             const hasRecentEpisodes = airDate && airDate >= sevenDaysAgo;
 
-            if (!localSeason || (localSeason.episodes || []).length !== tmdbSeason.episode_count || hasRecentEpisodes) {
+            if (force || !localSeason || (localSeason.episodes || []).length !== tmdbSeason.episode_count || hasRecentEpisodes) {
                 const seasonDetails = await fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, seasonNumber);
                 if (seasonDetails) {
                     show.seasons[seasonNumber] = { 
@@ -2371,15 +2371,21 @@
           return;
         }
 
+        elements.updateProgressModal.style.display = 'flex';
+        elements.updateProgressTitle.textContent = "Aggiornamento Giornaliero";
         let hasAnyUpdates = false;
 
-        for (const show of showsToUpdate) {
+        for (let i = 0; i < showsToUpdate.length; i++) {
+            const show = showsToUpdate[i];
+            const progress = ((i + 1) / showsToUpdate.length) * 100;
+            elements.updateProgressBarFill.style.width = `${progress}%`;
+            elements.updateProgressText.textContent = `Controllo ${i + 1} di ${showsToUpdate.length}: ${show.title}...`;
+
             try {
-                // Check for recent episodes without full details first
-                let needsFullUpdate = false;
-                const tmdbDetails = await fetchFullTMDbDetails(show.tmdbID, 'en-US'); // en-US for reliable dates
+                const tmdbDetails = await fetchFullTMDbDetails(show.tmdbID, 'en-US');
                 if(!tmdbDetails) continue;
 
+                let needsFullUpdate = false;
                 const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
                 for(const season of tmdbDetails.seasons) {
                     if (season.air_date && new Date(season.air_date) >= sevenDaysAgo) {
@@ -2391,18 +2397,21 @@
                 if (needsFullUpdate) {
                     console.log(`Aggiornamento forzato per ${show.title} a causa di attività recente.`);
                     show.seasons = {}; // Force refetch
-                    await showDetailsModal(show.id); // Re-use the existing full-update logic
+                    await showDetailsModal(show.id);
                     hasAnyUpdates = true; 
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 350)); // API rate limiting
+                await new Promise(resolve => setTimeout(resolve, 350));
             } catch (error) {
                 console.error(`Errore durante l'aggiornamento di ${show.title} in background:`, error);
             }
         }
+        
+        closeModal(elements.updateProgressModal);
 
         if (hasAnyUpdates) {
-            console.log("Aggiornamenti in background completati.");
+            await saveData();
+            renderMedia();
             showNotification("Le tue serie in corso sono state aggiornate.", "success");
         }
         
