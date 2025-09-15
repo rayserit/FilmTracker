@@ -1436,14 +1436,16 @@
     
     async function fetchTMDbSeasonDetailsWithFallback(tvId, seasonNumber) {
         let season = await fetchTMDbSeasonDetails(tvId, seasonNumber, 'it-IT');
-        if (season && (!season.overview || season.episodes.some(e => !e.name || !e.overview))) {
+        if (season && (!season.overview || (season.episodes && season.episodes.some(e => !e.name || !e.overview)))) {
             const en_season = await fetchTMDbSeasonDetails(tvId, seasonNumber, 'en-US');
             if(en_season) {
                 if(!season.overview) season.overview = en_season.overview;
-                season.episodes.forEach((ep, index) => {
-                    if(!ep.name && en_season.episodes[index]) ep.name = en_season.episodes[index].name;
-                    if(!ep.overview && en_season.episodes[index]) ep.overview = en_season.episodes[index].overview;
-                });
+                if(season.episodes){
+                    season.episodes.forEach((ep, index) => {
+                        if(!ep.name && en_season.episodes[index]) ep.name = en_season.episodes[index].name;
+                        if(!ep.overview && en_season.episodes[index]) ep.overview = en_season.episodes[index].overview;
+                    });
+                }
             }
         }
         return season;
@@ -1520,19 +1522,14 @@
         const now = new Date();
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-        const seasonDetailPromises = tmdbDetails.seasons
-            .filter(s => s.season_number > 0)
-            .map(s => fetchTMDbSeasonDetails(tmdbDetails.id, s.season_number, 'en-US'));
-        const allSeasonDetails = await Promise.all(seasonDetailPromises);
-        
-        for (const tmdbSeason of allSeasonDetails) {
-            if (!tmdbSeason) continue;
-
+        for (const tmdbSeason of tmdbDetails.seasons.filter(s => s.season_number > 0)) {
             const seasonNumber = tmdbSeason.season_number;
             const localSeason = show.seasons[seasonNumber];
-            const hasRecentEpisodes = (tmdbSeason.episodes || []).some(ep => ep.air_date && new Date(ep.air_date) >= sevenDaysAgo);
+            
+            const airDate = tmdbSeason.air_date ? new Date(tmdbSeason.air_date) : null;
+            const hasRecentEpisodes = airDate && airDate >= sevenDaysAgo;
 
-            if (!localSeason || (localSeason.episodes || []).length !== (tmdbSeason.episodes || []).length || hasRecentEpisodes) {
+            if (!localSeason || (localSeason.episodes || []).length !== tmdbSeason.episode_count || hasRecentEpisodes) {
                 const seasonDetails = await fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, seasonNumber);
                 if (seasonDetails) {
                     show.seasons[seasonNumber] = { 
@@ -2368,33 +2365,36 @@
         }
 
         console.log("Avvio aggiornamento in background...");
-        const showsToUpdate = mediaList.filter(s => s.category === 'In Corso' || (s.year && !s.year.includes('–')));
-        if (showsToUpdate.length === 0) return;
+        const showsToUpdate = mediaList.filter(s => s.category === 'In Corso' && s.tmdbID);
+        if (showsToUpdate.length === 0) {
+          localStorage.setItem('lastBackgroundUpdate', now);
+          return;
+        }
 
         let hasAnyUpdates = false;
 
         for (const show of showsToUpdate) {
             try {
-                const tmdbDetails = await fetchBestTMDbDetails(show);
-                if (!tmdbDetails) continue;
-                
-                const firstYear = tmdbDetails.first_air_date ? tmdbDetails.first_air_date.split('-')[0] : '';
-                const status = tmdbDetails.status;
-                const lastYear = (status === 'Ended' || status === 'Canceled') && tmdbDetails.last_air_date ? tmdbDetails.last_air_date.split('-')[0] : '';
-                let newYear = firstYear;
+                // Check for recent episodes without full details first
+                let needsFullUpdate = false;
+                const tmdbDetails = await fetchFullTMDbDetails(show.tmdbID, 'en-US'); // en-US for reliable dates
+                if(!tmdbDetails) continue;
 
-                if (firstYear && lastYear && firstYear !== lastYear) {
-                    newYear = `${firstYear}–${lastYear}`;
-                } else if (firstYear && (status === 'Returning Series' || status === 'In Production' || status === 'Planned')) {
-                    newYear = `${firstYear} – In corso`;
+                const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+                for(const season of tmdbDetails.seasons) {
+                    if (season.air_date && new Date(season.air_date) >= sevenDaysAgo) {
+                        needsFullUpdate = true;
+                        break;
+                    }
                 }
                 
-                if (show.year !== newYear || show.status !== status) {
-                    show.year = newYear;
-                    show.status = status;
-                    hasAnyUpdates = true;
+                if (needsFullUpdate) {
+                    console.log(`Aggiornamento forzato per ${show.title} a causa di attività recente.`);
+                    show.seasons = {}; // Force refetch
+                    await showDetailsModal(show.id); // Re-use the existing full-update logic
+                    hasAnyUpdates = true; 
                 }
-                
+
                 await new Promise(resolve => setTimeout(resolve, 350)); // API rate limiting
             } catch (error) {
                 console.error(`Errore durante l'aggiornamento di ${show.title} in background:`, error);
@@ -2402,10 +2402,8 @@
         }
 
         if (hasAnyUpdates) {
-            console.log("Aggiornamenti trovati, salvataggio e re-renderizzazione...");
-            await saveData();
-            renderMedia();
-            showNotification("La tua libreria è stata aggiornata in background.", "success");
+            console.log("Aggiornamenti in background completati.");
+            showNotification("Le tue serie in corso sono state aggiornate.", "success");
         }
         
         localStorage.setItem('lastBackgroundUpdate', now);
