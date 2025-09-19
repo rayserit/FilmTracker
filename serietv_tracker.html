@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Serie TV Tracker</title>
   
-  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="%232a9d8f" d="M592 0H48A48 48 0 0 0 0 48v320a48 48 0 0 0 48 48h160v32a32 32 0 0 0 32 32h160a32 32 0 0 0 32-32v-32h160a48 48 0 0 0 48-48V48a48 48 0 0 0-48-48zm-16 352H64V64h512zM272 448h96v-32h-96z"/></svg>' type="image/svg+xml">
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="%232a9d8f" d="M592 0H48A48 48 0 0 0 0 48v320a48 48 0 0 0 48 48h160v32a32 32 0 0 0 32 32h160a32 32 0 0 0 32-32v-32h160a48 48 0 0 0 48-48V48a48 48 0 0 0 -48-48zm-16 352H64V64h512zM272 448h96v-32h-96z"/></svg>' type="image/svg+xml">
   
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -176,6 +176,10 @@
     #rewatchModal { z-index: 1003; }
     #rewatchModal .modal-content { max-width: 450px; text-align: center; }
     #updateProgressModal .modal-content { max-width: 500px; text-align: center; }
+    #updateSummaryModal .modal-content { max-width: 500px; }
+    #updateSummaryList { list-style: none; padding: 0; max-height: 40vh; overflow-y: auto; }
+    #updateSummaryList li { padding: 0.5rem; border-bottom: 1px solid var(--border-color); }
+    #updateSummaryList li:last-child { border-bottom: none; }
 
 
     input, select { padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); font-size: 1rem; box-sizing: border-box; margin: 0; height: 38px; transition: border-color 0.2s, box-shadow 0.2s; }
@@ -845,6 +849,16 @@
     </div>
   </div>
 
+  <!-- Update Summary Modal -->
+  <div class="modal" id="updateSummaryModal">
+    <div class="modal-content">
+        <h2 style="text-align:center; margin-top: 0;">Riepilogo Aggiornamenti</h2>
+        <ul id="updateSummaryList"></ul>
+        <div class="modal-footer" style="padding-top: 1rem; border: none;">
+          <button id="closeSummaryBtn" class="btn btn-primary">OK</button>
+        </div>
+    </div>
+  </div>
 
   <div id="notification" class="notification"><span id="notificationText"></span></div>
   
@@ -942,6 +956,9 @@
         updateProgressBarFill: document.getElementById('updateProgressBarFill'),
         updateProgressText: document.getElementById('updateProgressText'),
         updateProgressTitle: document.getElementById('updateProgressTitle'),
+        updateSummaryModal: document.getElementById('updateSummaryModal'),
+        updateSummaryList: document.getElementById('updateSummaryList'),
+        closeSummaryBtn: document.getElementById('closeSummaryBtn'),
         // Bottom Nav Bar Elements
         bottomNavAdd: document.getElementById('bottomNavAdd'),
         bottomNavManage: document.getElementById('bottomNavManage'),
@@ -1526,10 +1543,11 @@
         const tmdbDetails = await fetchBestTMDbDetails(show);
         if (!tmdbDetails) { 
             elements.detailsModalContent.innerHTML = "<p>Dettagli non trovati.</p>"; 
-            return; 
+            return [];
         }
 
         let hasUpdates = false;
+        let updateSummary = [];
         
         const firstYear = tmdbDetails.first_air_date ? tmdbDetails.first_air_date.split('-')[0] : '';
         const status = tmdbDetails.status;
@@ -1540,10 +1558,14 @@
         } else if (firstYear && (status === 'Returning Series' || status === 'In Production' || status === 'Planned')) {
             newYear = `${firstYear} – In corso`;
         }
-        if(show.year !== newYear || show.status !== status) {
+        if(show.year !== newYear) {
             show.year = newYear;
+            hasUpdates = true;
+        }
+        if(show.status !== status) {
             show.status = status;
             hasUpdates = true;
+            updateSummary.push(`<strong>${show.title}</strong>: Stato aggiornato a "${status}"`);
         }
 
         const seasonDetailPromises = tmdbDetails.seasons
@@ -1554,8 +1576,18 @@
         
         allSeasonDetails.forEach(seasonDetails => {
             if (seasonDetails) {
-                 const seasonNumber = seasonDetails.season_number;
-                if (!show.seasons[seasonNumber] || (show.seasons[seasonNumber].episodes || []).length !== (seasonDetails.episodes || []).length || force) {
+                const seasonNumber = seasonDetails.season_number;
+                const localSeason = show.seasons[seasonNumber];
+                const newEpisodeCount = (seasonDetails.episodes || []).length;
+                const oldEpisodeCount = (localSeason?.episodes || []).length;
+                
+                if (!localSeason) {
+                    updateSummary.push(`<strong>${show.title}</strong>: Aggiunta Stagione ${seasonNumber}`);
+                } else if (newEpisodeCount > oldEpisodeCount) {
+                    updateSummary.push(`<strong>${show.title}</strong>: ${newEpisodeCount - oldEpisodeCount} nuovi episodi nella Stagione ${seasonNumber}`);
+                }
+
+                if (!localSeason || oldEpisodeCount !== newEpisodeCount || force) {
                      show.seasons[seasonNumber] = { 
                         name: seasonDetails.name, 
                         episodes: (seasonDetails.episodes || []).map(ep => ({
@@ -1580,11 +1612,11 @@
         }
         
         currentShowCache = { show, tmdbDetails };
-        if(force){ // If forced, re-populate to ensure UI consistency
-             populateDetailsModal(tmdbDetails, show);
-        } else if (elements.detailsModal.style.display === 'flex') {
+        if(elements.detailsModal.style.display === 'flex') {
              populateDetailsModal(tmdbDetails, show);
         }
+        
+        return updateSummary;
     }
     
     function populateDetailsModal(details, media) {
@@ -2391,19 +2423,37 @@
             return;
         }
 
-        const showsToCheck = mediaList.filter(show => show.tmdbID && (force || show.category === 'In Corso'));
+        // CORREZIONE: La logica di selezione è ora identica sia per l'aggiornamento forzato che per quello automatico.
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0); // Normalizza a mezzanotte UTC per un confronto coerente
+        const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-        if (showsToCheck.length === 0) {
-            if (force) showNotification("Nessuna serie da aggiornare.", "warning");
+        const showsToUpdate = mediaList.filter(show => {
+            if (!show.tmdbID) return false;
+
+            // Questo controllo ora prescinde dalla categoria e cerca episodi in una finestra di 14 giorni.
+            return Object.values(show.seasons).some(season =>
+                (season.episodes || []).some(ep => {
+                    if (!ep.air_date) return false;
+                    const airDate = new Date(ep.air_date + 'T00:00:00Z'); // Tratta la data come UTC
+                    // Controlla se l'episodio è uscito negli ultimi 7 giorni o uscirà nei prossimi 7
+                    return airDate >= sevenDaysAgo && airDate <= sevenDaysFromNow;
+                })
+            );
+        });
+        
+        if (showsToUpdate.length === 0) {
+            if (force) showNotification("Nessuna serie con attività recente da aggiornare.", "warning");
             localStorage.setItem('lastBackgroundUpdate', now);
             displayLastUpdateTime();
             return;
         }
         
-        console.log(`Avvio aggiornamento in background per ${showsToUpdate.length} serie...`);
+        console.log(`Avvio aggiornamento per ${showsToUpdate.length} serie...`);
         elements.updateProgressModal.style.display = 'flex';
-        elements.updateProgressTitle.textContent = "Aggiornamento Giornaliero";
-        let hasAnyUpdates = false;
+        elements.updateProgressTitle.textContent = force ? "Aggiornamento Manuale" : "Aggiornamento Giornaliero";
+        let allChanges = [];
 
         for (let i = 0; i < showsToUpdate.length; i++) {
             const show = showsToUpdate[i];
@@ -2412,42 +2462,22 @@
             elements.updateProgressText.textContent = `Controllo ${i + 1} di ${showsToUpdate.length}: ${show.title}...`;
             
             try {
-                const tmdbDetails = await fetchFullTMDbDetails(show.tmdbID, 'en-US'); 
-                if (!tmdbDetails) continue;
-
-                let needsFullUpdate = force; // Always update if forced
-                const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-                const today = new Date();
-                today.setUTCHours(23, 59, 59, 999);
-
-                if (!needsFullUpdate) {
-                    for(const season of tmdbDetails.seasons) {
-                        if (season.air_date) {
-                            const seasonAirDate = new Date(season.air_date + 'T00:00:00Z');
-                            if (seasonAirDate >= sevenDaysAgo && seasonAirDate <= today) {
-                                needsFullUpdate = true;
-                                break;
-                            }
-                        }
-                    }
+                // La funzione showDetailsModal con force=true fa già il controllo di nuove stagioni/episodi
+                const showChanges = await showDetailsModal(show.id, true);
+                if (showChanges.length > 0) {
+                    allChanges = allChanges.concat(showChanges);
                 }
-                
-                if (needsFullUpdate) {
-                    console.log(`Aggiornamento forzato per ${show.title} a causa di attività recente.`);
-                    await forceRefreshShow(show.id);
-                    hasAnyUpdates = true; 
-                }
-                
-                await new Promise(resolve => setTimeout(resolve, 400)); // API rate limiting
+                await new Promise(resolve => setTimeout(resolve, 400)); // Piccola pausa per non sovraccaricare l'API
             } catch (error) {
-                console.error(`Errore durante l'aggiornamento di ${show.title} in background:`, error);
+                console.error(`Errore aggiornando ${show.title} in background:`, error);
             }
         }
         
         closeModal(elements.updateProgressModal);
 
-        if (hasAnyUpdates) {
-            showNotification("Le tue serie in corso sono state aggiornate.", "success");
+        if (allChanges.length > 0) {
+            elements.updateSummaryList.innerHTML = allChanges.map(change => `<li>${change}</li>`).join('');
+            elements.updateSummaryModal.style.display = 'flex';
         } else if (force) {
             showNotification("Nessun aggiornamento trovato.", "success");
         }
@@ -2877,7 +2907,7 @@
       elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
       elements.episodesModalClose.addEventListener('click', () => closeModal(elements.episodesModal));
       elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
-      document.addEventListener("click", e => { if (e.target === elements.detailsModal) closeModal(elements.detailsModal); if (e.target === elements.episodesModal) closeModal(elements.episodesModal); if (e.target === elements.actorModal) closeModal(elements.actorModal); if (e.target === elements.rewatchModal) closeModal(elements.rewatchModal); if (e.target === elements.mobileMenuModal) closeModal(elements.mobileMenuModal); if (e.target === elements.mobileNotificationsModal) closeModal(elements.mobileNotificationsModal); if (e.target === elements.filterSortModal) closeModal(elements.filterSortModal); if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible'); });
+      document.addEventListener("click", e => { if (e.target === elements.detailsModal) closeModal(elements.detailsModal); if (e.target === elements.episodesModal) closeModal(elements.episodesModal); if (e.target === elements.actorModal) closeModal(elements.actorModal); if (e.target === elements.rewatchModal) closeModal(elements.rewatchModal); if (e.target === elements.mobileMenuModal) closeModal(elements.mobileMenuModal); if (e.target === elements.mobileNotificationsModal) closeModal(elements.mobileNotificationsModal); if (e.target === elements.filterSortModal) closeModal(elements.filterSortModal); if (e.target === elements.updateSummaryModal) closeModal(elements.updateSummaryModal); if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible'); });
       elements.savePosterChange.addEventListener('click', () => { const selected = document.querySelector(".poster-option.selected"); if (selected) changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url); });
       elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
       elements.exportBtn.addEventListener('click', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ mediaList, categories }, null, 2)], {type: 'application/json'})); a.download = `serietv_tracker_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(a.href); });
@@ -2890,6 +2920,7 @@
       elements.addFriendBtn.addEventListener('click', addFriend);
       elements.copyMyIdBtn.addEventListener('click', () => { navigator.clipboard.writeText(elements.myIdInput.value); showNotification("ID copiato!", "success"); });
       elements.bellIcon.addEventListener('click', (e) => { e.stopPropagation(); elements.notificationDropdown.classList.toggle('visible'); });
+      elements.closeSummaryBtn.addEventListener('click', () => closeModal(elements.updateSummaryModal));
       
       elements.confirmRewatchBtn.addEventListener('click', () => { const newCount = parseInt(elements.rewatchCountInput.value); if (!isNaN(newCount) && newCount >= 0) { setRewatchCount(newCount); } else { showNotification("Inserisci un numero valido (0 o superiore).", "warning"); } });
       elements.cancelRewatchBtn.addEventListener('click', () => closeModal(elements.rewatchModal));
@@ -2932,7 +2963,6 @@
       
       // --- Force Update Listeners ---
       const forceUpdate = () => {
-        localStorage.removeItem('lastBackgroundUpdate');
         updateAllShowsInBackground(true);
       };
       elements.forceUpdateBtnDesktop.addEventListener('click', forceUpdate);
