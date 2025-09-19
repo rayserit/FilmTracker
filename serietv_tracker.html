@@ -466,6 +466,18 @@
       text-align: center;
       color: var(--primary);
     }
+    .update-section {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .update-section .btn {
+      width: 100%;
+      margin-top: 0.5rem;
+    }
 
     #mobileNotificationsModal {
       align-items: flex-end; /* Position modal at the bottom */
@@ -717,6 +729,10 @@
                 <div class="management-list" id="friendsList"></div>
             </div>
         </div>
+        <div class="update-section" id="updateSectionDesktop" style="display: none;">
+          <p id="lastUpdateTimestampDesktop"></p>
+          <button id="forceUpdateBtnDesktop" class="btn btn-secondary">Forza Aggiornamento Giornaliero</button>
+        </div>
         <div class="modal-footer" style="border-top: none; padding-top: 0; justify-content: flex-end;">
             <button id="closeManagementModal" class="btn btn-danger">Chiudi</button>
             <button id="addShowBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi Serie</button>
@@ -781,6 +797,10 @@
               <button class="btn" id="mobileMenuImportBtn"><i class="fas fa-upload"></i>Importa Dati</button>
               <button class="btn" id="mobileMenuThemeBtn"><i class="fas fa-moon"></i>Cambia Tema</button>
               <button class="btn" id="mobileMenuResetBtn" style="color: var(--danger);"><i class="fas fa-undo" style="color: var(--danger);"></i>Resetta Tracker</button>
+          </div>
+          <div class="update-section">
+            <p id="lastUpdateTimestampMobile"></p>
+            <button id="forceUpdateBtnMobile" class="btn btn-secondary">Forza Aggiornamento Giornaliero</button>
           </div>
           <div class="modal-footer" style="border: none; padding-bottom: 0;">
             <button id="mobileMenuCloseBtn" class="btn btn-danger">Chiudi</button>
@@ -947,7 +967,13 @@
         mobileFilterBtn: document.getElementById('mobileFilterBtn'),
         mobileCategoryFilter: document.getElementById('mobileCategoryFilter'),
         mobileSortFilter: document.getElementById('mobileSortFilter'),
-        applyFiltersBtn: document.getElementById('applyFiltersBtn')
+        applyFiltersBtn: document.getElementById('applyFiltersBtn'),
+        // Update Section
+        forceUpdateBtnDesktop: document.getElementById('forceUpdateBtnDesktop'),
+        forceUpdateBtnMobile: document.getElementById('forceUpdateBtnMobile'),
+        lastUpdateTimestampDesktop: document.getElementById('lastUpdateTimestampDesktop'),
+        lastUpdateTimestampMobile: document.getElementById('lastUpdateTimestampMobile'),
+        updateSectionDesktop: document.getElementById('updateSectionDesktop')
     };
     
     firebase.initializeApp(firebaseConfig);
@@ -1040,6 +1066,7 @@
         updateCategoryFilter(); 
         updateStats();
         renderMedia(); 
+        displayLastUpdateTime();
     }
     function calculateProgress(show) { 
         const totalEpisodes = Object.values(show.seasons || {}).reduce((sum, season) => sum + (season.episodes || []).length, 0); 
@@ -1483,19 +1510,18 @@
     }
     
     async function forceRefreshShow(showId) {
-        const show = mediaList.find(m => m.id === showId);
-        if (!show) return;
-        show.seasons = {}; // This will force a re-fetch of all season data on the next details view
-        await showDetailsModal(showId); // Pass a flag to indicate a forced refresh
+        await showDetailsModal(showId, true);
     }
     
     async function showDetailsModal(showId, force = false) {
         const show = mediaList.find(m => m.id === showId); 
         if (!show) return;
         
-        elements.detailsModal.style.display = 'flex'; 
-        document.body.classList.add('modal-open');
-        elements.detailsModalContent.innerHTML = `<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>`;
+        if(!force){
+             elements.detailsModal.style.display = 'flex'; 
+             document.body.classList.add('modal-open');
+             elements.detailsModalContent.innerHTML = `<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>`;
+        }
         
         const tmdbDetails = await fetchBestTMDbDetails(show);
         if (!tmdbDetails) { 
@@ -1514,25 +1540,23 @@
         } else if (firstYear && (status === 'Returning Series' || status === 'In Production' || status === 'Planned')) {
             newYear = `${firstYear} – In corso`;
         }
-        if(show.year !== newYear) {
+        if(show.year !== newYear || show.status !== status) {
             show.year = newYear;
+            show.status = status;
             hasUpdates = true;
         }
 
-        const now = new Date();
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-        for (const tmdbSeason of tmdbDetails.seasons.filter(s => s.season_number > 0)) {
-            const seasonNumber = tmdbSeason.season_number;
-            const localSeason = show.seasons[seasonNumber];
-            
-            const airDate = tmdbSeason.air_date ? new Date(tmdbSeason.air_date) : null;
-            const hasRecentEpisodes = airDate && airDate >= sevenDaysAgo && airDate <= now;
-
-            if (force || !localSeason || (localSeason.episodes || []).length !== tmdbSeason.episode_count || hasRecentEpisodes) {
-                const seasonDetails = await fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, seasonNumber);
-                if (seasonDetails) {
-                    show.seasons[seasonNumber] = { 
+        const seasonDetailPromises = tmdbDetails.seasons
+            .filter(s => s.season_number > 0)
+            .map(s => fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, s.season_number));
+        
+        const allSeasonDetails = await Promise.all(seasonDetailPromises);
+        
+        allSeasonDetails.forEach(seasonDetails => {
+            if (seasonDetails) {
+                 const seasonNumber = seasonDetails.season_number;
+                if (!show.seasons[seasonNumber] || (show.seasons[seasonNumber].episodes || []).length !== (seasonDetails.episodes || []).length || force) {
+                     show.seasons[seasonNumber] = { 
                         name: seasonDetails.name, 
                         episodes: (seasonDetails.episodes || []).map(ep => ({
                             name: ep.name,
@@ -1546,17 +1570,21 @@
                     hasUpdates = true;
                 }
             }
-        }
+        });
 
         if (hasUpdates) {
             await saveData();
             renderMedia();
             updateStats();
-            showNotification(`Dati aggiornati per ${show.title}!`, "success");
+            if(force) showNotification(`Dati aggiornati per ${show.title}!`, "success");
         }
         
         currentShowCache = { show, tmdbDetails };
-        populateDetailsModal(tmdbDetails, show);
+        if(force){ // If forced, re-populate to ensure UI consistency
+             populateDetailsModal(tmdbDetails, show);
+        } else if (elements.detailsModal.style.display === 'flex') {
+             populateDetailsModal(tmdbDetails, show);
+        }
     }
     
     function populateDetailsModal(details, media) {
@@ -1647,10 +1675,9 @@
 
     function formatAirDate(airDateString) {
         if (!airDateString) return '';
-
-        const airDate = new Date(airDateString + 'T00:00:00');
+        const airDate = new Date(airDateString + 'T00:00:00Z'); // Treat as UTC date
         const today = new Date();
-        today.setHours(0, 0, 0, 0); 
+        today.setUTCHours(0, 0, 0, 0);
 
         if (airDate < today) {
             return '';
@@ -1659,10 +1686,10 @@
         const diffTime = airDate.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
-        const currentYear = today.getFullYear();
-        const airDateYear = airDate.getFullYear();
-
-        const options = { day: 'numeric', month: 'long' };
+        const currentYear = new Date().getUTCFullYear();
+        const airDateYear = airDate.getUTCFullYear();
+        
+        const options = { day: 'numeric', month: 'long', timeZone: 'UTC' };
         if (airDateYear > currentYear) {
             options.year = 'numeric';
         }
@@ -2354,19 +2381,22 @@
         });
     }
 
-    async function updateAllShowsInBackground() {
+    async function updateAllShowsInBackground(force = false) {
         const now = new Date().getTime();
         const lastUpdate = localStorage.getItem('lastBackgroundUpdate');
         const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-        if (lastUpdate && (now - lastUpdate) < TWENTY_FOUR_HOURS) {
+        if (!force && lastUpdate && (now - lastUpdate) < TWENTY_FOUR_HOURS) {
             console.log("Aggiornamento in background saltato: non ancora trascorse 24 ore.");
             return;
         }
 
-        const showsToUpdate = mediaList.filter(s => s.category === 'In Corso' && s.tmdbID);
-        if (showsToUpdate.length === 0) {
+        const showsToCheck = mediaList.filter(show => show.tmdbID && (force || show.category === 'In Corso'));
+
+        if (showsToCheck.length === 0) {
+            if (force) showNotification("Nessuna serie da aggiornare.", "warning");
             localStorage.setItem('lastBackgroundUpdate', now);
+            displayLastUpdateTime();
             return;
         }
         
@@ -2382,29 +2412,33 @@
             elements.updateProgressText.textContent = `Controllo ${i + 1} di ${showsToUpdate.length}: ${show.title}...`;
             
             try {
-                const tmdbDetails = await fetchFullTMDbDetails(show.tmdbID, 'en-US'); // Use 'en-US' for reliable dates
+                const tmdbDetails = await fetchFullTMDbDetails(show.tmdbID, 'en-US'); 
                 if (!tmdbDetails) continue;
 
-                let needsFullUpdate = false;
+                let needsFullUpdate = force; // Always update if forced
                 const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-                for (const season of tmdbDetails.seasons) {
-                    if (season.air_date) {
-                        const seasonAirDate = new Date(season.air_date);
-                        if (seasonAirDate >= sevenDaysAgo && seasonAirDate <= now) {
-                            needsFullUpdate = true;
-                            break;
+                const today = new Date();
+                today.setUTCHours(23, 59, 59, 999);
+
+                if (!needsFullUpdate) {
+                    for(const season of tmdbDetails.seasons) {
+                        if (season.air_date) {
+                            const seasonAirDate = new Date(season.air_date + 'T00:00:00Z');
+                            if (seasonAirDate >= sevenDaysAgo && seasonAirDate <= today) {
+                                needsFullUpdate = true;
+                                break;
+                            }
                         }
                     }
                 }
                 
                 if (needsFullUpdate) {
                     console.log(`Aggiornamento forzato per ${show.title} a causa di attività recente.`);
-                    show.seasons = {}; // Force refetch
-                    await showDetailsModal(show.id);
-                    hasAnyUpdates = true;
+                    await forceRefreshShow(show.id);
+                    hasAnyUpdates = true; 
                 }
                 
-                await new Promise(resolve => setTimeout(resolve, 350));
+                await new Promise(resolve => setTimeout(resolve, 400)); // API rate limiting
             } catch (error) {
                 console.error(`Errore durante l'aggiornamento di ${show.title} in background:`, error);
             }
@@ -2413,12 +2447,13 @@
         closeModal(elements.updateProgressModal);
 
         if (hasAnyUpdates) {
-            await saveData();
-            renderMedia();
             showNotification("Le tue serie in corso sono state aggiornate.", "success");
+        } else if (force) {
+            showNotification("Nessun aggiornamento trovato.", "success");
         }
         
         localStorage.setItem('lastBackgroundUpdate', now);
+        displayLastUpdateTime();
     }
     
     function setupAuthListeners() {
@@ -2460,6 +2495,7 @@
             elements.userInfo.style.display = "flex";
             elements.authToggle.parentElement.style.display = "none";
             elements.notificationBellContainer.style.display = 'block';
+            elements.updateSectionDesktop.style.display = 'block';
             if (userActionBtn) {
               userActionBtn.textContent = 'Logout';
               elements.mobileMenuUserActionBtn.style.color = 'var(--danger)';
@@ -2469,6 +2505,7 @@
             elements.userInfo.style.display = "none";
             elements.authToggle.parentElement.style.display = "block";
             elements.notificationBellContainer.style.display = 'none';
+            elements.updateSectionDesktop.style.display = 'none';
             if (userActionBtn) {
               userActionBtn.textContent = 'Login / Registrati';
               elements.mobileMenuUserActionBtn.style.color = '';
@@ -2813,6 +2850,16 @@
         });
     }
 
+    function displayLastUpdateTime() {
+        const lastUpdate = localStorage.getItem('lastBackgroundUpdate');
+        let timestampText = "Mai eseguito";
+        if (lastUpdate) {
+            timestampText = new Date(parseInt(lastUpdate)).toLocaleString('it-IT');
+        }
+        elements.lastUpdateTimestampDesktop.textContent = `Ultimo aggiornamento: ${timestampText}`;
+        elements.lastUpdateTimestampMobile.textContent = `Ultimo aggiornamento: ${timestampText}`;
+    }
+
     function setupEventListeners() {
       elements.mediaManagementBtn.addEventListener("click", () => { elements.mediaManagementModal.style.display = 'flex'; elements.mediaTitle.value = ''; elements.tmdbResults.innerHTML = ''; currentTMDbSelection = null; renderCategoriesList(); renderFriendsList(); populateAddMediaCategorySelect();});
       document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active')); btn.classList.add('active'); document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active'); elements.addShowBtn.style.display = btn.dataset.tab === 'add-media' ? 'inline-flex' : 'none'; }));
@@ -2881,6 +2928,17 @@
           localStorage.setItem("tvShowSortOrder", elements.sortFilter.value);
           renderMedia();
           closeModal(elements.filterSortModal);
+      });
+      
+      // --- Force Update Listeners ---
+      const forceUpdate = () => {
+        localStorage.removeItem('lastBackgroundUpdate');
+        updateAllShowsInBackground(true);
+      };
+      elements.forceUpdateBtnDesktop.addEventListener('click', forceUpdate);
+      elements.forceUpdateBtnMobile.addEventListener('click', () => {
+        forceUpdate();
+        closeModal(elements.mobileMenuModal);
       });
     }
   </script>
