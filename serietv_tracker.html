@@ -892,7 +892,7 @@
     const MDBLIST_PROXY_URL = "https://serietvtracker.amrit-singh99mail-5e3.workers.dev"; 
     
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
-    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi43LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
+    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi47LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
     const EMPTY_STILL_PLACEHOLDER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTY5IiB2aWV3Qm94PSIwIDAgMzAwIDE2OSI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNjkiIGZpbGw9IiNkZGQiLz48L3N2Zz4=";
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
@@ -910,6 +910,7 @@
     let statContributorIds = new Set();
     let ignoredDuplicateIds = new Set();
     let currentRewatchContext = {};
+    let isUpdateInProgress = false; // Il nostro "semaforo" per gli aggiornamenti
     
     const getDefaultShowProps = () => ({
         category: 'Da Vedere', addedAt: new Date().toISOString(), lastActivityAt: null, poster: "", 
@@ -2414,76 +2415,87 @@
     }
 
     async function updateAllShowsInBackground(force = false) {
-        const now = new Date().getTime();
-        const lastUpdate = localStorage.getItem('lastBackgroundUpdate');
-        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-
-        if (!force && lastUpdate && (now - lastUpdate) < TWENTY_FOUR_HOURS) {
-            console.log("Aggiornamento in background saltato: non ancora trascorse 24 ore.");
+        if (isUpdateInProgress) {
+            if (force) {
+                showNotification("Aggiornamento già in corso.", "warning");
+            }
+            console.log("Tentativo di avvio aggiornamento bloccato: un altro è già in corso.");
             return;
         }
 
-        // CORREZIONE: La logica di selezione è ora identica sia per l'aggiornamento forzato che per quello automatico.
-        const today = new Date();
-        today.setUTCHours(0, 0, 0, 0); // Normalizza a mezzanotte UTC per un confronto coerente
-        const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+        isUpdateInProgress = true;
 
-        const showsToUpdate = mediaList.filter(show => {
-            if (!show.tmdbID) return false;
+        try {
+            const now = new Date().getTime();
+            const lastUpdate = localStorage.getItem('lastBackgroundUpdate');
+            const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-            // Questo controllo ora prescinde dalla categoria e cerca episodi in una finestra di 14 giorni.
-            return Object.values(show.seasons).some(season =>
-                (season.episodes || []).some(ep => {
-                    if (!ep.air_date) return false;
-                    const airDate = new Date(ep.air_date + 'T00:00:00Z'); // Tratta la data come UTC
-                    // Controlla se l'episodio è uscito negli ultimi 7 giorni o uscirà nei prossimi 7
-                    return airDate >= sevenDaysAgo && airDate <= sevenDaysFromNow;
-                })
-            );
-        });
-        
-        if (showsToUpdate.length === 0) {
-            if (force) showNotification("Nessuna serie con attività recente da aggiornare.", "warning");
+            if (!force && lastUpdate && (now - lastUpdate) < TWENTY_FOUR_HOURS) {
+                console.log("Aggiornamento in background saltato: non ancora trascorse 24 ore.");
+                isUpdateInProgress = false;
+                return;
+            }
+
+            const today = new Date();
+            today.setUTCHours(0, 0, 0, 0);
+            const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+            const showsToUpdate = mediaList.filter(show => {
+                if (!show.tmdbID) return false;
+                return Object.values(show.seasons).some(season =>
+                    (season.episodes || []).some(ep => {
+                        if (!ep.air_date) return false;
+                        const airDate = new Date(ep.air_date + 'T00:00:00Z');
+                        return airDate >= sevenDaysAgo && airDate <= sevenDaysFromNow;
+                    })
+                );
+            });
+            
+            if (showsToUpdate.length === 0) {
+                if (force) showNotification("Nessuna serie con attività recente da aggiornare.", "warning");
+                localStorage.setItem('lastBackgroundUpdate', now);
+                displayLastUpdateTime();
+                isUpdateInProgress = false;
+                return;
+            }
+            
+            console.log(`Avvio aggiornamento per ${showsToUpdate.length} serie...`);
+            elements.updateProgressModal.style.display = 'flex';
+            elements.updateProgressTitle.textContent = force ? "Aggiornamento Manuale" : "Aggiornamento Giornaliero";
+            let allChanges = [];
+
+            for (let i = 0; i < showsToUpdate.length; i++) {
+                const show = showsToUpdate[i];
+                const progress = ((i + 1) / showsToUpdate.length) * 100;
+                elements.updateProgressBarFill.style.width = `${progress}%`;
+                elements.updateProgressText.textContent = `Controllo ${i + 1} di ${showsToUpdate.length}: ${show.title}...`;
+                
+                try {
+                    const showChanges = await showDetailsModal(show.id, true);
+                    if (showChanges.length > 0) {
+                        allChanges = allChanges.concat(showChanges);
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 400));
+                } catch (error) {
+                    console.error(`Errore aggiornando ${show.title} in background:`, error);
+                }
+            }
+            
+            closeModal(elements.updateProgressModal);
+
+            if (allChanges.length > 0) {
+                elements.updateSummaryList.innerHTML = allChanges.map(change => `<li>${change}</li>`).join('');
+                elements.updateSummaryModal.style.display = 'flex';
+            } else if (force) {
+                showNotification("Nessun aggiornamento trovato.", "success");
+            }
+            
             localStorage.setItem('lastBackgroundUpdate', now);
             displayLastUpdateTime();
-            return;
+        } finally {
+            isUpdateInProgress = false;
         }
-        
-        console.log(`Avvio aggiornamento per ${showsToUpdate.length} serie...`);
-        elements.updateProgressModal.style.display = 'flex';
-        elements.updateProgressTitle.textContent = force ? "Aggiornamento Manuale" : "Aggiornamento Giornaliero";
-        let allChanges = [];
-
-        for (let i = 0; i < showsToUpdate.length; i++) {
-            const show = showsToUpdate[i];
-            const progress = ((i + 1) / showsToUpdate.length) * 100;
-            elements.updateProgressBarFill.style.width = `${progress}%`;
-            elements.updateProgressText.textContent = `Controllo ${i + 1} di ${showsToUpdate.length}: ${show.title}...`;
-            
-            try {
-                // La funzione showDetailsModal con force=true fa già il controllo di nuove stagioni/episodi
-                const showChanges = await showDetailsModal(show.id, true);
-                if (showChanges.length > 0) {
-                    allChanges = allChanges.concat(showChanges);
-                }
-                await new Promise(resolve => setTimeout(resolve, 400)); // Piccola pausa per non sovraccaricare l'API
-            } catch (error) {
-                console.error(`Errore aggiornando ${show.title} in background:`, error);
-            }
-        }
-        
-        closeModal(elements.updateProgressModal);
-
-        if (allChanges.length > 0) {
-            elements.updateSummaryList.innerHTML = allChanges.map(change => `<li>${change}</li>`).join('');
-            elements.updateSummaryModal.style.display = 'flex';
-        } else if (force) {
-            showNotification("Nessun aggiornamento trovato.", "success");
-        }
-        
-        localStorage.setItem('lastBackgroundUpdate', now);
-        displayLastUpdateTime();
     }
     
     function setupAuthListeners() {
