@@ -15,10 +15,10 @@
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
   
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <!-- Firebase (Versione 8 - Stabile) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   
   <style>
     :root {
@@ -892,7 +892,7 @@
     const MDBLIST_PROXY_URL = "https://serietvtracker.amrit-singh99mail-5e3.workers.dev"; 
     
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
-    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi47LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
+    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi43LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
     const EMPTY_STILL_PLACEHOLDER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTY5IiB2aWV3Qm94PSIwIDAgMzAwIDE2OSI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNjkiIGZpbGw9IiNkZGQiLz48L3N2Zz4=";
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
@@ -915,7 +915,8 @@
     const getDefaultShowProps = () => ({
         category: 'Da Vedere', addedAt: new Date().toISOString(), lastActivityAt: null, poster: "", 
         year: "", imdbID: null, tmdbID: null, imdbRating: "N/A", rottenTomatoes: "N/A", popcornRating: "N/A", metacriticRating: "N/A", letterboxdRating: "N/A", status: "Unknown", 
-        seasons: {}, progress: {}, rewatches: {}, isFavorite: false, italianTitle: null
+        seasons: {}, progress: {}, rewatches: {}, isFavorite: false, italianTitle: null,
+        includeSpecialsInProgress: false // Nuova proprietà per la logica degli speciali
     });
     
     const elements = { 
@@ -1086,11 +1087,29 @@
         renderMedia(); 
         displayLastUpdateTime();
     }
-    function calculateProgress(show) { 
-        const totalEpisodes = Object.values(show.seasons || {}).reduce((sum, season) => sum + (season.episodes || []).length, 0); 
-        const watchedEpisodes = Object.keys(show.progress || {}).length; 
-        return { watchedEpisodes, totalEpisodes }; 
+
+    function calculateProgress(show) {
+        const watchedEpisodes = Object.keys(show.progress || {}).length;
+        
+        // Calcola il totale di base includendo solo le stagioni > 0
+        let totalEpisodes = Object.entries(show.seasons || {})
+            .filter(([seasonNum]) => parseInt(seasonNum) > 0)
+            .reduce((sum, [, season]) => sum + (season.episodes || []).length, 0);
+
+        // Se la modalità speciale è attiva per questa serie, aggiungi al totale solo gli speciali già visti
+        if (show.includeSpecialsInProgress) {
+            const specialsSeason = show.seasons ? show.seasons[0] : null;
+            if (specialsSeason && specialsSeason.episodes) {
+                const watchedSpecialsCount = specialsSeason.episodes.filter(ep => 
+                    show.progress[`0-${ep.episode_number}`]
+                ).length;
+                totalEpisodes += watchedSpecialsCount;
+            }
+        }
+        
+        return { watchedEpisodes, totalEpisodes };
     }
+
     function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
     function getPopcornState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 60 ? "positive" : "negative"; }
 
@@ -1126,7 +1145,8 @@
                 stats[categoryKey]++;
             }
             
-            const { watchedEpisodes } = calculateProgress(show);
+            // Usiamo il conteggio degli episodi visti per le statistiche generali
+            const watchedEpisodes = Object.keys(show.progress || {}).length;
             stats.episodesWatched += watchedEpisodes;
 
             if (show.seasons) {
@@ -1398,7 +1418,7 @@
             newShow.status = status;
             newShow.imdbRating = (omdbDetails?.imdbRating && omdbDetails.imdbRating !== "N/A") ? omdbDetails.imdbRating : (enDetails.vote_average ? enDetails.vote_average.toFixed(1) : "N/A");
             
-            const seasonPromises = enDetails.seasons.filter(s => s.season_number > 0).map(s => fetchTMDbSeasonDetailsWithFallback(enDetails.id, s.season_number));
+            const seasonPromises = enDetails.seasons.map(s => fetchTMDbSeasonDetailsWithFallback(enDetails.id, s.season_number));
             const seasonsData = await Promise.all(seasonPromises);
             seasonsData.forEach(season => { 
                 if (season) {
@@ -1418,9 +1438,11 @@
 
             if (category === "Completate" && !existingShow) {
                 Object.keys(newShow.seasons).forEach(seasonNum => {
-                    (newShow.seasons[seasonNum].episodes || []).forEach(ep => {
-                        newShow.progress[`${seasonNum}-${ep.episode_number}`] = true;
-                    });
+                    if (parseInt(seasonNum) > 0) { // Non segnare gli speciali come visti di default
+                        (newShow.seasons[seasonNum].episodes || []).forEach(ep => {
+                            newShow.progress[`${seasonNum}-${ep.episode_number}`] = true;
+                        });
+                    }
                 });
             }
             
@@ -1570,7 +1592,6 @@
         }
 
         const seasonDetailPromises = tmdbDetails.seasons
-            .filter(s => s.season_number > 0)
             .map(s => fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, s.season_number));
         
         const allSeasonDetails = await Promise.all(seasonDetailPromises);
@@ -1693,17 +1714,20 @@
         populateEpisodesModal(); 
         elements.episodesModal.style.display = 'flex'; 
     }
+    
     function populateEpisodesModal() {
         const { show } = currentShowCache;
+
+        // CORREZIONE: Rimuoviamo la logica di unione e mostriamo sempre le stagioni separate
         const seasonsHTML = Object.keys(show.seasons).map(Number).sort((a, b) => a - b).map(seasonNum => {
             const season = show.seasons[seasonNum];
             return createSeasonBlockHTML(show, { ...season, season_number: seasonNum });
         }).join('');
+        
         elements.episodesModalContent.innerHTML = `<h2>Progresso episodi: ${show.title}</h2><div class="seasons-container">${seasonsHTML}</div>`;
         
-        Object.keys(show.seasons).forEach(seasonNum => {
-            setupSeasonEventListeners(parseInt(seasonNum));
-        });
+        // Imposta gli event listener per tutti i blocchi visibili
+        Object.keys(show.seasons).map(Number).forEach(setupSeasonEventListeners);
     }
 
     function formatAirDate(airDateString) {
@@ -1741,6 +1765,7 @@
     function createSeasonBlockHTML(show, season) {
         const seasonNumber = season.season_number;
         const episodes = season.episodes || [];
+        
         const watchedInSeason = Object.keys(show.progress).filter(key => key.startsWith(`${seasonNumber}-`)).length;
         const episodeCount = episodes.length;
         const isSeasonComplete = watchedInSeason === episodeCount && episodeCount > 0;
@@ -1771,7 +1796,7 @@
                 <img data-src="${ep.still_path ? `https://image.tmdb.org/t/p/w300${ep.still_path}` : EMPTY_STILL_PLACEHOLDER}" class="episode-still lazy" onerror="this.src='${EMPTY_STILL_PLACEHOLDER}'">
                 <div class="episode-details">
                     <div class="episode-main-info">
-                        <span class="episode-number">E${ep.episode_number}</span>
+                        <span class="episode-number">${seasonNumber > 0 ? `S${seasonNumber}` : 'SP'}-E${ep.episode_number}</span>
                         <span class="episode-title ${titleSpoilerClass}">${ep.name || `Episodio ${ep.episode_number}`}</span>
                         ${ep.runtime ? `<span class="episode-runtime">(${ep.runtime}m)</span>` : ''}
                         ${formatAirDate(ep.air_date)}
@@ -2095,6 +2120,26 @@
       changePosterItem.innerHTML = '<i class="fas fa-image fa-fw"></i> Cambia Copertina';
       changePosterItem.addEventListener("click", () => { showPosterModal(show.id); hide(); });
       menu.appendChild(changePosterItem);
+
+      // NUOVA OPZIONE PER GLI SPECIALI
+      const toggleSpecialsItem = document.createElement("div");
+      toggleSpecialsItem.className = "context-menu-item";
+      if (show.includeSpecialsInProgress) {
+          toggleSpecialsItem.innerHTML = '<i class="fas fa-magic-wand-sparkles fa-fw"></i> Disabilita Speciali nel Progresso';
+      } else {
+          toggleSpecialsItem.innerHTML = '<i class="fas fa-magic fa-fw"></i> Abilita Speciali nel Progresso';
+      }
+      toggleSpecialsItem.addEventListener("click", () => {
+          const targetShow = mediaList.find(m => m.id === show.id);
+          if (targetShow) {
+              targetShow.includeSpecialsInProgress = !targetShow.includeSpecialsInProgress;
+              saveData();
+              refreshSingleMedia(targetShow.id);
+              showNotification(`Modalità Speciali ${targetShow.includeSpecialsInProgress ? 'abilitata' : 'disabilitata'} per "${targetShow.title}".`, "success");
+          }
+          hide();
+      });
+      menu.appendChild(toggleSpecialsItem);
       
       const deleteItem = document.createElement("div");
       deleteItem.className = "context-menu-item";
