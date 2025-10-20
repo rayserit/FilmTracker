@@ -1026,7 +1026,13 @@
         const path = `users/${currentUser.uid}`;
         db.ref(`${path}/tvShowTracker`).on("value", snapshot => {
             const data = snapshot.val() || {};
-            mediaList = (data.mediaList || []).map(item => ({ ...getDefaultShowProps(), ...item }));
+            mediaList = (data.mediaList || []).map(item => {
+                const cleanItem = { ...getDefaultShowProps(), ...item };
+                if (typeof cleanItem.seasons !== 'object' || cleanItem.seasons === null) {
+                    cleanItem.seasons = {}; // Bonifica dati vecchi
+                }
+                return cleanItem;
+            });
             categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => (typeof cat === 'string') ? { name: cat, hideProgress: false } : cat);
             if (!isViewMode) {
                 renderFullUI();
@@ -1048,7 +1054,14 @@
 
     function loadLocalData() { 
         try { 
-            mediaList = JSON.parse(localStorage.getItem("tvShowList") || "[]").map(item => ({ ...getDefaultShowProps(), ...item })); 
+            const localList = JSON.parse(localStorage.getItem("tvShowList") || "[]");
+            mediaList = localList.map(item => {
+                const cleanItem = { ...getDefaultShowProps(), ...item };
+                if (typeof cleanItem.seasons !== 'object' || cleanItem.seasons === null) {
+                    cleanItem.seasons = {}; // Bonifica dati vecchi
+                }
+                return cleanItem;
+            });
             const storedCategories = JSON.parse(localStorage.getItem("tvShowCategories") || JSON.stringify(DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))));
             categories = storedCategories.map(cat => (typeof cat === 'string') ? { name: cat, hideProgress: false } : cat);
             renderFullUI(); 
@@ -1091,24 +1104,22 @@
     function calculateProgress(show) {
         const watchedEpisodes = Object.keys(show.progress || {}).length;
         
-        // Calcola il totale di base includendo solo le stagioni > 0
-        let totalEpisodes = Object.entries(show.seasons || {})
+        // Se la modalità speciale è attiva, calcola il totale includendo TUTTI gli speciali
+        if (show.includeSpecialsInProgress) {
+            return {
+                watchedEpisodes,
+                totalEpisodes: Object.values(show.seasons || {}).reduce((sum, season) => sum + (season.episodes || []).length, 0)
+            };
+        }
+        
+        // Altrimenti, calcola il totale standard (solo stagioni > 0)
+        const totalEpisodes = Object.entries(show.seasons || {})
             .filter(([seasonNum]) => parseInt(seasonNum) > 0)
             .reduce((sum, [, season]) => sum + (season.episodes || []).length, 0);
 
-        // Se la modalità speciale è attiva per questa serie, aggiungi al totale solo gli speciali già visti
-        if (show.includeSpecialsInProgress) {
-            const specialsSeason = show.seasons ? show.seasons[0] : null;
-            if (specialsSeason && specialsSeason.episodes) {
-                const watchedSpecialsCount = specialsSeason.episodes.filter(ep => 
-                    show.progress[`0-${ep.episode_number}`]
-                ).length;
-                totalEpisodes += watchedSpecialsCount;
-            }
-        }
-        
         return { watchedEpisodes, totalEpisodes };
     }
+
 
     function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
     function getPopcornState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 60 ? "positive" : "negative"; }
@@ -1418,7 +1429,11 @@
             newShow.status = status;
             newShow.imdbRating = (omdbDetails?.imdbRating && omdbDetails.imdbRating !== "N/A") ? omdbDetails.imdbRating : (enDetails.vote_average ? enDetails.vote_average.toFixed(1) : "N/A");
             
-            const seasonPromises = enDetails.seasons.map(s => fetchTMDbSeasonDetailsWithFallback(enDetails.id, s.season_number));
+            // Per le nuove serie, scarica solo le stagioni regolari per evitare di aggiungere speciali non richiesti
+            const seasonPromises = enDetails.seasons
+                .filter(s => s.season_number > 0)
+                .map(s => fetchTMDbSeasonDetailsWithFallback(enDetails.id, s.season_number));
+            
             const seasonsData = await Promise.all(seasonPromises);
             seasonsData.forEach(season => { 
                 if (season) {
@@ -1438,11 +1453,9 @@
 
             if (category === "Completate" && !existingShow) {
                 Object.keys(newShow.seasons).forEach(seasonNum => {
-                    if (parseInt(seasonNum) > 0) { // Non segnare gli speciali come visti di default
-                        (newShow.seasons[seasonNum].episodes || []).forEach(ep => {
-                            newShow.progress[`${seasonNum}-${ep.episode_number}`] = true;
-                        });
-                    }
+                    (newShow.seasons[seasonNum].episodes || []).forEach(ep => {
+                        newShow.progress[`${seasonNum}-${ep.episode_number}`] = true;
+                    });
                 });
             }
             
@@ -1591,7 +1604,9 @@
             updateSummary.push(`<strong>${show.title}</strong>: Stato aggiornato a "${status}"`);
         }
 
+        // CORREZIONE: Filtra le stagioni da aggiornare. Aggiorna solo gli speciali (stagione 0) SE esistono già nei dati locali.
         const seasonDetailPromises = tmdbDetails.seasons
+            .filter(s => s.season_number > 0 || (show.seasons && show.seasons[s.season_number]))
             .map(s => fetchTMDbSeasonDetailsWithFallback(tmdbDetails.id, s.season_number));
         
         const allSeasonDetails = await Promise.all(seasonDetailPromises);
@@ -1718,21 +1733,25 @@
     function populateEpisodesModal() {
         const { show } = currentShowCache;
 
-        // CORREZIONE: Rimuoviamo la logica di unione e mostriamo sempre le stagioni separate
-        const seasonsHTML = Object.keys(show.seasons).map(Number).sort((a, b) => a - b).map(seasonNum => {
+        const sortedSeasonNumbers = Object.keys(show.seasons || {}).map(Number).sort((a, b) => {
+            if (a === 0) return 1;
+            if (b === 0) return -1;
+            return a - b;
+        });
+        
+        const seasonsHTML = sortedSeasonNumbers.map(seasonNum => {
             const season = show.seasons[seasonNum];
             return createSeasonBlockHTML(show, { ...season, season_number: seasonNum });
         }).join('');
         
         elements.episodesModalContent.innerHTML = `<h2>Progresso episodi: ${show.title}</h2><div class="seasons-container">${seasonsHTML}</div>`;
         
-        // Imposta gli event listener per tutti i blocchi visibili
-        Object.keys(show.seasons).map(Number).forEach(setupSeasonEventListeners);
+        sortedSeasonNumbers.forEach(setupSeasonEventListeners);
     }
 
     function formatAirDate(airDateString) {
         if (!airDateString) return '';
-        const airDate = new Date(airDateString + 'T00:00:00Z'); // Treat as UTC date
+        const airDate = new Date(airDateString + 'T00:00:00Z');
         const today = new Date();
         today.setUTCHours(0, 0, 0, 0);
 
@@ -1953,7 +1972,7 @@
         currentShowCache.show = show;
         
         const seasonBlock = document.getElementById(`season-block-${seasonNumber}`);
-        if(seasonBlock) {
+        if(seasonBlock && elements.episodesModal.style.display === 'flex') {
             const isExpanded = seasonBlock.querySelector('.season-episodes').style.maxHeight !== '0px';
             const newSeasonHTML = createSeasonBlockHTML(show, { ...show.seasons[seasonNumber], season_number: seasonNumber });
             const tempDiv = document.createElement('div');
@@ -1992,7 +2011,7 @@
         const seasonBlock = document.getElementById(`season-block-${season}`);
         if (seasonBlock) {
             const watchedInSeason = Object.keys(show.progress).filter(key => key.startsWith(`${season}-`)).length;
-            const episodeCount = (show.seasons[season].episodes || []).length;
+            const episodeCount = (show.seasons[season]?.episodes || []).length;
             seasonBlock.querySelector('.season-progress-text').textContent = `${watchedInSeason} / ${episodeCount}`;
 
             const isSeasonComplete = watchedInSeason === episodeCount && episodeCount > 0;
@@ -2055,7 +2074,7 @@
             const oldCategory = show.category;
             show.category = newCategory; 
             if (newCategory === 'Completate') { 
-                Object.keys(show.seasons).forEach(seasonNum => { 
+                Object.keys(show.seasons).forEach(seasonNum => {
                     (show.seasons[seasonNum].episodes || []).forEach(ep => {
                         show.progress[`${seasonNum}-${ep.episode_number}`] = true;
                     });
@@ -2121,24 +2140,15 @@
       changePosterItem.addEventListener("click", () => { showPosterModal(show.id); hide(); });
       menu.appendChild(changePosterItem);
 
-      // NUOVA OPZIONE PER GLI SPECIALI
       const toggleSpecialsItem = document.createElement("div");
       toggleSpecialsItem.className = "context-menu-item";
-      if (show.includeSpecialsInProgress) {
-          toggleSpecialsItem.innerHTML = '<i class="fas fa-magic-wand-sparkles fa-fw"></i> Disabilita Speciali nel Progresso';
+      if (show.seasons && show.seasons[0]) {
+          toggleSpecialsItem.innerHTML = '<i class="fas fa-trash-alt fa-fw"></i> Rimuovi Speciali';
+          toggleSpecialsItem.addEventListener("click", () => { removeSpecials(show.id); hide(); });
       } else {
-          toggleSpecialsItem.innerHTML = '<i class="fas fa-magic fa-fw"></i> Abilita Speciali nel Progresso';
+          toggleSpecialsItem.innerHTML = '<i class="fas fa-plus-circle fa-fw"></i> Aggiungi Speciali';
+          toggleSpecialsItem.addEventListener("click", () => { addSpecials(show.id); hide(); });
       }
-      toggleSpecialsItem.addEventListener("click", () => {
-          const targetShow = mediaList.find(m => m.id === show.id);
-          if (targetShow) {
-              targetShow.includeSpecialsInProgress = !targetShow.includeSpecialsInProgress;
-              saveData();
-              refreshSingleMedia(targetShow.id);
-              showNotification(`Modalità Speciali ${targetShow.includeSpecialsInProgress ? 'abilitata' : 'disabilitata'} per "${targetShow.title}".`, "success");
-          }
-          hide();
-      });
       menu.appendChild(toggleSpecialsItem);
       
       const deleteItem = document.createElement("div");
@@ -2156,6 +2166,49 @@
       menu.style.left = `${x}px`;
       menu.style.top = `${y}px`;
       requestAnimationFrame(() => menu.classList.add('visible'));
+    }
+
+    async function addSpecials(showId) {
+        const show = mediaList.find(m => m.id === showId);
+        if (!show || !show.tmdbID) return;
+
+        showNotification("Recupero episodi speciali...", "warning");
+        const specialsData = await fetchTMDbSeasonDetailsWithFallback(show.tmdbID, 0);
+        if (specialsData && specialsData.episodes && specialsData.episodes.length > 0) {
+            show.seasons[0] = {
+                name: specialsData.name || "Speciali",
+                episodes: specialsData.episodes.map(ep => ({
+                    name: ep.name,
+                    overview: ep.overview,
+                    episode_number: ep.episode_number,
+                    runtime: ep.runtime || 0,
+                    still_path: ep.still_path,
+                    air_date: ep.air_date
+                }))
+            };
+            await saveData();
+            refreshSingleMedia(showId);
+            showNotification("Episodi speciali aggiunti!", "success");
+        } else {
+            showNotification("Nessun episodio speciale trovato per questa serie.", "error");
+        }
+    }
+
+    async function removeSpecials(showId) {
+        const show = mediaList.find(m => m.id === showId);
+        if (!show || !show.seasons || !show.seasons[0]) return;
+
+        // Rimuovi i progressi legati agli speciali
+        Object.keys(show.progress).forEach(key => {
+            if (key.startsWith('0-')) {
+                delete show.progress[key];
+            }
+        });
+        
+        delete show.seasons[0];
+        await saveData();
+        refreshSingleMedia(showId);
+        showNotification("Episodi speciali rimossi.", "success");
     }
 
     function deleteShow(showId) {
