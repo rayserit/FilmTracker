@@ -1,0 +1,17 @@
+{
+  "name": "Serie TV Tracker",
+  "short_name": "TV Tracker",
+  "start_url": "./serietv_tracker.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#2a9d8f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
