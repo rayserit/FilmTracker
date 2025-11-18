@@ -507,115 +507,203 @@
     /* END: Mobile Menu and Notifications Modals Styles */
   </style>
   
-  <!-- START: Mobile-Friendly CSS Rules -->
   <style>
     @media (max-width: 768px) {
       body {
         padding: 0.5rem;
-        padding-bottom: 70px; /* Space for bottom nav bar */
-        -webkit-text-size-adjust: 100%; /* Prevents text zooming on iOS */
+        padding-bottom: 80px; /* Più spazio per la bottom nav */
+        -webkit-text-size-adjust: 100%;
       }
+
+      /* TOP BAR: Semplificata */
       .top-bar {
         flex-direction: column;
         align-items: stretch;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
       }
       .top-bar-left {
         flex-direction: row;
         flex-wrap: nowrap;
         align-items: center;
+        justify-content: space-between; /* Spazia il titolo/switcher dalla ricerca */
+      }
+      .top-bar-left h1 {
+        font-size: 1.2rem; /* Titolo più compatto */
+        white-space: nowrap;
       }
       .top-bar-left #topBarTitle {
-        display: none; /* Hide title to make space */
+        display: none; /* Nascondiamo il testo lungo per spazio */
       }
-      .top-bar-right {
-        display: none;
+      .tracker-switch {
+        transform: scale(0.9); /* Leggermente più piccolo */
+        transform-origin: left center;
       }
-      .search-box { flex-grow: 1; }
-      .top-bar-left > .filter-select { 
-        display: none; 
+      .top-bar-right { display: none; } /* I controlli desktop via */
+      .search-box { 
+        width: 100%; 
+        max-width: none; 
+        height: 44px; /* Più alto per il tocco */
       }
+      .top-bar-left > .filter-select { display: none; }
 
+      /* STATS: Scorrimento Orizzontale Fluido */
       .stats-container {
-          display: flex;
-          overflow-x: auto;
-          gap: 0.75rem;
-          padding-bottom: 0.5rem; /* Space for scrollbar */
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
+        display: flex;
+        overflow-x: auto;
+        gap: 0.75rem;
+        padding-bottom: 0.5rem;
+        scroll-snap-type: x mandatory; /* Scatto magnetico */
       }
-      .stats-container::-webkit-scrollbar {
-          display: none; /* Chrome, Safari */
-      }
+      .stats-container::-webkit-scrollbar { display: none; }
       .stat-item {
         flex-shrink: 0;
-        min-width: 120px;
+        min-width: 110px;
         padding: 0.75rem;
+        scroll-snap-align: start;
+        background: var(--card-bg);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       }
-      .stat-value { font-size: 1.5rem; }
+      .stat-value { font-size: 1.4rem; }
 
-      .media-section { padding: 1rem; }
+      /* MEDIA GRID: Ottimizzata per 3 colonne su schermi standard */
+      .media-section { 
+        padding: 0; 
+        background: transparent; /* Meno "scatole" su mobile */
+        margin-bottom: 1.5rem;
+      }
+      .section-header {
+        padding: 0 0.5rem 0.5rem 0.5rem;
+        margin-bottom: 0.5rem;
+      }
       .media-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); /* Dimensione ideale per mobile */
         gap: 0.75rem;
+        padding: 0 0.25rem;
       }
-      .media-card { width: auto; }
+      .media-card { 
+        width: auto; 
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
       .media-info { padding: 0.5rem; }
-      .media-title { font-size: 0.8rem; white-space: normal; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; }
-      .media-meta { display: none; } /* Hide original meta */
-      .media-ratings { display: none; }
-      .progress-bar-container { height: 4px; }
-      .progress-text { font-size: 0.7rem; display: flex; justify-content: space-between; }
-      .progress-text .media-year-compact { display: inline; color: var(--text-secondary); }
-
-      /* Modal Adjustments */
-      .modal-content { padding: 1rem; max-height: 85vh; overflow-y: auto; }
-      .modal-footer { flex-wrap: wrap; justify-content: stretch; }
-      .modal-footer .btn { flex-grow: 1; }
-
-      /* Details Modal */
-      #detailsModal .modal-content { padding: 0; }
-      #detailsModalHeader-main > div:last-child {
-          flex-wrap: wrap;
-          justify-content: center;
+      .media-title { 
+        font-size: 0.85rem; 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
       }
-      .details-header { flex-direction: column; align-items: center; margin-top: -80px; padding: 1rem; text-align: center; }
-      #detailsModalPoster { width: 120px; height: 180px; margin-right: 0; margin-bottom: 1rem; }
-      .details-title-section { padding-top: 80px; width: 100%; }
-      #detailsModalHeader-main { flex-direction: column; align-items: center; gap: 1rem; }
-      #detailsModalTitle { font-size: 1.5rem; }
-      .details-ratings-container { justify-content: center; }
-      #detailsModalMeta { justify-content: center; gap: 0.5rem 1rem; }
-      .details-body { padding: 0 1rem 1rem 1rem; }
+      .media-meta, .media-ratings { display: none; } /* Pulizia visiva */
+      .progress-bar-container { height: 3px; margin-top: 4px; }
+      .progress-text { display: none; } /* Solo la barra visiva è sufficiente in griglia */
 
-      /* Episodes Modal */
-      #episodesModal .modal-content { height: 85vh; }
-      #episodesModalContent { padding-right: 0.5rem; }
-      .episode-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-      .episode-still { width: 100%; height: auto; aspect-ratio: 16 / 9; }
-      .episode-controls { width: 100%; margin-left: 0; justify-content: flex-end; }
-      .season-header { flex-wrap: wrap; }
-
-      /* Management Modal */
-      .management-tabs { overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; }
-      .management-tabs::-webkit-scrollbar { display: none; }
-      .form-row { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-      .form-row > * { width: 100%; }
-      .management-card { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-      .management-card-actions { justify-content: flex-end; }
+      /* MODALI: A tutto schermo o quasi */
+      .modal-content { 
+        padding: 1rem; 
+        width: 95%; 
+        max-height: 90vh; 
+        overflow-y: auto;
+        border-radius: 16px;
+      }
       
-      /* Actor Modal */
-      .actor-details-header { flex-direction: column; align-items: center; text-align: center; }
-      .actor-details-info ul { display: inline-block; text-align: left; }
-
-      /* Notification */
-      .notification { width: calc(100% - 2rem); bottom: 1rem; left: 1rem; right: auto; margin-bottom: 60px; }
-
-      /* Show Bottom Nav Bar */
-      .bottom-nav { display: flex; }
-      #mobileFilterBtn { display: inline-flex; }
+      /* DETTAGLI SERIE: Layout "Netflix Style" */
+      #detailsModal .modal-content { padding: 0; border-radius: 0; height: 100vh; max-height: 100vh; width: 100%; }
+      .details-backdrop { height: 35vh; mask-image: linear-gradient(to bottom, black 60%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%); }
       
-      /* Hide desktop-only elements on mobile */
-      #notificationDropdown { display: none; }
+      .details-header { 
+        flex-direction: column; 
+        align-items: center; 
+        margin-top: -120px; /* Sovrapposizione maggiore */
+        padding: 1rem; 
+        text-align: center; 
+        position: relative;
+      }
+      #detailsModalPoster { 
+        width: 140px; 
+        height: 210px; 
+        margin-right: 0; 
+        margin-bottom: 1rem; 
+        border: 2px solid rgba(255,255,255,0.1);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      }
+      .details-title-section { padding-top: 0; width: 100%; }
+      #detailsModalHeader-main { flex-direction: column; align-items: center; gap: 0.5rem; }
+      #detailsModalTitle { font-size: 1.75rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+      .details-ratings-container { justify-content: center; margin-bottom: 1rem; }
+      
+      /* Pulsanti Azione Dettagli: Grandi e affiancati */
+      #detailsModalHeader-main > div:last-child {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr; /* 3 bottoni affiancati */
+          gap: 0.5rem;
+          width: 100%;
+          margin-top: 0.5rem;
+      }
+      #detailsModalHeader-main > div:last-child .btn {
+          flex-direction: column;
+          gap: 0.2rem;
+          font-size: 0.75rem;
+          padding: 0.5rem;
+          height: auto;
+      }
+      #detailsModalHeader-main > div:last-child .btn i { font-size: 1.2rem; margin: 0; }
+      
+      #detailsModalMeta { justify-content: center; gap: 0.75rem; opacity: 0.8; font-size: 0.85rem; }
+      .details-body { padding: 0 1.25rem 2rem 1.25rem; }
+      .modal-close-btn { top: 1rem; right: 1rem; background: rgba(0,0,0,0.6); width: 40px; height: 40px; }
+
+      /* EPISODI: Layout migliorato */
+      #episodesModal .modal-content { height: 100vh; width: 100%; border-radius: 0; }
+      #episodesModalContent { padding-right: 0; }
+      
+      .season-header {
+          position: sticky;
+          top: 0;
+          z-index: 10;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+          margin: 0 -0.5rem; /* Estendi ai bordi */
+          border-radius: 0;
+      }
+      
+      .episode-item { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 0.75rem; 
+        padding: 1rem 0.5rem;
+      }
+      .episode-still { 
+        width: 100%; 
+        height: auto; 
+        aspect-ratio: 16 / 9; 
+        border-radius: 8px;
+      }
+      .episode-details { width: 100%; }
+      .episode-main-info { justify-content: space-between; width: 100%; margin-bottom: 0.25rem; }
+      .episode-number { font-size: 0.9rem; }
+      .episode-title { font-size: 1rem; }
+      
+      /* Controlli episodio in basso a destra grandi */
+      .episode-controls { 
+        width: 100%; 
+        justify-content: flex-end; 
+        margin-left: 0; 
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--border-color);
+        margin-top: 0.5rem;
+      }
+      .episode-item input[type="checkbox"] { 
+        width: 28px; 
+        height: 28px; /* Checkbox più grande per il dito */
+        margin-left: 1rem;
+      }
+      
+      /* BOTTOM NAV: Più evidente */
+      .bottom-nav { display: flex; height: 65px; padding-bottom: env(safe-area-inset-bottom); background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px); border-top: none; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
+      .bottom-nav-btn.active { color: var(--primary); position: relative; }
+      .bottom-nav-btn.active::after { content: ''; position: absolute; top: 5px; width: 4px; height: 4px; background: var(--primary); border-radius: 50%; }
+      .bottom-nav-btn.add-btn { transform: translateY(-20px); border: 4px solid var(--bg-color); }
+      
+      /* NOTIFICHE e MENU */
+      .notification { width: 90%; bottom: 80px; left: 5%; right: auto; }
     }
   </style>
   <!-- END: Mobile-Friendly CSS Rules -->
