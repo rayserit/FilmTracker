@@ -511,199 +511,170 @@
     @media (max-width: 768px) {
       body {
         padding: 0.5rem;
-        padding-bottom: 80px; /* Più spazio per la bottom nav */
+        padding-bottom: 80px; /* Spazio per la bottom nav */
         -webkit-text-size-adjust: 100%;
       }
 
-      /* TOP BAR: Semplificata */
-      .top-bar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
-        margin-bottom: 1rem;
-      }
-      .top-bar-left {
-        flex-direction: row;
-        flex-wrap: nowrap;
-        align-items: center;
-        justify-content: space-between; /* Spazia il titolo/switcher dalla ricerca */
-      }
-      .top-bar-left h1 {
-        font-size: 1.2rem; /* Titolo più compatto */
-        white-space: nowrap;
-      }
-      .top-bar-left #topBarTitle {
-        display: none; /* Nascondiamo il testo lungo per spazio */
-      }
-      .tracker-switch {
-        transform: scale(0.9); /* Leggermente più piccolo */
-        transform-origin: left center;
-      }
-      .top-bar-right { display: none; } /* I controlli desktop via */
-      .search-box { 
-        width: 100%; 
-        max-width: none; 
-        height: 44px; /* Più alto per il tocco */
-      }
+      /* --- TOP BAR --- */
+      .top-bar { flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+      .top-bar-left { flex-direction: row; justify-content: space-between; width: 100%; }
+      .top-bar-left h1, .top-bar-left #topBarTitle { display: none; }
+      .top-bar-right { display: none; }
+      .search-box { width: 100%; max-width: none; height: 40px; }
       .top-bar-left > .filter-select { display: none; }
 
-      /* STATS: Scorrimento Orizzontale Fluido */
+      /* --- STATISTICHE: GRIGLIA 3 COLONNE (SOLO ICONE) --- */
       .stats-container {
-        display: flex;
-        overflow-x: auto;
-        gap: 0.75rem;
-        padding-bottom: 0.5rem;
-        scroll-snap-type: x mandatory; /* Scatto magnetico */
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 3 colonne */
+        gap: 0.5rem;
+        padding-bottom: 0;
+        overflow: visible;
       }
-      .stats-container::-webkit-scrollbar { display: none; }
+      
       .stat-item {
-        flex-shrink: 0;
-        min-width: 110px;
-        padding: 0.75rem;
-        scroll-snap-align: start;
+        width: auto;
+        min-width: 0;
+        padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border-radius: 12px;
         background: var(--card-bg);
+        border: 1px solid var(--border-color);
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       }
-      .stat-value { font-size: 1.4rem; }
+      
+      .stat-value { 
+          font-size: 1.4rem; /* Numeri più grandi */
+          margin-bottom: 0.3rem; 
+          line-height: 1; 
+          font-weight: 700; 
+          color: var(--text-color);
+      }
 
-      /* MEDIA GRID: Ottimizzata per 3 colonne su schermi standard */
-      .media-section { 
-        padding: 0; 
-        background: transparent; /* Meno "scatole" su mobile */
-        margin-bottom: 1.5rem;
+      /* Nasconde il testo ma prepara il contenitore per l'icona */
+      .stat-label { 
+          font-size: 0; /* NASCONDE IL TESTO */
+          display: flex; 
+          justify-content: center;
       }
-      .section-header {
-        padding: 0 0.5rem 0.5rem 0.5rem;
-        margin-bottom: 0.5rem;
+      
+      /* Definizioni Icone (Visibili e più grandi) */
+      .stat-item:nth-child(1) .stat-label::after { content: "\f00a"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--text-secondary); opacity: 0.6; } /* Totale */
+      .stat-item:nth-child(2) .stat-label::after { content: "\f04b"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--success); } /* In Corso */
+      .stat-item:nth-child(3) .stat-label::after { content: "\f00c"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: #9c04fc; } /* Completate */
+      .stat-item:nth-child(4) .stat-label::after { content: "\f02e"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--warning); } /* Da Vedere */
+      .stat-item:nth-child(5) .stat-label::after { content: "\f04c"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--danger); } /* Pausa */
+      .stat-item:nth-child(6) .stat-label::after { content: "\f06e"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--primary); } /* Episodi */
+      
+      /* L'ultima stat (Ore) su una riga intera */
+      .stat-item:nth-child(7) { 
+          grid-column: 1 / -1; 
+          flex-direction: row; 
+          gap: 1rem; 
+          padding: 0.75rem;
       }
+      .stat-item:nth-child(7) .stat-value { margin-bottom: 0; font-size: 1.2rem; }
+      .stat-item:nth-child(7) .stat-label::after { content: "\f017"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--text-secondary); opacity: 0.6; }
+
+      /* --- GRIGLIA SERIE --- */
+      .media-section { padding: 0; background: transparent; margin-bottom: 1rem; }
+      .section-header { padding: 0 0.5rem 0.5rem 0.5rem; margin-bottom: 0.5rem; }
       .media-grid {
-        grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); /* Dimensione ideale per mobile */
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         gap: 0.75rem;
         padding: 0 0.25rem;
       }
-      .media-card { 
-        width: auto; 
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      }
-      .media-info { padding: 0.5rem; }
-      .media-title { 
-        font-size: 0.85rem; 
-        white-space: nowrap; 
-        overflow: hidden; 
-        text-overflow: ellipsis; 
-      }
-      .media-meta, .media-ratings { display: none; } /* Pulizia visiva */
+      .media-card { width: auto; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+      .media-title { font-size: 0.8rem; }
+      .media-meta, .media-ratings { display: none; }
+      .progress-text { display: none; } 
       .progress-bar-container { height: 3px; margin-top: 4px; }
-      .progress-text { display: none; } /* Solo la barra visiva è sufficiente in griglia */
 
-      /* MODALI: A tutto schermo o quasi */
-      .modal-content { 
-        padding: 1rem; 
-        width: 95%; 
-        max-height: 90vh; 
-        overflow-y: auto;
-        border-radius: 16px;
-      }
-      
-      /* DETTAGLI SERIE: Layout "Netflix Style" */
-      #detailsModal .modal-content { padding: 0; border-radius: 0; height: 100vh; max-height: 100vh; width: 100%; }
-      .details-backdrop { height: 35vh; mask-image: linear-gradient(to bottom, black 60%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%); }
-      
+      /* --- MODALE DETTAGLI SERIE (CENTRATO) --- */
+      #detailsModal .modal-content { padding: 0; width: 100%; height: 100vh; border-radius: 0; }
       .details-header { 
         flex-direction: column; 
         align-items: center; 
-        margin-top: -120px; /* Sovrapposizione maggiore */
+        margin-top: -90px; 
         padding: 1rem; 
         text-align: center; 
-        position: relative;
       }
-      #detailsModalPoster { 
-        width: 140px; 
-        height: 210px; 
-        margin-right: 0; 
-        margin-bottom: 1rem; 
-        border: 2px solid rgba(255,255,255,0.1);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      }
-      .details-title-section { padding-top: 0; width: 100%; }
-      #detailsModalHeader-main { flex-direction: column; align-items: center; gap: 0.5rem; }
-      #detailsModalTitle { font-size: 1.75rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-      .details-ratings-container { justify-content: center; margin-bottom: 1rem; }
+      #detailsModalPoster { width: 130px; height: 195px; margin: 0 0 1rem 0; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+      .details-title-section { padding: 0; width: 100%; display: flex; flex-direction: column; align-items: center; }
       
-      /* Pulsanti Azione Dettagli: Grandi e affiancati */
+      #detailsModalHeader-main { 
+          flex-direction: column; 
+          width: 100%; 
+          gap: 0.5rem; 
+          align-items: center;
+      }
+      
+      #detailsModalTitle { 
+          font-size: 1.75rem; 
+          text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
+          text-align: center; 
+          width: 100%;
+          line-height: 1.2;
+      }
+      
+      .details-ratings-container { 
+          justify-content: center; 
+          margin-bottom: 1rem; 
+          width: 100%;
+      }
+      
       #detailsModalHeader-main > div:last-child {
-          display: grid;
-          grid-template-columns: 1fr 1fr 1fr; /* 3 bottoni affiancati */
-          gap: 0.5rem;
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
           width: 100%;
           margin-top: 0.5rem;
       }
       #detailsModalHeader-main > div:last-child .btn {
-          flex-direction: column;
-          gap: 0.2rem;
-          font-size: 0.75rem;
-          padding: 0.5rem;
-          height: auto;
+          flex: 0 1 auto;
+          padding: 0.6rem 1.2rem;
       }
-      #detailsModalHeader-main > div:last-child .btn i { font-size: 1.2rem; margin: 0; }
       
-      #detailsModalMeta { justify-content: center; gap: 0.75rem; opacity: 0.8; font-size: 0.85rem; }
-      .details-body { padding: 0 1.25rem 2rem 1.25rem; }
-      .modal-close-btn { top: 1rem; right: 1rem; background: rgba(0,0,0,0.6); width: 40px; height: 40px; }
+      #detailsModalMeta { justify-content: center; font-size: 0.8rem; opacity: 0.8; }
+      .details-body { padding: 0 1rem 2rem 1rem; }
 
-      /* EPISODI: Layout migliorato */
-      #episodesModal .modal-content { height: 100vh; width: 100%; border-radius: 0; }
-      #episodesModalContent { padding-right: 0; }
-      
-      .season-header {
-          position: sticky;
-          top: 0;
-          z-index: 10;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-          margin: 0 -0.5rem; /* Estendi ai bordi */
-          border-radius: 0;
+      /* --- LISTA EPISODI --- */
+      #episodesModal .modal-content { height: 100vh; width: 100%; border-radius: 0; padding: 0; display: flex; flex-direction: column; }
+      #episodesModalContent { padding: 0; overflow-y: auto; flex: 1; }
+      .season-header { position: sticky; top: 0; z-index: 10; border-radius: 0; margin: 0; padding: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+      .episode-item {
+        display: grid;
+        grid-template-columns: 100px 1fr 40px;
+        grid-template-rows: auto auto;
+        gap: 0.5rem 0.75rem;
+        padding: 0.75rem;
+        align-items: start;
       }
+      .episode-still { grid-column: 1; grid-row: 1; width: 100px; height: 56px; border-radius: 4px; object-fit: cover; }
+      .episode-details { grid-column: 2; grid-row: 1; min-width: 0; }
+      .episode-main-info { display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
+      .episode-number { font-size: 0.75rem; color: var(--primary); margin-bottom: 2px; }
+      .episode-title { font-size: 0.9rem; line-height: 1.2; }
+      .episode-air-date { display: none; }
+      .episode-controls { grid-column: 3; grid-row: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin: 0; }
+      .episode-item input[type="checkbox"] { width: 24px; height: 24px; margin: 0; }
+      .episode-rewatch-btn { width: 24px; height: 24px; }
+      .episode-overview { grid-column: 1 / -1; grid-row: 2; font-size: 0.8rem; margin-top: 0; color: var(--text-secondary); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+      /* --- NOTIFICHE --- */
+      #mobileNotificationsModal { justify-content: flex-end; background: rgba(0,0,0,0.6); }
+      #mobileNotificationsModal .modal-content { width: 95%; margin: 0 auto 85px auto; border-radius: 16px; height: auto; max-height: 60vh; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+      .notification-list { max-height: 40vh; }
+      .notification-item { padding: 1rem; border-bottom: 1px solid var(--border-color); }
       
-      .episode-item { 
-        flex-direction: column; 
-        align-items: flex-start; 
-        gap: 0.75rem; 
-        padding: 1rem 0.5rem;
-      }
-      .episode-still { 
-        width: 100%; 
-        height: auto; 
-        aspect-ratio: 16 / 9; 
-        border-radius: 8px;
-      }
-      .episode-details { width: 100%; }
-      .episode-main-info { justify-content: space-between; width: 100%; margin-bottom: 0.25rem; }
-      .episode-number { font-size: 0.9rem; }
-      .episode-title { font-size: 1rem; }
-      
-      /* Controlli episodio in basso a destra grandi */
-      .episode-controls { 
-        width: 100%; 
-        justify-content: flex-end; 
-        margin-left: 0; 
-        padding-top: 0.5rem;
-        border-top: 1px solid var(--border-color);
-        margin-top: 0.5rem;
-      }
-      .episode-item input[type="checkbox"] { 
-        width: 28px; 
-        height: 28px; /* Checkbox più grande per il dito */
-        margin-left: 1rem;
-      }
-      
-      /* BOTTOM NAV: Più evidente */
-      .bottom-nav { display: flex; height: 65px; padding-bottom: env(safe-area-inset-bottom); background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px); border-top: none; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
-      .bottom-nav-btn.active { color: var(--primary); position: relative; }
-      .bottom-nav-btn.active::after { content: ''; position: absolute; top: 5px; width: 4px; height: 4px; background: var(--primary); border-radius: 50%; }
-      .bottom-nav-btn.add-btn { transform: translateY(-20px); border: 4px solid var(--bg-color); }
-      
-      /* NOTIFICHE e MENU */
-      .notification { width: 90%; bottom: 80px; left: 5%; right: auto; }
+      /* --- BOTTOM NAV --- */
+      .bottom-nav { display: flex; height: 60px; background: var(--card-bg); border-top: 1px solid var(--border-color); }
+      .bottom-nav-btn.add-btn { transform: translateY(-15px); border: 4px solid var(--bg-color); width: 50px; height: 50px; }
     }
   </style>
   <!-- END: Mobile-Friendly CSS Rules -->
