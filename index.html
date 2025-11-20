@@ -492,11 +492,11 @@
        .search-box { width: 100%; max-width: none; height: 40px; flex-basis: 100%; order: 3; margin-top: 0.25rem; }
        .top-bar-left > .filter-select { display: none; }
 
-      /* --- STATISTICHE: GRIGLIA 3 COLONNE (SOLO ICONE) --- */
+      /* --- STATISTICHE: GRIGLIA 4 COLONNE PER LE PRIME 4 STATISTICHE --- */
       .stats-container {
         display: grid;
-        grid-template-columns: repeat(3, 1fr); /* 3 colonne */
-        gap: 0.5rem;
+        grid-template-columns: repeat(4, 1fr); /* 4 colonne per le prime 4 statistiche */
+        gap: 0.4rem;
         padding-bottom: 0;
         overflow: visible;
       }
@@ -504,7 +504,7 @@
       .stat-item {
          width: auto;
          min-width: 0;
-         padding: 0.5rem;
+         padding: 0.4rem;
          display: flex;
          flex-direction: column;
          align-items: center;
@@ -516,16 +516,25 @@
          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
        }
 
-       /* L'ultima stat (Ore) su una riga intera */
+       /* Le prime 4 statistiche sulla stessa riga */
+       .stat-item:nth-child(1),
+       .stat-item:nth-child(2),
+       .stat-item:nth-child(3),
+       .stat-item:nth-child(4) {
+         grid-row: 1;
+       }
+
+       /* L'ultima stat (Ore) su una riga intera sotto */
        .stat-item:nth-child(5) {
           grid-column: 1 / -1;
+          grid-row: 2;
           flex-direction: row;
           gap: 1rem;
           padding: 0.75rem;
        }
 
       .stat-value {
-          font-size: 1.4rem; /* Numeri più grandi */
+          font-size: 1.3rem; /* Numeri leggermente più piccoli per stare in 4 colonne */
           margin-bottom: 0.3rem;
           line-height: 1;
           font-weight: 700;
@@ -542,10 +551,10 @@
       }
 
       /* Definizioni Icone (Visibili e più grandi) */
-      .stat-item:nth-child(1) .stat-label::after { content: "\f00a"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--text-secondary); opacity: 0.6; } /* Totale */
-      .stat-item:nth-child(2) .stat-label::after { content: "\f00b"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--secondary); } /* Da Vedere */
-      .stat-item:nth-child(3) .stat-label::after { content: "\f00c"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--success); } /* Visti */
-      .stat-item:nth-child(4) .stat-label::after { content: "\f2f9"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--warning); } /* Rewatch */
+      .stat-item:nth-child(1) .stat-label::after { content: "\f00a"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--text-secondary); opacity: 0.6; } /* Totale */
+      .stat-item:nth-child(2) .stat-label::after { content: "\f00b"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--secondary); } /* Da Vedere */
+      .stat-item:nth-child(3) .stat-label::after { content: "\f00c"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--success); } /* Visti */
+      .stat-item:nth-child(4) .stat-label::after { content: "\f2f9"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--warning); } /* Rewatch */
       .stat-item:nth-child(5) .stat-label::after { content: "\f017"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--text-secondary); opacity: 0.6; } /* Ore */
 
       /* --- GRIGLIA FILM --- */
@@ -2846,6 +2855,77 @@
                 renderMedia();
             }
         }
+    }
+
+    // --- BACK GESTURE IMPLEMENTATION FOR MOBILE MODALS ---
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+    let isSwipingBack = false;
+
+    function handleTouchStart(e) {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+        isSwipingBack = false;
+    }
+
+    function handleTouchMove(e) {
+        if (!touchStartX || !touchStartY) return;
+        
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+        
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        
+        // Check if this is a horizontal swipe to the right
+        if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 50) {
+            isSwipingBack = true;
+            e.preventDefault();
+        }
+    }
+
+    function handleTouchEnd(e) {
+        if (!touchStartX || !touchStartY) return;
+        
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        
+        // Check if it's a valid back gesture (swipe right with minimal vertical movement)
+        if (isSwipingBack && Math.abs(deltaX) > 100 && Math.abs(deltaY) < 100) {
+            const modal = e.currentTarget;
+            if (modal && modal.classList.contains('modal') && modal.style.display === 'flex') {
+                closeModal(modal);
+            }
+        }
+        
+        // Reset values
+        touchStartX = 0;
+        touchStartY = 0;
+        touchEndX = 0;
+        touchEndY = 0;
+        isSwipingBack = false;
+    }
+
+    // Add back gesture support to all modals
+    function setupBackGestureSupport() {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            // Skip modals that shouldn't be closed with back gesture
+            if (modal.id === 'confirmModal') return;
+            
+            modal.addEventListener('touchstart', handleTouchStart, { passive: false });
+            modal.addEventListener('touchmove', handleTouchMove, { passive: false });
+            modal.addEventListener('touchend', handleTouchEnd, { passive: false });
+        });
+    }
+
+    // Initialize back gesture support when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupBackGestureSupport);
+    } else {
+        setupBackGestureSupport();
     }
   </script>
 </body>
