@@ -499,9 +499,8 @@
         gap: 0.5rem;
         padding-bottom: 0;
         overflow: visible;
-        justify-items: center;
       }
-      
+
       .stat-item {
          width: auto;
          min-width: 0;
@@ -517,29 +516,31 @@
          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
        }
 
-       .stat-item:nth-child(4) {
-         grid-column: 2 / 3;
+       /* L'ultima stat (Ore) su una riga intera */
+       .stat-item:nth-child(5) {
+          grid-column: 1 / -1;
+          flex-direction: row;
+          gap: 1rem;
+          padding: 0.75rem;
        }
 
-       .stat-item:nth-child(5) {
-         grid-column: 1 / 2;
-       }
-      
-      .stat-value { 
+      .stat-value {
           font-size: 1.4rem; /* Numeri più grandi */
-          margin-bottom: 0.3rem; 
-          line-height: 1; 
-          font-weight: 700; 
+          margin-bottom: 0.3rem;
+          line-height: 1;
+          font-weight: 700;
           color: var(--text-color);
       }
 
+      .stat-item:nth-child(5) .stat-value { margin-bottom: 0; font-size: 1.2rem; }
+
       /* Nasconde il testo ma prepara il contenitore per l'icona */
-      .stat-label { 
+      .stat-label {
           font-size: 0; /* NASCONDE IL TESTO */
-          display: flex; 
+          display: flex;
           justify-content: center;
       }
-      
+
       /* Definizioni Icone (Visibili e più grandi) */
       .stat-item:nth-child(1) .stat-label::after { content: "\f00a"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--text-secondary); opacity: 0.6; } /* Totale */
       .stat-item:nth-child(2) .stat-label::after { content: "\f00b"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--secondary); } /* Da Vedere */
