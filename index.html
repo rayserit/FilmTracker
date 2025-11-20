@@ -1189,15 +1189,23 @@
 
     function updateAuthUI() {
       const userActionBtn = document.getElementById('mobileMenuUserActionBtn');
+      const userActionBtnIcon = userActionBtn ? userActionBtn.querySelector('i') : null;
+      const userActionBtnLabel = userActionBtn ? userActionBtn.querySelector('span') : null;
       if (currentUser) {
         elements.userInfo.style.display = "flex";
         elements.authToggle.parentElement.style.display = "none";
         elements.notificationBellContainer.style.display = 'block';
         document.querySelectorAll(".btn").forEach(btn => btn.disabled = false);
         if (userActionBtn) {
-          userActionBtn.textContent = 'Logout';
-          elements.mobileMenuUserActionBtn.style.color = 'var(--danger)';
-          elements.mobileMenuUserActionBtn.querySelector('i').style.color = 'var(--danger)';
+          if (userActionBtnLabel) {
+            userActionBtnLabel.textContent = 'Logout';
+          } else {
+            userActionBtn.textContent = 'Logout';
+          }
+          userActionBtn.style.color = 'var(--danger)';
+          if (userActionBtnIcon) {
+            userActionBtnIcon.style.color = 'var(--danger)';
+          }
         }
       } else {
         elements.userInfo.style.display = "none";
@@ -1206,9 +1214,15 @@
         document.querySelectorAll("#mediaManagementBtn, #shareBtn").forEach(btn => btn.disabled = true);
         document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(btn => btn.disabled = false);
         if (userActionBtn) {
-          userActionBtn.textContent = 'Login / Registrati';
-          elements.mobileMenuUserActionBtn.style.color = '';
-          elements.mobileMenuUserActionBtn.querySelector('i').style.color = '';
+          if (userActionBtnLabel) {
+            userActionBtnLabel.textContent = 'Login / Registrati';
+          } else {
+            userActionBtn.textContent = 'Login / Registrati';
+          }
+          userActionBtn.style.color = '';
+          if (userActionBtnIcon) {
+            userActionBtnIcon.style.color = '';
+          }
         }
       }
     }
