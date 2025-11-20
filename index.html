@@ -188,7 +188,7 @@
 
     .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-open { overflow: hidden; }
-    .modal-content { background: var(--card-bg); border-radius: 12px; padding: 1.5rem; width: 90%; max-width: 800px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .modal-content { background: var(--card-bg); border-radius: 12px; padding: 1.5rem; width: 90%; max-width: 800px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transform: translateY(0); transition: transform 0.3s ease-out; }
     
     input, select { padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); font-size: 1rem; box-sizing: border-box; margin: 0; height: 38px; transition: border-color 0.2s, box-shadow 0.2s; }
     input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2); }
@@ -349,6 +349,260 @@
     .film-card-small:hover img { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
     .film-card-small-title { font-size: 0.8rem; margin-top: 0.5rem; white-space: normal; text-align: center; }
 
+    /* START: Mobile Menu and Notifications Modals Styles */
+    #mobileMenuModal, #filterSortModal {
+      align-items: flex-end;
+      background: rgba(0,0,0,0.4);
+    }
+    #mobileMenuModal.visible .modal-content, #filterSortModal.visible .modal-content {
+        transform: translateY(0);
+    }
+    .mobile-menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .mobile-menu-list .btn {
+      width: 100%;
+      justify-content: flex-start;
+      background-color: var(--section-tint);
+      color: var(--text-color);
+    }
+    .mobile-menu-list .btn i {
+      width: 24px;
+      text-align: center;
+      color: var(--primary);
+    }
+
+    #mobileNotificationsModal {
+      align-items: flex-end; /* Position modal at bottom */
+      background: rgba(0,0,0,0.4);
+    }
+    #mobileNotificationsModal .modal-content {
+      width: 100%;
+      max-width: none;
+      height: 75vh;
+      border-radius: 16px 16px 0 0;
+      margin: 0;
+      box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+      transform: translateY(100%);
+      transition: transform 0.3s ease-out;
+    }
+    #mobileNotificationsModal.visible .modal-content {
+        transform: translateY(0);
+    }
+
+    .filter-modal-section { margin-bottom: 1rem; }
+    .filter-modal-section label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+    .filter-modal-section select { width: 100%; }
+    /* END: Mobile Menu and Notifications Modals Styles */
+
+    /* START: Bottom Navigation Bar Styles */
+    .bottom-nav {
+      display: none; /* Hidden by default, shown in media query */
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background-color: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      z-index: 999;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .bottom-nav-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-grow: 1;
+      height: 100%;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .bottom-nav-btn i {
+      font-size: 1.2rem;
+      margin-bottom: 0.2rem;
+    }
+    .bottom-nav-btn.active {
+      color: var(--primary);
+    }
+    .bottom-nav-btn:active {
+      transform: scale(0.95);
+    }
+    .bottom-nav-btn.add-btn {
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      margin: 0 10px;
+      box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
+      transform: translateY(-15px);
+      border: 4px solid var(--bg-color);
+    }
+    .bottom-nav-btn.add-btn i {
+      font-size: 1.4rem;
+      margin: 0;
+    }
+    .notification-badge-mobile {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background-color: var(--danger);
+      color: white;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px solid var(--card-bg);
+      transform: scale(0);
+      transition: transform 0.2s ease-out;
+    }
+    .notification-badge-mobile.visible {
+      transform: scale(1);
+    }
+    #mobileFilterBtn { display: none; } /* Hide mobile filter button on desktop */
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+      body {
+        padding: 0.5rem;
+        padding-bottom: 80px; /* Spazio per la bottom nav */
+        -webkit-text-size-adjust: 100%;
+      }
+
+      /* --- TOP BAR --- */
+      .top-bar { flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+      .top-bar-left { flex-direction: row; justify-content: space-between; width: 100%; }
+      .top-bar-left h1, .top-bar-left #topBarTitle { display: none; }
+      .top-bar-right { display: none; }
+      .search-box { width: 100%; max-width: none; height: 40px; }
+      .top-bar-left > .filter-select { display: none; }
+      #mobileFilterBtn { display: flex; align-items: center; justify-content: center; padding: 0.5rem; }
+
+      /* --- STATISTICHE: GRIGLIA 3 COLONNE (SOLO ICONE) --- */
+      .stats-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 3 colonne */
+        gap: 0.5rem;
+        padding-bottom: 0;
+        overflow: visible;
+      }
+      
+      .stat-item {
+        width: auto;
+        min-width: 0;
+        padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border-radius: 12px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+      
+      .stat-value { 
+          font-size: 1.4rem; /* Numeri più grandi */
+          margin-bottom: 0.3rem; 
+          line-height: 1; 
+          font-weight: 700; 
+          color: var(--text-color);
+      }
+
+      /* Nasconde il testo ma prepara il contenitore per l'icona */
+      .stat-label { 
+          font-size: 0; /* NASCONDE IL TESTO */
+          display: flex; 
+          justify-content: center;
+      }
+      
+      /* Definizioni Icone (Visibili e più grandi) */
+      .stat-item:nth-child(1) .stat-label::after { content: "\f00a"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--text-secondary); opacity: 0.6; } /* Totale */
+      .stat-item:nth-child(2) .stat-label::after { content: "\f00b"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--secondary); } /* Da Vedere */
+      .stat-item:nth-child(3) .stat-label::after { content: "\f00c"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--success); } /* Visti */
+      .stat-item:nth-child(4) .stat-label::after { content: "\f2f9"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--warning); } /* Rewatch */
+      .stat-item:nth-child(5) .stat-label::after { content: "\f017"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--text-secondary); opacity: 0.6; } /* Ore */
+
+      /* --- GRIGLIA FILM --- */
+      .media-section { padding: 0; background: transparent; margin-bottom: 1rem; }
+      .section-header { padding: 0 0.5rem 0.5rem 0.5rem; margin-bottom: 0.5rem; }
+      .media-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.75rem;
+        padding: 0 0.25rem;
+      }
+      .media-card { width: auto; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+      .media-title { font-size: 0.8rem; }
+      .media-meta, .media-ratings { display: none; }
+
+      /* --- MODALE DETTAGLI FILM (CENTRATO) --- */
+      #detailsModal .modal-content { padding: 0; width: 100%; height: 100vh; border-radius: 0; }
+      .details-header { 
+        flex-direction: column; 
+        align-items: center; 
+        margin-top: -90px; 
+        padding: 1rem; 
+        text-align: center; 
+      }
+      #detailsModalPoster { width: 130px; height: 195px; margin: 0 0 1rem 0; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+      .details-title-section { padding: 0; width: 100%; display: flex; flex-direction: column; align-items: center; }
+      
+      #detailsModalHeader-main { 
+          flex-direction: column; 
+          width: 100%; 
+          gap: 0.5rem; 
+          align-items: center;
+      }
+      
+      #detailsModalTitle { 
+          font-size: 1.75rem; 
+          text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
+          text-align: center; 
+          width: 100%;
+          line-height: 1.2;
+      }
+      
+      .details-ratings-container { 
+          justify-content: center; 
+          margin-bottom: 1rem; 
+          width: 100%;
+      }
+      
+      #detailsModalHeader-main > div:last-child {
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
+          width: 100%;
+          margin-top: 0.5rem;
+      }
+      #detailsModalHeader-main > div:last-child .btn {
+          flex: 0 1 auto;
+          padding: 0.6rem 1.2rem;
+      }
+      
+      #detailsModalMeta { justify-content: center; font-size: 0.8rem; opacity: 0.8; }
+      .details-body { padding: 0 1rem 2rem 1rem; }
+
+      /* --- BOTTOM NAV --- */
+      .bottom-nav { display: flex; height: 60px; background: var(--card-bg); border-top: 1px solid var(--border-color); }
+      .bottom-nav-btn.add-btn { transform: translateY(-15px); border: 4px solid var(--bg-color); width: 50px; height: 50px; }
+    }
+
   </style>
 </head>
 <body class="dark user-select-none">
@@ -373,6 +627,7 @@
         <a href="serietv_tracker.html" class="tracker-switch-btn" title="Vai a Serie TV Tracker"><i class="fas fa-tv"></i></a>
       </div>
       <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
+      <button id="mobileFilterBtn" class="btn btn-secondary"><i class="fas fa-filter"></i></button>
       <select id="categoryFilter" class="filter-select">
         <option value="all">Tutte le categorie</option>
         <option value="favorites">Solo Preferiti</option>
@@ -552,7 +807,89 @@
       </div>
     </div>
   </div>
+  
+  <!-- Mobile "More Options" Modal -->
+  <div class="modal" id="mobileMenuModal">
+      <div class="modal-content">
+          <h2 style="text-align: center; margin-top: 0;">Altre Opzioni</h2>
+          <div class="mobile-menu-list">
+              <button class="btn" id="mobileMenuUserActionBtn"><i class="fas fa-user"></i><span>Login / Registrati</span></button>
+              <button class="btn" id="mobileMenuShareBtn"><i class="fas fa-share-alt"></i>Condividi Libreria</button>
+              <button class="btn" id="mobileMenuExportBtn"><i class="fas fa-download"></i>Esporta Dati</button>
+              <button class="btn" id="mobileMenuImportBtn"><i class="fas fa-upload"></i>Importa Dati</button>
+              <button class="btn" id="mobileMenuThemeBtn"><i class="fas fa-moon"></i>Cambia Tema</button>
+              <button class="btn" id="mobileMenuResetBtn" style="color: var(--danger);"><i class="fas fa-undo" style="color: var(--danger);"></i>Resetta Tracker</button>
+          </div>
+          <div class="modal-footer" style="border: none; padding-bottom: 0;">
+            <button id="mobileMenuCloseBtn" class="btn btn-danger">Chiudi</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- Mobile Notifications Modal -->
+  <div class="modal" id="mobileNotificationsModal">
+      <div class="modal-content">
+          <div class="notification-header" style="text-align:center; position:relative;">
+              Notifiche Amici
+              <button class="modal-close-btn" id="mobileNotificationsCloseBtn" style="background:none; color:var(--text-color); top:0.5rem; right:0.5rem;"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="notification-list" id="notificationListMobile"></div>
+          <div class="notification-footer">
+              <button id="markAllReadMobileBtn" class="btn btn-primary btn-small"><i class="fas fa-check-double"></i> Segna tutte come lette</button>
+          </div>
+      </div>
+  </div>
+  
+  <!-- Mobile Filter & Sort Modal -->
+  <div class="modal" id="filterSortModal">
+    <div class="modal-content">
+        <h2 style="text-align: center; margin-top: 0;">Filtra e Ordina</h2>
+        <div class="filter-modal-section">
+            <label for="mobileCategoryFilter">Categoria</label>
+            <select id="mobileCategoryFilter"></select>
+        </div>
+        <div class="filter-modal-section">
+            <label for="mobileSortFilter">Ordina per</label>
+            <select id="mobileSortFilter">
+                <option value="saga-alpha" selected>Saga / Alfabetico</option>
+                <option value="alpha">Solo Alfabetico</option>
+                <option value="added">Ultimi aggiunti</option>
+                <option value="rating">Valutazione</option>
+                <option value="year">Anno di uscita</option>
+            </select>
+        </div>
+        <div class="modal-footer" style="border: none; padding-bottom: 0;">
+            <button id="applyFiltersBtn" class="btn btn-primary">Applica</button>
+        </div>
+    </div>
+  </div>
   <!-- MODALS END -->
+
+  <div id="notification" class="notification"><span id="notificationText"></span></div>
+  
+  <!-- Bottom Navigation Bar for Mobile -->
+  <div class="bottom-nav" id="bottomNav">
+      <button class="bottom-nav-btn active" id="bottomNavHome" title="Liste">
+          <i class="fas fa-list-ul"></i>
+          <span>Liste</span>
+      </button>
+      <button class="bottom-nav-btn" id="bottomNavSearch" title="Cerca">
+          <i class="fas fa-search"></i>
+          <span>Cerca</span>
+      </button>
+      <button class="bottom-nav-btn add-btn" id="bottomNavAdd" title="Aggiungi Film">
+          <i class="fas fa-plus"></i>
+      </button>
+      <button class="bottom-nav-btn" id="bottomNavNotifications" title="Notifiche">
+          <i class="fas fa-bell"></i>
+          <span class="notification-badge-mobile" id="notificationBadgeMobile">0</span>
+          <span>Notifiche</span>
+      </button>
+      <button class="bottom-nav-btn" id="bottomNavManage" title="Altro">
+          <i class="fas fa-ellipsis-h"></i>
+          <span>Altro</span>
+      </button>
+  </div>
 
   <script>
     const OMDb_API_KEY = "2526ef70";
@@ -627,7 +964,33 @@
         updateProgressModal: document.getElementById('updateProgressModal'),
         updateProgressBarFill: document.getElementById('updateProgressBarFill'),
         updateProgressText: document.getElementById('updateProgressText'),
-        updateProgressTitle: document.getElementById('updateProgressTitle')
+        updateProgressTitle: document.getElementById('updateProgressTitle'),
+        // Bottom Nav Bar Elements
+        bottomNavAdd: document.getElementById('bottomNavAdd'),
+        bottomNavManage: document.getElementById('bottomNavManage'),
+        bottomNavSearch: document.getElementById('bottomNavSearch'),
+        bottomNavNotifications: document.getElementById('bottomNavNotifications'),
+        bottomNavHome: document.getElementById('bottomNavHome'),
+        notificationBadgeMobile: document.getElementById('notificationBadgeMobile'),
+        // Mobile Modals and Buttons
+        mobileMenuModal: document.getElementById('mobileMenuModal'),
+        mobileMenuCloseBtn: document.getElementById('mobileMenuCloseBtn'),
+        mobileMenuUserActionBtn: document.getElementById('mobileMenuUserActionBtn'),
+        mobileMenuShareBtn: document.getElementById('mobileMenuShareBtn'),
+        mobileMenuExportBtn: document.getElementById('mobileMenuExportBtn'),
+        mobileMenuImportBtn: document.getElementById('mobileMenuImportBtn'),
+        mobileMenuThemeBtn: document.getElementById('mobileMenuThemeBtn'),
+        mobileMenuResetBtn: document.getElementById('mobileMenuResetBtn'),
+        mobileNotificationsModal: document.getElementById('mobileNotificationsModal'),
+        mobileNotificationsCloseBtn: document.getElementById('mobileNotificationsCloseBtn'),
+        notificationListMobile: document.getElementById('notificationListMobile'),
+        markAllReadMobileBtn: document.getElementById('markAllReadMobileBtn'),
+        // Filter Modal
+        filterSortModal: document.getElementById('filterSortModal'),
+        mobileFilterBtn: document.getElementById('mobileFilterBtn'),
+        mobileCategoryFilter: document.getElementById('mobileCategoryFilter'),
+        mobileSortFilter: document.getElementById('mobileSortFilter'),
+        applyFiltersBtn: document.getElementById('applyFiltersBtn')
     };
     
     const defaultMediaProps = { 
@@ -825,17 +1188,28 @@
     }
 
     function updateAuthUI() {
+      const userActionBtn = document.getElementById('mobileMenuUserActionBtn');
       if (currentUser) {
         elements.userInfo.style.display = "flex";
         elements.authToggle.parentElement.style.display = "none";
         elements.notificationBellContainer.style.display = 'block';
         document.querySelectorAll(".btn").forEach(btn => btn.disabled = false);
+        if (userActionBtn) {
+          userActionBtn.textContent = 'Logout';
+          elements.mobileMenuUserActionBtn.style.color = 'var(--danger)';
+          elements.mobileMenuUserActionBtn.querySelector('i').style.color = 'var(--danger)';
+        }
       } else {
         elements.userInfo.style.display = "none";
         elements.authToggle.parentElement.style.display = "block";
         elements.notificationBellContainer.style.display = 'none';
         document.querySelectorAll("#mediaManagementBtn, #shareBtn").forEach(btn => btn.disabled = true);
         document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(btn => btn.disabled = false);
+        if (userActionBtn) {
+          userActionBtn.textContent = 'Login / Registrati';
+          elements.mobileMenuUserActionBtn.style.color = '';
+          elements.mobileMenuUserActionBtn.querySelector('i').style.color = '';
+        }
       }
     }
 
@@ -908,6 +1282,8 @@
       const viewId = new URLSearchParams(window.location.search).get("view");
       if (!viewId) return false;
       isViewMode = true;
+      document.body.style.paddingBottom = '0';
+      document.getElementById('bottomNav').style.display = 'none';
       document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, .auth-container, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
       elements.viewModeBanner.style.display = "flex";
       db.ref(`users/${viewId}/mediaTracker`).on("value", snapshot => {
@@ -1250,6 +1626,8 @@
       const current = elements.categoryFilter.value;
       elements.categoryFilter.innerHTML = `<option value="all">Tutte le categorie</option><option value="favorites">Solo Preferiti</option>${categories.map(cat => `<option value="${cat}">${getCategoryName(cat)}</option>`).join("")}`;
       elements.categoryFilter.value = current;
+      elements.mobileCategoryFilter.innerHTML = elements.categoryFilter.innerHTML;
+      elements.mobileCategoryFilter.value = current;
     }
 
     function populateAddMediaCategorySelect() {
@@ -1538,6 +1916,7 @@
 
     function closeModal(modal) {
       modal.style.display = "none";
+      modal.classList.remove('visible');
       if (!document.querySelector('.modal[style*="display: flex"]')) {
           document.body.classList.remove("modal-open");
       }
@@ -1801,9 +2180,11 @@
         const count = notifications.length;
         elements.notificationBadge.textContent = count;
         elements.notificationBadge.classList.toggle('visible', count > 0);
-        
+        elements.notificationBadgeMobile.textContent = count;
+        elements.notificationBadgeMobile.classList.toggle('visible', count > 0);
+
         elements.notificationDropdown.innerHTML = '';
-        
+
         const header = document.createElement('div'); header.className = 'notification-header'; header.textContent = 'Notifiche Amici';
         const list = document.createElement('div'); list.className = 'notification-list';
 
@@ -1817,12 +2198,12 @@
                 item.innerHTML = `
                     <i class="fas ${getActivityIcon(n.activity.type)} ${isTV ? 'tv-notification' : 'film-notification'}"></i>
                     <span class="notification-item-text">${getActivityText(n.friendEmail, n.activity)}</span>`;
-                
+
                 item.addEventListener('click', () => {
                     const friendId = item.dataset.friendId;
-                    if (friendId) { 
+                    if (friendId) {
                         const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
-                        const url = isTV 
+                        const url = isTV
                             ? `${baseUrl}/serietv_tracker.html?view=${friendId}`
                             : `${baseUrl}/index.html?view=${friendId}`;
                        window.open(url, '_blank');
@@ -1830,14 +2211,14 @@
                 });
                 list.appendChild(item);
             });
-            
+
             const footer = document.createElement('div'); footer.className = 'notification-footer';
             const markAllBtn = document.createElement('button');
             markAllBtn.className = 'btn btn-primary btn-small';
             markAllBtn.innerHTML = '<i class="fas fa-check-double"></i> Segna tutte come lette';
             markAllBtn.addEventListener('click', markAllNotificationsAsRead);
             footer.appendChild(markAllBtn);
-            
+
             elements.notificationDropdown.appendChild(header);
             elements.notificationDropdown.appendChild(list);
             elements.notificationDropdown.appendChild(footer);
@@ -1847,6 +2228,36 @@
             list.appendChild(emptyState);
             elements.notificationDropdown.appendChild(header);
             elements.notificationDropdown.appendChild(list);
+        }
+
+        // Update mobile notification list as well
+        elements.notificationListMobile.innerHTML = '';
+        if (count > 0) {
+            notifications.forEach(n => {
+                if (!n.activity) return;
+                const item = document.createElement('div');
+                item.className = 'notification-item';
+                item.dataset.friendId = n.friendId;
+                const isTV = n.activity.type.includes('show') || n.activity.type.includes('season');
+                item.innerHTML = `
+                    <i class="fas ${getActivityIcon(n.activity.type)} ${isTV ? 'tv-notification' : 'film-notification'}"></i>
+                    <span class="notification-item-text">${getActivityText(n.friendEmail, n.activity)}</span>`;
+
+                item.addEventListener('click', () => {
+                    const friendId = item.dataset.friendId;
+                    if (friendId) {
+                        const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+                        const url = isTV
+                            ? `${baseUrl}/serietv_tracker.html?view=${friendId}`
+                            : `${baseUrl}/index.html?view=${friendId}`;
+                       window.open(url, '_blank');
+                    }
+                });
+                elements.notificationListMobile.appendChild(item);
+            });
+        } else {
+            const emptyState = document.createElement('div'); emptyState.className = 'no-notifications'; emptyState.textContent = 'Nessuna nuova notifica';
+            elements.notificationListMobile.appendChild(emptyState);
         }
     }
     
@@ -2253,6 +2664,40 @@
           const count = parseInt(elements.rewatchCountInput.value);
           updateRewatchModalButtons(count);
       });
+      
+      // --- Bottom Nav Bar Listeners ---
+      elements.bottomNavHome.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      elements.bottomNavSearch.addEventListener('click', () => { elements.searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => elements.searchInput.focus(), 300); });
+      elements.bottomNavAdd.addEventListener('click', () => { elements.mediaManagementBtn.click(); document.querySelector('.tab-btn[data-tab="add-media"]').click(); });
+      elements.bottomNavManage.addEventListener('click', () => { elements.mobileMenuModal.style.display = 'flex'; requestAnimationFrame(() => elements.mobileMenuModal.classList.add('visible')); });
+      elements.bottomNavNotifications.addEventListener('click', () => { elements.mobileNotificationsModal.style.display = 'flex'; requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
+      
+      // --- Mobile Modals Listeners ---
+      elements.mobileMenuCloseBtn.addEventListener('click', () => closeModal(elements.mobileMenuModal));
+      elements.mobileNotificationsCloseBtn.addEventListener('click', () => closeModal(elements.mobileNotificationsModal));
+      elements.markAllReadMobileBtn.addEventListener('click', markAllNotificationsAsRead);
+      elements.mobileMenuUserActionBtn.addEventListener('click', () => { (currentUser) ? elements.logoutBtn.click() : elements.authToggle.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuShareBtn.addEventListener('click', () => { elements.shareBtn.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuExportBtn.addEventListener('click', () => { elements.exportBtn.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuImportBtn.addEventListener('click', () => { elements.importBtn.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuThemeBtn.addEventListener('click', () => { elements.themeToggle.click(); });
+      elements.mobileMenuResetBtn.addEventListener('click', () => { elements.resetBtn.click(); closeModal(elements.mobileMenuModal); });
+
+      // --- Filter Modal Listeners ---
+      elements.mobileFilterBtn.addEventListener('click', () => {
+          elements.mobileCategoryFilter.value = elements.categoryFilter.value;
+          elements.mobileSortFilter.value = elements.sortFilter.value;
+          elements.filterSortModal.style.display = 'flex';
+          requestAnimationFrame(() => elements.filterSortModal.classList.add('visible'));
+      });
+      elements.applyFiltersBtn.addEventListener('click', () => {
+          elements.categoryFilter.value = elements.mobileCategoryFilter.value;
+          elements.sortFilter.value = elements.mobileSortFilter.value;
+          localStorage.setItem("mediaTrackerSortOrder", elements.sortFilter.value);
+          renderMedia();
+          closeModal(elements.filterSortModal);
+      });
+      
       document.querySelectorAll(".num-spinner-btn").forEach(btn => {
         btn.addEventListener("click", e => {
           const target = document.getElementById(e.currentTarget.dataset.target);
