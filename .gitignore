@@ -1,0 +1,15 @@
+# Logs
+*.log
+*.log.*
+server.log
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+
+# Python cache
+__pycache__/

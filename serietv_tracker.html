@@ -2695,16 +2695,24 @@
     }
     
     function updateAuthUI() {
-        const userActionBtn = elements.mobileMenuUserActionBtn.querySelector('span');
+        const userActionBtn = elements.mobileMenuUserActionBtn;
+        const userActionBtnIcon = userActionBtn ? userActionBtn.querySelector('i') : null;
+        const userActionBtnLabel = userActionBtn ? userActionBtn.querySelector('span') : null;
         if(currentUser) {
             elements.userInfo.style.display = "flex";
             elements.authToggle.parentElement.style.display = "none";
             elements.notificationBellContainer.style.display = 'block';
             elements.updateSectionDesktop.style.display = 'block';
             if (userActionBtn) {
-              userActionBtn.textContent = 'Logout';
-              elements.mobileMenuUserActionBtn.style.color = 'var(--danger)';
-              elements.mobileMenuUserActionBtn.querySelector('i').style.color = 'var(--danger)';
+              if (userActionBtnLabel) {
+                userActionBtnLabel.textContent = 'Logout';
+              } else {
+                userActionBtn.textContent = 'Logout';
+              }
+              userActionBtn.style.color = 'var(--danger)';
+              if (userActionBtnIcon) {
+                userActionBtnIcon.style.color = 'var(--danger)';
+              }
             }
         } else {
             elements.userInfo.style.display = "none";
@@ -2712,9 +2720,15 @@
             elements.notificationBellContainer.style.display = 'none';
             elements.updateSectionDesktop.style.display = 'none';
             if (userActionBtn) {
-              userActionBtn.textContent = 'Login / Registrati';
-              elements.mobileMenuUserActionBtn.style.color = '';
-              elements.mobileMenuUserActionBtn.querySelector('i').style.color = '';
+              if (userActionBtnLabel) {
+                userActionBtnLabel.textContent = 'Login / Registrati';
+              } else {
+                userActionBtn.textContent = 'Login / Registrati';
+              }
+              userActionBtn.style.color = '';
+              if (userActionBtnIcon) {
+                userActionBtnIcon.style.color = '';
+              }
             }
         }
     }
