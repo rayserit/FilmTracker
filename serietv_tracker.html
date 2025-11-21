@@ -326,47 +326,88 @@
     .episode-meta-row { display: flex; justify-content: space-between; align-items: center; }
     .episode-number { font-weight: 700; font-size: 0.85rem; color: var(--text-secondary); }
     
-    /* New Meta Right Container (Rewatch + Date) */
-    .episode-meta-right { display: flex; align-items: center; gap: 8px; }
+    /* --- CSS AGGIORNATO PER LISTA EPISODI --- */
     
-    /* Styling for Badges */
-    .episode-meta-badge {
+    /* Contenitore sinistra: Numero Episodio + Data */
+    .episode-meta-left { 
+        display: flex; 
+        align-items: center; 
+        gap: 8px; 
+        flex-wrap: wrap;
+    }
+
+    /* Contenitore destra: Solo Rewatch */
+    .episode-meta-right { 
+        display: flex; 
+        align-items: center; 
+        gap: 8px; 
+    }
+
+    /* Badge Data (Base) */
+    .episode-date-badge {
+        font-size: 0.7rem;
+        font-weight: 500;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 2px 6px;
+        gap: 3px;
+        color: var(--text-secondary);
+        /* Nessun bordo per la data normale per pulizia, o aggiungi border: 1px solid var(--border-color); */
+    }
+    .episode-date-badge i { font-size: 0.65rem; }
+
+    /* Badge Countdown (Oggi, Domani, -3gg) */
+    .episode-countdown-badge {
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        margin-left: 2px;
+        display: inline-block;
+    }
+    /* Colori Countdown */
+    .episode-countdown-badge.today {
+        background: rgba(42, 157, 143, 0.15);
+        color: var(--success);
+        border: 1px solid var(--success);
+    }
+    .episode-countdown-badge.future {
+        background: rgba(244, 162, 97, 0.15);
+        color: var(--warning);
+        border: 1px solid var(--warning);
+    }
+
+    /* Badge Rewatch (Arancione) */
+    .episode-rewatch-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 1px 5px;
         border-radius: 4px;
         font-size: 0.7rem;
         font-weight: 500;
-        border: 1px solid var(--border-color);
-        background: rgba(128,128,128,0.1);
-        color: var(--text-secondary);
-        white-space: nowrap;
-    }
-    
-    /* Rewatch Specifics */
-    .episode-rewatch-badge {
-        cursor: pointer;
-        border-color: var(--warning);
+        border: 1px solid var(--warning); /* Bordo Arancione */
         background: rgba(244, 162, 97, 0.1);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
     }
     .episode-rewatch-badge .count { font-weight: 700; color: var(--warning); }
-    .episode-rewatch-badge i { color: var(--warning); }
-    .episode-rewatch-badge:hover { background: rgba(244, 162, 97, 0.2); }
+    .episode-rewatch-badge i { color: var(--warning); font-size: 0.7rem; }
+    .episode-rewatch-badge:hover { background: rgba(244, 162, 97, 0.25); }
 
-    /* Runtime Specifics */
-    .episode-runtime-badge i { font-size: 0.65rem; }
-    
-    .episode-air-date {
-        font-size: 0.75rem;
-        color: var(--text-secondary);
-        background: transparent; /* Clean background */
-        padding: 1px 6px;
-        border-radius: 4px;
-        white-space: nowrap;
-        border: 1px solid var(--warning); /* Thin Orange Border */
-        font-weight: 500;
+    /* Runtime (Accanto al titolo) */
+    .episode-runtime-badge { 
+        font-size: 0.7rem; 
+        color: var(--text-secondary); 
+        font-weight: 500; 
+        display: inline-flex; 
+        align-items: center; 
+        gap: 3px; 
+        margin-left: 6px;
+        opacity: 0.8;
     }
+    .episode-runtime-badge i { font-size: 0.65rem; }
     
     .episode-title { font-weight: 700; font-size: 1.1rem; line-height: 1.2; transition: color 0.2s; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .episode-overview { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; transition: filter 0.2s; }
@@ -1977,8 +2018,29 @@
     function formatAirDate(airDateString) {
         if (!airDateString) return '';
         const airDate = new Date(airDateString + 'T00:00:00Z');
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
+
+        // Calcolo differenza giorni
+        const diffTime = airDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
         const options = { day: 'numeric', month: 'short', year: '2-digit' };
-        return airDate.toLocaleDateString('it-IT', options);
+        const dateStr = airDate.toLocaleDateString('it-IT', options);
+
+        // HTML Base della data
+        const baseDateHTML = `<span class="episode-date-badge"><i class="fas fa-calendar-alt"></i> ${dateStr}</span>`;
+
+        // Aggiunta Badge Countdown
+        if (diffDays === 0) {
+            return `${baseDateHTML} <span class="episode-countdown-badge today">Oggi</span>`;
+        } else if (diffDays === 1) {
+            return `${baseDateHTML} <span class="episode-countdown-badge future">Domani</span>`;
+        } else if (diffDays > 1 && diffDays <= 30) {
+            return `${baseDateHTML} <span class="episode-countdown-badge future">-${diffDays}gg</span>`;
+        } else {
+            return baseDateHTML;
+        }
     }
 
 
@@ -2026,18 +2088,25 @@
                 </div>
                 <div class="episode-details">
                     <div class="episode-meta-row">
-                        <span class="episode-number">${seasonNumber > 0 ? `S${seasonNumber}` : 'SP'} E${ep.episode_number}</span>
+                        <!-- SINISTRA: Numero + Data + Countdown -->
+                        <div class="episode-meta-left">
+                            <span class="episode-number">${seasonNumber > 0 ? `S${seasonNumber}` : 'SP'} E${ep.episode_number}</span>
+                            ${formatAirDate(ep.air_date)}
+                        </div>
+
+                        <!-- DESTRA: Solo Rewatch (se presente) -->
                         <div class="episode-meta-right">
                              <div class="episode-rewatch-badge" onclick="event.stopPropagation(); openRewatchModal({showId: '${show.id}', seasonNumber: '${seasonNumber}', episodeNumber: '${ep.episode_number}'})">
                                 <i class="fas fa-sync-alt"></i> 
                                 ${rewatchCount > 0 ? `<span class="count">${rewatchCount}</span>` : ''}
                              </div>
-                             ${ep.air_date ? `<span class="episode-air-date">${formatAirDate(ep.air_date)}</span>` : ''}
                         </div>
                     </div>
+                    
+                    <!-- TITOLO + DURATA -->
                     <div class="episode-title ${titleSpoilerClass}">
                         ${ep.name || `Episodio ${ep.episode_number}`}
-                        ${ep.runtime ? `<span class="episode-meta-badge episode-runtime-badge"><i class="fas fa-clock"></i> ${ep.runtime}m</span>` : ''}
+                        ${ep.runtime ? `<span class="episode-runtime-badge"><i class="fas fa-clock"></i> ${ep.runtime}m</span>` : ''}
                     </div>
                     <p class="episode-overview">${ep.overview || 'Nessuna trama disponibile.'}</p>
                 </div>
@@ -3151,13 +3220,15 @@
             if (!dup.rewatches) dup.rewatches = {};
 
             if (episodeNumber) {
+                // Rewatch Episodio Singolo
                 const key = `${seasonNumber}-${episodeNumber}`;
                 if (count > 0) {
                     dup.rewatches[key] = count;
-                    if (!dup.progress[key]) dup.progress[key] = true;
+                    if (!dup.progress[key]) dup.progress[key] = true; // Se rivedo, è visto
                 }
                 else delete dup.rewatches[key];
             } else {
+                // Rewatch Intera Stagione
                 const season = dup.seasons[seasonNumber];
                 if (season && season.episodes) {
                     season.episodes.forEach(ep => {
@@ -3176,20 +3247,18 @@
         await saveData();
         updateStats();
         
-        const seasonBlock = document.getElementById(`season-block-${seasonNumber}`);
-        if(seasonBlock && elements.episodesModal.style.display === 'flex') {
-            const isExpanded = seasonBlock.querySelector('.season-episodes').style.maxHeight && seasonBlock.querySelector('.season-episodes').style.maxHeight !== '0px';
-            const newSeasonHTML = createSeasonBlockHTML(show, { ...show.seasons[seasonNumber], season_number: seasonNumber });
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = newSeasonHTML;
-            const newBlock = tempDiv.firstChild;
-            seasonBlock.parentNode.replaceChild(newBlock, seasonBlock);
-            setupSeasonEventListeners(seasonNumber);
-            
-            if (isExpanded) {
-                const episodesContainer = newBlock.querySelector('.season-episodes');
-                if(episodesContainer) episodesContainer.style.maxHeight = episodesContainer.scrollHeight + 'px';
-            }
+        // --- FIX REFRESH VISIVO ---
+        // Invece di manipolare il DOM manualmente (che causava la scomparsa), 
+        // aggiorniamo i dati in cache e ridisegniamo la lista.
+        currentShowCache.show = show; // Aggiorna cache locale
+        
+        // Ridisegna tutto il modale episodi
+        populateEpisodesModal();
+        
+        // Riapri la stagione che stavi modificando (perché populate le chiude)
+        const seasonContainer = document.getElementById(`season-episodes-${seasonNumber}`);
+        if(seasonContainer) {
+            seasonContainer.style.maxHeight = seasonContainer.scrollHeight + 'px';
         }
 
         closeModal(elements.rewatchModal);
