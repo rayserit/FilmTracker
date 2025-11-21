@@ -1114,10 +1114,9 @@
       } else {
           elements.saveMediaBtn.style.display = 'none';
       }
-      
-      elements.mediaManagementModal.style.display = 'flex';
-      document.body.classList.add('modal-open');
-    }
+
+      openModal(elements.mediaManagementModal);
+      }
 
     function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
     function getPopcornState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 60 ? "positive" : "negative"; }
@@ -1700,8 +1699,7 @@
     function showConfirmModal(title, body, onConfirm) {
       elements.confirmModalTitle.textContent = title;
       elements.confirmModalBody.textContent = body;
-      elements.confirmModal.style.display = "flex";
-      document.body.classList.add('modal-open');
+      openModal(elements.confirmModal);
       const confirmHandler = () => { onConfirm(); closeModal(elements.confirmModal); cleanup(); };
       const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); };
       const cleanup = () => {
@@ -1900,9 +1898,8 @@
         
         updateRewatchModalButtons(currentCount);
 
-        elements.rewatchModal.style.display = 'flex';
-        document.body.classList.add('modal-open');
-    }
+        openModal(elements.rewatchModal);
+        }
 
     function updateRewatchModalButtons(count) {
         document.querySelectorAll('.quick-rewatch-btn').forEach(btn => {
@@ -2344,10 +2341,9 @@
             return;
         }
 
-        elements.detailsModal.style.display = 'flex';
-        document.body.classList.add('modal-open');
+        openModal(elements.detailsModal);
         elements.detailsModalContent.innerHTML = '<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>';
-        
+
         // CORREZIONE: Richiede sempre i dati in italiano per avere la descrizione corretta
         const details = await fetchTMDbDetails(media.imdbID, 'it-IT');
 
@@ -2474,10 +2470,9 @@
 
 
     async function showActorModal(personId) {
-        elements.actorModal.style.display = 'flex';
-        document.body.classList.add('modal-open');
+        openModal(elements.actorModal);
         elements.actorModalContent.innerHTML = '<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>';
-        
+
         const actorDetails = await fetchTMDbActorDetails(personId);
         
         if(actorDetails) {
@@ -2710,8 +2705,8 @@
       elements.bottomNavHome.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
       elements.bottomNavSearch.addEventListener('click', () => { elements.searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => elements.searchInput.focus(), 300); });
       elements.bottomNavAdd.addEventListener('click', () => { elements.mediaManagementBtn.click(); document.querySelector('.tab-btn[data-tab="add-media"]').click(); });
-      elements.bottomNavManage.addEventListener('click', () => { elements.mobileMenuModal.style.display = 'flex'; requestAnimationFrame(() => elements.mobileMenuModal.classList.add('visible')); });
-      elements.bottomNavNotifications.addEventListener('click', () => { elements.mobileNotificationsModal.style.display = 'flex'; requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
+      elements.bottomNavManage.addEventListener('click', () => { openModal(elements.mobileMenuModal); requestAnimationFrame(() => elements.mobileMenuModal.classList.add('visible')); });
+      elements.bottomNavNotifications.addEventListener('click', () => { openModal(elements.mobileNotificationsModal); requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
       
       // --- Mobile Modals Listeners ---
       elements.mobileMenuCloseBtn.addEventListener('click', () => closeModal(elements.mobileMenuModal));
@@ -2728,7 +2723,7 @@
       elements.mobileFilterBtn.addEventListener('click', () => {
           elements.mobileCategoryFilter.value = elements.categoryFilter.value;
           elements.mobileSortFilter.value = elements.sortFilter.value;
-          elements.filterSortModal.style.display = 'flex';
+          openModal(elements.filterSortModal);
           requestAnimationFrame(() => elements.filterSortModal.classList.add('visible'));
       });
       elements.applyFiltersBtn.addEventListener('click', () => {
@@ -2777,7 +2772,7 @@
         if (!media || !media.imdbID) return showNotification("Nessun IMDb ID trovato per questo film.", "warning");
         elements.posterModal.dataset.mediaId = id;
         elements.posterGrid.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><i class="fas fa-spinner fa-2x loading-spinner"></i></div>';
-        elements.posterModal.style.display = "flex";
+        openModal(elements.posterModal);
 
         const currentPosterUrl = media.poster;
 
@@ -2864,6 +2859,59 @@
             }
         }
     }
+
+    /* --- GESTIONE MODALI E BACK GESTURE (HISTORY API) --- */
+        
+    // 1. Nuova funzione unificata per aprire i modali
+    function openModal(modal) {
+        if (!modal) return;
+        
+        // Se il modale è già aperto, non fare nulla per evitare doppi stati
+        if (modal.style.display === 'flex') return;
+
+        modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+        
+        // Aggiungiamo uno stato alla cronologia del browser.
+        // Questo fa sì che il tasto "Indietro" o lo swipe del telefono non chiudano la pagina,
+        // ma vengano intercettati dall'evento 'popstate'.
+        history.pushState({ modalId: modal.id }, '', window.location.href);
+    }
+
+    // 2. Nuova funzione unificata per chiudere i modali
+    function closeModal(modal) {
+        if (modal && modal.style.display === 'flex') {
+            // Invece di nasconderlo direttamente, diciamo al browser di "tornare indietro".
+            // Questo attiverà l'evento 'popstate' (vedi punto 3), che chiuderà visivamente il modale.
+            // Questo serve a mantenere sincronizzata la cronologia se l'utente usa il tasto "X".
+            history.back();
+        }
+    }
+
+    // 3. Gestore dell'evento "Torna Indietro" (Swipe o Tasto fisico)
+    window.addEventListener('popstate', (event) => {
+        // Troviamo tutti i modali attualmente visibili
+        const visibleModals = Array.from(document.querySelectorAll('.modal'))
+            .filter(m => m.style.display === 'flex');
+        
+        if (visibleModals.length > 0) {
+            // Ordiniamo per z-index decrescente per chiudere prima quello più in alto (es. Actor sopra Details)
+            visibleModals.sort((a, b) => {
+                const zA = parseInt(window.getComputedStyle(a).zIndex) || 0;
+                const zB = parseInt(window.getComputedStyle(b).zIndex) || 0;
+                return zB - zA;
+            });
+
+            // Chiudiamo "fisicamente" il modale più in alto
+            const topModal = visibleModals[0];
+            topModal.style.display = 'none';
+
+            // Se non ci sono altri modali sotto, riattiviamo lo scroll del body
+            if (visibleModals.length === 1) {
+                document.body.classList.remove('modal-open');
+            }
+        }
+    });
 
     // --- BACK GESTURE IMPLEMENTATION FOR MOBILE MODALS ---
     let touchStartX = 0;

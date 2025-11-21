@@ -1760,8 +1760,7 @@
         if (!show) return;
         
         if(!force){
-             elements.detailsModal.style.display = 'flex'; 
-             document.body.classList.add('modal-open');
+             openModal(elements.detailsModal);
              elements.detailsModalContent.innerHTML = `<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>`;
         }
         
@@ -1915,9 +1914,9 @@
 
     function showEpisodesModal(show) { 
         currentShowCache = { show };
-        populateEpisodesModal(); 
-        elements.episodesModal.style.display = 'flex'; 
-    }
+        populateEpisodesModal();
+        openModal(elements.episodesModal);
+        }
     
     function populateEpisodesModal() {
         const { show } = currentShowCache;
@@ -2094,8 +2093,7 @@
     }
     
     async function showActorModal(personId) {
-        elements.actorModal.style.display = 'flex';
-        document.body.classList.add('modal-open');
+        openModal(elements.actorModal);
         elements.actorModalContent.innerHTML = '<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>';
         const actorDetails = await fetchTMDbActorDetailsWithFallback(personId);
         if(actorDetails) {
@@ -2443,7 +2441,7 @@
         if (!show || (!show.imdbID && !show.tmdbID)) return showNotification("Nessun ID valido (TMDb/IMDb) trovato per questa serie.", "warning");
         elements.posterModal.dataset.mediaId = id;
         elements.posterGrid.innerHTML = `<div style="text-align:center;"><i class="fas fa-spinner loading-spinner"></i></div>`;
-        elements.posterModal.style.display = "flex";
+        openModal(elements.posterModal);
 
         const posters = await fetchPosters(show);
         if (posters.length === 0) {
@@ -2658,7 +2656,7 @@
       }
     }
     function showNotification(text, type = "success") { elements.notificationText.textContent = text; elements.notification.className = `notification ${type}`; elements.notification.style.display = "block"; setTimeout(() => elements.notification.style.display = "none", 3000); }
-    function showConfirmModal(title, body, onConfirm) { elements.confirmModalTitle.textContent = title; elements.confirmModalBody.textContent = body; elements.confirmModal.style.display = "flex"; const confirmHandler = () => { onConfirm(); closeModal(elements.confirmModal); cleanup(); }; const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); }; const cleanup = () => { elements.confirmModalConfirm.removeEventListener("click", confirmHandler); elements.confirmModalCancel.removeEventListener("click", cancelHandler); }; elements.confirmModalConfirm.addEventListener("click", confirmHandler); elements.confirmModalCancel.addEventListener("click", cancelHandler); }
+    function showConfirmModal(title, body, onConfirm) { elements.confirmModalTitle.textContent = title; elements.confirmModalBody.textContent = body; openModal(elements.confirmModal); const confirmHandler = () => { onConfirm(); closeModal(elements.confirmModal); cleanup(); }; const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); }; const cleanup = () => { elements.confirmModalConfirm.removeEventListener("click", confirmHandler); elements.confirmModalCancel.removeEventListener("click", cancelHandler); }; elements.confirmModalConfirm.addEventListener("click", confirmHandler); elements.confirmModalCancel.addEventListener("click", cancelHandler); }
     function setupLazyLoading() { if (lazyLoadObserver) lazyLoadObserver.disconnect(); lazyLoadObserver = new IntersectionObserver((entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { const img = entry.target; img.src = img.dataset.src; img.classList.remove("lazy"); observer.unobserve(img); } }); }, { rootMargin: "200px" }); document.querySelectorAll(".lazy").forEach(img => lazyLoadObserver.observe(img)); }
     function loadSortOrder() { elements.sortFilter.value = localStorage.getItem("tvShowSortOrder") || "added"; }
     function loadTheme() { const theme = localStorage.getItem("theme") || "dark"; document.body.classList.toggle("dark", theme === "dark"); elements.themeToggle.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>`; elements.mobileMenuThemeBtn.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>Cambia Tema`; }
@@ -2774,7 +2772,7 @@
             }
             
             console.log(`Avvio aggiornamento per ${showsToUpdate.length} serie...`);
-            elements.updateProgressModal.style.display = 'flex';
+            openModal(elements.updateProgressModal);
             elements.updateProgressTitle.textContent = force ? "Aggiornamento Manuale" : "Aggiornamento Giornaliero";
             let allChanges = [];
 
@@ -2799,7 +2797,7 @@
 
             if (allChanges.length > 0) {
                 elements.updateSummaryList.innerHTML = allChanges.map(change => `<li>${change}</li>`).join('');
-                elements.updateSummaryModal.style.display = 'flex';
+                openModal(elements.updateSummaryModal);
             } else if (force) {
                 showNotification("Nessun aggiornamento trovato.", "success");
             }
@@ -3138,9 +3136,8 @@
         elements.rewatchCountInput.value = currentCount;
         updateRewatchModalButtons(currentCount);
 
-        elements.rewatchModal.style.display = 'flex';
-        document.body.classList.add('modal-open');
-    }
+        openModal(elements.rewatchModal);
+        }
 
     async function setRewatchCount(count) {
         const { showId, seasonNumber, episodeNumber } = currentRewatchContext;
@@ -3216,7 +3213,7 @@
     }
 
     function setupEventListeners() {
-      elements.mediaManagementBtn.addEventListener("click", () => { elements.mediaManagementModal.style.display = 'flex'; elements.mediaTitle.value = ''; elements.tmdbResults.innerHTML = ''; currentTMDbSelection = null; renderCategoriesList(); renderFriendsList(); populateAddMediaCategorySelect();});
+      elements.mediaManagementBtn.addEventListener("click", () => { openModal(elements.mediaManagementModal); elements.mediaTitle.value = ''; elements.tmdbResults.innerHTML = ''; currentTMDbSelection = null; renderCategoriesList(); renderFriendsList(); populateAddMediaCategorySelect();});
       document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active')); btn.classList.add('active'); document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active'); elements.addShowBtn.style.display = btn.dataset.tab === 'add-media' ? 'inline-flex' : 'none'; }));
       elements.closeManagementModal.addEventListener("click", () => closeModal(elements.mediaManagementModal));
       elements.addShowBtn.addEventListener('click', () => { if (!currentTMDbSelection) { showNotification("Cerca e seleziona una serie.", "warning"); return; } addNewMedia(currentTMDbSelection.tmdbId); });
@@ -3238,7 +3235,7 @@
       elements.exportBtn.addEventListener('click', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ mediaList, categories }, null, 2)], {type: 'application/json'})); a.download = `serietv_tracker_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(a.href); });
       elements.importBtn.addEventListener('click', () => elements.importFile.click());
       elements.importFile.addEventListener('change', e => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = event => { try { const data = JSON.parse(event.target.result); if (data && Array.isArray(data.mediaList)) { showConfirmModal("Importa Dati", `Sovrascrivere i dati con ${data.mediaList.length} serie?`, () => { mediaList = data.mediaList.map(item => ({...getDefaultShowProps(), ...item})); categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => typeof cat === 'string' ? {name: cat, hideProgress: false} : cat); saveData(); renderFullUI(); showNotification("Dati importati!", "success"); }); } else { showNotification("File non valido.", "error"); } } catch (error) { showNotification("Errore lettura file.", "error"); } }; reader.readAsText(file); e.target.value = ''; });
-      elements.shareBtn.addEventListener('click', () => { if (!currentUser) { showNotification("Devi essere loggato per condividere.", "warning"); return; } const link = `${window.location.origin}${window.location.pathname.replace('index.html', 'serietv_tracker.html')}?view=${currentUser.uid}`; elements.shareModal.querySelector('input').value = link; elements.shareModal.style.display = 'flex'; });
+      elements.shareBtn.addEventListener('click', () => { if (!currentUser) { showNotification("Devi essere loggato per condividere.", "warning"); return; } const link = `${window.location.origin}${window.location.pathname.replace('index.html', 'serietv_tracker.html')}?view=${currentUser.uid}`; elements.shareModal.querySelector('input').value = link; openModal(elements.shareModal); });
       elements.closeShareModalBtn.addEventListener('click', () => closeModal(elements.shareModal));
       elements.copyShareLinkBtn.addEventListener('click', (e) => { navigator.clipboard.writeText(e.target.closest('.modal-content').querySelector('input').value); showNotification("Link copiato!", "success"); });
       elements.closeViewBtn.addEventListener('click', () => { window.location.href = window.location.pathname; });
@@ -3257,8 +3254,8 @@
       elements.bottomNavHome.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
       elements.bottomNavSearch.addEventListener('click', () => { elements.searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => elements.searchInput.focus(), 300); });
       elements.bottomNavAdd.addEventListener('click', () => { elements.mediaManagementBtn.click(); document.querySelector('.tab-btn[data-tab="add-media"]').click(); });
-      elements.bottomNavManage.addEventListener('click', () => { elements.mobileMenuModal.style.display = 'flex'; requestAnimationFrame(() => elements.mobileMenuModal.classList.add('visible')); });
-      elements.bottomNavNotifications.addEventListener('click', () => { elements.mobileNotificationsModal.style.display = 'flex'; requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
+      elements.bottomNavManage.addEventListener('click', () => { openModal(elements.mobileMenuModal); requestAnimationFrame(() => elements.mobileMenuModal.classList.add('visible')); });
+      elements.bottomNavNotifications.addEventListener('click', () => { openModal(elements.mobileNotificationsModal); requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
       
       // --- Mobile Modals Listeners ---
       elements.mobileMenuCloseBtn.addEventListener('click', () => closeModal(elements.mobileMenuModal));
@@ -3275,7 +3272,7 @@
       elements.mobileFilterBtn.addEventListener('click', () => {
           elements.mobileCategoryFilter.value = elements.categoryFilter.value;
           elements.mobileSortFilter.value = elements.sortFilter.value;
-          elements.filterSortModal.style.display = 'flex';
+          openModal(elements.filterSortModal);
           requestAnimationFrame(() => elements.filterSortModal.classList.add('visible'));
       });
       elements.applyFiltersBtn.addEventListener('click', () => {
@@ -3297,205 +3294,187 @@
       });
     }
 
+    /* --- GESTIONE MODALI E BACK GESTURE (HISTORY API) --- */
+        
+    // 1. Nuova funzione unificata per aprire i modali
+    function openModal(modal) {
+        if (!modal) return;
+        
+        // Se il modale è già aperto, non fare nulla per evitare doppi stati
+        if (modal.style.display === 'flex') return;
+
+        modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+        
+        // Aggiungiamo uno stato alla cronologia del browser.
+        // Questo fa sì che il tasto "Indietro" o lo swipe del telefono non chiudano la pagina,
+        // ma vengano intercettati dall'evento 'popstate'.
+        history.pushState({ modalId: modal.id }, '', window.location.href);
+    }
+
+    // 2. Nuova funzione unificata per chiudere i modali
     function closeModal(modal) {
         if (modal && modal.style.display === 'flex') {
-            modal.style.display = 'none';
-            document.body.classList.remove('modal-open');
-            
-            // Check if any modals are still open
-            const modals = document.querySelectorAll('.modal');
-            let hasOpenModal = false;
-            for (const m of modals) {
-                if (m.style.display === 'flex' && m.id !== 'confirmModal') {
-                    hasOpenModal = true;
-                    break;
-                }
-            }
-            
-            // If no modals are open, clear the history state we added
-            if (!hasOpenModal) {
-                if (window.history.state !== null) {
-                    history.back();
-                }
-            }
+            // Invece di nasconderlo direttamente, diciamo al browser di "tornare indietro".
+            // Questo attiverà l'evento 'popstate' (vedi punto 3), che chiuderà visivamente il modale.
+            // Questo serve a mantenere sincronizzata la cronologia se l'utente usa il tasto "X".
+            history.back();
         }
     }
 
-    function openModal(modal) {
-        if (modal) {
-            modal.style.display = 'flex';
-            document.body.classList.add('modal-open');
-            
-            // Check if any modals were already open
-            const modals = document.querySelectorAll('.modal');
-            let hadOpenModal = false;
-            for (const m of modals) {
-                if (m !== modal && m.style.display === 'flex' && m.id !== 'confirmModal') {
-                    hadOpenModal = true;
-                    break;
-                }
-            }
-            
-            // Only add history state if no other modals were open
-            if (!hadOpenModal) {
-                history.pushState(null, '', window.location.href);
-            }
-        }
-    }
-
-    // --- BACK GESTURE IMPLEMENTATION FOR MOBILE MODALS ---
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchEndX = 0;
-    let touchEndY = 0;
-    let isSwipingBack = false;
-    let modalHistoryStack = [];
-
-    function handleTouchStart(e) {
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
-        isSwipingBack = false;
-    }
-
-    function handleTouchMove(e) {
-        if (!touchStartX || !touchStartY) return;
+    // 3. Gestore dell'evento "Torna Indietro" (Swipe o Tasto fisico)
+    window.addEventListener('popstate', (event) => {
+        // Troviamo tutti i modali attualmente visibili
+        const visibleModals = Array.from(document.querySelectorAll('.modal'))
+            .filter(m => m.style.display === 'flex');
         
-        touchEndX = e.changedTouches[0].screenX;
-        touchEndY = e.changedTouches[0].screenY;
-        
-        const deltaX = touchEndX - touchStartX;
-        const deltaY = touchEndY - touchStartY;
-        
-        // Check if this is a horizontal swipe to the right from the left edge
-        if (touchStartX < 50 && Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 50) {
-            isSwipingBack = true;
-            e.preventDefault();
-        }
-    }
+        if (visibleModals.length > 0) {
+            // Ordiniamo per z-index decrescente per chiudere prima quello più in alto (es. Actor sopra Details)
+            visibleModals.sort((a, b) => {
+                const zA = parseInt(window.getComputedStyle(a).zIndex) || 0;
+                const zB = parseInt(window.getComputedStyle(b).zIndex) || 0;
+                return zB - zA;
+            });
 
-    function handleTouchEnd(e) {
-        if (!touchStartX || !touchStartY) return;
+            // Chiudiamo "fisicamente" il modale più in alto
+            const topModal = visibleModals[0];
+            topModal.style.display = 'none';
 
-        const deltaX = touchEndX - touchStartX;
-        const deltaY = touchEndY - touchStartY;
-
-        // Check if it's a valid back gesture (swipe right from left edge with minimal vertical movement)
-        if (isSwipingBack && touchStartX < 50 && Math.abs(deltaX) > 100 && Math.abs(deltaY) < 100) {
-            // Find the currently open modal
-            let openModal = null;
-            const modals = [
-                elements.detailsModal,
-                elements.episodesModal,
-                elements.actorModal,
-                elements.rewatchModal,
-                elements.posterModal,
-                elements.mobileMenuModal,
-                elements.filterSortModal,
-                elements.mobileNotificationsModal
-            ];
-
-            for (const modal of modals) {
-                if (modal && modal.style.display === 'flex') {
-                    openModal = modal;
-                    break;
-                }
-            }
-
-            if (openModal) {
-                e.preventDefault();
-                closeModal(openModal);
+            // Se non ci sono altri modali sotto, riattiviamo lo scroll del body
+            if (visibleModals.length === 1) {
+                document.body.classList.remove('modal-open');
             }
         }
+    });
 
-        // Reset values
-        touchStartX = 0;
-        touchStartY = 0;
-        touchEndX = 0;
-        touchEndY = 0;
-        isSwipingBack = false;
-    }
+    // --- AGGIORNAMENTO LISTENERS ---
+    // Aggiorna setupEventListeners per usare openModal invece di style.display='flex'
+    
+    function setupEventListeners() {
+      // Modali principali
+      elements.mediaManagementBtn.addEventListener("click", () => { 
+          // Sostituito style.display con openModal
+          openModal(elements.mediaManagementModal); 
+          elements.mediaTitle.value = ''; 
+          elements.tmdbResults.innerHTML = ''; 
+          currentTMDbSelection = null; 
+          renderCategoriesList(); 
+          renderFriendsList(); 
+          populateAddMediaCategorySelect();
+      });
 
-    // Add back gesture support to all modals
-    function setupBackGestureSupport() {
-        const modals = document.querySelectorAll('.modal');
-        modals.forEach(modal => {
-            // Skip modals that shouldn't be closed with back gesture
-            if (modal.id === 'confirmModal') return;
+      // Gestione Tabs
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { 
+          document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active')); 
+          btn.classList.add('active'); 
+          document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active'); 
+          elements.addShowBtn.style.display = btn.dataset.tab === 'add-media' ? 'inline-flex' : 'none'; 
+      }));
 
-            modal.addEventListener('touchstart', handleTouchStart, { passive: false });
-            modal.addEventListener('touchmove', handleTouchMove, { passive: false });
-            modal.addEventListener('touchend', handleTouchEnd, { passive: false });
-        });
+      // Chiusura Modali (Il click fuori dal modale deve chiamare history.back() se implementato, o closeModal)
+      elements.closeManagementModal.addEventListener("click", () => closeModal(elements.mediaManagementModal));
+      
+      // Pulsante Aggiungi Serie
+      elements.addShowBtn.addEventListener('click', () => { 
+          if (!currentTMDbSelection) { showNotification("Cerca e seleziona una serie.", "warning"); return; } 
+          addNewMedia(currentTMDbSelection.tmdbId); 
+      });
 
-        // Prevent browser back gesture when modal is open using history manipulation
-        window.addEventListener('popstate', (e) => {
-            const modals = document.querySelectorAll('.modal');
-            let hasOpenModal = false;
-            
-            for (const modal of modals) {
-                if (modal.style.display === 'flex' && modal.id !== 'confirmModal') {
-                    hasOpenModal = true;
-                    break;
-                }
-            }
+      // Ricerca
+      elements.searchTMDbBtn.addEventListener("click", searchTMDb);
+      elements.mediaTitle.addEventListener("keydown", e => { if(e.key === "Enter") searchTMDb(); });
+      
+      // Categorie
+      elements.addCategoryBtn.addEventListener("click", addCategory);
+      elements.newCategoryName.addEventListener("keydown", e => { if (e.key === "Enter") addCategory(); });
+      
+      // Filtri e Ricerca home
+      elements.searchInput.addEventListener("input", () => { clearTimeout(debounceTimeout); debounceTimeout = setTimeout(renderMedia, 300); });
+      elements.categoryFilter.addEventListener("change", renderMedia);
+      elements.sortFilter.addEventListener("change", () => { localStorage.setItem("tvShowSortOrder", elements.sortFilter.value); renderMedia(); });
+      
+      // Tema e Reset
+      elements.themeToggle.addEventListener("click", () => { document.body.classList.toggle("dark"); localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light"); loadTheme(); });
+      elements.resetBtn.addEventListener('click', resetApp);
 
-            if (hasOpenModal) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                
-                // Push a new state to prevent going back
-                history.pushState(null, '', window.location.href);
-            }
-        });
+      // Pulsanti Chiusura Modali (X)
+      elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
+      elements.episodesModalClose.addEventListener('click', () => closeModal(elements.episodesModal));
+      elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
 
-        // Initialize history state when first modal opens
-        let originalCloseModal = null;
-        
-        function initializeCloseModalOverride() {
-            if (!originalCloseModal && window.closeModal) {
-                originalCloseModal = window.closeModal;
-                window.closeModal = function(modal) {
-                    if (modal && modal.style.display === 'flex') {
-                        const wasOpen = modal.style.display === 'flex';
-                        originalCloseModal.call(this, modal);
-                        
-                        // Check if any modals are still open
-                        const modals = document.querySelectorAll('.modal');
-                        let hasOpenModal = false;
-                        for (const m of modals) {
-                            if (m.style.display === 'flex' && m.id !== 'confirmModal') {
-                                hasOpenModal = true;
-                                break;
-                            }
-                        }
-                        
-                        // If no modals are open, clear the extra history state
-                        if (!hasOpenModal && wasOpen) {
-                            // Remove the extra history state we added
-                            if (window.history.state !== null) {
-                                history.back();
-                            }
-                        }
-                    } else {
-                        originalCloseModal.call(this, modal);
-                    }
-                };
-            }
-        }
-        
-        // Initialize the override when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeCloseModalOverride);
-        } else {
-            initializeCloseModalOverride();
-        }
-    }
+      // Chiusura cliccando sullo sfondo scuro (Overlay)
+      document.addEventListener("click", e => { 
+          if (e.target.classList.contains('modal')) {
+              closeModal(e.target);
+          }
+          if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible'); 
+      });
 
-    // Initialize back gesture support when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setupBackGestureSupport);
-    } else {
-        setupBackGestureSupport();
+      // Poster Modal
+      elements.savePosterChange.addEventListener('click', () => { const selected = document.querySelector(".poster-option.selected"); if (selected) changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url); });
+      elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
+
+      // Import/Export
+      elements.exportBtn.addEventListener('click', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ mediaList, categories }, null, 2)], {type: 'application/json'})); a.download = `serietv_tracker_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(a.href); });
+      elements.importBtn.addEventListener('click', () => elements.importFile.click());
+      elements.importFile.addEventListener('change', e => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = event => { try { const data = JSON.parse(event.target.result); if (data && Array.isArray(data.mediaList)) { showConfirmModal("Importa Dati", `Sovrascrivere i dati con ${data.mediaList.length} serie?`, () => { mediaList = data.mediaList.map(item => ({...getDefaultShowProps(), ...item})); categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => typeof cat === 'string' ? {name: cat, hideProgress: false} : cat); saveData(); renderFullUI(); showNotification("Dati importati!", "success"); }); } else { showNotification("File non valido.", "error"); } } catch (error) { showNotification("Errore lettura file.", "error"); } }; reader.readAsText(file); e.target.value = ''; });
+
+      // Share
+      elements.shareBtn.addEventListener('click', () => { if (!currentUser) { showNotification("Devi essere loggato per condividere.", "warning"); return; } const link = `${window.location.origin}${window.location.pathname.replace('index.html', 'serietv_tracker.html')}?view=${currentUser.uid}`; elements.shareModal.querySelector('input').value = link; openModal(elements.shareModal); }); // Usa openModal
+      elements.closeShareModalBtn.addEventListener('click', () => closeModal(elements.shareModal));
+      elements.copyShareLinkBtn.addEventListener('click', (e) => { navigator.clipboard.writeText(e.target.closest('.modal-content').querySelector('input').value); showNotification("Link copiato!", "success"); });
+      
+      // Social e Varie
+      elements.closeViewBtn.addEventListener('click', () => { window.location.href = window.location.pathname; });
+      elements.addFriendBtn.addEventListener('click', addFriend);
+      elements.copyMyIdBtn.addEventListener('click', () => { navigator.clipboard.writeText(elements.myIdInput.value); showNotification("ID copiato!", "success"); });
+      elements.bellIcon.addEventListener('click', (e) => { e.stopPropagation(); elements.notificationDropdown.classList.toggle('visible'); });
+      elements.closeSummaryBtn.addEventListener('click', () => closeModal(elements.updateSummaryModal));
+      
+      // Rewatch Modal
+      elements.confirmRewatchBtn.addEventListener('click', () => { const newCount = parseInt(elements.rewatchCountInput.value); if (!isNaN(newCount) && newCount >= 0) { setRewatchCount(newCount); } else { showNotification("Inserisci un numero valido (0 o superiore).", "warning"); } });
+      elements.cancelRewatchBtn.addEventListener('click', () => closeModal(elements.rewatchModal));
+      document.querySelectorAll('#rewatchModal .quick-rewatch-btn').forEach(btn => btn.addEventListener('click', () => { const count = parseInt(btn.dataset.count); elements.rewatchCountInput.value = count; updateRewatchModalButtons(count); }));
+      elements.rewatchCountInput.addEventListener('input', () => { const count = parseInt(elements.rewatchCountInput.value); updateRewatchModalButtons(count); });
+      document.querySelectorAll("#rewatchModal .num-spinner-btn").forEach(btn => { btn.addEventListener("click", e => { const target = document.getElementById(e.currentTarget.dataset.target); if (target) { let value = parseInt(target.value) || 0; value += e.currentTarget.classList.contains("up") ? 1 : -1; if (value < 0) value = 0; target.value = value; updateRewatchModalButtons(value); } }); });
+      
+      // --- Bottom Nav Bar Listeners ---
+      elements.bottomNavHome.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      elements.bottomNavSearch.addEventListener('click', () => { elements.searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => elements.searchInput.focus(), 300); });
+      elements.bottomNavAdd.addEventListener('click', () => { elements.mediaManagementBtn.click(); document.querySelector('.tab-btn[data-tab="add-media"]').click(); });
+      elements.bottomNavManage.addEventListener('click', () => { openModal(elements.mobileMenuModal); requestAnimationFrame(() => elements.mobileMenuModal.classList.add('visible')); });
+      elements.bottomNavNotifications.addEventListener('click', () => { openModal(elements.mobileNotificationsModal); requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
+      
+      // --- Mobile Modals Listeners ---
+      elements.mobileMenuCloseBtn.addEventListener('click', () => closeModal(elements.mobileMenuModal));
+      elements.mobileNotificationsCloseBtn.addEventListener('click', () => closeModal(elements.mobileNotificationsModal));
+      elements.markAllReadMobileBtn.addEventListener('click', markAllNotificationsAsRead);
+      elements.mobileMenuUserActionBtn.addEventListener('click', () => { (currentUser) ? elements.logoutBtn.click() : elements.authToggle.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuShareBtn.addEventListener('click', () => { elements.shareBtn.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuExportBtn.addEventListener('click', () => { elements.exportBtn.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuImportBtn.addEventListener('click', () => { elements.importBtn.click(); closeModal(elements.mobileMenuModal); });
+      elements.mobileMenuThemeBtn.addEventListener('click', () => { elements.themeToggle.click(); });
+      elements.mobileMenuResetBtn.addEventListener('click', () => { elements.resetBtn.click(); closeModal(elements.mobileMenuModal); });
+
+      // --- Filter Modal Listeners ---
+      elements.mobileFilterBtn.addEventListener('click', () => {
+          elements.mobileCategoryFilter.value = elements.categoryFilter.value;
+          elements.mobileSortFilter.value = elements.sortFilter.value;
+          openModal(elements.filterSortModal);
+          requestAnimationFrame(() => elements.filterSortModal.classList.add('visible'));
+      });
+      elements.applyFiltersBtn.addEventListener('click', () => {
+          elements.categoryFilter.value = elements.mobileCategoryFilter.value;
+          elements.sortFilter.value = elements.mobileSortFilter.value;
+          localStorage.setItem("tvShowSortOrder", elements.sortFilter.value);
+          renderMedia();
+          closeModal(elements.filterSortModal);
+      });
+      
+      // --- Force Update Listeners ---
+      const forceUpdate = () => { updateAllShowsInBackground(true); };
+      elements.forceUpdateBtnDesktop.addEventListener('click', forceUpdate);
+      elements.forceUpdateBtnMobile.addEventListener('click', () => { forceUpdate(); closeModal(elements.mobileMenuModal); });
     }
   </script>
   <script>
