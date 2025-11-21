@@ -657,17 +657,50 @@
 
       /* --- STATS MOBILE --- */
       .stats-panel { padding: 0.75rem; margin-bottom: 1rem; }
-      .stats-container { gap: 0.5rem; justify-items: center; grid-template-columns: repeat(4, 1fr); }
+      .stats-container { 
+        gap: 0.4rem; 
+        justify-items: center; 
+        grid-template-columns: repeat(4, 1fr); 
+        padding-bottom: 0;
+        overflow: visible;
+      }
       .stat-item { 
-        padding: 0.5rem; 
+        padding: 0.4rem; 
         min-height: 60px;
+        width: auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border-radius: 12px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       }
       .stat-value { font-size: 1.2rem; }
       .stat-label::after { font-size: 1rem; }
-      /* For 7 items layout: 4 on first row, then 3 on second row with hours taking right space */
-      .stat-item:nth-child(5) { grid-column: 1 / 2; } /* Da Vedere - left */
-      .stat-item:nth-child(6) { grid-column: 2 / 3; } /* Episodi - center-left */
-      .stat-item:nth-child(7) { grid-column: 3 / 5; } /* Ore - spans 2 columns on right */
+      
+      /* Prime 4 statistiche sulla prima riga */
+      .stat-item:nth-child(1),
+      .stat-item:nth-child(2),
+      .stat-item:nth-child(3),
+      .stat-item:nth-child(4) {
+        grid-row: 1;
+      }
+      
+      /* Ultime 3 statistiche su una seconda riga centrata */
+      .stat-item:nth-child(5),
+      .stat-item:nth-child(6),
+      .stat-item:nth-child(7) {
+        grid-row: 2;
+      }
+      
+      /* Centra le ultime 3 statistiche: 5a a sinistra, 6a al centro, 7a a destra */
+      .stat-item:nth-child(5) { grid-column: 2 / 3; } /* Da Vedere - centro */
+      .stat-item:nth-child(6) { grid-column: 1 / 2; } /* Episodi - sinistra */  
+      .stat-item:nth-child(7) { grid-column: 3 / 4; } /* Ore - destra */
 
       /* --- GRIGLIA SERIE --- */
       .media-section { padding: 0; background: transparent; margin-bottom: 1rem; }
@@ -3264,12 +3297,59 @@
       });
     }
 
+    function closeModal(modal) {
+        if (modal && modal.style.display === 'flex') {
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            
+            // Check if any modals are still open
+            const modals = document.querySelectorAll('.modal');
+            let hasOpenModal = false;
+            for (const m of modals) {
+                if (m.style.display === 'flex' && m.id !== 'confirmModal') {
+                    hasOpenModal = true;
+                    break;
+                }
+            }
+            
+            // If no modals are open, clear the history state we added
+            if (!hasOpenModal) {
+                if (window.history.state !== null) {
+                    history.back();
+                }
+            }
+        }
+    }
+
+    function openModal(modal) {
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.classList.add('modal-open');
+            
+            // Check if any modals were already open
+            const modals = document.querySelectorAll('.modal');
+            let hadOpenModal = false;
+            for (const m of modals) {
+                if (m !== modal && m.style.display === 'flex' && m.id !== 'confirmModal') {
+                    hadOpenModal = true;
+                    break;
+                }
+            }
+            
+            // Only add history state if no other modals were open
+            if (!hadOpenModal) {
+                history.pushState(null, '', window.location.href);
+            }
+        }
+    }
+
     // --- BACK GESTURE IMPLEMENTATION FOR MOBILE MODALS ---
     let touchStartX = 0;
     let touchStartY = 0;
     let touchEndX = 0;
     let touchEndY = 0;
     let isSwipingBack = false;
+    let modalHistoryStack = [];
 
     function handleTouchStart(e) {
         touchStartX = e.changedTouches[0].screenX;
@@ -3286,8 +3366,8 @@
         const deltaX = touchEndX - touchStartX;
         const deltaY = touchEndY - touchStartY;
         
-        // Check if this is a horizontal swipe to the right
-        if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 50) {
+        // Check if this is a horizontal swipe to the right from the left edge
+        if (touchStartX < 50 && Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 50) {
             isSwipingBack = true;
             e.preventDefault();
         }
@@ -3299,8 +3379,8 @@
         const deltaX = touchEndX - touchStartX;
         const deltaY = touchEndY - touchStartY;
 
-        // Check if it's a valid back gesture (swipe right with minimal vertical movement)
-        if (isSwipingBack && Math.abs(deltaX) > 100 && Math.abs(deltaY) < 100) {
+        // Check if it's a valid back gesture (swipe right from left edge with minimal vertical movement)
+        if (isSwipingBack && touchStartX < 50 && Math.abs(deltaX) > 100 && Math.abs(deltaY) < 100) {
             // Find the currently open modal
             let openModal = null;
             const modals = [
@@ -3347,17 +3427,68 @@
             modal.addEventListener('touchend', handleTouchEnd, { passive: false });
         });
 
-        // Prevent browser back gesture when modal is open
+        // Prevent browser back gesture when modal is open using history manipulation
         window.addEventListener('popstate', (e) => {
             const modals = document.querySelectorAll('.modal');
+            let hasOpenModal = false;
+            
             for (const modal of modals) {
                 if (modal.style.display === 'flex' && modal.id !== 'confirmModal') {
-                    e.preventDefault();
-                    history.forward();
+                    hasOpenModal = true;
                     break;
                 }
             }
+
+            if (hasOpenModal) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                
+                // Push a new state to prevent going back
+                history.pushState(null, '', window.location.href);
+            }
         });
+
+        // Initialize history state when first modal opens
+        let originalCloseModal = null;
+        
+        function initializeCloseModalOverride() {
+            if (!originalCloseModal && window.closeModal) {
+                originalCloseModal = window.closeModal;
+                window.closeModal = function(modal) {
+                    if (modal && modal.style.display === 'flex') {
+                        const wasOpen = modal.style.display === 'flex';
+                        originalCloseModal.call(this, modal);
+                        
+                        // Check if any modals are still open
+                        const modals = document.querySelectorAll('.modal');
+                        let hasOpenModal = false;
+                        for (const m of modals) {
+                            if (m.style.display === 'flex' && m.id !== 'confirmModal') {
+                                hasOpenModal = true;
+                                break;
+                            }
+                        }
+                        
+                        // If no modals are open, clear the extra history state
+                        if (!hasOpenModal && wasOpen) {
+                            // Remove the extra history state we added
+                            if (window.history.state !== null) {
+                                history.back();
+                            }
+                        }
+                    } else {
+                        originalCloseModal.call(this, modal);
+                    }
+                };
+            }
+        }
+        
+        // Initialize the override when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeCloseModalOverride);
+        } else {
+            initializeCloseModalOverride();
+        }
     }
 
     // Initialize back gesture support when DOM is ready
