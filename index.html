@@ -681,14 +681,7 @@
         <button id="resetBtn" class="btn btn-secondary" title="Resetta Applicazione"><i class="fas fa-undo"></i></button>
         <button id="themeToggle" class="btn btn-secondary" title="Cambia Tema"><i class="fas fa-moon"></i></button>
         <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger" title="Logout"><i class="fas fa-sign-out-alt"></i></button></div>
-        <div class="auth-container">
-            <button id="authToggle" class="btn btn-secondary" title="Login"><i class="fas fa-user"></i></button>
-            <div id="authForms" class="auth-form">
-              <div class="auth-tabs"><div class="auth-tab active" data-tab="login">Login</div><div class="auth-tab" data-tab="register">Registrati</div></div>
-              <div id="loginForm" class="auth-form-container active"><input type="email" id="loginEmail" placeholder="Email"><input type="password" id="loginPassword" placeholder="Password"><div class="auth-form-buttons"><button id="loginBtn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button></div></div>
-              <div id="registerForm" class="auth-form-container"><input type="email" id="registerEmail" placeholder="Email"><input type="password" id="registerPassword" placeholder="Password (min. 6 caratteri)"><input type="password" id="registerConfirmPassword" placeholder="Conferma Password"><div class="auth-form-buttons"><button id="registerBtn" class="btn btn-primary"><i class="fas fa-user-plus"></i> Registrati</button></div></div>
-            </div>
-        </div>
+        <button id="authToggle" class="btn btn-secondary" title="Login / Registrati"><i class="fas fa-user"></i></button>
     </div>
   </div>
 
@@ -890,6 +883,35 @@
         </div>
     </div>
   </div>
+
+  <!-- Auth Modal -->
+  <div class="modal" id="authModal">
+      <div class="modal-content" style="max-width: 350px;">
+          <h2 style="text-align: center; margin-top: 0;">Accedi</h2>
+          
+          <div class="auth-tabs">
+              <div class="auth-tab active" data-tab="login">Login</div>
+              <div class="auth-tab" data-tab="register">Registrati</div>
+          </div>
+
+          <div id="loginForm" class="auth-form-container active">
+              <input type="email" id="loginEmail" placeholder="Email" style="width: 100%; margin-bottom: 1rem;">
+              <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; margin-bottom: 1rem;">
+              <button id="loginBtn" class="btn btn-primary" style="width: 100%;">Login</button>
+          </div>
+
+          <div id="registerForm" class="auth-form-container">
+              <input type="email" id="registerEmail" placeholder="Email" style="width: 100%; margin-bottom: 1rem;">
+              <input type="password" id="registerPassword" placeholder="Password (min. 6 car.)" style="width: 100%; margin-bottom: 1rem;">
+              <input type="password" id="registerConfirmPassword" placeholder="Conferma Password" style="width: 100%; margin-bottom: 1rem;">
+              <button id="registerBtn" class="btn btn-primary" style="width: 100%;">Registrati</button>
+          </div>
+
+          <div class="modal-footer">
+              <button class="btn btn-danger" onclick="closeModal(document.getElementById('authModal'))">Chiudi</button>
+          </div>
+      </div>
+  </div>
   <!-- MODALS END -->
 
   <div id="notification" class="notification"><span id="notificationText"></span></div>
@@ -941,7 +963,7 @@
     
     const elements = { 
         appLoader: document.getElementById("appLoader"),
-        authForms: document.getElementById("authForms"), authToggle: document.getElementById("authToggle"), 
+        authModal: document.getElementById("authModal"), authToggle: document.getElementById("authToggle"), 
         userInfo: document.getElementById("userInfo"), loginBtn: document.getElementById("loginBtn"), 
         loginEmail: document.getElementById("loginEmail"), loginPassword: document.getElementById("loginPassword"), 
         registerBtn: document.getElementById("registerBtn"), registerEmail: document.getElementById("registerEmail"), 
@@ -1123,15 +1145,7 @@
     function getMetacriticState(score) { if (!score || score === "N/A") return null; const value = parseInt(score); return isNaN(value) ? null : value >= 61 ? "favorable" : value >= 40 ? "mixed" : "unfavorable"; }
 
     function setupAuthListeners() {
-      elements.authToggle.addEventListener("click", e => {
-        e.stopPropagation();
-        elements.authForms.classList.toggle("active");
-      });
-      document.addEventListener("click", e => {
-        if (!elements.authForms.contains(e.target) && !e.target.closest(".auth-container")) {
-          elements.authForms.classList.remove("active");
-        }
-      });
+      elements.authToggle.addEventListener("click", () => openModal(elements.authModal));
       document.querySelectorAll(".auth-tab").forEach(tab => {
         tab.addEventListener("click", () => {
           document.querySelectorAll(".auth-tab").forEach(t => t.classList.remove("active"));
@@ -1155,7 +1169,7 @@
                     });
                 }
                 showNotification("Login effettuato", "success");
-                elements.authForms.classList.remove("active");
+                closeModal(elements.authModal);
             })
             .catch(err => showNotification(getAuthErrorMessage(err), "error"));
         } else {
@@ -1176,7 +1190,7 @@
               .then((userCredential) => {
                 db.ref(`users/${userCredential.user.uid}/email`).set(email);
                 showNotification("Registrazione completata!", "success");
-                elements.authForms.classList.remove("active");
+                closeModal(elements.authModal);
               })
               .catch(err => showNotification(getAuthErrorMessage(err), "error"));
           }
@@ -1219,7 +1233,7 @@
       const userActionBtnLabel = userActionBtn ? userActionBtn.querySelector('span') : null;
       if (currentUser) {
         elements.userInfo.style.display = "flex";
-        elements.authToggle.parentElement.style.display = "none";
+        elements.authToggle.style.display = "none";
         elements.notificationBellContainer.style.display = 'block';
         document.querySelectorAll(".btn").forEach(btn => btn.disabled = false);
         if (userActionBtn) {
@@ -1235,7 +1249,7 @@
         }
       } else {
         elements.userInfo.style.display = "none";
-        elements.authToggle.parentElement.style.display = "block";
+        elements.authToggle.style.display = "inline-flex";
         elements.notificationBellContainer.style.display = 'none';
         document.querySelectorAll("#mediaManagementBtn, #shareBtn").forEach(btn => btn.disabled = true);
         document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(btn => btn.disabled = false);
@@ -1324,7 +1338,7 @@
       isViewMode = true;
       document.body.style.paddingBottom = '0';
       document.getElementById('bottomNav').style.display = 'none';
-      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, .auth-container, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
+      document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, #authToggle, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
       elements.viewModeBanner.style.display = "flex";
       db.ref(`users/${viewId}/mediaTracker`).on("value", snapshot => {
         const data = snapshot.val();
