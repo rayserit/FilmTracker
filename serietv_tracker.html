@@ -655,52 +655,31 @@
       }
       .top-bar-left > .filter-select { display: none; }
 
-      /* --- STATS MOBILE --- */
+      /* --- STATS MOBILE: 12-COLUMN GRID FOR FULLWIDTH --- */
       .stats-panel { padding: 0.75rem; margin-bottom: 1rem; }
       .stats-container { 
+        display: grid; 
+        grid-template-columns: repeat(12, 1fr); /* 12 columns total */
         gap: 0.4rem; 
-        justify-items: center; 
-        grid-template-columns: repeat(4, 1fr); 
         padding-bottom: 0;
-        overflow: visible;
       }
       .stat-item { 
-        padding: 0.4rem; 
+        padding: 0.5rem 0.2rem; 
+        width: 100%; /* Occupy full cell width */
         min-height: 60px;
-        width: auto;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
         border-radius: 12px;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       }
-      .stat-value { font-size: 1.2rem; }
-      .stat-label::after { font-size: 1rem; }
+      .stat-value { font-size: 1.3rem; }
+      .stat-label::after { font-size: 1.1rem; }
       
-      /* Prime 4 statistiche sulla prima riga */
-      .stat-item:nth-child(1),
-      .stat-item:nth-child(2),
-      .stat-item:nth-child(3),
-      .stat-item:nth-child(4) {
-        grid-row: 1;
+      /* Row 1: 4 items (3 cols each -> 12 total) */
+      .stat-item:nth-child(1), .stat-item:nth-child(2), .stat-item:nth-child(3), .stat-item:nth-child(4) {
+        grid-column: span 3;
       }
-      
-      /* Ultime 3 statistiche su una seconda riga centrata */
-      .stat-item:nth-child(5),
-      .stat-item:nth-child(6),
-      .stat-item:nth-child(7) {
-        grid-row: 2;
+      /* Row 2: 3 items (4 cols each -> 12 total) */
+      .stat-item:nth-child(5), .stat-item:nth-child(6), .stat-item:nth-child(7) {
+        grid-column: span 4;
       }
-      
-      /* Centra le ultime 3 statistiche: 5a a sinistra, 6a al centro, 7a a destra */
-      .stat-item:nth-child(5) { grid-column: 2 / 3; } /* Da Vedere - centro */
-      .stat-item:nth-child(6) { grid-column: 1 / 2; } /* Episodi - sinistra */  
-      .stat-item:nth-child(7) { grid-column: 3 / 4; } /* Ore - destra */
 
       /* --- GRIGLIA SERIE --- */
       .media-section { padding: 0; background: transparent; margin-bottom: 1rem; }
