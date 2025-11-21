@@ -657,16 +657,17 @@
 
       /* --- STATS MOBILE --- */
       .stats-panel { padding: 0.75rem; margin-bottom: 1rem; }
-      .stats-container { gap: 0.5rem; justify-items: center; }
+      .stats-container { gap: 0.5rem; justify-items: center; grid-template-columns: repeat(4, 1fr); }
       .stat-item { 
         padding: 0.5rem; 
         min-height: 60px;
       }
       .stat-value { font-size: 1.2rem; }
       .stat-label::after { font-size: 1rem; }
-      /* For 7 items layout: 3+2+1+1 (bottom row centered) */
-      .stat-item:nth-child(6) { grid-column: 2 / 3; } /* Episodi - center */
-      .stat-item:nth-child(7) { grid-column: 3 / 4; } /* Ore - right */
+      /* For 7 items layout: 4 on first row, then 3 on second row with hours taking right space */
+      .stat-item:nth-child(5) { grid-column: 1 / 2; } /* Da Vedere - left */
+      .stat-item:nth-child(6) { grid-column: 2 / 3; } /* Episodi - center-left */
+      .stat-item:nth-child(7) { grid-column: 3 / 5; } /* Ore - spans 2 columns on right */
 
       /* --- GRIGLIA SERIE --- */
       .media-section { padding: 0; background: transparent; margin-bottom: 1rem; }
@@ -3294,18 +3295,38 @@
 
     function handleTouchEnd(e) {
         if (!touchStartX || !touchStartY) return;
-        
+
         const deltaX = touchEndX - touchStartX;
         const deltaY = touchEndY - touchStartY;
-        
+
         // Check if it's a valid back gesture (swipe right with minimal vertical movement)
         if (isSwipingBack && Math.abs(deltaX) > 100 && Math.abs(deltaY) < 100) {
-            const modal = e.currentTarget;
-            if (modal && modal.classList.contains('modal') && modal.style.display === 'flex') {
-                closeModal(modal);
+            // Find the currently open modal
+            let openModal = null;
+            const modals = [
+                elements.detailsModal,
+                elements.episodesModal,
+                elements.actorModal,
+                elements.rewatchModal,
+                elements.posterModal,
+                elements.mobileMenuModal,
+                elements.filterSortModal,
+                elements.mobileNotificationsModal
+            ];
+
+            for (const modal of modals) {
+                if (modal && modal.style.display === 'flex') {
+                    openModal = modal;
+                    break;
+                }
+            }
+
+            if (openModal) {
+                e.preventDefault();
+                closeModal(openModal);
             }
         }
-        
+
         // Reset values
         touchStartX = 0;
         touchStartY = 0;
@@ -3320,10 +3341,22 @@
         modals.forEach(modal => {
             // Skip modals that shouldn't be closed with back gesture
             if (modal.id === 'confirmModal') return;
-            
+
             modal.addEventListener('touchstart', handleTouchStart, { passive: false });
             modal.addEventListener('touchmove', handleTouchMove, { passive: false });
             modal.addEventListener('touchend', handleTouchEnd, { passive: false });
+        });
+
+        // Prevent browser back gesture when modal is open
+        window.addEventListener('popstate', (e) => {
+            const modals = document.querySelectorAll('.modal');
+            for (const modal of modals) {
+                if (modal.style.display === 'flex' && modal.id !== 'confirmModal') {
+                    e.preventDefault();
+                    history.forward();
+                    break;
+                }
+            }
         });
     }
 
