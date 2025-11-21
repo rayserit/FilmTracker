@@ -494,70 +494,55 @@
        .search-box { width: 100%; max-width: none; height: 40px; flex-basis: 100%; order: 3; margin-top: 0.25rem; }
        .top-bar-left > .filter-select { display: none; }
 
-      /* --- STATISTICHE: GRIGLIA 4 COLONNE PER LE PRIME 4 STATISTICHE --- */
+      /* --- STATISTICHE: 12-COLUMN GRID FOR FULLWIDTH --- */
       .stats-container {
         display: grid;
-        grid-template-columns: repeat(4, 1fr); /* 4 colonne per le prime 4 statistiche */
+        grid-template-columns: repeat(12, 1fr); /* 12 columns total */
         gap: 0.4rem;
         padding-bottom: 0;
-        overflow: visible;
       }
 
       .stat-item {
-         width: auto;
-         min-width: 0;
-         padding: 0.4rem;
-         display: flex;
-         flex-direction: column;
-         align-items: center;
-         justify-content: center;
-         text-align: center;
+         padding: 0.5rem 0.2rem;
+         width: 100%; /* Occupy full cell width */
+         min-height: 60px;
          border-radius: 12px;
-         background: var(--card-bg);
-         border: 1px solid var(--border-color);
-         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
        }
 
-       /* Le prime 4 statistiche sulla stessa riga */
+       /* Row 1: 4 items (3 cols each -> 12 total) */
        .stat-item:nth-child(1),
        .stat-item:nth-child(2),
        .stat-item:nth-child(3),
        .stat-item:nth-child(4) {
-         grid-row: 1;
+         grid-column: span 3;
        }
 
-       /* L'ultima stat (Ore) su una riga intera sotto */
+       /* Row 2: 1 item (4 cols) */
        .stat-item:nth-child(5) {
-          grid-column: 1 / -1;
-          grid-row: 2;
-          flex-direction: row;
-          gap: 1rem;
-          padding: 0.75rem;
+          grid-column: span 4;
        }
 
-      .stat-value {
-          font-size: 1.3rem; /* Numeri leggermente più piccoli per stare in 4 colonne */
-          margin-bottom: 0.3rem;
-          line-height: 1;
-          font-weight: 700;
-          color: var(--text-color);
-      }
+       .stat-value {
+           font-size: 1.3rem;
+           margin-bottom: 0.3rem;
+           line-height: 1;
+           font-weight: 700;
+           color: var(--text-color);
+       }
 
-      .stat-item:nth-child(5) .stat-value { margin-bottom: 0; font-size: 1.2rem; }
+       /* Nasconde il testo ma prepara il contenitore per l'icona */
+       .stat-label {
+           font-size: 0; /* NASCONDE IL TESTO */
+           display: flex;
+           justify-content: center;
+       }
 
-      /* Nasconde il testo ma prepara il contenitore per l'icona */
-      .stat-label {
-          font-size: 0; /* NASCONDE IL TESTO */
-          display: flex;
-          justify-content: center;
-      }
-
-      /* Definizioni Icone (Visibili e più grandi) */
-      .stat-item:nth-child(1) .stat-label::after { content: "\f00a"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--text-secondary); opacity: 0.6; } /* Totale */
-      .stat-item:nth-child(2) .stat-label::after { content: "\f00b"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--secondary); } /* Da Vedere */
-      .stat-item:nth-child(3) .stat-label::after { content: "\f00c"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--success); } /* Visti */
-      .stat-item:nth-child(4) .stat-label::after { content: "\f2f9"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--warning); } /* Rewatch */
-      .stat-item:nth-child(5) .stat-label::after { content: "\f017"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.2rem; color: var(--text-secondary); opacity: 0.6; } /* Ore */
+       /* Definizioni Icone (Visibili e più grandi) */
+       .stat-item:nth-child(1) .stat-label::after { content: "\f00a"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--text-secondary); opacity: 0.6; } /* Totale */
+       .stat-item:nth-child(2) .stat-label::after { content: "\f00b"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--secondary); } /* Da Vedere */
+       .stat-item:nth-child(3) .stat-label::after { content: "\f00c"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--success); } /* Visti */
+       .stat-item:nth-child(4) .stat-label::after { content: "\f2f9"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--warning); } /* Rewatch */
+       .stat-item:nth-child(5) .stat-label::after { content: "\f017"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1rem; color: var(--text-secondary); opacity: 0.6; } /* Ore */
 
       /* --- GRIGLIA FILM --- */
       .media-section { padding: 0; background: transparent; margin-bottom: 1rem; }
