@@ -381,20 +381,40 @@
     .episode-rewatch-badge {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 3px;
-        padding: 1px 5px;
+        padding: 2px 6px;
         border-radius: 4px;
-        font-size: 0.7rem;
-        font-weight: 500;
+        font-size: 0.75rem;
+        font-weight: 600;
         border: 1px solid var(--warning); /* Bordo Arancione */
         background: rgba(244, 162, 97, 0.1);
         color: var(--text-secondary);
         cursor: pointer;
         transition: all 0.2s;
+        min-width: 24px; /* Stabilità visiva */
+        height: 20px;
+    }
+    .episode-rewatch-badge.zero-count {
+        border-color: var(--border-color);
+        background: transparent;
+        opacity: 0.5;
+    }
+    .episode-rewatch-badge.zero-count:hover {
+        opacity: 1;
+        border-color: var(--warning);
+        background: rgba(244, 162, 97, 0.1);
     }
     .episode-rewatch-badge .count { font-weight: 700; color: var(--warning); }
     .episode-rewatch-badge i { color: var(--warning); font-size: 0.7rem; }
     .episode-rewatch-badge:hover { background: rgba(244, 162, 97, 0.25); }
+
+    /* Fix per mobile: Area di tocco più grande */
+    @media (max-width: 768px) {
+        .episode-rewatch-badge {
+            padding: 4px 8px; /* Più facile da toccare */
+        }
+    }
 
     /* Runtime (Accanto al titolo) */
     .episode-runtime-badge { 
@@ -2096,8 +2116,8 @@
 
                         <!-- DESTRA: Solo Rewatch (se presente) -->
                         <div class="episode-meta-right">
-                             <div class="episode-rewatch-badge" onclick="event.stopPropagation(); openRewatchModal({showId: '${show.id}', seasonNumber: '${seasonNumber}', episodeNumber: '${ep.episode_number}'})">
-                                <i class="fas fa-sync-alt"></i> 
+                             <div class="episode-rewatch-badge ${rewatchCount === 0 ? 'zero-count' : ''}" onclick="event.stopPropagation(); openRewatchModal({showId: '${show.id}', seasonNumber: '${seasonNumber}', episodeNumber: '${ep.episode_number}'})">
+                                <i class="fas fa-sync-alt"></i>
                                 ${rewatchCount > 0 ? `<span class="count">${rewatchCount}</span>` : ''}
                              </div>
                         </div>
@@ -3216,53 +3236,100 @@
 
         const duplicates = mediaList.filter(d => (d.imdbID && d.imdbID === show.imdbID) || (d.tmdbID && d.tmdbID === show.tmdbID));
 
+        // 1. Aggiorna i dati in memoria (MediaList)
         duplicates.forEach(dup => {
             if (!dup.rewatches) dup.rewatches = {};
 
-            if (episodeNumber) {
-                // Rewatch Episodio Singolo
-                const key = `${seasonNumber}-${episodeNumber}`;
+            const updateLogic = (sNum, eNum) => {
+                const key = `${sNum}-${eNum}`;
                 if (count > 0) {
                     dup.rewatches[key] = count;
                     if (!dup.progress[key]) dup.progress[key] = true; // Se rivedo, è visto
+                } else {
+                    delete dup.rewatches[key];
                 }
-                else delete dup.rewatches[key];
+                
+                // --- DOM UPDATE CHIRURGICO ---
+                // Troviamo l'elemento specifico dell'episodio nel DOM
+                const item = document.getElementById(`item-${showId}-${sNum}-${eNum}`);
+                if (item) {
+                    // Aggiorna stato 'watched' visivamente (classe CSS)
+                    if (count > 0) item.classList.add('watched');
+                    
+                    // Trova il badge rewatch dentro questo item
+                    const badge = item.querySelector('.episode-rewatch-badge');
+                    if (badge) {
+                        if (count > 0) {
+                            badge.classList.remove('zero-count');
+                            badge.innerHTML = `<i class="fas fa-sync-alt"></i> <span class="count">${count}</span>`;
+                        } else {
+                            badge.classList.add('zero-count');
+                            badge.innerHTML = `<i class="fas fa-sync-alt"></i>`;
+                        }
+                    }
+                }
+            };
+
+            if (episodeNumber) {
+                // Singolo episodio
+                updateLogic(seasonNumber, episodeNumber);
             } else {
-                // Rewatch Intera Stagione
+                // Intera stagione
                 const season = dup.seasons[seasonNumber];
                 if (season && season.episodes) {
-                    season.episodes.forEach(ep => {
-                        const key = `${seasonNumber}-${ep.episode_number}`;
-                        if (count > 0) {
-                            dup.rewatches[key] = count;
-                            if (!dup.progress[key]) dup.progress[key] = true;
-                        }
-                        else delete dup.rewatches[key];
-                    });
+                    season.episodes.forEach(ep => updateLogic(seasonNumber, ep.episode_number));
                 }
             }
             updateShowCategoryAndTimestamps(dup);
         });
 
-        await saveData();
-        updateStats();
-        
-        // --- FIX REFRESH VISIVO ---
-        // Invece di manipolare il DOM manualmente (che causava la scomparsa), 
-        // aggiorniamo i dati in cache e ridisegniamo la lista.
-        currentShowCache.show = show; // Aggiorna cache locale
-        
-        // Ridisegna tutto il modale episodi
-        populateEpisodesModal();
-        
-        // Riapri la stagione che stavi modificando (perché populate le chiude)
-        const seasonContainer = document.getElementById(`season-episodes-${seasonNumber}`);
-        if(seasonContainer) {
-            seasonContainer.style.maxHeight = seasonContainer.scrollHeight + 'px';
-        }
+        // 2. Aggiorna icona "Stagione Rivista" nell'header (senza ricaricare)
+        updateSeasonHeaderUI(showId, seasonNumber);
 
+        // 3. Chiudi modale e salva (in background)
         closeModal(elements.rewatchModal);
-        showNotification("Conteggio rewatch aggiornato!", "success");
+        updateStats(); // Veloce, aggiorna solo i numeri in alto
+        await saveData();
+        showNotification("Rewatch aggiornato", "success");
+    }
+
+    // Nuova funzione helper per aggiornare l'header della stagione
+    function updateSeasonHeaderUI(showId, seasonNumber) {
+        const show = mediaList.find(s => s.id === showId);
+        if (!show || !show.seasons[seasonNumber]) return;
+        
+        const episodes = show.seasons[seasonNumber].episodes || [];
+        // Controlla se TUTTI gli episodi hanno rewatch > 0
+        const isSeasonRewatched = episodes.length > 0 && episodes.every(ep => (show.rewatches[`${seasonNumber}-${ep.episode_number}`] || 0) > 0);
+        
+        const header = document.querySelector(`.season-header[data-season-target="${seasonNumber}"]`);
+        if (header) {
+            const titleContainer = header.querySelector('.season-title-container');
+            const existingBadge = titleContainer.querySelector('.season-rewatch-badge');
+            
+            if (isSeasonRewatched) {
+                if (!existingBadge) {
+                    // Aggiungi badge se non c'è
+                    const badge = document.createElement('span');
+                    badge.className = 'season-rewatch-badge';
+                    badge.title = 'Stagione rivista';
+                    badge.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                    // Inserisci dopo il titolo (che è il primo figlio span)
+                    const titleSpan = titleContainer.querySelector('.season-title');
+                    titleSpan.insertAdjacentElement('afterend', badge);
+                }
+            } else {
+                if (existingBadge) {
+                    // Rimuovi badge se c'è
+                    existingBadge.remove();
+                }
+            }
+            
+            // Aggiorna anche il testo progressi (es. 10/10)
+            const progressText = header.querySelector('.season-progress-text');
+            const watchedCount = Object.keys(show.progress).filter(k => k.startsWith(`${seasonNumber}-`)).length;
+            if (progressText) progressText.textContent = `${watchedCount} / ${episodes.length}`;
+        }
     }
 
 
