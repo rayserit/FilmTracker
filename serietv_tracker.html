@@ -2149,11 +2149,12 @@
                 grid-column: span 3;
             }
 
-            /* Row 2: 3 items (4 cols each -> 12 total) */
+            /* Row 2: 4 items (3 cols each -> 12 total) */
             .stat-item:nth-child(5),
             .stat-item:nth-child(6),
-            .stat-item:nth-child(7) {
-                grid-column: span 4;
+            .stat-item:nth-child(7),
+            .stat-item:nth-child(8) {
+                grid-column: span 3;
             }
 
             /* --- GRIGLIA SERIE --- */
@@ -2207,6 +2208,7 @@
                 width: 100%;
                 height: 100vh;
                 border-radius: 0;
+                overflow-y: auto;
             }
 
             .details-header {
@@ -2466,6 +2468,11 @@
                 <i class="fas fa-eye stat-icon"></i>
                 <span class="stat-name">Episodi Visti</span>
                 <div class="stat-value" id="statEpisodiVisti">0</div>
+            </div>
+            <div class="stat-item" title="Episodi Rivisti">
+                <i class="fas fa-sync-alt stat-icon"></i>
+                <span class="stat-name">Episodi Rivisti</span>
+                <div class="stat-value" id="statEpisodiRivisti">0</div>
             </div>
             <div class="stat-item" title="Tempo Totale">
                 <i class="fas fa-clock stat-icon"></i>
@@ -2819,7 +2826,9 @@
             statTotal: document.getElementById("statTotal"), statFollowing: document.getElementById("statInCorso"),
             statCompleted: document.getElementById("statCompletate"), statToWatch: document.getElementById("statDaVedere"),
             statPaused: document.getElementById("statInPausaDroppata"),
-            statEpisodes: document.getElementById("statEpisodiVisti"), statHours: document.getElementById("statTempoTotale"),
+            statEpisodes: document.getElementById("statEpisodiVisti"),
+            statEpisodiRivisti: document.getElementById("statEpisodiRivisti"), // NEW STATISTIC
+            statHours: document.getElementById("statTempoTotale"),
             mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), mediaManagementModal: document.getElementById("mediaManagementModal"),
             mediaTitle: document.getElementById("mediaTitle"), searchTMDbBtn: document.getElementById("searchTMDbBtn"), tmdbResults: document.getElementById("tmdbResults"),
             addShowBtn: document.getElementById("addShowBtn"), closeManagementModal: document.getElementById("closeManagementModal"), notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"),
@@ -3042,7 +3051,7 @@
                 }
             });
 
-            const stats = { InCorso: 0, Completate: 0, DaVedere: 0, InPausaDroppata: 0, episodesWatched: 0, minutesWatched: 0 };
+            const stats = { InCorso: 0, Completate: 0, DaVedere: 0, InPausaDroppata: 0, episodesWatched: 0, episodesRewatched: 0, minutesWatched: 0 };
             statContributorIds.forEach(id => {
                 const show = mediaList.find(m => m.id === id);
                 if (!show) return;
@@ -3055,6 +3064,12 @@
                 // Usiamo il conteggio degli episodi visti per le statistiche generali
                 const watchedEpisodes = Object.keys(show.progress || {}).length;
                 stats.episodesWatched += watchedEpisodes;
+
+                // Calcolo episodi rivisti (somma dei conteggi)
+                if (show.rewatches) {
+                    const totalRewatches = Object.values(show.rewatches).reduce((sum, count) => sum + count, 0);
+                    stats.episodesRewatched += totalRewatches;
+                }
 
                 if (show.seasons) {
                     Object.keys(show.progress).forEach(progressKey => {
@@ -3077,6 +3092,7 @@
             elements.statToWatch.textContent = stats.DaVedere || 0;
             elements.statPaused.textContent = stats.InPausaDroppata || 0;
             elements.statEpisodes.textContent = stats.episodesWatched;
+            elements.statEpisodiRivisti.textContent = stats.episodesRewatched;
 
             const hours = Math.floor(stats.minutesWatched / 60);
             const minutes = stats.minutesWatched % 60;
