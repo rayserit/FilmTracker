@@ -393,7 +393,8 @@
             font-weight: 500;
         }
 
-        .progress-text .media-year-compact {
+        .progress-text .media-year-compact,
+        .mobile-imdb-rating {
             display: none;
         }
 
@@ -2197,6 +2198,10 @@
                 margin-top: 2px;
             }
 
+            .progress-text .mobile-imdb-rating {
+                display: inline-block;
+            }
+
             .progress-bar-container {
                 height: 3px;
                 margin-top: 4px;
@@ -3223,7 +3228,7 @@
           <div class="progress-text">
             <span>${watchedEpisodes}/${totalEpisodes}</span>
             <span class="media-year-compact">${show.year}</span>
-            ${(show.imdbRating && show.imdbRating !== "N/A") ? `<span><i class="fas fa-star" style="color: #f5c518; font-size: 0.7rem;"></i> ${show.imdbRating}</span>` : ''}
+            ${(show.imdbRating && show.imdbRating !== "N/A") ? `<span class="mobile-imdb-rating"><i class="fas fa-star" style="color: #f5c518; font-size: 0.7rem;"></i> ${show.imdbRating}</span>` : ''}
           </div>
         </div>`;
 
