@@ -2189,7 +2189,11 @@
             }
 
             .progress-text {
-                display: none;
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.7rem;
+                color: var(--text-secondary);
+                margin-top: 2px;
             }
 
             .progress-bar-container {
@@ -3203,6 +3207,7 @@
           <div class="progress-text">
             <span>${watchedEpisodes}/${totalEpisodes}</span>
             <span class="media-year-compact">${show.year}</span>
+            ${(show.imdbRating && show.imdbRating !== "N/A") ? `<span><i class="fas fa-star" style="color: #f5c518; font-size: 0.7rem;"></i> ${show.imdbRating}</span>` : ''}
           </div>
         </div>`;
 
@@ -4391,8 +4396,12 @@
 
                 if (cat.name === 'Da Vedere') {
                     icon = 'fa-bookmark';
-                } else if (cat.name === 'Visti') {
+                } else if (cat.name === 'In Corso') {
+                    icon = 'fa-play-circle';
+                } else if (cat.name === 'Completate') {
                     icon = 'fa-check-circle';
+                } else if (cat.name === 'In Pausa / Droppata') {
+                    icon = 'fa-pause-circle';
                 }
 
                 btn.innerHTML = `<i class="fas ${icon}"></i> ${displayName}`;
