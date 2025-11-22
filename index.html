@@ -3046,6 +3046,7 @@
           <div class="media-meta">
             ${media.year ? `<span>${media.year}</span>` : ""}
             ${media.runtime ? `<span><i class="fas fa-clock"></i> ${formatRuntime(media.runtime)}</span>` : ""}
+            ${(media.rewatchCount && media.rewatchCount > 0) ? `<span title="${media.rewatchCount} Rewatch"><i class="fas fa-redo" style="font-size: 0.8em;"></i> ${media.rewatchCount}</span>` : ""}
           </div>
           ${ratingsSection}
         </div>
