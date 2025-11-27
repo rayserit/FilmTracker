@@ -4078,10 +4078,19 @@
 
             if (watchedEpisodes === 0) show.category = "Da Vedere";
             else if (watchedEpisodes >= totalEpisodes && totalEpisodes > 0) {
-                show.category = "Completate";
-                if (oldCategory !== 'Completate' || forceLog) {
-                    showNotification(`Hai completato ${show.title}!`, "success");
-                    logActivity('complete_show', show.title, '');
+                // Check if rewatching
+                const hasRewatches = show.rewatches && Object.values(show.rewatches).some(c => c > 0);
+
+                // If currently In Corso and has rewatches, don't move to Completate
+                if (oldCategory === 'In Corso' && hasRewatches) {
+                    // Keep in In Corso
+                    show.category = "In Corso";
+                } else {
+                    show.category = "Completate";
+                    if (oldCategory !== 'Completate' || forceLog) {
+                        showNotification(`Hai completato ${show.title}!`, "success");
+                        logActivity('complete_show', show.title, '');
+                    }
                 }
             }
             else show.category = "In Corso";
