@@ -5338,10 +5338,8 @@
             elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
 
             // Chiusura cliccando sullo sfondo scuro (Overlay)
+            // Chiusura cliccando sullo sfondo scuro (Overlay)
             document.addEventListener("click", e => {
-                if (e.target.classList.contains('modal')) {
-                    closeModal(e.target);
-                }
                 if (e.target.classList.contains('modal')) {
                     closeModal(e.target);
                 }
