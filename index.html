@@ -62,6 +62,24 @@
       scroll-behavior: smooth;
     }
 
+    /* Rendi la barra di scorrimento più sottile e moderna (stile app) */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-color);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
     .tracker-switch {
       display: flex;
       background-color: rgba(128, 128, 128, 0.1);
@@ -152,6 +170,16 @@
     }
 
     .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(30, 30, 30, 0.8);
+      /* Colore scuro semi-trasparente */
+      backdrop-filter: blur(15px);
+      /* Sfocatura dello sfondo */
+      -webkit-backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -267,7 +295,7 @@
       overflow: hidden;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       width: 180px;
-      transition: all 0.2s ease-out;
+      transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s;
       position: relative;
       border: 1px solid var(--border-color);
       animation: fadeIn 0.5s ease-out both;
@@ -277,8 +305,9 @@
     }
 
     .media-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+      transform: translateY(-5px) scale(1.02);
+      /* Sale e si ingrandisce leggermente */
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
     }
 
     .media-card.is-stat-contributor {
@@ -413,9 +442,17 @@
     }
 
     .favorite-btn.is-favorite {
-      color: #e74c3c;
       background: rgba(255, 255, 255, 0.8);
       opacity: 1;
+    }
+
+    .favorite-btn i {
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .favorite-btn.is-favorite i {
+      transform: scale(1.3);
+      color: #e74c3c;
     }
 
     .media-section {
@@ -526,32 +563,76 @@
       color: #1a1a1a;
     }
 
+    /* Stato base del modale (Invisibile) */
     .modal {
+      display: none;
+      /* Gestito dal JS */
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
       background: rgba(0, 0, 0, 0.7);
-      display: none;
-      justify-content: center;
-      align-items: center;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
       z-index: 1000;
+      justify-content: center;
+      align-items: flex-end;
+      /* Mobile: attacca al fondo */
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    /* Quando il modale è attivo */
+    .modal.visible {
+      opacity: 1;
     }
 
     .modal-open {
       overflow: hidden;
     }
 
+    /* Il contenuto del modale */
     .modal-content {
       background: var(--card-bg);
-      border-radius: 12px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+
+      /* Animazione Mobile: sale dal basso */
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      border-radius: 20px 20px 0 0;
       padding: 1.5rem;
-      width: 90%;
-      max-width: 800px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      box-sizing: border-box;
+    }
+
+    .modal.visible .modal-content {
       transform: translateY(0);
-      transition: transform 0.3s ease-out;
+    }
+
+    /* --- REGOLE DESKTOP --- */
+    @media (min-width: 769px) {
+      .modal {
+        align-items: center;
+        /* Centra nel desktop */
+      }
+
+      .modal-content {
+        width: 90%;
+        max-width: 800px;
+        border-radius: 12px;
+        /* Animazione Desktop: leggera comparsa con scala */
+        transform: scale(0.9) translateY(20px);
+        opacity: 0;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s;
+      }
+
+      .modal.visible .modal-content {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
     }
 
     input,
@@ -3470,10 +3551,17 @@
     }
 
     function closeModal(modal) {
-      modal.style.display = "none";
-      modal.classList.remove('visible');
-      if (!document.querySelector('.modal[style*="display: flex"]')) {
-        document.body.classList.remove("modal-open");
+      if (modal && modal.classList.contains('visible')) {
+        history.back();
+      } else if (modal) {
+        // Fallback for modals opened without history (e.g. startup)
+        modal.classList.remove('visible');
+        setTimeout(() => {
+          modal.style.display = 'none';
+          if (!document.querySelector('.modal.visible')) {
+            document.body.classList.remove('modal-open');
+          }
+        }, 300);
       }
     }
 
@@ -4395,49 +4483,58 @@
       if (!modal) return;
 
       // Se il modale è già aperto, non fare nulla per evitare doppi stati
-      if (modal.style.display === 'flex') return;
+      if (modal.classList.contains('visible')) return;
 
       modal.style.display = 'flex';
       document.body.classList.add('modal-open');
 
+      // Aspetta un micro-secondo e aggiungi la classe per l'animazione
+      setTimeout(() => {
+        modal.classList.add('visible');
+      }, 10);
+
       // Aggiungiamo uno stato alla cronologia del browser.
-      // Questo fa sì che il tasto "Indietro" o lo swipe del telefono non chiudano la pagina,
-      // ma vengano intercettati dall'evento 'popstate'.
-      history.pushState({ modalId: modal.id }, '', window.location.href);
+      if (!history.state || history.state.modalId !== modal.id) {
+        history.pushState({ modalId: modal.id }, '', window.location.href);
+      }
     }
 
     // 2. Nuova funzione unificata per chiudere i modali
     function closeModal(modal) {
-      if (modal && modal.style.display === 'flex') {
+      if (modal && modal.classList.contains('visible')) {
         // Invece di nasconderlo direttamente, diciamo al browser di "tornare indietro".
-        // Questo attiverà l'evento 'popstate' (vedi punto 3), che chiuderà visivamente il modale.
-        // Questo serve a mantenere sincronizzata la cronologia se l'utente usa il tasto "X".
+        // Questo attiverà l'evento 'popstate' (vedi punto 3), che chiuderà visivamente il modale con animazione.
         history.back();
       }
     }
 
     // 3. Gestore dell'evento "Torna Indietro" (Swipe o Tasto fisico)
     window.addEventListener('popstate', (event) => {
-      // Troviamo tutti i modali attualmente visibili
+      // Troviamo tutti i modali attualmente visibili (quelli con la classe .visible)
       const visibleModals = Array.from(document.querySelectorAll('.modal'))
-        .filter(m => m.style.display === 'flex');
+        .filter(m => m.classList.contains('visible'));
 
       if (visibleModals.length > 0) {
-        // Ordiniamo per z-index decrescente per chiudere prima quello più in alto (es. Actor sopra Details)
+        // Ordiniamo per z-index decrescente per chiudere prima quello più in alto
         visibleModals.sort((a, b) => {
           const zA = parseInt(window.getComputedStyle(a).zIndex) || 0;
           const zB = parseInt(window.getComputedStyle(b).zIndex) || 0;
           return zB - zA;
         });
 
-        // Chiudiamo "fisicamente" il modale più in alto
+        // Chiudiamo visivamente il modale più in alto con animazione
         const topModal = visibleModals[0];
-        topModal.style.display = 'none';
+        topModal.classList.remove('visible');
 
-        // Se non ci sono altri modali sotto, riattiviamo lo scroll del body
-        if (visibleModals.length === 1) {
-          document.body.classList.remove('modal-open');
-        }
+        // Aspetta che l'animazione finisca (300ms) prima di fare display: none
+        setTimeout(() => {
+          topModal.style.display = 'none';
+
+          // Se non ci sono altri modali visibili, riattiviamo lo scroll del body
+          if (!document.querySelector('.modal.visible')) {
+            document.body.classList.remove('modal-open');
+          }
+        }, 300);
       }
     });
 
@@ -4504,6 +4601,21 @@
         modal.addEventListener('touchend', handleTouchEnd, { passive: false });
       });
     }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Chiudi modale con ESC
+      if (e.key === "Escape") {
+        const visibleModal = document.querySelector('.modal[style*="flex"]');
+        if (visibleModal) closeModal(visibleModal);
+      }
+
+      // Focus sulla ricerca con il tasto "/"
+      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+        e.preventDefault();
+        elements.searchInput.focus();
+      }
+    });
 
     // Initialize back gesture support when DOM is ready
     if (document.readyState === 'loading') {
