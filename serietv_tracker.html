@@ -644,16 +644,318 @@
             z-index: 1100;
         }
 
-        /* Livello 3: Storico e Riepiloghi (sopra ai menu) */
+        /* Livello 3: Centro Manutenzione, Storico, Calendario, Riepiloghi */
+        #settingsModal,
         #historyModal,
+        #calendarModal,
         #updateProgressModal,
         #updateSummaryModal {
-            z-index: 1200;
+            z-index: 1200 !important;
         }
 
         /* Livello 4: Conferme e Allerta (Sopra a TUTTO) */
         #confirmModal {
-            z-index: 1300 !important;
+            z-index: 1500 !important;
+        }
+
+        /* Stile Switch Toggle */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        #settingsModal {
+            z-index: 1200;
+        }
+
+        .settings-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .settings-card {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .settings-card:active {
+            transform: scale(0.97);
+        }
+
+        .settings-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-right: 1rem;
+        }
+
+        .settings-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-title {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .settings-desc {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        /* Colori chiari e distinti */
+        .export-card {
+            background: rgba(34, 139, 34, 0.1);
+            color: #228b22;
+            border-color: rgba(34, 139, 34, 0.2);
+        }
+
+        .export-card .settings-icon {
+            background: #228b22;
+            color: white;
+        }
+
+        .import-card {
+            background: rgba(58, 134, 255, 0.1);
+            color: var(--primary);
+            border-color: rgba(58, 134, 255, 0.2);
+        }
+
+        .import-card .settings-icon {
+            background: var(--primary);
+            color: white;
+        }
+
+        .reset-card {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            border-color: rgba(231, 76, 60, 0.2);
+        }
+
+        .reset-card .settings-icon {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .last-backup-info {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            padding: 0.5rem;
+            background: var(--section-tint);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(18px);
+        }
+
+        /* Fix per header calendario desktop */
+        #calendarModal .modal-content {
+            padding: 0;
+            /* Rimuoviamo padding interno per gestire meglio l'header */
+        }
+
+        .calendar-day-group {
+            margin-bottom: 2rem;
+            padding: 0 1rem;
+        }
+
+        .calendar-date-header {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .calendar-still {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background-color: #2b2b2b;
+            display: block;
+        }
+
+        .calendar-still-wrapper {
+            background: linear-gradient(90deg, #222 25%, #333 50%, #222 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 2s infinite linear;
+            border-radius: 6px;
+            overflow: hidden;
+            width: 100px;
+            height: 56px;
+            flex-shrink: 0;
+        }
+
+        @keyframes skeleton-loading {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* Forza il contenitore a non far uscire il contenuto */
+        #calendarModal .modal-content {
+            padding: 0 !important;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+            /* Assicuriamo che non occupi tutto su desktop */
+        }
+
+        /* Il footer del calendario stile iOS sticky */
+        .calendar-footer {
+            padding: 1rem;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            margin-top: 0;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+        }
+
+        .full-width-btn {
+            width: 100%;
+            justify-content: center;
+            height: 45px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        #calendarList {
+            padding: 1rem;
+            padding-bottom: 2rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .calendar-item {
+            display: flex;
+            gap: 1rem;
+            background: var(--section-tint);
+            border-radius: 10px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .calendar-item:active {
+            transform: scale(0.98);
+        }
+
+        .calendar-still-wrapper {
+            width: 120px;
+            min-width: 120px;
+            aspect-ratio: 16/9;
+            border-radius: 6px;
+            overflow: hidden;
+            background: var(--border-color);
+        }
+
+        .calendar-still {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .calendar-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        .calendar-show-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .calendar-ep-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 2px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .calendar-ep-number {
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .calendar-still-wrapper {
+                width: 100px;
+                min-width: 100px;
+            }
+
+            .calendar-ep-title {
+                font-size: 0.9rem;
+            }
         }
 
         .modal-open {
@@ -2168,55 +2470,67 @@
                 -webkit-text-size-adjust: 100%;
             }
 
-            /* --- TOP BAR --- */
-            .top-bar {
-                flex-direction: column;
-                gap: 0.75rem;
-                margin-bottom: 1rem;
-            }
-
-            .top-bar-left {
-                flex-direction: row;
-                flex-wrap: wrap;
-                gap: 0.75rem;
-                width: 100%;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .top-bar-left h1,
-            .top-bar-left #topBarTitle {
-                display: none;
-            }
-
+            /* 1. NASCONDI TUTTA LA PARTE DESTRA (Pulsanti Desktop) */
             .top-bar-right {
-                display: none;
+                display: none !important;
             }
 
-            .tracker-switch {
-                flex-shrink: 0;
-            }
-
-            #mobileFilterBtn {
+            /* 2. SISTEMA LA BARRA SUPERIORE */
+            .top-bar {
+                padding: 0.5rem 0.75rem;
+                margin-bottom: 0.5rem;
+                height: auto;
+                min-height: 60px;
                 display: flex;
                 align-items: center;
-                justify-content: center;
-                padding: 0.5rem;
-                flex-shrink: 0;
-                margin-left: auto;
             }
 
+            /* 3. RIGA UNICA: Switch - Search - Filter */
+            .top-bar-left {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                width: 100% !important;
+                gap: 10px !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+            }
+
+            /* Lo Switch a sinistra */
+            .tracker-switch {
+                flex-shrink: 0 !important;
+                order: 1;
+            }
+
+            /* La barra di ricerca al centro che si espande */
             .search-box {
-                width: 100%;
-                max-width: none;
+                flex-grow: 1 !important;
+                min-width: 0 !important;
+                /* Permette il restringimento */
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                order: 2;
                 height: 40px;
-                flex-basis: 100%;
-                order: 3;
-                margin-top: 0.25rem;
             }
 
-            .top-bar-left>.filter-select {
-                display: none;
+            /* Il tasto filtro a destra */
+            #mobileFilterBtn {
+                display: flex !important;
+                flex-shrink: 0 !important;
+                order: 3;
+                width: 40px;
+                height: 40px;
+                padding: 0;
+                justify-content: center;
+                align-items: center;
+            }
+
+            /* Nascondi titoli e select nativi */
+            #topBarTitle,
+            .top-bar-left h1,
+            .top-bar-left .filter-select {
+                display: none !important;
             }
 
             /* --- STATS MOBILE: 12-COLUMN GRID FOR FULLWIDTH --- */
@@ -2512,7 +2826,10 @@
                 <a href="serietv_tracker.html" class="tracker-switch-btn active" title="Vai a Serie TV Tracker"><i
                         class="fas fa-tv"></i></a>
             </div>
+
+            <!-- Spostato qui: tra lo switch e il tasto filtro -->
             <input type="text" id="searchInput" class="search-box" placeholder="Cerca...">
+
             <button id="mobileFilterBtn" class="btn btn-secondary"><i class="fas fa-filter"></i></button>
             <select id="categoryFilter" class="filter-select">
                 <option value="all">Tutte le categorie</option>
@@ -2528,18 +2845,24 @@
         <div class="top-bar-right">
             <button id="mediaManagementBtn" class="btn btn-primary" title="Gestione"><i
                     class="fas fa-plus"></i></button>
+
+            <!-- AGGIUNTO IL CALENDARIO ANCHE SU DESKTOP -->
+            <button id="calendarBtn" class="btn btn-secondary" title="Calendario Uscite"><i
+                    class="fas fa-calendar-alt"></i></button>
+
+            <button id="settingsBtn" class="btn btn-secondary" title="Impostazioni Dati">
+                <i class="fas fa-cog"></i>
+            </button>
+
             <div class="notification-bell-container" id="notificationBellContainer" style="display: none;">
                 <button id="bellIcon" class="btn btn-secondary" title="Notifiche"><i class="fas fa-bell"></i></button>
                 <div id="notificationBadge" class="notification-badge">0</div>
                 <div id="notificationDropdown" class="notification-dropdown"></div>
             </div>
+
             <button id="shareBtn" class="btn btn-secondary" title="Condividi Libreria"><i
                     class="fas fa-share-alt"></i></button>
-            <button id="exportBtn" class="btn btn-secondary" title="Esporta Dati"><i
-                    class="fas fa-download"></i></button>
-            <input type="file" id="importFile" accept=".json" style="display: none;">
-            <button id="importBtn" class="btn btn-secondary" title="Importa Dati"><i class="fas fa-upload"></i></button>
-            <button id="resetBtn" class="btn btn-secondary" title="Resetta Tracker"><i class="fas fa-undo"></i></button>
+
             <button id="themeToggle" class="btn btn-secondary" title="Cambia Tema"><i class="fas fa-moon"></i></button>
 
             <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger" title="Logout"><i
@@ -2770,11 +3093,10 @@
                         Registrati</span></button>
                 <button class="btn" id="mobileMenuShareBtn"><i class="fas fa-share-alt"></i>Condividi
                     Libreria</button>
-                <button class="btn" id="mobileMenuExportBtn"><i class="fas fa-download"></i>Esporta Dati</button>
-                <button class="btn" id="mobileMenuImportBtn"><i class="fas fa-upload"></i>Importa Dati</button>
+                <button class="btn" id="mobileSettingsBtn">
+                    <i class="fas fa-cog"></i>Gestione Dati & Backup
+                </button>
                 <button class="btn" id="mobileMenuThemeBtn"><i class="fas fa-moon"></i>Cambia Tema</button>
-                <button class="btn" id="mobileMenuResetBtn" style="color: var(--danger);"><i class="fas fa-undo"
-                        style="color: var(--danger);"></i>Resetta Tracker</button>
             </div>
             <div class="update-section">
                 <p id="lastUpdateTimestampMobile"></p>
@@ -2896,22 +3218,73 @@
             <i class="fas fa-list-ul"></i>
             <span>Liste</span>
         </button>
-        <button class="bottom-nav-btn" id="bottomNavSearch" title="Cerca">
-            <i class="fas fa-search"></i>
-            <span>Cerca</span>
+
+        <!-- Inseriamo qui il tasto Calendario al posto di Cerca -->
+        <button class="bottom-nav-btn" id="bottomNavCalendar" title="Calendario">
+            <i class="fas fa-calendar-day"></i>
+            <span>Calendario</span>
         </button>
+
         <button class="bottom-nav-btn add-btn" id="bottomNavAdd" title="Aggiungi Serie">
             <i class="fas fa-plus"></i>
         </button>
+
         <button class="bottom-nav-btn" id="bottomNavNotifications" title="Notifiche">
             <i class="fas fa-bell"></i>
             <span class="notification-badge-mobile" id="notificationBadgeMobile">0</span>
             <span>Notifiche</span>
         </button>
+
         <button class="bottom-nav-btn" id="bottomNavManage" title="Altro">
             <i class="fas fa-ellipsis-h"></i>
             <span>Altro</span>
         </button>
+    </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <h2 style="text-align: center; margin-top: 0;">Centro Manutenzione</h2>
+
+            <div class="settings-grid">
+                <!-- EXPORT -->
+                <div class="settings-card export-card" id="exportAction">
+                    <div class="settings-icon"><i class="fas fa-download"></i></div>
+                    <div class="settings-info">
+                        <span class="settings-title">Esporta Dati</span>
+                        <span class="settings-desc">Scarica un backup locale (JSON)</span>
+                    </div>
+                </div>
+
+                <!-- IMPORT -->
+                <div class="settings-card import-card" id="importAction">
+                    <div class="settings-icon"><i class="fas fa-upload"></i></div>
+                    <div class="settings-info">
+                        <span class="settings-title">Importa Dati</span>
+                        <span class="settings-desc">Ripristina da un file salvato</span>
+                    </div>
+                </div>
+
+                <!-- RESET -->
+                <div class="settings-card reset-card" id="resetAction">
+                    <div class="settings-icon"><i class="fas fa-trash-alt"></i></div>
+                    <div class="settings-info">
+                        <span class="settings-title">Resetta Tracker</span>
+                        <span class="settings-desc">Cancella tutto (Azione irreversibile)</span>
+                    </div>
+                </div>
+                <!-- Spostato qui per assicurarne il caricamento -->
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+            </div>
+
+            <div id="lastBackupBadge" class="last-backup-info">
+                <i class="fas fa-history"></i> Ultimo backup: <span>Mai eseguito</span>
+            </div>
+
+            <div class="modal-footer" style="border-top: none;">
+                <button onclick="closeModal(document.getElementById('settingsModal'))" class="btn btn-secondary"
+                    style="width: 100%;">Chiudi</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -2921,7 +3294,7 @@
 
         const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
         const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi43LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
-        const EMPTY_STILL_PLACEHOLDER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTY5IiB2aWV3Qm94PSIwIDAgMzAwIDE2OSI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNjkiIGZpbGw9IiNkZGQiLz48L3N2Zz4=";
+        const EMPTY_STILL_PLACEHOLDER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMTY5IiB2aWV3Qm94PSIwIDAgMzAwIDE2OSI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIxNjkiIGZpbGw9IiMyYjJiMmIiLz48cGF0aCBkPSJNMTQwIDg1bDUtNXYxMGwtNS01em0yNSAwbC01LTV2MTBsNS01eiIgZmlsbD0iIzQ0NCIvPjwvc3ZnPg==";
         const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
         const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
         const POPCORN_ICONS = { positive: "https://upload.wikimedia.org/wikipedia/commons/d/da/Rotten_Tomatoes_positive_audience.svg", negative: "https://upload.wikimedia.org/wikipedia/commons/6/63/Rotten_Tomatoes_negative_audience.svg" };
@@ -2933,6 +3306,7 @@
 
         const DEFAULT_CATEGORIES = ["In Corso", "Completate", "Da Vedere"];
         let mediaList = [], categories = [], currentTMDbSelection = null, debounceTimeout, lazyLoadObserver, currentShowCache = null;
+        let calendarOnlyInCorso = true;
         let updateHistory = JSON.parse(localStorage.getItem('updateHistory') || "[]");
         let currentUser = null, isViewMode = false, followedFriends = [], friendListeners = {};
         let lastCheckedTimestamps = {};
@@ -2950,8 +3324,10 @@
 
         const elements = {
             appLoader: document.getElementById("appLoader"), mediaManagementBtn: document.getElementById("mediaManagementBtn"),
-            exportBtn: document.getElementById("exportBtn"), importBtn: document.getElementById("importBtn"), importFile: document.getElementById("importFile"),
-            resetBtn: document.getElementById("resetBtn"), themeToggle: document.getElementById("themeToggle"), searchInput: document.getElementById("searchInput"),
+            settingsBtn: document.getElementById("settingsBtn"),
+            mobileSettingsBtn: document.getElementById("mobileSettingsBtn"),
+            importFile: document.getElementById("importFile"),
+            themeToggle: document.getElementById("themeToggle"), searchInput: document.getElementById("searchInput"),
             categoryFilter: document.getElementById("categoryFilter"), sortFilter: document.getElementById("sortFilter"),
             statTotal: document.getElementById("statTotal"), statFollowing: document.getElementById("statInCorso"),
             statCompleted: document.getElementById("statCompletate"), statToWatch: document.getElementById("statDaVedere"),
@@ -2996,7 +3372,7 @@
             // Bottom Nav Bar Elements
             bottomNavAdd: document.getElementById('bottomNavAdd'),
             bottomNavManage: document.getElementById('bottomNavManage'),
-            bottomNavSearch: document.getElementById('bottomNavSearch'),
+            bottomNavCalendar: document.getElementById('bottomNavCalendar'),
             bottomNavNotifications: document.getElementById('bottomNavNotifications'),
             bottomNavHome: document.getElementById('bottomNavHome'),
             notificationBadgeMobile: document.getElementById('notificationBadgeMobile'),
@@ -3137,6 +3513,100 @@
             });
 
             hideLoader();
+        }
+
+        function renderCalendar() {
+            const container = document.getElementById('calendarList');
+            if (!container) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            let allEpisodes = [];
+
+            mediaList.forEach(show => {
+                // FILTRO: Se lo switch è attivo, mostra solo "In Corso"
+                if (calendarOnlyInCorso && show.category !== "In Corso") return;
+
+                // Escludiamo comunque le droppate a prescindere
+                if (show.isDropped) return;
+
+                Object.keys(show.seasons).forEach(sNum => {
+                    const season = show.seasons[sNum];
+                    (season.episodes || []).forEach(ep => {
+                        if (!ep.air_date) return;
+
+                        const airDate = new Date(ep.air_date);
+                        const diffTime = airDate - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                        // Mostriamo da 2 giorni fa a 30 giorni nel futuro
+                        if (diffDays >= -2 && diffDays <= 30) {
+                            allEpisodes.push({
+                                showId: show.id,
+                                showTitle: show.title,
+                                season: sNum,
+                                episode: ep.episode_number,
+                                name: ep.name,
+                                airDate: ep.air_date,
+                                dateObj: airDate,
+                                still: ep.still_path ? `https://image.tmdb.org/t/p/w300${ep.still_path}` : EMPTY_STILL_PLACEHOLDER,
+                                diffDays: diffDays
+                            });
+                        }
+                    });
+                });
+            });
+
+            allEpisodes.sort((a, b) => a.dateObj - b.dateObj);
+
+            if (allEpisodes.length === 0) {
+                container.innerHTML = `<div class="empty-state" style="text-align:center; padding: 3rem; color: var(--text-secondary);">
+                    <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>Nessun episodio trovato con questi filtri.</p>
+                </div>`;
+                return;
+            }
+
+            let html = '';
+            let currentDay = '';
+
+            allEpisodes.forEach(ep => {
+                const epDateStr = ep.dateObj.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+
+                if (epDateStr !== currentDay) {
+                    if (currentDay !== '') html += `</div>`;
+                    html += `
+                        <div class="calendar-day-group">
+                            <div class="calendar-date-header">
+                                <span>${epDateStr}</span>
+                                <span style="font-size: 0.75rem; font-weight: 500; text-transform: uppercase;">${getRelativeDayLabel(ep.diffDays)}</span>
+                            </div>`;
+                    currentDay = epDateStr;
+                }
+
+                html += `
+                    <div class="calendar-item" onclick="closeModal(document.getElementById('calendarModal')); setTimeout(() => showDetailsModal('${ep.showId}'), 300)">
+                        <div class="calendar-still-wrapper">
+                            <img src="${ep.still}" class="calendar-still" onerror="this.src='${EMPTY_STILL_PLACEHOLDER}'">
+                        </div>
+                        <div class="calendar-info">
+                            <div class="calendar-show-title">${ep.showTitle}</div>
+                            <div class="calendar-ep-title">${ep.name || 'Episodio ' + ep.episode}</div>
+                            <div class="calendar-ep-number">S${ep.season} · Episodio ${ep.episode}</div>
+                        </div>
+                    </div>`;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function getRelativeDayLabel(diff) {
+            if (diff === 0) return "OGGI";
+            if (diff === 1) return "DOMANI";
+            if (diff === -1) return "IERI";
+            if (diff < 0) return `${Math.abs(diff)} GIORNI FA`;
+            return `TRA ${diff} GIORNI`;
         }
 
         function loadLocalData() {
@@ -4763,962 +5233,4 @@
         function showConfirmModal(title, body, onConfirm) { elements.confirmModalTitle.textContent = title; elements.confirmModalBody.textContent = body; openModal(elements.confirmModal); const confirmHandler = () => { closeModal(elements.confirmModal); onConfirm(); cleanup(); }; const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); }; const cleanup = () => { elements.confirmModalConfirm.removeEventListener("click", confirmHandler); elements.confirmModalCancel.removeEventListener("click", cancelHandler); }; elements.confirmModalConfirm.addEventListener("click", confirmHandler); elements.confirmModalCancel.addEventListener("click", cancelHandler); }
         function setupLazyLoading() { if (lazyLoadObserver) lazyLoadObserver.disconnect(); lazyLoadObserver = new IntersectionObserver((entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { const img = entry.target; img.src = img.dataset.src; img.classList.remove("lazy"); observer.unobserve(img); } }); }, { rootMargin: "200px" }); document.querySelectorAll(".lazy").forEach(img => lazyLoadObserver.observe(img)); }
         function loadSortOrder() { elements.sortFilter.value = localStorage.getItem("tvShowSortOrder") || "added"; }
-        function loadTheme() { const theme = localStorage.getItem("theme") || "dark"; document.body.classList.toggle("dark", theme === "dark"); elements.themeToggle.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>`; elements.mobileMenuThemeBtn.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>Cambia Tema`; }
-
-        async function searchTMDb() {
-            const title = elements.mediaTitle.value.trim();
-            if (!title) return;
-            elements.tmdbResults.innerHTML = `<div style="text-align:center;"><i class="fas fa-spinner loading-spinner"></i></div>`;
-            try {
-                const res = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_KEY}&query=${encodeURIComponent(title)}&language=it-IT&include_adult=false`);
-                const data = await res.json();
-                if (data.results && data.results.length > 0) {
-                    elements.tmdbResults.innerHTML = data.results.map(r => `
-                    <div class="tmdb-result-item" data-tmdb-id="${r.id}" data-title="${r.name}">
-                        <img src="${r.poster_path ? `https://image.tmdb.org/t/p/w200${r.poster_path}` : DEFAULT_POSTER}" class="tmdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'">
-                        <div>
-                            <strong>${r.name}</strong> (${r.first_air_date ? r.first_air_date.split('-')[0] : 'N/D'})
-                            <div style="font-size:0.8rem; color: var(--text-secondary)">${r.original_name}</div>
-                        </div>
-                    </div>`).join('');
-                    document.querySelectorAll(".tmdb-result-item").forEach(item => item.addEventListener("click", () => {
-                        currentTMDbSelection = { tmdbId: item.dataset.tmdbId };
-                        elements.mediaTitle.value = item.dataset.title;
-                        showNotification(`"${item.dataset.title}" selezionato.`, "success");
-                    }));
-                } else {
-                    elements.tmdbResults.innerHTML = `<p>Nessun risultato</p>`;
-                }
-            } catch (err) {
-                elements.tmdbResults.innerHTML = "<p>Errore di rete</p>";
-            }
-        }
-
-        function triggerNewEpisodeCheck() {
-            const now = new Date().getTime();
-            const lastCheck = localStorage.getItem('lastNewEpisodeCheck');
-            const SIX_HOURS = 6 * 60 * 60 * 1000;
-
-            if (!lastCheck || (now - lastCheck) > SIX_HOURS) {
-                console.log("Esecuzione del controllo per nuovi episodi...");
-                checkForNewEpisodes();
-                localStorage.setItem('lastNewEpisodeCheck', now);
-            }
-        }
-
-        function checkForNewEpisodes() {
-            const lastCheckString = localStorage.getItem('lastNewEpisodeCheck');
-            const lastCheckDate = lastCheckString ? new Date(parseInt(lastCheckString)) : new Date(Date.now() - 24 * 60 * 60 * 1000);
-            const currentDate = new Date();
-
-            const showsToCheck = mediaList.filter(s => s.category === 'In Corso');
-
-            showsToCheck.forEach(show => {
-                Object.values(show.seasons).forEach(season => {
-                    (season.episodes || []).forEach(ep => {
-                        if (ep.air_date) {
-                            const airDate = new Date(ep.air_date);
-                            if (airDate >= lastCheckDate && airDate <= currentDate) {
-                                if (!show.progress[`${season.season_number}-${ep.episode_number}`]) {
-                                    setTimeout(() => showNotification(`È uscito un nuovo episodio di ${show.title}!`, 'success'), 500);
-                                }
-                            }
-                        }
-                    });
-                });
-            });
-        }
-
-        async function updateAllShowsInBackground(force = false) {
-            if (isUpdateInProgress) {
-                if (force) {
-                    showNotification("Aggiornamento già in corso.", "warning");
-                }
-                console.log("Tentativo di avvio aggiornamento bloccato: un altro è già in corso.");
-                return;
-            }
-
-            isUpdateInProgress = true;
-
-            try {
-                const now = new Date().getTime();
-                const lastUpdate = localStorage.getItem('lastBackgroundUpdate');
-                const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-
-                if (!force && lastUpdate && (now - lastUpdate) < TWENTY_FOUR_HOURS) {
-                    console.log("Aggiornamento in background saltato: non ancora trascorse 24 ore.");
-                    isUpdateInProgress = false;
-                    return;
-                }
-
-                const today = new Date();
-                today.setUTCHours(0, 0, 0, 0);
-                const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-                const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-                const showsToUpdate = mediaList.filter(show => {
-                    if (!show.tmdbID) return false;
-
-                    const ora = new Date().getTime();
-                    const ultimaAttivita = new Date(show.lastActivityAt || 0).getTime();
-                    const QUINDICI_GIORNI = 15 * 24 * 60 * 60 * 1000;
-
-                    // 1. Controllo episodi vicini (±7 giorni)
-                    const haEpisodiVicini = Object.values(show.seasons).some(season =>
-                        (season.episodes || []).some(ep => {
-                            if (!ep.air_date) return false;
-                            const airDate = new Date(ep.air_date + 'T00:00:00Z');
-                            return airDate >= sevenDaysAgo && airDate <= sevenDaysFromNow;
-                        })
-                    );
-
-                    // 2. Controllo "Serie in Corso" ferma da troppo tempo
-                    // Se la serie non è conclusa, la controlliamo comunque ogni 15 giorni 
-                    // per vedere se TMDb ha aggiunto una nuova stagione o nuove date.
-                    const vaControllataPerSicurezza =
-                        (show.status === 'Returning Series' || show.status === 'In Production') &&
-                        (ora - ultimaAttivita > QUINDICI_GIORNI);
-
-                    return haEpisodiVicini || vaControllataPerSicurezza;
-                });
-
-                if (showsToUpdate.length === 0) {
-                    if (force) showNotification("Nessuna serie con attività recente da aggiornare.", "warning");
-                    localStorage.setItem('lastBackgroundUpdate', now);
-                    displayLastUpdateTime();
-                    isUpdateInProgress = false;
-                    return;
-                }
-
-                console.log(`Avvio aggiornamento per ${showsToUpdate.length} serie...`);
-                openModal(elements.updateProgressModal);
-                elements.updateProgressTitle.textContent = force ? "Aggiornamento Manuale" : "Aggiornamento Giornaliero";
-                let allChanges = [];
-
-                for (let i = 0; i < showsToUpdate.length; i++) {
-                    const show = showsToUpdate[i];
-                    const progress = ((i + 1) / showsToUpdate.length) * 100;
-                    elements.updateProgressBarFill.style.width = `${progress}%`;
-                    elements.updateProgressText.textContent = `Controllo ${i + 1} di ${showsToUpdate.length}: ${show.title}...`;
-
-                    try {
-                        const showChanges = await showDetailsModal(show.id, true);
-                        if (showChanges.length > 0) {
-                            allChanges = allChanges.concat(showChanges);
-                        }
-                        await new Promise(resolve => setTimeout(resolve, 400));
-                    } catch (error) {
-                        console.error(`Errore aggiornando ${show.title} in background:`, error);
-                    }
-                }
-
-                closeModal(elements.updateProgressModal);
-
-                if (allChanges.length > 0) {
-                    // SALVA NELLO STORICO
-                    addToUpdateHistory(allChanges);
-                    elements.updateSummaryList.innerHTML = allChanges.map(change => `<li>${change}</li>`).join('');
-                    openModal(elements.updateSummaryModal);
-                } else if (force) {
-                    showNotification("Nessun aggiornamento trovato.", "success");
-                }
-
-                localStorage.setItem('lastBackgroundUpdate', now);
-                displayLastUpdateTime();
-            } finally {
-                isUpdateInProgress = false;
-            }
-        }
-
-        function setupAuthListeners() {
-            elements.authToggle.addEventListener("click", () => openModal(elements.authModal));
-
-            document.querySelectorAll(".auth-tab").forEach(tab => tab.addEventListener("click", () => {
-                document.querySelectorAll(".auth-tab, .auth-form-container").forEach(el => el.classList.remove("active"));
-                tab.classList.add("active");
-                document.getElementById(`${tab.dataset.tab}Form`).classList.add("active");
-            }));
-            elements.loginBtn.addEventListener('click', () => firebase.auth().signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value).catch(err => showNotification(err.message, "error")));
-            elements.registerBtn.addEventListener('click', () => {
-                const pass = document.getElementById('registerPassword').value;
-                if (pass !== document.getElementById('registerConfirmPassword').value) { showNotification("Le password non corrispondono.", "warning"); return; }
-                firebase.auth().createUserWithEmailAndPassword(document.getElementById('registerEmail').value, pass)
-                    .then(cred => db.ref(`users/${cred.user.uid}/email`).set(cred.user.email))
-                    .catch(err => showNotification(err.message, "error"));
-            });
-            elements.logoutBtn.addEventListener("click", () => {
-                detachAllFriendListeners();
-                firebase.auth().signOut()
-            });
-            firebase.auth().onAuthStateChanged(user => {
-                if (isViewMode) return;
-                currentUser = user;
-                updateAuthUI();
-                if (user) {
-                    loadData();
-                } else {
-                    loadLocalData();
-                    // --- MIGRATION LOGIC FOR DROPPED SHOWS ---
-                    let migrationNeeded = false;
-                    mediaList.forEach(show => {
-                        if (show.category === "In Pausa / Droppata") {
-                            show.isDropped = true;
-                            // Move to "In Corso" unless progress is 0, then "Da Vedere"
-                            const totalEpisodes = show.totalEpisodes || 0;
-                            const watchedEpisodes = show.progress ? Object.values(show.progress).reduce((a, b) => a + b, 0) : 0;
-                            show.category = (watchedEpisodes === 0) ? "Da Vedere" : "In Corso";
-                            migrationNeeded = true;
-                        }
-                    });
-
-                    // Remove "In Pausa / Droppata" from categories list if present
-                    const droppedCatIndex = categories.findIndex(c => (typeof c === 'string' ? c : c.name) === "In Pausa / Droppata");
-                    if (droppedCatIndex !== -1) {
-                        categories.splice(droppedCatIndex, 1);
-                        migrationNeeded = true;
-                    }
-
-                    if (migrationNeeded && !isViewMode) {
-                        saveData();
-                        console.log("Migration for Dropped shows completed.");
-                    }
-                    // -----------------------------------------
-
-                    renderFullUI();
-                    hideLoader();
-                }
-            });
-        }
-
-        function updateAuthUI() {
-            const userActionBtn = elements.mobileMenuUserActionBtn.querySelector('span');
-            if (currentUser) {
-                elements.userInfo.style.display = "flex";
-                elements.authToggle.style.display = "none";
-                elements.notificationBellContainer.style.display = 'block';
-                elements.updateSectionDesktop.style.display = 'block';
-                if (userActionBtn) {
-                    userActionBtn.textContent = 'Logout';
-                    elements.mobileMenuUserActionBtn.style.color = 'var(--danger)';
-                    elements.mobileMenuUserActionBtn.querySelector('i').style.color = 'var(--danger)';
-                }
-            } else {
-                elements.userInfo.style.display = "none";
-                elements.authToggle.style.display = "inline-flex";
-                elements.notificationBellContainer.style.display = 'none';
-                elements.updateSectionDesktop.style.display = 'none';
-                if (userActionBtn) {
-                    userActionBtn.textContent = 'Login / Registrati';
-                    elements.mobileMenuUserActionBtn.style.color = '';
-                    elements.mobileMenuUserActionBtn.querySelector('i').style.color = '';
-                }
-            }
-        }
-
-        function handleViewMode() {
-            const viewId = new URLSearchParams(window.location.search).get("view");
-            if (!viewId) { hideLoader(); return false; }
-            isViewMode = true;
-            document.body.style.paddingBottom = '0';
-            document.getElementById('bottomNav').style.display = 'none';
-            document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, #authToggle, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
-            elements.viewModeBanner.style.display = "flex";
-            db.ref(`users/${viewId}/tvShowTracker`).on("value", snapshot => {
-                const data = snapshot.val();
-                if (data) {
-                    mediaList = (data.mediaList || []).map(item => ({ ...getDefaultShowProps(), ...item }));
-                    categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => (typeof cat === 'string') ? { name: cat, hideProgress: false } : cat);
-                    renderFullUI();
-                    db.ref(`users/${viewId}/email`).once("value", emailSnap => {
-                        elements.viewModeUserEmail.textContent = `Stai visualizzando la libreria di ${emailSnap.val() || "un utente"}`;
-                    });
-                } else { showNotification("Libreria condivisa non trovata.", "error"); }
-                hideLoader();
-            });
-            return true;
-        }
-
-        function logActivity(type, title, details) {
-            if (!currentUser) return;
-            const logRef = db.ref(`users/${currentUser.uid}/activityLog`);
-            const activity = {
-                type,
-                title,
-                details,
-                timestamp: new Date().toISOString(),
-                link: `${window.location.origin}${window.location.pathname.replace('index.html', 'serietv_tracker.html')}?view=${currentUser.uid}`
-            };
-
-            return logRef.transaction(currentLog => {
-                let log = Array.isArray(currentLog) ? currentLog : [];
-                log.unshift(activity);
-                return log.slice(0, MAX_LOG_SIZE);
-            });
-        }
-
-        function detachAllFriendListeners() {
-            Object.values(friendListeners).forEach(({ ref, listener }) => ref.off('value', listener));
-            friendListeners = {};
-        }
-
-        function setupFriendListeners() {
-            if (!currentUser) return;
-            detachAllFriendListeners();
-            const friendActivityMap = new Map();
-            const processAndRenderNotifications = () => {
-                let allNewNotifications = Array.from(friendActivityMap.values()).flat();
-                allNewNotifications.sort((a, b) => {
-                    // Check if activity is related to a dropped show
-                    const showA = mediaList.find(m => m.title === a.activity.title);
-                    const showB = mediaList.find(m => m.title === b.activity.title);
-                    const isDroppedA = showA ? showA.isDropped : false;
-                    const isDroppedB = showB ? showB.isDropped : false;
-
-                    // Sort dropped shows to the bottom
-                    if (isDroppedA && !isDroppedB) return 1;
-                    if (!isDroppedA && isDroppedB) return -1;
-
-                    // Secondary sort by date (descending)
-                    return new Date(b.activity.timestamp) - new Date(a.activity.timestamp);
-                });
-                renderNotifications(allNewNotifications.slice(0, MAX_NOTIFICATIONS));
-            };
-
-            followedFriends.forEach(friend => {
-                const ref = db.ref(`users/${friend.id}/activityLog`);
-                const listener = snapshot => {
-                    const activities = snapshot.val() || [];
-                    const lastChecked = lastCheckedTimestamps[friend.id] || new Date(0).toISOString();
-
-                    const activityArray = Array.isArray(activities) ? activities : [];
-                    const newActivities = activityArray
-                        .filter(act => act && new Date(act.timestamp) > new Date(lastChecked))
-                        .map(activity => ({ friendId: friend.id, friendEmail: friend.email, activity }));
-
-                    friendActivityMap.set(friend.id, newActivities);
-                    processAndRenderNotifications();
-                };
-                ref.on('value', listener);
-                friendListeners[friend.id] = { ref, listener };
-            });
-        }
-
-        function populateNotificationList(listElement, notifications) {
-            listElement.innerHTML = ''; // Clear previous notifications
-            if (notifications.length > 0) {
-                notifications.forEach(n => {
-                    if (!n.activity) return;
-                    const item = document.createElement('div');
-                    item.className = 'notification-item';
-                    item.dataset.friendId = n.friendId;
-                    const isTV = n.activity.type.includes('show') || n.activity.type.includes('season');
-                    item.innerHTML = `
-                    <i class="fas ${getActivityIcon(n.activity.type)} ${isTV ? 'tv-notification' : 'film-notification'}"></i>
-                    <span class="notification-item-text">${getActivityText(n.friendEmail, n.activity)}</span>`;
-
-                    item.addEventListener('click', () => {
-                        const friendId = item.dataset.friendId;
-                        if (friendId) {
-                            const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
-                            const url = isTV
-                                ? `${baseUrl}/serietv_tracker.html?view=${friendId}`
-                                : `${baseUrl}/index.html?view=${friendId}`;
-                            window.open(url, '_blank');
-                        }
-                    });
-                    listElement.appendChild(item);
-                });
-            } else {
-                const emptyState = document.createElement('div');
-                emptyState.className = 'no-notifications';
-                emptyState.textContent = 'Nessuna nuova notifica';
-                listElement.appendChild(emptyState);
-            }
-        }
-
-        function renderNotifications(notifications) {
-            const count = notifications.length;
-
-            // Desktop Dropdown
-            elements.notificationBadge.textContent = count;
-            elements.notificationBadge.classList.toggle('visible', count > 0);
-            const desktopList = elements.notificationDropdown.querySelector('.notification-list');
-            if (!desktopList) { // Initial setup for desktop dropdown
-                elements.notificationDropdown.innerHTML = `
-                <div class="notification-header">Notifiche Amici</div>
-                <div class="notification-list"></div>
-                <div class="notification-footer">
-                    <button class="btn btn-primary btn-small" id="markReadAllDesktop"><i class="fas fa-check-double"></i> Segna tutte come lette</button>
-                </div>`;
-                document.getElementById('markReadAllDesktop').addEventListener('click', markAllNotificationsAsRead);
-            }
-            populateNotificationList(elements.notificationDropdown.querySelector('.notification-list'), notifications);
-
-            // Mobile Modal
-            elements.notificationBadgeMobile.textContent = count;
-            elements.notificationBadgeMobile.classList.toggle('visible', count > 0);
-            populateNotificationList(elements.notificationListMobile, notifications);
-        }
-
-
-        function markAllNotificationsAsRead() {
-            if (!currentUser) return;
-            followedFriends.forEach(f => lastCheckedTimestamps[f.id] = new Date().toISOString());
-            saveSocialData();
-            renderNotifications([]); // This will clear both desktop and mobile
-            closeModal(elements.mobileNotificationsModal);
-        }
-
-        function getActivityIcon(type) {
-            if (type.startsWith('add_show')) return 'fa-plus-circle';
-            if (type.startsWith('move_show')) return 'fa-folder-open';
-            if (type.startsWith('delete_show')) return 'fa-trash-alt';
-            if (type.startsWith('complete_show') || type === 'mark_completed') return 'fa-check-double';
-            if (type.startsWith('complete_season')) return 'fa-check-circle';
-            if (type === 'add') return 'fa-film';
-            if (type === 'move') return 'fa-folder-open';
-            if (type === 'delete') return 'fa-trash-alt';
-            if (type === 'rewatch') return 'fa-sync-alt';
-            return 'fa-info-circle';
-        }
-
-        function getActivityText(friendEmail, activity) {
-            const email = `<strong>${friendEmail || 'Utente'}</strong>`;
-            const title = `<strong>${activity.title}</strong>`;
-            switch (activity.type) {
-                case 'add_show': return `${email} ha aggiunto la serie ${title} ${activity.details}`;
-                case 'move_show': return `${email} ha spostato la serie ${title} ${activity.details}`;
-                case 'delete_show': return `${email} ha eliminato la serie ${title} ${activity.details}`;
-                case 'complete_show': return `${email} ha completato la serie ${title}! 🎉`;
-                case 'mark_completed': return `${email} ha segnato ${title} come completato.`;
-                case 'complete_season': return `${email} ha completato ${activity.details} di ${title}`;
-                case 'add': return `${email} ha aggiunto il film ${title} ${activity.details}`;
-                case 'move': return `${email} ha spostato il film ${title} ${activity.details}`;
-                case 'delete': return `${email} ha eliminato il film ${title} ${activity.details}`;
-                case 'rewatch': return `${email} ha aggiornato ${title} (${activity.details})`;
-                default: return `${email} ha aggiornato ${title}`;
-            }
-        }
-
-        async function addFriend() {
-            const friendId = elements.friendIdInput.value.trim();
-            if (!friendId || !currentUser) return;
-            if (friendId === currentUser.uid) { showNotification("Non puoi aggiungere te stesso.", "warning"); return; }
-            if (followedFriends.some(f => f.id === friendId)) { showNotification("Amico già presente in lista.", "warning"); return; }
-            const friendEmailRef = db.ref(`users/${friendId}/email`);
-            const snapshot = await friendEmailRef.once('value');
-            if (snapshot.exists()) {
-                followedFriends.push({ id: friendId, email: snapshot.val() });
-                lastCheckedTimestamps[friendId] = new Date().toISOString();
-                await saveSocialData();
-                renderFriendsList();
-                setupFriendListeners();
-                showNotification("Amico aggiunto!", "success");
-            } else {
-                showNotification("ID Utente non trovato.", "error");
-            }
-        }
-
-        async function removeFriend(friendId) {
-            followedFriends = followedFriends.filter(f => f.id !== friendId);
-            delete lastCheckedTimestamps[friendId];
-            await saveSocialData();
-            renderFriendsList();
-            setupFriendListeners();
-        }
-
-        function renderFriendsList() {
-            if (!currentUser) { elements.friendsList.innerHTML = "<p>Devi essere loggato per usare questa funzione.</p>"; document.getElementById('myIdContainer').style.display = 'none'; return; }
-            document.getElementById('myIdContainer').style.display = 'block';
-            elements.myIdInput.value = currentUser.uid;
-            elements.friendsList.innerHTML = "";
-            if (followedFriends.length === 0) { elements.friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`; return; }
-            followedFriends.forEach(friend => {
-                const card = document.createElement("div"); card.className = "management-card";
-                card.innerHTML = `
-                <div>
-                    <div>
-                        <div class="friend-email">${friend.email}</div>
-                        <div class="friend-id">${friend.id}</div>
-                    </div>
-                </div>
-                <div class="management-card-actions">
-                    <button class="btn visit-friend-films-btn" data-id="${friend.id}" title="Visita Libreria Film"><i class="fas fa-film"></i></button>
-                    <button class="btn visit-friend-tv-btn" data-id="${friend.id}" title="Visita Libreria Serie TV"><i class="fas fa-tv"></i></button>
-                    <button class="btn btn-danger remove-friend-btn" data-id="${friend.id}" title="Rimuovi Amico"><i class="fas fa-trash"></i></button>
-                </div>`;
-                card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
-                card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
-                    const url = `${window.location.origin}${window.location.pathname.replace('serietv_tracker.html', 'index.html')}?view=${e.currentTarget.dataset.id}`;
-                    window.open(url, '_blank');
-                });
-                card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
-                    const url = `${window.location.origin}${window.location.pathname}?view=${e.currentTarget.dataset.id}`;
-                    window.open(url, '_blank');
-                });
-                elements.friendsList.appendChild(card);
-            });
-        }
-
-        async function toggleFavorite(showId) {
-            if (isViewMode) return;
-            const show = mediaList.find(m => m.id === showId);
-            if (show) {
-                show.isFavorite = !show.isFavorite;
-                await saveData();
-
-                const cardBtn = document.querySelector(`.media-card[data-id="${showId}"] .favorite-btn`);
-                if (cardBtn) cardBtn.classList.toggle('is-favorite', show.isFavorite);
-
-                const modalBtn = document.getElementById('detailsModalFavoriteBtn');
-                if (modalBtn && elements.detailsModal.style.display === 'flex') {
-                    modalBtn.classList.toggle('is-favorite', show.isFavorite);
-                }
-
-                if (elements.categoryFilter.value === 'favorites') {
-                    renderMedia();
-                }
-            }
-        }
-
-        function openRewatchModal(context) {
-            currentRewatchContext = context;
-            const { showId, seasonNumber, episodeNumber } = context;
-            const show = mediaList.find(s => s.id === showId);
-            if (!show) return;
-
-            let currentCount = 0;
-            let title = "";
-
-            if (episodeNumber) {
-                const episodeKey = `${seasonNumber}-${episodeNumber}`;
-                currentCount = show.rewatches?.[episodeKey] || 0;
-                const episode = show.seasons?.[seasonNumber]?.episodes.find(e => e.episode_number == episodeNumber);
-                title = episode ? `S${seasonNumber} E${episodeNumber} - ${episode.name}` : `Episodio S${seasonNumber}E${episodeNumber}`;
-            } else {
-                title = `Stagione ${seasonNumber}`;
-            }
-
-            elements.rewatchModalTitle.textContent = `Rewatch: ${title}`;
-            elements.rewatchCountInput.value = currentCount;
-            updateRewatchModalButtons(currentCount);
-
-            openModal(elements.rewatchModal);
-        }
-
-        async function setRewatchCount(count) {
-            const { showId, seasonNumber, episodeNumber } = currentRewatchContext;
-            const show = mediaList.find(s => s.id === showId);
-            if (!show) return;
-
-            const duplicates = mediaList.filter(d => (d.imdbID && d.imdbID === show.imdbID) || (d.tmdbID && d.tmdbID === show.tmdbID));
-
-            // 1. Aggiorna i dati in memoria (MediaList)
-            duplicates.forEach(dup => {
-                if (!dup.rewatches) dup.rewatches = {};
-
-                const updateLogic = (sNum, eNum) => {
-                    const key = `${sNum}-${eNum}`;
-                    if (count > 0) {
-                        dup.rewatches[key] = count;
-                        if (!dup.progress[key]) dup.progress[key] = true; // Se rivedo, è visto
-                    } else {
-                        delete dup.rewatches[key];
-                    }
-
-                    // --- DOM UPDATE CHIRURGICO ---
-                    // Troviamo l'elemento specifico dell'episodio nel DOM
-                    const item = document.getElementById(`item-${showId}-${sNum}-${eNum}`);
-                    if (item) {
-                        // Aggiorna stato 'watched' visivamente (classe CSS)
-                        if (count > 0) item.classList.add('watched');
-
-                        // Trova il badge rewatch dentro questo item
-                        const badge = item.querySelector('.episode-rewatch-badge');
-                        if (badge) {
-                            if (count > 0) {
-                                badge.classList.remove('zero-count');
-                                badge.innerHTML = `<i class="fas fa-sync-alt"></i> <span class="count">${count}</span>`;
-                            } else {
-                                badge.classList.add('zero-count');
-                                badge.innerHTML = `<i class="fas fa-sync-alt"></i>`;
-                            }
-                        }
-                    }
-                };
-
-                if (episodeNumber) {
-                    // Singolo episodio
-                    updateLogic(seasonNumber, episodeNumber);
-                } else {
-                    // Intera stagione
-                    const season = dup.seasons[seasonNumber];
-                    if (season && season.episodes) {
-                        season.episodes.forEach(ep => updateLogic(seasonNumber, ep.episode_number));
-                    }
-                }
-                updateShowCategoryAndTimestamps(dup);
-            });
-
-            // 2. Aggiorna icona "Stagione Rivista" nell'header (senza ricaricare)
-            updateSeasonHeaderUI(showId, seasonNumber);
-
-            // 3. Chiudi modale e salva (in background)
-            closeModal(elements.rewatchModal);
-            updateStats(); // Veloce, aggiorna solo i numeri in alto
-            await saveData();
-            showNotification("Rewatch aggiornato", "success");
-        }
-
-        // Nuova funzione helper per aggiornare l'header della stagione
-        function updateSeasonHeaderUI(showId, seasonNumber) {
-            const show = mediaList.find(s => s.id === showId);
-            if (!show || !show.seasons[seasonNumber]) return;
-
-            const episodes = show.seasons[seasonNumber].episodes || [];
-            // Controlla se TUTTI gli episodi hanno rewatch > 0
-            const isSeasonRewatched = episodes.length > 0 && episodes.every(ep => (show.rewatches[`${seasonNumber}-${ep.episode_number}`] || 0) > 0);
-
-            const header = document.querySelector(`.season-header[data-season-target="${seasonNumber}"]`);
-            if (header) {
-                const titleContainer = header.querySelector('.season-title-container');
-                const existingBadge = titleContainer.querySelector('.season-rewatch-badge');
-
-                if (isSeasonRewatched) {
-                    if (!existingBadge) {
-                        // Aggiungi badge se non c'è
-                        const badge = document.createElement('span');
-                        badge.className = 'season-rewatch-badge';
-                        badge.title = 'Stagione rivista';
-                        badge.innerHTML = '<i class="fas fa-sync-alt"></i>';
-                        // Inserisci dopo il titolo (che è il primo figlio span)
-                        const titleSpan = titleContainer.querySelector('.season-title');
-                        titleSpan.insertAdjacentElement('afterend', badge);
-                    }
-                } else {
-                    if (existingBadge) {
-                        // Rimuovi badge se c'è
-                        existingBadge.remove();
-                    }
-                }
-
-                // Aggiorna anche il testo progressi (es. 10/10)
-                const progressText = header.querySelector('.season-progress-text');
-                const watchedCount = Object.keys(show.progress).filter(k => k.startsWith(`${seasonNumber}-`)).length;
-                if (progressText) progressText.textContent = `${watchedCount} / ${episodes.length}`;
-            }
-        }
-
-
-        function updateRewatchModalButtons(count) {
-            document.querySelectorAll('#rewatchModal .quick-rewatch-btn').forEach(btn => {
-                btn.classList.toggle('active', parseInt(btn.dataset.count) === count);
-            });
-        }
-
-        function displayLastUpdateTime() {
-            const lastUpdate = localStorage.getItem('lastBackgroundUpdate');
-            let timestampText = "Mai eseguito";
-            if (lastUpdate) {
-                timestampText = new Date(parseInt(lastUpdate)).toLocaleString('it-IT');
-            }
-            elements.lastUpdateTimestampDesktop.textContent = `Ultimo aggiornamento: ${timestampText}`;
-            elements.lastUpdateTimestampMobile.textContent = `Ultimo aggiornamento: ${timestampText}`;
-        }
-
-
-        /* --- GESTIONE MODALI E BACK GESTURE (HISTORY API) --- */
-
-        // 1. Nuova funzione unificata per aprire i modali
-        function openModal(modal) {
-            if (!modal) return;
-
-            // Se stiamo aprendo un modale sopra un altro già aperto
-            const alreadyOpen = document.querySelector('.modal.visible');
-            if (alreadyOpen && alreadyOpen !== modal) {
-                // Rendiamo il modale sotto leggermente più scuro o sfocato
-                alreadyOpen.style.filter = "blur(2px) brightness(0.8)";
-            }
-
-            modal.style.display = 'flex';
-            document.body.classList.add('modal-open');
-
-            setTimeout(() => {
-                modal.classList.add('visible');
-            }, 10);
-
-            // Registriamo lo stato nella cronologia
-            history.pushState({ modalId: modal.id }, '', window.location.href);
-        }
-
-        // 2. Nuova funzione unificata per chiudere i modali (Rimosso duplicato precedente)
-        // 3. Gestore dell'evento "Torna Indietro" (Swipe o Tasto fisico)
-        window.addEventListener('popstate', (event) => {
-            const visibleModals = Array.from(document.querySelectorAll('.modal'))
-                .filter(m => m.classList.contains('visible'));
-
-            if (visibleModals.length > 0) {
-                // Ordina per z-index decrescente
-                visibleModals.sort((a, b) => {
-                    const zA = parseInt(window.getComputedStyle(a).zIndex) || 0;
-                    const zB = parseInt(window.getComputedStyle(b).zIndex) || 0;
-                    return zB - zA;
-                });
-
-                // Chiudiamo quello più in alto
-                const topModal = visibleModals[0];
-                topModal.classList.remove('visible');
-
-                setTimeout(() => {
-                    topModal.style.display = 'none';
-                    topModal.style.filter = ""; // Resetta filtri
-
-                    // Se è rimasto un altro modale sotto, togliamo la sfocatura
-                    const nextModal = document.querySelector('.modal.visible');
-                    if (nextModal) {
-                        nextModal.style.filter = "";
-                    }
-
-                    if (document.querySelectorAll('.modal.visible').length === 0) {
-                        document.body.classList.remove('modal-open');
-                    }
-                }, 300);
-            }
-        });
-
-        // --- AGGIORNAMENTO LISTENERS ---
-        // Aggiorna setupEventListeners per usare openModal invece di style.display='flex'
-
-        function setupEventListeners() {
-            // Modali principali
-            elements.mediaManagementBtn.addEventListener("click", () => {
-                // Sostituito style.display con openModal
-                openModal(elements.mediaManagementModal);
-                elements.mediaTitle.value = '';
-                elements.tmdbResults.innerHTML = '';
-                currentTMDbSelection = null;
-                renderCategoriesList();
-                renderFriendsList();
-                populateAddMediaCategorySelect();
-            });
-
-            // Gestione Tabs
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
-                btn.classList.add('active');
-                document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
-                elements.addShowBtn.style.display = btn.dataset.tab === 'add-media' ? 'inline-flex' : 'none';
-            }));
-
-            // Chiusura Modali (Il click fuori dal modale deve chiamare history.back() se implementato, o closeModal)
-            elements.closeManagementModal.addEventListener("click", () => closeModal(elements.mediaManagementModal));
-
-            // Pulsante Aggiungi Serie
-            elements.addShowBtn.addEventListener('click', () => {
-                if (!currentTMDbSelection) { showNotification("Cerca e seleziona una serie.", "warning"); return; }
-                addNewMedia(currentTMDbSelection.tmdbId);
-            });
-
-            // Ricerca
-            elements.searchTMDbBtn.addEventListener("click", searchTMDb);
-            elements.mediaTitle.addEventListener("keydown", e => { if (e.key === "Enter") searchTMDb(); });
-
-            // Categorie
-            elements.addCategoryBtn.addEventListener("click", addCategory);
-            elements.newCategoryName.addEventListener("keydown", e => { if (e.key === "Enter") addCategory(); });
-
-            // Filtri e Ricerca home
-            elements.searchInput.addEventListener("input", () => { clearTimeout(debounceTimeout); debounceTimeout = setTimeout(renderMedia, 300); });
-            elements.categoryFilter.addEventListener("change", renderMedia);
-            elements.sortFilter.addEventListener("change", () => { localStorage.setItem("tvShowSortOrder", elements.sortFilter.value); renderMedia(); });
-
-            // Tema e Reset
-            elements.themeToggle.addEventListener("click", () => { document.body.classList.toggle("dark"); localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light"); loadTheme(); });
-            elements.resetBtn.addEventListener('click', resetApp);
-
-            // Pulsanti Chiusura Modali (X)
-            elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
-            elements.episodesModalClose.addEventListener('click', () => closeModal(elements.episodesModal));
-            elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
-
-            // Chiusura cliccando sullo sfondo scuro (Overlay)
-            // Chiusura cliccando sullo sfondo scuro (Overlay)
-            document.addEventListener("click", e => {
-                if (e.target.classList.contains('modal')) {
-                    closeModal(e.target);
-                }
-                if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible');
-            });
-
-            // Poster Modal
-            elements.savePosterChange.addEventListener('click', () => { const selected = document.querySelector(".poster-option.selected"); if (selected) changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url); });
-            elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
-
-            // Import/Export
-            elements.exportBtn.addEventListener('click', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ mediaList, categories }, null, 2)], { type: 'application/json' })); a.download = `serietv_tracker_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(a.href); });
-            elements.importBtn.addEventListener('click', () => elements.importFile.click());
-            elements.importFile.addEventListener('change', e => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = event => { try { const data = JSON.parse(event.target.result); if (data && Array.isArray(data.mediaList)) { showConfirmModal("Importa Dati", `Sovrascrivere i dati con ${data.mediaList.length} serie?`, () => { mediaList = data.mediaList.map(item => ({ ...getDefaultShowProps(), ...item })); categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => typeof cat === 'string' ? { name: cat, hideProgress: false } : cat); saveData(); renderFullUI(); showNotification("Dati importati!", "success"); }); } else { showNotification("File non valido.", "error"); } } catch (error) { showNotification("Errore lettura file.", "error"); } }; reader.readAsText(file); e.target.value = ''; });
-
-            // Share
-            elements.shareBtn.addEventListener('click', () => { if (!currentUser) { showNotification("Devi essere loggato per condividere.", "warning"); return; } const link = `${window.location.origin}${window.location.pathname.replace('index.html', 'serietv_tracker.html')}?view=${currentUser.uid}`; elements.shareModal.querySelector('input').value = link; openModal(elements.shareModal); }); // Usa openModal
-            elements.closeShareModalBtn.addEventListener('click', () => closeModal(elements.shareModal));
-            elements.copyShareLinkBtn.addEventListener('click', (e) => { navigator.clipboard.writeText(e.target.closest('.modal-content').querySelector('input').value); showNotification("Link copiato!", "success"); });
-
-            // Social e Varie
-            elements.closeViewBtn.addEventListener('click', () => { window.location.href = window.location.pathname; });
-            elements.addFriendBtn.addEventListener('click', addFriend);
-            elements.copyMyIdBtn.addEventListener('click', () => { navigator.clipboard.writeText(elements.myIdInput.value); showNotification("ID copiato!", "success"); });
-            elements.bellIcon.addEventListener('click', (e) => { e.stopPropagation(); elements.notificationDropdown.classList.toggle('visible'); });
-            elements.closeSummaryBtn.addEventListener('click', () => closeModal(elements.updateSummaryModal));
-
-            // Rewatch Modal
-            elements.confirmRewatchBtn.addEventListener('click', () => { const newCount = parseInt(elements.rewatchCountInput.value); if (!isNaN(newCount) && newCount >= 0) { setRewatchCount(newCount); } else { showNotification("Inserisci un numero valido (0 o superiore).", "warning"); } });
-            elements.cancelRewatchBtn.addEventListener('click', () => closeModal(elements.rewatchModal));
-            document.querySelectorAll('#rewatchModal .quick-rewatch-btn').forEach(btn => btn.addEventListener('click', () => { const count = parseInt(btn.dataset.count); elements.rewatchCountInput.value = count; updateRewatchModalButtons(count); }));
-            elements.rewatchCountInput.addEventListener('input', () => { const count = parseInt(elements.rewatchCountInput.value); updateRewatchModalButtons(count); });
-            document.querySelectorAll("#rewatchModal .num-spinner-btn").forEach(btn => { btn.addEventListener("click", e => { const target = document.getElementById(e.currentTarget.dataset.target); if (target) { let value = parseInt(target.value) || 0; value += e.currentTarget.classList.contains("up") ? 1 : -1; if (value < 0) value = 0; target.value = value; updateRewatchModalButtons(value); } }); });
-
-            // --- Bottom Nav Bar Listeners ---
-            elements.bottomNavHome.addEventListener('click', () => {
-                populateCategoryNavModal();
-                openModal(elements.categoryNavModal);
-                requestAnimationFrame(() => elements.categoryNavModal.classList.add('visible'));
-            });
-            elements.bottomNavSearch.addEventListener('click', () => { elements.searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => elements.searchInput.focus(), 300); });
-            elements.bottomNavAdd.addEventListener('click', () => { elements.mediaManagementBtn.click(); document.querySelector('.tab-btn[data-tab="add-media"]').click(); });
-            elements.bottomNavManage.addEventListener('click', () => { openModal(elements.mobileMenuModal); requestAnimationFrame(() => elements.mobileMenuModal.classList.add('visible')); });
-            elements.bottomNavNotifications.addEventListener('click', () => { openModal(elements.mobileNotificationsModal); requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
-
-            // --- Mobile Modals Listeners ---
-            elements.mobileMenuCloseBtn.addEventListener('click', () => closeModal(elements.mobileMenuModal));
-            elements.mobileNotificationsCloseBtn.addEventListener('click', () => closeModal(elements.mobileNotificationsModal));
-            elements.markAllReadMobileBtn.addEventListener('click', markAllNotificationsAsRead);
-            elements.mobileMenuUserActionBtn.addEventListener('click', () => { (currentUser) ? elements.logoutBtn.click() : elements.authToggle.click(); closeModal(elements.mobileMenuModal); });
-            elements.mobileMenuShareBtn.addEventListener('click', () => {
-                closeModal(elements.mobileMenuModal);
-                if (!currentUser) {
-                    showNotification("Devi essere loggato per condividere.", "warning");
-                } else {
-                    setTimeout(() => {
-                        const link = `${window.location.origin}${window.location.pathname.replace('index.html', 'serietv_tracker.html')}?view=${currentUser.uid}`;
-                        document.getElementById("shareLinkInput").value = link;
-                        openModal(elements.shareModal);
-                    }, 300);
-                }
-            });
-            elements.mobileMenuExportBtn.addEventListener('click', () => { elements.exportBtn.click(); closeModal(elements.mobileMenuModal); });
-            elements.mobileMenuImportBtn.addEventListener('click', () => { elements.importBtn.click(); closeModal(elements.mobileMenuModal); });
-            elements.mobileMenuThemeBtn.addEventListener('click', () => { elements.themeToggle.click(); });
-            elements.mobileMenuResetBtn.addEventListener('click', () => { elements.resetBtn.click(); closeModal(elements.mobileMenuModal); });
-
-            // --- Category Navigation Modal Listeners ---
-            elements.closeCategoryNavBtn.addEventListener('click', () => closeModal(elements.categoryNavModal));
-
-            // --- Filter Modal Listeners ---
-            elements.mobileFilterBtn.addEventListener('click', () => {
-                elements.mobileCategoryFilter.value = elements.categoryFilter.value;
-                elements.mobileSortFilter.value = elements.sortFilter.value;
-                openModal(elements.filterSortModal);
-                requestAnimationFrame(() => elements.filterSortModal.classList.add('visible'));
-            });
-            elements.applyFiltersBtn.addEventListener('click', () => {
-                elements.categoryFilter.value = elements.mobileCategoryFilter.value;
-                elements.sortFilter.value = elements.mobileSortFilter.value;
-                localStorage.setItem("tvShowSortOrder", elements.sortFilter.value);
-                renderMedia();
-                closeModal(elements.filterSortModal);
-            });
-
-            // --- Force Update Listeners ---
-            const forceUpdate = () => { updateAllShowsInBackground(true); };
-            elements.forceUpdateBtnDesktop.addEventListener('click', forceUpdate);
-            elements.forceUpdateBtnMobile.addEventListener('click', () => { forceUpdate(); closeModal(elements.mobileMenuModal); });
-
-            // Keyboard shortcuts
-            document.addEventListener('keydown', (e) => {
-                // Chiudi modale con ESC
-                if (e.key === "Escape") {
-                    const visibleModal = document.querySelector('.modal[style*="flex"]');
-                    if (visibleModal) closeModal(visibleModal);
-                }
-
-                // Focus sulla ricerca con il tasto "/"
-                if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) {
-                    e.preventDefault();
-                    elements.searchInput.focus();
-                }
-            });
-
-            // --- Update History Listeners ---
-            document.getElementById('viewHistoryBtnDesktop').addEventListener('click', () => {
-                renderUpdateHistory();
-                openModal(document.getElementById('historyModal'));
-            });
-
-            document.getElementById('viewHistoryBtnMobile').addEventListener('click', () => {
-                // 1. Chiudiamo il menu mobile visivamente senza attivare history.back()
-                elements.mobileMenuModal.classList.remove('visible');
-
-                // 2. Aspettiamo un istante che il menu sparisca
-                setTimeout(() => {
-                    elements.mobileMenuModal.style.display = 'none';
-                    document.body.classList.remove('modal-open');
-
-                    // 3. Ora "puliamo" lo stato della cronologia del menu mobile 
-                    // in modo che il tasto "indietro" non lo riapra
-                    history.replaceState(null, '', window.location.href);
-
-                    // 4. Infine apriamo lo storico come nuovo stato
-                    renderUpdateHistory();
-                    openModal(document.getElementById('historyModal'));
-                }, 300);
-            });
-
-            document.getElementById('clearHistoryBtn').addEventListener('click', (e) => {
-                // Evitiamo che il click si propaghi ad altri elementi sotto
-                e.stopPropagation();
-
-                // Apriamo il modale di conferma (grazie allo z-index 1300 apparirà SOPRA lo storico)
-                showConfirmModal(
-                    "Cancella Storico",
-                    "Vuoi svuotare tutta la cronologia degli aggiornamenti?",
-                    () => {
-                        // Logica di cancellazione
-                        updateHistory = [];
-                        localStorage.removeItem('updateHistory');
-                        if (currentUser) db.ref(`users/${currentUser.uid}/updateHistory`).remove();
-                        renderUpdateHistory();
-                        showNotification("Storico rimosso", "success");
-                    }
-                );
-            });
-        }
-    </script>
-    <script>
-        // Registrazione Service Worker per PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('PWA Service Worker registrato!', reg))
-                    .catch(err => console.log('Errore PWA:', err));
-            });
-        }
-    </script>
-    <div class="modal" id="historyModal">
-        <div class="modal-content">
-            <h2 style="text-align: center; margin-top: 0;">Storico Aggiornamenti</h2>
-            <div id="historyList" style="max-height: 60vh; overflow-y: auto; padding: 0.5rem;">
-                <!-- Qui verranno inseriti i log -->
-            </div>
-            <div class="modal-footer"
-                style="padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; gap: 1rem;">
-                <button id="clearHistoryBtn" class="btn btn-danger btn-small">Cancella Storico</button>
-                <button onclick="closeModal(document.getElementById('historyModal'))"
-                    class="btn btn-secondary">Chiudi</button>
-            </div>
-        </div>
-    </div>
-
-</body>
-
-</html>
+        function loadTheme() { const theme = localStorage.getItem("theme") || "dark"; document.body.classList.toggle("dark", theme === "dark"); elements.themeToggle.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>`; elem
