@@ -695,6 +695,110 @@
       }
     }
 
+    /* Livello 3: Centro Manutenzione, Storico, Calendario */
+    #settingsModal,
+    #historyModal,
+    #calendarModal,
+    #updateSummaryModal {
+      z-index: 1200 !important;
+    }
+
+    /* Livello 4: Conferme (Import, Reset, Elimina) - DEVE ESSERE IL PIÙ ALTO */
+    #confirmModal {
+      z-index: 1500 !important;
+    }
+
+    .settings-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .settings-card {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+    }
+
+    .settings-card:active {
+      transform: scale(0.97);
+    }
+
+    .settings-icon {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-right: 1rem;
+    }
+
+    .settings-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .settings-title {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .settings-desc {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+
+    /* Colori chiari e distinti */
+    .export-card {
+      background: rgba(34, 139, 34, 0.1);
+      color: #228b22;
+      border-color: rgba(34, 139, 34, 0.2);
+    }
+
+    .export-card .settings-icon {
+      background: #228b22;
+      color: white;
+    }
+
+    .import-card {
+      background: rgba(58, 134, 255, 0.1);
+      color: var(--primary);
+      border-color: rgba(58, 134, 255, 0.2);
+    }
+
+    .import-card .settings-icon {
+      background: var(--primary);
+      color: white;
+    }
+
+    .reset-card {
+      background: rgba(231, 76, 60, 0.1);
+      color: #e74c3c;
+      border-color: rgba(231, 76, 60, 0.2);
+    }
+
+    .reset-card .settings-icon {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .last-backup-info {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      padding: 0.5rem;
+      background: var(--section-tint);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+
     .context-menu {
       position: fixed;
       background: var(--card-bg);
@@ -1786,54 +1890,67 @@
         -webkit-text-size-adjust: 100%;
       }
 
-      /* --- TOP BAR --- */
-      .top-bar {
-        flex-direction: column;
-        gap: 0.75rem;
-        margin-bottom: 1rem;
-      }
-
-      .top-bar-left {
-        flex-direction: row;
-        width: 100%;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        align-items: center;
-      }
-
-      .top-bar-left h1,
-      .top-bar-left #topBarTitle {
-        display: none;
-      }
-
+      /* 1. NASCONDI TUTTA LA PARTE DESTRA (Pulsanti Desktop) */
       .top-bar-right {
-        display: none;
+        display: none !important;
       }
 
-      .tracker-switch {
-        flex-shrink: 0;
-      }
-
-      #mobileFilterBtn {
+      /* 2. SISTEMA LA BARRA SUPERIORE */
+      .top-bar {
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.5rem;
+        height: auto;
+        min-height: 60px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        padding: 0.5rem;
-        flex-shrink: 0;
-        margin-left: auto;
       }
 
+      /* 3. RIGA UNICA: Switch - Search - Filter */
+      .top-bar-left {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+        gap: 10px !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+      }
+
+      /* Lo Switch a sinistra */
+      .tracker-switch {
+        flex-shrink: 0 !important;
+        order: 1;
+      }
+
+      /* La barra di ricerca al centro che si espande */
       .search-box {
-        width: 100%;
-        max-width: none;
+        flex-grow: 1 !important;
+        min-width: 0 !important;
+        /* Permette il restringimento */
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        order: 2;
         height: 40px;
-        flex-basis: 100%;
-        order: 3;
-        margin-top: 0.25rem;
       }
 
-      .top-bar-left>.filter-select {
-        display: none;
+      /* Il tasto filtro a destra */
+      #mobileFilterBtn {
+        display: flex !important;
+        flex-shrink: 0 !important;
+        order: 3;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        justify-content: center;
+        align-items: center;
+      }
+
+      /* Nascondi titoli e select nativi */
+      #topBarTitle,
+      .top-bar-left h1,
+      .top-bar-left .filter-select {
+        display: none !important;
       }
 
       /* --- STATISTICHE: GRIGLIA 4 COLONNE PER LE PRIME 4 STATISTICHE --- */
@@ -2092,17 +2209,40 @@
 
       /* --- BOTTOM NAV --- */
       .bottom-nav {
-        display: flex;
-        height: 60px;
+        display: grid !important;
+        /* Creiamo 5 colonne di larghezza identica */
+        grid-template-columns: repeat(5, 1fr);
+        justify-items: center;
+        align-items: center;
+        height: 65px;
+        padding-bottom: env(safe-area-inset-bottom);
         background: var(--card-bg);
         border-top: 1px solid var(--border-color);
       }
 
+      .nav-spacer {
+        /* Questo elemento occupa spazio ma non reagisce ai tocchi */
+        pointer-events: none;
+        visibility: hidden;
+      }
+
+      .bottom-nav-btn {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      /* Forza il tasto + ad occupare la colonna centrale (la 3) */
       .bottom-nav-btn.add-btn {
+        grid-column: 3;
         transform: translateY(-15px);
-        border: 4px solid var(--bg-color);
         width: 56px;
         height: 56px;
+        border: 4px solid var(--bg-color);
+        box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
       }
     }
   </style>
@@ -2147,6 +2287,9 @@
     </div>
     <div class="top-bar-right">
       <button id="mediaManagementBtn" class="btn btn-primary" title="Gestione"><i class="fas fa-plus"></i></button>
+      <button id="settingsBtn" class="btn btn-secondary" title="Impostazioni Dati">
+        <i class="fas fa-cog"></i>
+      </button>
       <div class="notification-bell-container" id="notificationBellContainer" style="display: none;">
         <button id="bellIcon" class="btn btn-secondary" title="Notifiche"><i class="fas fa-bell"></i></button>
         <div id="notificationBadge" class="notification-badge">0</div>
@@ -2154,12 +2297,6 @@
       </div>
       <button id="shareBtn" class="btn btn-secondary" title="Condividi Libreria"><i
           class="fas fa-share-alt"></i></button>
-      <button id="exportBtn" class="btn btn-secondary" title="Esporta Dati (.json)"><i
-          class="fas fa-download"></i></button>
-      <input type="file" id="importFile" accept=".json" style="display: none;">
-      <button id="importBtn" class="btn btn-secondary" title="Importa Dati (.json)"><i
-          class="fas fa-upload"></i></button>
-      <button id="resetBtn" class="btn btn-secondary" title="Resetta Applicazione"><i class="fas fa-undo"></i></button>
       <button id="themeToggle" class="btn btn-secondary" title="Cambia Tema"><i class="fas fa-moon"></i></button>
       <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger" title="Logout"><i
             class="fas fa-sign-out-alt"></i></button></div>
@@ -2350,11 +2487,10 @@
         <button class="btn" id="mobileMenuUserActionBtn"><i class="fas fa-user"></i><span>Login /
             Registrati</span></button>
         <button class="btn" id="mobileMenuShareBtn"><i class="fas fa-share-alt"></i>Condividi Libreria</button>
-        <button class="btn" id="mobileMenuExportBtn"><i class="fas fa-download"></i>Esporta Dati</button>
-        <button class="btn" id="mobileMenuImportBtn"><i class="fas fa-upload"></i>Importa Dati</button>
+        <button class="btn" id="mobileSettingsBtn">
+          <i class="fas fa-cog"></i>Gestione Dati & Backup
+        </button>
         <button class="btn" id="mobileMenuThemeBtn"><i class="fas fa-moon"></i>Cambia Tema</button>
-        <button class="btn" id="mobileMenuResetBtn" style="color: var(--danger);"><i class="fas fa-undo"
-            style="color: var(--danger);"></i>Resetta Tracker</button>
       </div>
       <div class="modal-footer" style="border: none; padding-bottom: 0;">
         <button id="mobileMenuCloseBtn" class="btn btn-danger">Chiudi</button>
@@ -2458,10 +2594,10 @@
       <i class="fas fa-list-ul"></i>
       <span>Liste</span>
     </button>
-    <button class="bottom-nav-btn" id="bottomNavSearch" title="Cerca">
-      <i class="fas fa-search"></i>
-      <span>Cerca</span>
-    </button>
+
+    <!-- SPAZIO VUOTO PER SIMMETRIA -->
+    <div class="nav-spacer"></div>
+
     <button class="bottom-nav-btn add-btn" id="bottomNavAdd" title="Aggiungi Film">
       <i class="fas fa-plus"></i>
     </button>
@@ -2474,6 +2610,51 @@
       <i class="fas fa-ellipsis-h"></i>
       <span>Altro</span>
     </button>
+  </div>
+
+  <div class="modal" id="settingsModal">
+    <div class="modal-content" style="max-width: 500px;">
+      <h2 style="text-align: center; margin-top: 0;">Centro Manutenzione</h2>
+
+      <div class="settings-grid">
+        <!-- EXPORT -->
+        <div class="settings-card export-card" id="exportAction">
+          <div class="settings-icon"><i class="fas fa-download"></i></div>
+          <div class="settings-info">
+            <span class="settings-title">Esporta Dati</span>
+            <span class="settings-desc">Scarica un backup locale (JSON)</span>
+          </div>
+        </div>
+
+        <!-- IMPORT -->
+        <div class="settings-card import-card" id="importAction">
+          <div class="settings-icon"><i class="fas fa-upload"></i></div>
+          <div class="settings-info">
+            <span class="settings-title">Importa Dati</span>
+            <span class="settings-desc">Ripristina da un file salvato</span>
+          </div>
+        </div>
+
+        <!-- RESET -->
+        <div class="settings-card reset-card" id="resetAction">
+          <div class="settings-icon"><i class="fas fa-trash-alt"></i></div>
+          <div class="settings-info">
+            <span class="settings-title">Resetta Tracker</span>
+            <span class="settings-desc">Cancella tutto (Azione irreversibile)</span>
+          </div>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+      </div>
+
+      <div id="lastBackupBadge" class="last-backup-info">
+        <i class="fas fa-history"></i> Ultimo backup: <span>Mai eseguito</span>
+      </div>
+
+      <div class="modal-footer" style="border-top: none;">
+        <button onclick="closeModal(document.getElementById('settingsModal'))" class="btn btn-secondary"
+          style="width: 100%;">Chiudi</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -2506,9 +2687,10 @@
       registerPassword: document.getElementById("registerPassword"), registerConfirmPassword: document.getElementById("registerConfirmPassword"),
       logoutBtn: document.getElementById("logoutBtn"), loginForm: document.getElementById("loginForm"),
       registerForm: document.getElementById("registerForm"), mediaManagementBtn: document.getElementById("mediaManagementBtn"),
-      shareBtn: document.getElementById("shareBtn"), exportBtn: document.getElementById("exportBtn"),
-      importBtn: document.getElementById("importBtn"), importFile: document.getElementById("importFile"),
-      resetBtn: document.getElementById("resetBtn"), themeToggle: document.getElementById("themeToggle"),
+      shareBtn: document.getElementById("shareBtn"),
+      settingsBtn: document.getElementById("settingsBtn"),
+      importFile: document.getElementById("importFile"),
+      themeToggle: document.getElementById("themeToggle"),
       searchInput: document.getElementById("searchInput"), categoryFilter: document.getElementById("categoryFilter"),
       sortFilter: document.getElementById("sortFilter"), statTotal: document.getElementById("statTotal"),
       statWatchlist: document.getElementById("statWatchlist"), statWatched: document.getElementById("statWatched"),
@@ -2553,7 +2735,7 @@
       // Bottom Nav Bar Elements
       bottomNavAdd: document.getElementById('bottomNavAdd'),
       bottomNavManage: document.getElementById('bottomNavManage'),
-      bottomNavSearch: document.getElementById('bottomNavSearch'),
+
       bottomNavNotifications: document.getElementById('bottomNavNotifications'),
       bottomNavHome: document.getElementById('bottomNavHome'),
       notificationBadgeMobile: document.getElementById('notificationBadgeMobile'),
@@ -3683,8 +3865,24 @@
       a.href = url;
       a.download = `filmtracker_export_${new Date().toISOString().split("T")[0]}.json`;
       a.click();
-      URL.revokeObjectURL(url);
-      showNotification("Dati esportati", "success");
+
+      // SALVA IL TIMESTAMP
+      const now = new Date().toISOString();
+      localStorage.setItem('lastFilmExport', now);
+      if (currentUser) db.ref(`users/${currentUser.uid}/lastExport`).set(now);
+
+      updateBackupBadge(now);
+      showNotification("Backup scaricato con successo!", "success");
+    }
+
+    function updateBackupBadge(timestamp) {
+      const badge = document.querySelector('#lastBackupBadge span');
+      const stored = timestamp || localStorage.getItem('lastFilmExport');
+      if (stored) {
+        badge.textContent = new Date(stored).toLocaleString('it-IT', {
+          day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+      }
     }
 
     function importData(file) {
@@ -3694,13 +3892,22 @@
         try {
           const data = JSON.parse(e.target.result);
           if (!Array.isArray(data.mediaList)) throw new Error("Formato file non valido");
-          showConfirmModal("Importa Dati", `Stai per importare ${data.mediaList.length} film. I dati attuali verranno sovrascritti. Continuare?`, () => {
-            mediaList = data.mediaList;
-            categories = data.categories || [...DEFAULT_CATEGORIES];
-            saveData();
-            renderFullUI();
-            showNotification("Dati importati con successo", "success");
-          });
+
+          // Chiudiamo il modale impostazioni così la conferma è pulita sullo sfondo
+          if (document.getElementById('settingsModal')) {
+            closeModal(document.getElementById('settingsModal'));
+          }
+
+          // Aspettiamo che il modale inizi a chiudersi prima di chiedere conferma
+          setTimeout(() => {
+            showConfirmModal("Importa Dati", `Stai per importare ${data.mediaList.length} film. I dati attuali verranno sovrascritti. Continuare?`, () => {
+              mediaList = data.mediaList;
+              categories = data.categories || [...DEFAULT_CATEGORIES];
+              saveData();
+              renderFullUI();
+              showNotification("Dati importati con successo", "success");
+            });
+          }, 350);
         } catch (err) {
           showNotification("Errore nell'importazione: " + err.message, "error");
         }
@@ -4268,10 +4475,53 @@
         closeModal(elements.posterModal);
       });
       elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
-      elements.exportBtn.addEventListener("click", exportData);
-      elements.importBtn.addEventListener("click", () => elements.importFile.click());
-      elements.importFile.addEventListener("change", e => importData(e.target.files[0]));
-      elements.resetBtn.addEventListener("click", resetApp);
+      // Apri modale Impostazioni (Desktop)
+      if (elements.settingsBtn) {
+        elements.settingsBtn.addEventListener('click', () => {
+          updateBackupBadge();
+          openModal(document.getElementById('settingsModal'));
+        });
+      }
+
+      // Apri modale Impostazioni (Mobile)
+      const mobileSettingsBtn = document.getElementById('mobileSettingsBtn');
+      if (mobileSettingsBtn) {
+        mobileSettingsBtn.addEventListener('click', () => {
+          closeModal(elements.mobileMenuModal);
+          setTimeout(() => {
+            updateBackupBadge();
+            openModal(document.getElementById('settingsModal'));
+          }, 300);
+        });
+      }
+
+      // Azioni dentro il modale (Export, Import, Reset)
+      const exportAction = document.getElementById('exportAction');
+      if (exportAction) exportAction.addEventListener('click', exportData);
+
+      const importAction = document.getElementById('importAction');
+      if (importAction) {
+        importAction.addEventListener('click', () => {
+          if (elements.importFile) elements.importFile.click();
+        });
+      }
+
+      const resetAction = document.getElementById('resetAction');
+      if (resetAction) {
+        resetAction.addEventListener('click', () => {
+          // Chiudiamo il modale impostazioni PRIMA
+          closeModal(document.getElementById('settingsModal'));
+
+          // Aspettiamo che finisca l'animazione e poi chiediamo conferma
+          setTimeout(() => {
+            resetApp();
+          }, 350);
+        });
+      }
+
+      if (elements.importFile) {
+        elements.importFile.addEventListener("change", e => importData(e.target.files[0]));
+      }
       elements.themeToggle.addEventListener("click", toggleTheme);
       elements.searchInput.addEventListener("input", () => {
         clearTimeout(debounceTimeout);
@@ -4316,7 +4566,7 @@
         openModal(elements.categoryNavModal);
         requestAnimationFrame(() => elements.categoryNavModal.classList.add('visible'));
       });
-      elements.bottomNavSearch.addEventListener('click', () => { elements.searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => elements.searchInput.focus(), 300); });
+
       elements.bottomNavAdd.addEventListener('click', () => { elements.mediaManagementBtn.click(); document.querySelector('.tab-btn[data-tab="add-media"]').click(); });
       elements.bottomNavManage.addEventListener('click', () => { openModal(elements.mobileMenuModal); requestAnimationFrame(() => elements.mobileMenuModal.classList.add('visible')); });
       elements.bottomNavNotifications.addEventListener('click', () => { openModal(elements.mobileNotificationsModal); requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
@@ -4326,11 +4576,7 @@
       elements.mobileNotificationsCloseBtn.addEventListener('click', () => closeModal(elements.mobileNotificationsModal));
       elements.markAllReadMobileBtn.addEventListener('click', markAllNotificationsAsRead);
       elements.mobileMenuUserActionBtn.addEventListener('click', () => { (currentUser) ? elements.logoutBtn.click() : elements.authToggle.click(); closeModal(elements.mobileMenuModal); });
-      elements.mobileMenuShareBtn.addEventListener('click', () => { elements.shareBtn.click(); closeModal(elements.mobileMenuModal); });
-      elements.mobileMenuExportBtn.addEventListener('click', () => { elements.exportBtn.click(); closeModal(elements.mobileMenuModal); });
-      elements.mobileMenuImportBtn.addEventListener('click', () => { elements.importBtn.click(); closeModal(elements.mobileMenuModal); });
       elements.mobileMenuThemeBtn.addEventListener('click', () => { elements.themeToggle.click(); });
-      elements.mobileMenuResetBtn.addEventListener('click', () => { elements.resetBtn.click(); closeModal(elements.mobileMenuModal); });
 
       // --- Filter Modal Listeners ---
       elements.mobileFilterBtn.addEventListener('click', () => {
@@ -4624,6 +4870,8 @@
       setupBackGestureSupport();
     }
   </script>
+
+
 </body>
 
 </html>
