@@ -843,6 +843,78 @@
       margin: 0.25rem 0;
     }
 
+    #digitalModal {
+      z-index: 1200 !important;
+    }
+
+    #digitalList {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .digital-item {
+      display: flex;
+      gap: 1rem;
+      background: var(--section-tint);
+      border-radius: 12px;
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      align-items: center;
+      transition: transform 0.2s;
+    }
+
+    .digital-item:active {
+      transform: scale(0.98);
+    }
+
+    .digital-still-wrapper {
+      width: 120px;
+      min-width: 120px;
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #2b2b2b;
+    }
+
+    .digital-still {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .digital-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .digital-title {
+      font-weight: 700;
+      font-size: 1rem;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .digital-release-date {
+      font-size: 0.85rem;
+      color: var(--primary);
+      font-weight: 600;
+      margin-top: 4px;
+      display: block;
+    }
+
+    .digital-status {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 6px;
+      display: inline-block;
+    }
+
     .empty-state {
       text-align: center;
       padding: 3rem 1rem;
@@ -2287,6 +2359,9 @@
     </div>
     <div class="top-bar-right">
       <button id="mediaManagementBtn" class="btn btn-primary" title="Gestione"><i class="fas fa-plus"></i></button>
+      <button id="digitalBtn" class="btn btn-secondary" title="Uscite Digitali">
+        <i class="fas fa-cloud"></i>
+      </button>
       <button id="settingsBtn" class="btn btn-secondary" title="Impostazioni Dati">
         <i class="fas fa-cog"></i>
       </button>
@@ -2595,8 +2670,11 @@
       <span>Liste</span>
     </button>
 
-    <!-- SPAZIO VUOTO PER SIMMETRIA -->
-    <div class="nav-spacer"></div>
+    <!-- Tasto Digital al posto dello spacer -->
+    <button class="bottom-nav-btn" id="mobileDigitalBtn" title="Digital">
+      <i class="fas fa-cloud"></i>
+      <span>Digital</span>
+    </button>
 
     <button class="bottom-nav-btn add-btn" id="bottomNavAdd" title="Aggiungi Film">
       <i class="fas fa-plus"></i>
@@ -4861,7 +4939,89 @@
         e.preventDefault();
         elements.searchInput.focus();
       }
+
+      // ALT+N per aggiungere nuovo film
+      if (e.altKey && e.key === 'n') {
+        elements.mediaManagementBtn.click();
+        document.querySelector('.tab-btn[data-tab="add-media"]').click();
+      }
     });
+
+    async function loadDigitalCalendar() {
+      const listContainer = document.getElementById('digitalList');
+      if (!listContainer) return;
+
+      listContainer.innerHTML = `<div style="text-align:center; padding: 3rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i></div>`;
+
+      try {
+        const response = await fetch(`${MDBLIST_PROXY_URL}?mode=digital`);
+        const movies = await response.json();
+
+        if (!movies || movies.length === 0) {
+          listContainer.innerHTML = "<p style='text-align:center;'>Nessun dato trovato.</p>";
+          return;
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Filtro: film usciti da non più di 5 giorni o futuri
+        const filtered = movies.filter(m => m.timestamp > (today.getTime() - (5 * 24 * 60 * 60 * 1000)));
+        filtered.sort((a, b) => a.timestamp - b.timestamp);
+
+        listContainer.innerHTML = filtered.map(movie => {
+          const relDate = new Date(movie.date);
+
+          // Badge per data incerta
+          const tbcBadge = movie.rdWarning ? `<span style="color: var(--danger); font-size: 0.7rem; font-weight: 800; margin-left: 5px;">(TBC)</span>` : '';
+
+          // Stringa Regista • Genere • Durata
+          const metaString = `${movie.director || 'N/D'} • ${movie.genre || 'N/D'} • ${movie.duration || 'N/D'}`;
+
+          return `
+            <div class="digital-item">
+                <div class="digital-still-wrapper">
+                    <img src="${movie.still}" class="digital-still" onerror="this.src='${DEFAULT_POSTER}'">
+                </div>
+                <div class="digital-info">
+                    <span class="digital-title">${movie.title}</span>
+                    <span class="digital-release-date" style="color: var(--primary); font-weight: 600; font-size: 0.85rem;">
+                        <i class="fas fa-calendar-day"></i> ${relDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })} ${tbcBadge}
+                    </span>
+                    <span class="digital-meta" style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-top: 2px;">
+                        ${metaString}
+                    </span>
+                </div>
+                <!-- TASTO AGGIUNGI RAPIDO -->
+                <button onclick="closeModal(document.getElementById('digitalModal')); addNewMedia('${movie.tmdbId}')" 
+                        class="btn btn-primary" 
+                        style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 50%;" 
+                        title="Aggiungi alla Watchlist">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>`;
+        }).join('');
+
+      } catch (error) {
+        listContainer.innerHTML = "<p style='text-align:center; color: var(--danger);'>Errore di caricamento.</p>";
+      }
+    }
+
+    const digitalBtn = document.getElementById('digitalBtn');
+    if (digitalBtn) {
+      digitalBtn.addEventListener('click', () => {
+        openModal(document.getElementById('digitalModal'));
+        loadDigitalCalendar();
+      });
+    }
+
+    const mobileDigitalBtn = document.getElementById('mobileDigitalBtn');
+    if (mobileDigitalBtn) {
+      mobileDigitalBtn.addEventListener('click', () => {
+        openModal(document.getElementById('digitalModal'));
+        loadDigitalCalendar();
+      });
+    }
 
     // Initialize back gesture support when DOM is ready
     if (document.readyState === 'loading') {
@@ -4871,6 +5031,20 @@
     }
   </script>
 
+
+  <!-- MODALE DIGITAL CALENDAR -->
+  <div class="modal" id="digitalModal">
+    <div class="modal-content">
+      <h2 style="text-align: center; margin: 1rem 0;">Prossime Uscite Digitali</h2>
+      <div id="digitalList" style="flex: 1; overflow-y: auto; padding: 0 1rem 1rem 1rem;">
+        <!-- I film appariranno qui -->
+      </div>
+      <div class="modal-footer" style="padding: 1rem; border-top: 1px solid var(--border-color);">
+        <button onclick="closeModal(document.getElementById('digitalModal'))" class="btn btn-secondary"
+          style="width: 100%;">Chiudi</button>
+      </div>
+    </div>
+  </div>
 
 </body>
 
