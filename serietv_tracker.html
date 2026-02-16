@@ -5233,4 +5233,1092 @@
         function showConfirmModal(title, body, onConfirm) { elements.confirmModalTitle.textContent = title; elements.confirmModalBody.textContent = body; openModal(elements.confirmModal); const confirmHandler = () => { closeModal(elements.confirmModal); onConfirm(); cleanup(); }; const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); }; const cleanup = () => { elements.confirmModalConfirm.removeEventListener("click", confirmHandler); elements.confirmModalCancel.removeEventListener("click", cancelHandler); }; elements.confirmModalConfirm.addEventListener("click", confirmHandler); elements.confirmModalCancel.addEventListener("click", cancelHandler); }
         function setupLazyLoading() { if (lazyLoadObserver) lazyLoadObserver.disconnect(); lazyLoadObserver = new IntersectionObserver((entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { const img = entry.target; img.src = img.dataset.src; img.classList.remove("lazy"); observer.unobserve(img); } }); }, { rootMargin: "200px" }); document.querySelectorAll(".lazy").forEach(img => lazyLoadObserver.observe(img)); }
         function loadSortOrder() { elements.sortFilter.value = localStorage.getItem("tvShowSortOrder") || "added"; }
-        function loadTheme() { const theme = localStorage.getItem("theme") || "dark"; document.body.classList.toggle("dark", theme === "dark"); elements.themeToggle.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>`; elem
+        function loadTheme() { const theme = localStorage.getItem("theme") || "dark"; document.body.classList.toggle("dark", theme === "dark"); elements.themeToggle.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>`; elements.mobileMenuThemeBtn.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>Cambia Tema`; }
+
+        async function searchTMDb() {
+            const title = elements.mediaTitle.value.trim();
+            if (!title) return;
+            elements.tmdbResults.innerHTML = `<div style="text-align:center;"><i class="fas fa-spinner loading-spinner"></i></div>`;
+            try {
+                const res = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_KEY}&query=${encodeURIComponent(title)}&language=it-IT&include_adult=false`);
+                const data = await res.json();
+                if (data.results && data.results.length > 0) {
+                    elements.tmdbResults.innerHTML = data.results.map(r => `
+                    <div class="tmdb-result-item" data-tmdb-id="${r.id}" data-title="${r.name}">
+                        <img src="${r.poster_path ? `https://image.tmdb.org/t/p/w200${r.poster_path}` : DEFAULT_POSTER}" class="tmdb-poster-small" onerror="this.src='${DEFAULT_POSTER}'">
+                        <div>
+                            <strong>${r.name}</strong> (${r.first_air_date ? r.first_air_date.split('-')[0] : 'N/D'})
+                            <div style="font-size:0.8rem; color: var(--text-secondary)">${r.original_name}</div>
+                        </div>
+                    </div>`).join('');
+                    document.querySelectorAll(".tmdb-result-item").forEach(item => item.addEventListener("click", () => {
+                        currentTMDbSelection = { tmdbId: item.dataset.tmdbId };
+                        elements.mediaTitle.value = item.dataset.title;
+                        showNotification(`"${item.dataset.title}" selezionato.`, "success");
+                    }));
+                } else {
+                    elements.tmdbResults.innerHTML = `<p>Nessun risultato</p>`;
+                }
+            } catch (err) {
+                elements.tmdbResults.innerHTML = "<p>Errore di rete</p>";
+            }
+        }
+
+        function triggerNewEpisodeCheck() {
+            const now = new Date().getTime();
+            const lastCheck = localStorage.getItem('lastNewEpisodeCheck');
+            const SIX_HOURS = 6 * 60 * 60 * 1000;
+
+            if (!lastCheck || (now - lastCheck) > SIX_HOURS) {
+                console.log("Esecuzione del controllo per nuovi episodi...");
+                checkForNewEpisodes();
+                localStorage.setItem('lastNewEpisodeCheck', now);
+            }
+        }
+
+        function checkForNewEpisodes() {
+            const lastCheckString = localStorage.getItem('lastNewEpisodeCheck');
+            const lastCheckDate = lastCheckString ? new Date(parseInt(lastCheckString)) : new Date(Date.now() - 24 * 60 * 60 * 1000);
+            const currentDate = new Date();
+
+            const showsToCheck = mediaList.filter(s => s.category === 'In Corso');
+
+            showsToCheck.forEach(show => {
+                Object.values(show.seasons).forEach(season => {
+                    (season.episodes || []).forEach(ep => {
+                        if (ep.air_date) {
+                            const airDate = new Date(ep.air_date);
+                            if (airDate >= lastCheckDate && airDate <= currentDate) {
+                                if (!show.progress[`${season.season_number}-${ep.episode_number}`]) {
+                                    setTimeout(() => showNotification(`È uscito un nuovo episodio di ${show.title}!`, 'success'), 500);
+                                }
+                            }
+                        }
+                    });
+                });
+            });
+        }
+
+        async function updateAllShowsInBackground(force = false) {
+            if (isUpdateInProgress) {
+                if (force) {
+                    showNotification("Aggiornamento già in corso.", "warning");
+                }
+                console.log("Tentativo di avvio aggiornamento bloccato: un altro è già in corso.");
+                return;
+            }
+
+            isUpdateInProgress = true;
+
+            try {
+                const now = new Date().getTime();
+                const lastUpdate = localStorage.getItem('lastBackgroundUpdate');
+                const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+                if (!force && lastUpdate && (now - lastUpdate) < TWENTY_FOUR_HOURS) {
+                    console.log("Aggiornamento in background saltato: non ancora trascorse 24 ore.");
+                    isUpdateInProgress = false;
+                    return;
+                }
+
+                const today = new Date();
+                today.setUTCHours(0, 0, 0, 0);
+                const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+                const showsToUpdate = mediaList.filter(show => {
+                    if (!show.tmdbID) return false;
+
+                    const ora = new Date().getTime();
+                    const ultimaAttivita = new Date(show.lastActivityAt || 0).getTime();
+                    const QUINDICI_GIORNI = 15 * 24 * 60 * 60 * 1000;
+
+                    // 1. Controllo episodi vicini (±7 giorni)
+                    const haEpisodiVicini = Object.values(show.seasons).some(season =>
+                        (season.episodes || []).some(ep => {
+                            if (!ep.air_date) return false;
+                            const airDate = new Date(ep.air_date + 'T00:00:00Z');
+                            return airDate >= sevenDaysAgo && airDate <= sevenDaysFromNow;
+                        })
+                    );
+
+                    // 2. Controllo "Serie in Corso" ferma da troppo tempo
+                    // Se la serie non è conclusa, la controlliamo comunque ogni 15 giorni 
+                    // per vedere se TMDb ha aggiunto una nuova stagione o nuove date.
+                    const vaControllataPerSicurezza =
+                        (show.status === 'Returning Series' || show.status === 'In Production') &&
+                        (ora - ultimaAttivita > QUINDICI_GIORNI);
+
+                    return haEpisodiVicini || vaControllataPerSicurezza;
+                });
+
+                if (showsToUpdate.length === 0) {
+                    if (force) showNotification("Nessuna serie con attività recente da aggiornare.", "warning");
+                    localStorage.setItem('lastBackgroundUpdate', now);
+                    displayLastUpdateTime();
+                    isUpdateInProgress = false;
+                    return;
+                }
+
+                console.log(`Avvio aggiornamento per ${showsToUpdate.length} serie...`);
+                openModal(elements.updateProgressModal);
+                elements.updateProgressTitle.textContent = force ? "Aggiornamento Manuale" : "Aggiornamento Giornaliero";
+                let allChanges = [];
+
+                for (let i = 0; i < showsToUpdate.length; i++) {
+                    const show = showsToUpdate[i];
+                    const progress = ((i + 1) / showsToUpdate.length) * 100;
+                    elements.updateProgressBarFill.style.width = `${progress}%`;
+                    elements.updateProgressText.textContent = `Controllo ${i + 1} di ${showsToUpdate.length}: ${show.title}...`;
+
+                    try {
+                        const showChanges = await showDetailsModal(show.id, true);
+                        if (showChanges.length > 0) {
+                            allChanges = allChanges.concat(showChanges);
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 400));
+                    } catch (error) {
+                        console.error(`Errore aggiornando ${show.title} in background:`, error);
+                    }
+                }
+
+                closeModal(elements.updateProgressModal);
+
+                if (allChanges.length > 0) {
+                    // SALVA NELLO STORICO
+                    addToUpdateHistory(allChanges);
+                    elements.updateSummaryList.innerHTML = allChanges.map(change => `<li>${change}</li>`).join('');
+                    openModal(elements.updateSummaryModal);
+                } else if (force) {
+                    showNotification("Nessun aggiornamento trovato.", "success");
+                }
+
+                localStorage.setItem('lastBackgroundUpdate', now);
+                displayLastUpdateTime();
+            } finally {
+                isUpdateInProgress = false;
+            }
+        }
+
+        function setupAuthListeners() {
+            elements.authToggle.addEventListener("click", () => openModal(elements.authModal));
+
+            document.querySelectorAll(".auth-tab").forEach(tab => tab.addEventListener("click", () => {
+                document.querySelectorAll(".auth-tab, .auth-form-container").forEach(el => el.classList.remove("active"));
+                tab.classList.add("active");
+                document.getElementById(`${tab.dataset.tab}Form`).classList.add("active");
+            }));
+            elements.loginBtn.addEventListener('click', () => firebase.auth().signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value).catch(err => showNotification(err.message, "error")));
+            elements.registerBtn.addEventListener('click', () => {
+                const pass = document.getElementById('registerPassword').value;
+                if (pass !== document.getElementById('registerConfirmPassword').value) { showNotification("Le password non corrispondono.", "warning"); return; }
+                firebase.auth().createUserWithEmailAndPassword(document.getElementById('registerEmail').value, pass)
+                    .then(cred => db.ref(`users/${cred.user.uid}/email`).set(cred.user.email))
+                    .catch(err => showNotification(err.message, "error"));
+            });
+            elements.logoutBtn.addEventListener("click", () => {
+                detachAllFriendListeners();
+                firebase.auth().signOut()
+            });
+            firebase.auth().onAuthStateChanged(user => {
+                if (isViewMode) return;
+                currentUser = user;
+                updateAuthUI();
+                if (user) {
+                    loadData();
+                } else {
+                    loadLocalData();
+                    // --- MIGRATION LOGIC FOR DROPPED SHOWS ---
+                    let migrationNeeded = false;
+                    mediaList.forEach(show => {
+                        if (show.category === "In Pausa / Droppata") {
+                            show.isDropped = true;
+                            // Move to "In Corso" unless progress is 0, then "Da Vedere"
+                            const totalEpisodes = show.totalEpisodes || 0;
+                            const watchedEpisodes = show.progress ? Object.values(show.progress).reduce((a, b) => a + b, 0) : 0;
+                            show.category = (watchedEpisodes === 0) ? "Da Vedere" : "In Corso";
+                            migrationNeeded = true;
+                        }
+                    });
+
+                    // Remove "In Pausa / Droppata" from categories list if present
+                    const droppedCatIndex = categories.findIndex(c => (typeof c === 'string' ? c : c.name) === "In Pausa / Droppata");
+                    if (droppedCatIndex !== -1) {
+                        categories.splice(droppedCatIndex, 1);
+                        migrationNeeded = true;
+                    }
+
+                    if (migrationNeeded && !isViewMode) {
+                        saveData();
+                        console.log("Migration for Dropped shows completed.");
+                    }
+                    // -----------------------------------------
+
+                    renderFullUI();
+                    hideLoader();
+                }
+            });
+        }
+
+        function updateAuthUI() {
+            const userActionBtn = elements.mobileMenuUserActionBtn.querySelector('span');
+            if (currentUser) {
+                elements.userInfo.style.display = "flex";
+                elements.authToggle.style.display = "none";
+                elements.notificationBellContainer.style.display = 'block';
+                elements.updateSectionDesktop.style.display = 'block';
+                if (userActionBtn) {
+                    userActionBtn.textContent = 'Logout';
+                    elements.mobileMenuUserActionBtn.style.color = 'var(--danger)';
+                    elements.mobileMenuUserActionBtn.querySelector('i').style.color = 'var(--danger)';
+                }
+            } else {
+                elements.userInfo.style.display = "none";
+                elements.authToggle.style.display = "inline-flex";
+                elements.notificationBellContainer.style.display = 'none';
+                elements.updateSectionDesktop.style.display = 'none';
+                if (userActionBtn) {
+                    userActionBtn.textContent = 'Login / Registrati';
+                    elements.mobileMenuUserActionBtn.style.color = '';
+                    elements.mobileMenuUserActionBtn.querySelector('i').style.color = '';
+                }
+            }
+        }
+
+        function handleViewMode() {
+            const viewId = new URLSearchParams(window.location.search).get("view");
+            if (!viewId) { hideLoader(); return false; }
+            isViewMode = true;
+            document.body.style.paddingBottom = '0';
+            document.getElementById('bottomNav').style.display = 'none';
+            document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, #authToggle, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
+            elements.viewModeBanner.style.display = "flex";
+            db.ref(`users/${viewId}/tvShowTracker`).on("value", snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    mediaList = (data.mediaList || []).map(item => ({ ...getDefaultShowProps(), ...item }));
+                    categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => (typeof cat === 'string') ? { name: cat, hideProgress: false } : cat);
+                    renderFullUI();
+                    db.ref(`users/${viewId}/email`).once("value", emailSnap => {
+                        elements.viewModeUserEmail.textContent = `Stai visualizzando la libreria di ${emailSnap.val() || "un utente"}`;
+                    });
+                } else { showNotification("Libreria condivisa non trovata.", "error"); }
+                hideLoader();
+            });
+            return true;
+        }
+
+        function logActivity(type, title, details) {
+            if (!currentUser) return;
+            const logRef = db.ref(`users/${currentUser.uid}/activityLog`);
+            const activity = {
+                type,
+                title,
+                details,
+                timestamp: new Date().toISOString(),
+                link: `${window.location.origin}${window.location.pathname.replace('index.html', 'serietv_tracker.html')}?view=${currentUser.uid}`
+            };
+
+            return logRef.transaction(currentLog => {
+                let log = Array.isArray(currentLog) ? currentLog : [];
+                log.unshift(activity);
+                return log.slice(0, MAX_LOG_SIZE);
+            });
+        }
+
+        function detachAllFriendListeners() {
+            Object.values(friendListeners).forEach(({ ref, listener }) => ref.off('value', listener));
+            friendListeners = {};
+        }
+
+        function setupFriendListeners() {
+            if (!currentUser) return;
+            detachAllFriendListeners();
+            const friendActivityMap = new Map();
+            const processAndRenderNotifications = () => {
+                let allNewNotifications = Array.from(friendActivityMap.values()).flat();
+                allNewNotifications.sort((a, b) => {
+                    // Check if activity is related to a dropped show
+                    const showA = mediaList.find(m => m.title === a.activity.title);
+                    const showB = mediaList.find(m => m.title === b.activity.title);
+                    const isDroppedA = showA ? showA.isDropped : false;
+                    const isDroppedB = showB ? showB.isDropped : false;
+
+                    // Sort dropped shows to the bottom
+                    if (isDroppedA && !isDroppedB) return 1;
+                    if (!isDroppedA && isDroppedB) return -1;
+
+                    // Secondary sort by date (descending)
+                    return new Date(b.activity.timestamp) - new Date(a.activity.timestamp);
+                });
+                renderNotifications(allNewNotifications.slice(0, MAX_NOTIFICATIONS));
+            };
+
+            followedFriends.forEach(friend => {
+                const ref = db.ref(`users/${friend.id}/activityLog`);
+                const listener = snapshot => {
+                    const activities = snapshot.val() || [];
+                    const lastChecked = lastCheckedTimestamps[friend.id] || new Date(0).toISOString();
+
+                    const activityArray = Array.isArray(activities) ? activities : [];
+                    const newActivities = activityArray
+                        .filter(act => act && new Date(act.timestamp) > new Date(lastChecked))
+                        .map(activity => ({ friendId: friend.id, friendEmail: friend.email, activity }));
+
+                    friendActivityMap.set(friend.id, newActivities);
+                    processAndRenderNotifications();
+                };
+                ref.on('value', listener);
+                friendListeners[friend.id] = { ref, listener };
+            });
+        }
+
+        function populateNotificationList(listElement, notifications) {
+            listElement.innerHTML = ''; // Clear previous notifications
+            if (notifications.length > 0) {
+                notifications.forEach(n => {
+                    if (!n.activity) return;
+                    const item = document.createElement('div');
+                    item.className = 'notification-item';
+                    item.dataset.friendId = n.friendId;
+                    const isTV = n.activity.type.includes('show') || n.activity.type.includes('season');
+                    item.innerHTML = `
+                    <i class="fas ${getActivityIcon(n.activity.type)} ${isTV ? 'tv-notification' : 'film-notification'}"></i>
+                    <span class="notification-item-text">${getActivityText(n.friendEmail, n.activity)}</span>`;
+
+                    item.addEventListener('click', () => {
+                        const friendId = item.dataset.friendId;
+                        if (friendId) {
+                            const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+                            const url = isTV
+                                ? `${baseUrl}/serietv_tracker.html?view=${friendId}`
+                                : `${baseUrl}/index.html?view=${friendId}`;
+                            window.open(url, '_blank');
+                        }
+                    });
+                    listElement.appendChild(item);
+                });
+            } else {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'no-notifications';
+                emptyState.textContent = 'Nessuna nuova notifica';
+                listElement.appendChild(emptyState);
+            }
+        }
+
+        function renderNotifications(notifications) {
+            const count = notifications.length;
+
+            // Desktop Dropdown
+            elements.notificationBadge.textContent = count;
+            elements.notificationBadge.classList.toggle('visible', count > 0);
+            const desktopList = elements.notificationDropdown.querySelector('.notification-list');
+            if (!desktopList) { // Initial setup for desktop dropdown
+                elements.notificationDropdown.innerHTML = `
+                <div class="notification-header">Notifiche Amici</div>
+                <div class="notification-list"></div>
+                <div class="notification-footer">
+                    <button class="btn btn-primary btn-small" id="markReadAllDesktop"><i class="fas fa-check-double"></i> Segna tutte come lette</button>
+                </div>`;
+                document.getElementById('markReadAllDesktop').addEventListener('click', markAllNotificationsAsRead);
+            }
+            populateNotificationList(elements.notificationDropdown.querySelector('.notification-list'), notifications);
+
+            // Mobile Modal
+            elements.notificationBadgeMobile.textContent = count;
+            elements.notificationBadgeMobile.classList.toggle('visible', count > 0);
+            populateNotificationList(elements.notificationListMobile, notifications);
+        }
+
+
+        function markAllNotificationsAsRead() {
+            if (!currentUser) return;
+            followedFriends.forEach(f => lastCheckedTimestamps[f.id] = new Date().toISOString());
+            saveSocialData();
+            renderNotifications([]); // This will clear both desktop and mobile
+            closeModal(elements.mobileNotificationsModal);
+        }
+
+        function getActivityIcon(type) {
+            if (type.startsWith('add_show')) return 'fa-plus-circle';
+            if (type.startsWith('move_show')) return 'fa-folder-open';
+            if (type.startsWith('delete_show')) return 'fa-trash-alt';
+            if (type.startsWith('complete_show') || type === 'mark_completed') return 'fa-check-double';
+            if (type.startsWith('complete_season')) return 'fa-check-circle';
+            if (type === 'add') return 'fa-film';
+            if (type === 'move') return 'fa-folder-open';
+            if (type === 'delete') return 'fa-trash-alt';
+            if (type === 'rewatch') return 'fa-sync-alt';
+            return 'fa-info-circle';
+        }
+
+        function getActivityText(friendEmail, activity) {
+            const email = `<strong>${friendEmail || 'Utente'}</strong>`;
+            const title = `<strong>${activity.title}</strong>`;
+            switch (activity.type) {
+                case 'add_show': return `${email} ha aggiunto la serie ${title} ${activity.details}`;
+                case 'move_show': return `${email} ha spostato la serie ${title} ${activity.details}`;
+                case 'delete_show': return `${email} ha eliminato la serie ${title} ${activity.details}`;
+                case 'complete_show': return `${email} ha completato la serie ${title}! 🎉`;
+                case 'mark_completed': return `${email} ha segnato ${title} come completato.`;
+                case 'complete_season': return `${email} ha completato ${activity.details} di ${title}`;
+                case 'add': return `${email} ha aggiunto il film ${title} ${activity.details}`;
+                case 'move': return `${email} ha spostato il film ${title} ${activity.details}`;
+                case 'delete': return `${email} ha eliminato il film ${title} ${activity.details}`;
+                case 'rewatch': return `${email} ha aggiornato ${title} (${activity.details})`;
+                default: return `${email} ha aggiornato ${title}`;
+            }
+        }
+
+        async function addFriend() {
+            const friendId = elements.friendIdInput.value.trim();
+            if (!friendId || !currentUser) return;
+            if (friendId === currentUser.uid) { showNotification("Non puoi aggiungere te stesso.", "warning"); return; }
+            if (followedFriends.some(f => f.id === friendId)) { showNotification("Amico già presente in lista.", "warning"); return; }
+            const friendEmailRef = db.ref(`users/${friendId}/email`);
+            const snapshot = await friendEmailRef.once('value');
+            if (snapshot.exists()) {
+                followedFriends.push({ id: friendId, email: snapshot.val() });
+                lastCheckedTimestamps[friendId] = new Date().toISOString();
+                await saveSocialData();
+                renderFriendsList();
+                setupFriendListeners();
+                showNotification("Amico aggiunto!", "success");
+            } else {
+                showNotification("ID Utente non trovato.", "error");
+            }
+        }
+
+        async function removeFriend(friendId) {
+            followedFriends = followedFriends.filter(f => f.id !== friendId);
+            delete lastCheckedTimestamps[friendId];
+            await saveSocialData();
+            renderFriendsList();
+            setupFriendListeners();
+        }
+
+        function renderFriendsList() {
+            if (!currentUser) { elements.friendsList.innerHTML = "<p>Devi essere loggato per usare questa funzione.</p>"; document.getElementById('myIdContainer').style.display = 'none'; return; }
+            document.getElementById('myIdContainer').style.display = 'block';
+            elements.myIdInput.value = currentUser.uid;
+            elements.friendsList.innerHTML = "";
+            if (followedFriends.length === 0) { elements.friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`; return; }
+            followedFriends.forEach(friend => {
+                const card = document.createElement("div"); card.className = "management-card";
+                card.innerHTML = `
+                <div>
+                    <div>
+                        <div class="friend-email">${friend.email}</div>
+                        <div class="friend-id">${friend.id}</div>
+                    </div>
+                </div>
+                <div class="management-card-actions">
+                    <button class="btn visit-friend-films-btn" data-id="${friend.id}" title="Visita Libreria Film"><i class="fas fa-film"></i></button>
+                    <button class="btn visit-friend-tv-btn" data-id="${friend.id}" title="Visita Libreria Serie TV"><i class="fas fa-tv"></i></button>
+                    <button class="btn btn-danger remove-friend-btn" data-id="${friend.id}" title="Rimuovi Amico"><i class="fas fa-trash"></i></button>
+                </div>`;
+                card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
+                card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
+                    const url = `${window.location.origin}${window.location.pathname.replace('serietv_tracker.html', 'index.html')}?view=${e.currentTarget.dataset.id}`;
+                    window.open(url, '_blank');
+                });
+                card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
+                    const url = `${window.location.origin}${window.location.pathname}?view=${e.currentTarget.dataset.id}`;
+                    window.open(url, '_blank');
+                });
+                elements.friendsList.appendChild(card);
+            });
+        }
+
+        async function toggleFavorite(showId) {
+            if (isViewMode) return;
+            const show = mediaList.find(m => m.id === showId);
+            if (show) {
+                show.isFavorite = !show.isFavorite;
+                await saveData();
+
+                const cardBtn = document.querySelector(`.media-card[data-id="${showId}"] .favorite-btn`);
+                if (cardBtn) cardBtn.classList.toggle('is-favorite', show.isFavorite);
+
+                const modalBtn = document.getElementById('detailsModalFavoriteBtn');
+                if (modalBtn && elements.detailsModal.style.display === 'flex') {
+                    modalBtn.classList.toggle('is-favorite', show.isFavorite);
+                }
+
+                if (elements.categoryFilter.value === 'favorites') {
+                    renderMedia();
+                }
+            }
+        }
+
+        function openRewatchModal(context) {
+            currentRewatchContext = context;
+            const { showId, seasonNumber, episodeNumber } = context;
+            const show = mediaList.find(s => s.id === showId);
+            if (!show) return;
+
+            let currentCount = 0;
+            let title = "";
+
+            if (episodeNumber) {
+                const episodeKey = `${seasonNumber}-${episodeNumber}`;
+                currentCount = show.rewatches?.[episodeKey] || 0;
+                const episode = show.seasons?.[seasonNumber]?.episodes.find(e => e.episode_number == episodeNumber);
+                title = episode ? `S${seasonNumber} E${episodeNumber} - ${episode.name}` : `Episodio S${seasonNumber}E${episodeNumber}`;
+            } else {
+                title = `Stagione ${seasonNumber}`;
+            }
+
+            elements.rewatchModalTitle.textContent = `Rewatch: ${title}`;
+            elements.rewatchCountInput.value = currentCount;
+            updateRewatchModalButtons(currentCount);
+
+            openModal(elements.rewatchModal);
+        }
+
+        async function setRewatchCount(count) {
+            const { showId, seasonNumber, episodeNumber } = currentRewatchContext;
+            const show = mediaList.find(s => s.id === showId);
+            if (!show) return;
+
+            const duplicates = mediaList.filter(d => (d.imdbID && d.imdbID === show.imdbID) || (d.tmdbID && d.tmdbID === show.tmdbID));
+
+            // 1. Aggiorna i dati in memoria (MediaList)
+            duplicates.forEach(dup => {
+                if (!dup.rewatches) dup.rewatches = {};
+
+                const updateLogic = (sNum, eNum) => {
+                    const key = `${sNum}-${eNum}`;
+                    if (count > 0) {
+                        dup.rewatches[key] = count;
+                        if (!dup.progress[key]) dup.progress[key] = true; // Se rivedo, è visto
+                    } else {
+                        delete dup.rewatches[key];
+                    }
+
+                    // --- DOM UPDATE CHIRURGICO ---
+                    // Troviamo l'elemento specifico dell'episodio nel DOM
+                    const item = document.getElementById(`item-${showId}-${sNum}-${eNum}`);
+                    if (item) {
+                        // Aggiorna stato 'watched' visivamente (classe CSS)
+                        if (count > 0) item.classList.add('watched');
+
+                        // Trova il badge rewatch dentro questo item
+                        const badge = item.querySelector('.episode-rewatch-badge');
+                        if (badge) {
+                            if (count > 0) {
+                                badge.classList.remove('zero-count');
+                                badge.innerHTML = `<i class="fas fa-sync-alt"></i> <span class="count">${count}</span>`;
+                            } else {
+                                badge.classList.add('zero-count');
+                                badge.innerHTML = `<i class="fas fa-sync-alt"></i>`;
+                            }
+                        }
+                    }
+                };
+
+                if (episodeNumber) {
+                    // Singolo episodio
+                    updateLogic(seasonNumber, episodeNumber);
+                } else {
+                    // Intera stagione
+                    const season = dup.seasons[seasonNumber];
+                    if (season && season.episodes) {
+                        season.episodes.forEach(ep => updateLogic(seasonNumber, ep.episode_number));
+                    }
+                }
+                updateShowCategoryAndTimestamps(dup);
+            });
+
+            // 2. Aggiorna icona "Stagione Rivista" nell'header (senza ricaricare)
+            updateSeasonHeaderUI(showId, seasonNumber);
+
+            // 3. Chiudi modale e salva (in background)
+            closeModal(elements.rewatchModal);
+            updateStats(); // Veloce, aggiorna solo i numeri in alto
+            await saveData();
+            showNotification("Rewatch aggiornato", "success");
+        }
+
+        // Nuova funzione helper per aggiornare l'header della stagione
+        function updateSeasonHeaderUI(showId, seasonNumber) {
+            const show = mediaList.find(s => s.id === showId);
+            if (!show || !show.seasons[seasonNumber]) return;
+
+            const episodes = show.seasons[seasonNumber].episodes || [];
+            // Controlla se TUTTI gli episodi hanno rewatch > 0
+            const isSeasonRewatched = episodes.length > 0 && episodes.every(ep => (show.rewatches[`${seasonNumber}-${ep.episode_number}`] || 0) > 0);
+
+            const header = document.querySelector(`.season-header[data-season-target="${seasonNumber}"]`);
+            if (header) {
+                const titleContainer = header.querySelector('.season-title-container');
+                const existingBadge = titleContainer.querySelector('.season-rewatch-badge');
+
+                if (isSeasonRewatched) {
+                    if (!existingBadge) {
+                        // Aggiungi badge se non c'è
+                        const badge = document.createElement('span');
+                        badge.className = 'season-rewatch-badge';
+                        badge.title = 'Stagione rivista';
+                        badge.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                        // Inserisci dopo il titolo (che è il primo figlio span)
+                        const titleSpan = titleContainer.querySelector('.season-title');
+                        titleSpan.insertAdjacentElement('afterend', badge);
+                    }
+                } else {
+                    if (existingBadge) {
+                        // Rimuovi badge se c'è
+                        existingBadge.remove();
+                    }
+                }
+
+                // Aggiorna anche il testo progressi (es. 10/10)
+                const progressText = header.querySelector('.season-progress-text');
+                const watchedCount = Object.keys(show.progress).filter(k => k.startsWith(`${seasonNumber}-`)).length;
+                if (progressText) progressText.textContent = `${watchedCount} / ${episodes.length}`;
+            }
+        }
+
+
+        function updateRewatchModalButtons(count) {
+            document.querySelectorAll('#rewatchModal .quick-rewatch-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.count) === count);
+            });
+        }
+
+        function displayLastUpdateTime() {
+            const lastUpdate = localStorage.getItem('lastBackgroundUpdate');
+            let timestampText = "Mai eseguito";
+            if (lastUpdate) {
+                timestampText = new Date(parseInt(lastUpdate)).toLocaleString('it-IT');
+            }
+            elements.lastUpdateTimestampDesktop.textContent = `Ultimo aggiornamento: ${timestampText}`;
+            elements.lastUpdateTimestampMobile.textContent = `Ultimo aggiornamento: ${timestampText}`;
+        }
+
+
+        /* --- GESTIONE MODALI E BACK GESTURE (HISTORY API) --- */
+
+        // 1. Nuova funzione unificata per aprire i modali
+        function openModal(modal) {
+            if (!modal) return;
+
+            // Se stiamo aprendo un modale sopra un altro già aperto
+            const alreadyOpen = document.querySelector('.modal.visible');
+            if (alreadyOpen && alreadyOpen !== modal) {
+                // Rendiamo il modale sotto leggermente più scuro o sfocato
+                alreadyOpen.style.filter = "blur(2px) brightness(0.8)";
+            }
+
+            modal.style.display = 'flex';
+            document.body.classList.add('modal-open');
+
+            setTimeout(() => {
+                modal.classList.add('visible');
+            }, 10);
+
+            // Registriamo lo stato nella cronologia
+            history.pushState({ modalId: modal.id }, '', window.location.href);
+        }
+
+        // 2. Nuova funzione unificata per chiudere i modali (Rimosso duplicato precedente)
+        // 3. Gestore dell'evento "Torna Indietro" (Swipe o Tasto fisico)
+        window.addEventListener('popstate', (event) => {
+            const visibleModals = Array.from(document.querySelectorAll('.modal'))
+                .filter(m => m.classList.contains('visible'));
+
+            if (visibleModals.length > 0) {
+                // Ordina per z-index decrescente
+                visibleModals.sort((a, b) => {
+                    const zA = parseInt(window.getComputedStyle(a).zIndex) || 0;
+                    const zB = parseInt(window.getComputedStyle(b).zIndex) || 0;
+                    return zB - zA;
+                });
+
+                // Chiudiamo quello più in alto
+                const topModal = visibleModals[0];
+                topModal.classList.remove('visible');
+
+                setTimeout(() => {
+                    topModal.style.display = 'none';
+                    topModal.style.filter = ""; // Resetta filtri
+
+                    // Se è rimasto un altro modale sotto, togliamo la sfocatura
+                    const nextModal = document.querySelector('.modal.visible');
+                    if (nextModal) {
+                        nextModal.style.filter = "";
+                    }
+
+                    if (document.querySelectorAll('.modal.visible').length === 0) {
+                        document.body.classList.remove('modal-open');
+                    }
+                }, 300);
+            }
+        });
+
+        // --- AGGIORNAMENTO LISTENERS ---
+        // Aggiorna setupEventListeners per usare openModal invece di style.display='flex'
+
+        function exportData() {
+            if (isViewMode) return;
+            const data = { mediaList, categories, exportedAt: new Date().toISOString() };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `serietv_tracker_export_${new Date().toISOString().split("T")[0]}.json`;
+            a.click();
+
+            // SALVA IL TIMESTAMP
+            const now = new Date().toISOString();
+            localStorage.setItem('lastSeriesExport', now);
+            if (currentUser) db.ref(`users/${currentUser.uid}/lastExport`).set(now);
+
+            updateBackupBadge(now);
+            showNotification("Backup scaricato con successo!", "success");
+        }
+
+        function updateBackupBadge(timestamp) {
+            const badge = document.querySelector('#lastBackupBadge span');
+            const stored = timestamp || localStorage.getItem('lastSeriesExport');
+            if (stored) {
+                badge.textContent = new Date(stored).toLocaleString('it-IT', {
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+            }
+        }
+
+        function setupEventListeners() {
+            // Modali principali
+            elements.mediaManagementBtn.addEventListener("click", () => {
+                // Sostituito style.display con openModal
+                openModal(elements.mediaManagementModal);
+                elements.mediaTitle.value = '';
+                elements.tmdbResults.innerHTML = '';
+                currentTMDbSelection = null;
+                renderCategoriesList();
+                renderFriendsList();
+                populateAddMediaCategorySelect();
+            });
+
+            // Gestione Tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
+                elements.addShowBtn.style.display = btn.dataset.tab === 'add-media' ? 'inline-flex' : 'none';
+            }));
+
+            // Chiusura Modali (Il click fuori dal modale deve chiamare history.back() se implementato, o closeModal)
+            elements.closeManagementModal.addEventListener("click", () => closeModal(elements.mediaManagementModal));
+
+            // Pulsante Aggiungi Serie
+            elements.addShowBtn.addEventListener('click', () => {
+                if (!currentTMDbSelection) { showNotification("Cerca e seleziona una serie.", "warning"); return; }
+                addNewMedia(currentTMDbSelection.tmdbId);
+            });
+
+            // Ricerca
+            elements.searchTMDbBtn.addEventListener("click", searchTMDb);
+            elements.mediaTitle.addEventListener("keydown", e => { if (e.key === "Enter") searchTMDb(); });
+
+            // Categorie
+            elements.addCategoryBtn.addEventListener("click", addCategory);
+            elements.newCategoryName.addEventListener("keydown", e => { if (e.key === "Enter") addCategory(); });
+
+            // Filtri e Ricerca home
+            elements.searchInput.addEventListener("input", () => { clearTimeout(debounceTimeout); debounceTimeout = setTimeout(renderMedia, 300); });
+            elements.categoryFilter.addEventListener("change", renderMedia);
+            elements.sortFilter.addEventListener("change", () => { localStorage.setItem("tvShowSortOrder", elements.sortFilter.value); renderMedia(); });
+
+            // Tema
+            elements.themeToggle.addEventListener("click", () => { document.body.classList.toggle("dark"); localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light"); loadTheme(); });
+
+            // Pulsanti Chiusura Modali (X)
+            elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
+            elements.episodesModalClose.addEventListener('click', () => closeModal(elements.episodesModal));
+            elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
+
+            // Chiusura cliccando sullo sfondo scuro (Overlay)
+            // Chiusura cliccando sullo sfondo scuro (Overlay)
+            document.addEventListener("click", e => {
+                if (e.target.classList.contains('modal')) {
+                    closeModal(e.target);
+                }
+                if (!e.target.closest('.notification-bell-container')) elements.notificationDropdown.classList.remove('visible');
+            });
+
+            // Poster Modal
+            elements.savePosterChange.addEventListener('click', () => { const selected = document.querySelector(".poster-option.selected"); if (selected) changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url); });
+            elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
+
+            // Settings Modal
+            elements.settingsBtn.addEventListener('click', () => {
+                updateBackupBadge();
+                openModal(document.getElementById('settingsModal'));
+            });
+
+            // Click sulle card interne
+            document.getElementById('exportAction').addEventListener('click', exportData);
+            document.getElementById('importAction').addEventListener('click', () => {
+                if (elements.importFile) elements.importFile.click();
+            });
+            document.getElementById('resetAction').addEventListener('click', () => {
+                // Chiudiamo il modale impostazioni PRIMA
+                closeModal(document.getElementById('settingsModal'));
+
+                // Aspettiamo che finisca l'animazione e poi chiediamo conferma
+                setTimeout(() => {
+                    resetApp();
+                }, 350);
+            });
+            if (elements.importFile) {
+                elements.importFile.addEventListener('change', e => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = event => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            if (data && Array.isArray(data.mediaList)) {
+                                // Chiudiamo il modale impostazioni PRIMA
+                                closeModal(document.getElementById('settingsModal'));
+
+                                setTimeout(() => {
+                                    showConfirmModal("Importa Dati", `Sovrascrivere i dati con ${data.mediaList.length} serie?`, () => {
+                                        mediaList = data.mediaList.map(item => ({ ...getDefaultShowProps(), ...item }));
+                                        categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => typeof cat === 'string' ? { name: cat, hideProgress: false } : cat);
+                                        saveData();
+                                        renderFullUI();
+                                        showNotification("Dati importati!", "success");
+                                    });
+                                }, 350);
+                            } else {
+                                showNotification("File non valido.", "error");
+                            }
+                        } catch (error) {
+                            showNotification("Errore lettura file.", "error");
+                        }
+                    };
+                    reader.readAsText(file);
+                    e.target.value = '';
+                });
+            }
+
+            // Share
+            elements.shareBtn.addEventListener('click', () => { if (!currentUser) { showNotification("Devi essere loggato per condividere.", "warning"); return; } const link = `${window.location.origin}${window.location.pathname.replace('index.html', 'serietv_tracker.html')}?view=${currentUser.uid}`; elements.shareModal.querySelector('input').value = link; openModal(elements.shareModal); }); // Usa openModal
+            elements.closeShareModalBtn.addEventListener('click', () => closeModal(elements.shareModal));
+            elements.copyShareLinkBtn.addEventListener('click', (e) => { navigator.clipboard.writeText(e.target.closest('.modal-content').querySelector('input').value); showNotification("Link copiato!", "success"); });
+
+            // Social e Varie
+            elements.closeViewBtn.addEventListener('click', () => { window.location.href = window.location.pathname; });
+            elements.addFriendBtn.addEventListener('click', addFriend);
+            elements.copyMyIdBtn.addEventListener('click', () => { navigator.clipboard.writeText(elements.myIdInput.value); showNotification("ID copiato!", "success"); });
+            elements.bellIcon.addEventListener('click', (e) => { e.stopPropagation(); elements.notificationDropdown.classList.toggle('visible'); });
+            elements.closeSummaryBtn.addEventListener('click', () => closeModal(elements.updateSummaryModal));
+
+            // Rewatch Modal
+            elements.confirmRewatchBtn.addEventListener('click', () => { const newCount = parseInt(elements.rewatchCountInput.value); if (!isNaN(newCount) && newCount >= 0) { setRewatchCount(newCount); } else { showNotification("Inserisci un numero valido (0 o superiore).", "warning"); } });
+            elements.cancelRewatchBtn.addEventListener('click', () => closeModal(elements.rewatchModal));
+            document.querySelectorAll('#rewatchModal .quick-rewatch-btn').forEach(btn => btn.addEventListener('click', () => { const count = parseInt(btn.dataset.count); elements.rewatchCountInput.value = count; updateRewatchModalButtons(count); }));
+            elements.rewatchCountInput.addEventListener('input', () => { const count = parseInt(elements.rewatchCountInput.value); updateRewatchModalButtons(count); });
+            document.querySelectorAll("#rewatchModal .num-spinner-btn").forEach(btn => { btn.addEventListener("click", e => { const target = document.getElementById(e.currentTarget.dataset.target); if (target) { let value = parseInt(target.value) || 0; value += e.currentTarget.classList.contains("up") ? 1 : -1; if (value < 0) value = 0; target.value = value; updateRewatchModalButtons(value); } }); });
+
+            // --- Bottom Nav Bar Listeners ---
+            elements.bottomNavHome.addEventListener('click', () => {
+                populateCategoryNavModal();
+                openModal(elements.categoryNavModal);
+                requestAnimationFrame(() => elements.categoryNavModal.classList.add('visible'));
+            });
+            elements.bottomNavCalendar.addEventListener('click', () => {
+                renderCalendar();
+                openModal(document.getElementById('calendarModal'));
+            });
+
+
+            elements.bottomNavAdd.addEventListener('click', () => { elements.mediaManagementBtn.click(); document.querySelector('.tab-btn[data-tab="add-media"]').click(); });
+            elements.bottomNavManage.addEventListener('click', () => { openModal(elements.mobileMenuModal); requestAnimationFrame(() => elements.mobileMenuModal.classList.add('visible')); });
+            elements.bottomNavNotifications.addEventListener('click', () => { openModal(elements.mobileNotificationsModal); requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
+
+            // --- Mobile Modals Listeners ---
+            elements.mobileMenuCloseBtn.addEventListener('click', () => closeModal(elements.mobileMenuModal));
+            elements.mobileNotificationsCloseBtn.addEventListener('click', () => closeModal(elements.mobileNotificationsModal));
+            elements.markAllReadMobileBtn.addEventListener('click', markAllNotificationsAsRead);
+            elements.mobileMenuUserActionBtn.addEventListener('click', () => { (currentUser) ? elements.logoutBtn.click() : elements.authToggle.click(); closeModal(elements.mobileMenuModal); });
+            elements.mobileMenuShareBtn.addEventListener('click', () => {
+                closeModal(elements.mobileMenuModal);
+                if (!currentUser) {
+                    showNotification("Devi essere loggato per condividere.", "warning");
+                } else {
+                    setTimeout(() => {
+                        const link = `${window.location.origin}${window.location.pathname.replace('index.html', 'serietv_tracker.html')}?view=${currentUser.uid}`;
+                        document.getElementById("shareLinkInput").value = link;
+                        openModal(elements.shareModal);
+                    }, 300);
+                }
+            });
+            elements.mobileSettingsBtn.addEventListener('click', () => {
+                closeModal(elements.mobileMenuModal);
+                setTimeout(() => {
+                    updateBackupBadge();
+                    openModal(document.getElementById('settingsModal'));
+                }, 300);
+            });
+            elements.mobileMenuThemeBtn.addEventListener('click', () => { elements.themeToggle.click(); });
+
+            // --- Category Navigation Modal Listeners ---
+            elements.closeCategoryNavBtn.addEventListener('click', () => closeModal(elements.categoryNavModal));
+
+            // --- Filter Modal Listeners ---
+            elements.mobileFilterBtn.addEventListener('click', () => {
+                elements.mobileCategoryFilter.value = elements.categoryFilter.value;
+                elements.mobileSortFilter.value = elements.sortFilter.value;
+                openModal(elements.filterSortModal);
+                requestAnimationFrame(() => elements.filterSortModal.classList.add('visible'));
+            });
+            elements.applyFiltersBtn.addEventListener('click', () => {
+                elements.categoryFilter.value = elements.mobileCategoryFilter.value;
+                elements.sortFilter.value = elements.mobileSortFilter.value;
+                localStorage.setItem("tvShowSortOrder", elements.sortFilter.value);
+                renderMedia();
+                closeModal(elements.filterSortModal);
+            });
+
+            // --- Force Update Listeners ---
+            const forceUpdate = () => { updateAllShowsInBackground(true); };
+            elements.forceUpdateBtnDesktop.addEventListener('click', forceUpdate);
+            elements.forceUpdateBtnMobile.addEventListener('click', () => { forceUpdate(); closeModal(elements.mobileMenuModal); });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Chiudi modale con ESC
+                if (e.key === "Escape") {
+                    const visibleModal = document.querySelector('.modal[style*="flex"]');
+                    if (visibleModal) closeModal(visibleModal);
+                }
+
+                // Focus sulla ricerca con il tasto "/"
+                if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+                    e.preventDefault();
+                    elements.searchInput.focus();
+                }
+            });
+
+            // --- Update History Listeners ---
+            document.getElementById('viewHistoryBtnDesktop').addEventListener('click', () => {
+                renderUpdateHistory();
+                openModal(document.getElementById('historyModal'));
+            });
+
+            document.getElementById('viewHistoryBtnMobile').addEventListener('click', () => {
+                // 1. Chiudiamo il menu mobile visivamente senza attivare history.back()
+                elements.mobileMenuModal.classList.remove('visible');
+
+                // 2. Aspettiamo un istante che il menu sparisca
+                setTimeout(() => {
+                    elements.mobileMenuModal.style.display = 'none';
+                    document.body.classList.remove('modal-open');
+
+                    // 3. Ora "puliamo" lo stato della cronologia del menu mobile 
+                    // in modo che il tasto "indietro" non lo riapra
+                    history.replaceState(null, '', window.location.href);
+
+                    // 4. Infine apriamo lo storico come nuovo stato
+                    renderUpdateHistory();
+                    openModal(document.getElementById('historyModal'));
+                }, 300);
+            });
+
+            document.getElementById('clearHistoryBtn').addEventListener('click', (e) => {
+                // Evitiamo che il click si propaghi ad altri elementi sotto
+                e.stopPropagation();
+
+                // Apriamo il modale di conferma (grazie allo z-index 1300 apparirà SOPRA lo storico)
+                showConfirmModal(
+                    "Cancella Storico",
+                    "Vuoi svuotare tutta la cronologia degli aggiornamenti?",
+                    () => {
+                        // Logica di cancellazione
+                        updateHistory = [];
+                        localStorage.removeItem('updateHistory');
+                        if (currentUser) db.ref(`users/${currentUser.uid}/updateHistory`).remove();
+                        renderUpdateHistory();
+                        showNotification("Storico rimosso", "success");
+                    }
+                );
+            });
+
+            // --- Calendar Listeners ---
+            document.getElementById('calendarBtn').addEventListener('click', () => {
+                renderCalendar();
+                openModal(document.getElementById('calendarModal'));
+            });
+
+            document.getElementById('bottomNavCalendar').addEventListener('click', () => {
+                renderCalendar();
+                openModal(document.getElementById('calendarModal'));
+            });
+
+            document.getElementById('calendarFilterToggle').addEventListener('change', (e) => {
+                calendarOnlyInCorso = e.target.checked;
+                renderCalendar(); // Ricarica la lista istantaneamente
+            });
+        }
+    </script>
+    <script>
+        // Registrazione Service Worker per PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA Service Worker registrato!', reg))
+                    .catch(err => console.log('Errore PWA:', err));
+            });
+        }
+    </script>
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <h2 style="text-align: center; margin-top: 0;">Storico Aggiornamenti</h2>
+            <div id="historyList" style="max-height: 60vh; overflow-y: auto; padding: 0.5rem;">
+                <!-- Qui verranno inseriti i log -->
+            </div>
+            <div class="modal-footer"
+                style="padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; gap: 1rem;">
+                <button id="clearHistoryBtn" class="btn btn-danger btn-small">Cancella Storico</button>
+                <button onclick="closeModal(document.getElementById('historyModal'))"
+                    class="btn btn-secondary">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="calendarModal">
+        <div class="modal-content">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color);">
+                <h2 style="margin: 0; font-size: 1.25rem;">Calendario</h2>
+
+                <!-- SWITCH FILTRO -->
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Solo "In
+                        Corso"</span>
+                    <label class="switch">
+                        <input type="checkbox" id="calendarFilterToggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="calendarList" style="flex: 1; overflow-y: auto; padding: 1rem;">
+                <!-- Gli episodi appariranno qui -->
+            </div>
+            <div class="modal-footer calendar-footer">
+                <button onclick="closeModal(document.getElementById('calendarModal'))"
+                    class="btn btn-secondary full-width-btn">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+
+
+</body>
+
+</html>
