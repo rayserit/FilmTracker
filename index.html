@@ -1483,6 +1483,7 @@
       padding-right: 25px;
       background: var(--card-bg);
       -moz-appearance: textfield;
+      appearance: textfield;
     }
 
     .number-input-wrapper input::-webkit-outer-spin-button,
@@ -2317,6 +2318,36 @@
         box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
       }
     }
+
+    #detailsModalOverview,
+    .cast-scroller {
+      transition: opacity 0.3s ease-in-out;
+    }
+
+    /* Animazione pulsante per gli scheletri */
+    .skeleton {
+      background: #2a2a2a;
+      background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes skeleton-pulse {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .skeleton-text {
+      color: transparent !important;
+      background: #2a2a2a;
+      border-radius: 4px;
+      animation: skeleton-pulse 1.5s infinite ease-in-out;
+    }
   </style>
 </head>
 
@@ -2859,7 +2890,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    document.addEventListener("DOMContentLoaded", init);
+    window.addEventListener("load", init);
 
     function init() {
       setupEventListeners();
@@ -4232,21 +4263,67 @@
       }
 
       openModal(elements.detailsModal);
-      elements.detailsModalContent.innerHTML = '<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>';
+      renderDetailsShell(media);
 
-      // CORREZIONE: Richiede sempre i dati in italiano per avere la descrizione corretta
-      const details = await fetchTMDbDetails(media.imdbID, 'it-IT');
-
-      if (details) {
-        populateDetailsModal(details, media);
-      } else {
-        elements.detailsModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli non trovati.</p>';
+      try {
+        const details = await fetchTMDbDetails(media.imdbID, 'it-IT');
+        if (details) {
+          populateDetailsModal(details, media);
+        } else {
+          elements.detailsModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli non trovati.</p>';
+        }
+      } catch (err) {
+        console.error("Errore caricamento dettagli:", err);
       }
     }
 
+    function renderDetailsShell(media) {
+      const posterUrl = media.poster || DEFAULT_POSTER;
+
+      elements.detailsModalContent.innerHTML = `
+        <div class="details-backdrop" style="background-color: #1a1a1a;"></div>
+        <div class="details-header">
+            <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
+            <div class="details-title-section">
+                <h2 id="detailsModalTitle">${media.title}</h2>
+                <div class="details-ratings-container" id="shell-ratings">
+                    <div class="skeleton" style="width:100px; height:20px; border-radius:10px;"></div>
+                </div>
+                <div id="detailsModalMeta">
+                    <span><i class="fas fa-calendar-alt"></i> ${media.year || ''}</span>
+                    <span><i class="fas fa-clock"></i> ${formatRuntime(media.runtime || 0)}</span>
+                    <span id="shell-genres" class="skeleton" style="width:80px; height:15px; display:inline-block;"></span>
+                </div>
+            </div>
+        </div>
+        <div class="details-body">
+            <h3 class="details-section-title">Trama</h3>
+            <p id="detailsModalOverview" class="skeleton-text">Caricamento descrizione...</p>
+            
+            <h3 class="details-section-title">Cast Principale</h3>
+            <div class="cast-scroller" id="detailsModalCast">
+                ${Array(5).fill('<div class="actor-card"><div class="actor-photo skeleton"></div></div>').join('')}
+            </div>
+        </div>
+      `;
+    }
+
     function populateDetailsModal(details, media) {
-      const backdropUrl = details.backdrop_path ? `https://image.tmdb.org/t/p/w1280${details.backdrop_path}` : '';
+      // 1. Update backdrop
+      if (details.backdrop_path) {
+        const backdrop = elements.detailsModalContent.querySelector('.details-backdrop');
+        if (backdrop) {
+          backdrop.style.backgroundImage = `url(https://image.tmdb.org/t/p/w1280${details.backdrop_path})`;
+          backdrop.style.backgroundColor = 'transparent';
+        }
+      }
+
+      // 2. Update Poster (in case API has a better one)
       const posterUrl = media.poster || (details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : DEFAULT_POSTER);
+      const posterImg = document.getElementById('detailsModalPoster');
+      if (posterImg) posterImg.src = posterUrl;
+
+      // 3. Update Meta & Ratings
       const genres = details.genres.map(g => g.name).join(', ');
       const directors = details.crew.filter(member => member.job === 'Director');
       const directorsHTML = directors.map(d => `<a href="#" class="director-link" data-person-id="${d.id}">${d.name}</a>`).join(', ');
@@ -4261,6 +4338,40 @@
       if (media.metacriticRating && media.metacriticRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`; }
       if (media.letterboxdRating && media.letterboxdRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`; }
 
+      const ratingsContainer = document.getElementById('shell-ratings');
+      if (ratingsContainer) {
+        ratingsContainer.innerHTML = ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione disponibile</span>';
+      }
+
+      const genresSpan = document.getElementById('shell-genres');
+      if (genresSpan) {
+        genresSpan.outerHTML = `<span><i class="fas fa-film"></i> ${genres}</span>`;
+      }
+
+      const metaContainer = document.getElementById('detailsModalMeta');
+      if (metaContainer && directorsHTML) {
+        const directorSpan = document.createElement('span');
+        directorSpan.innerHTML = `<i class="fas fa-video"></i> Regia: ${directorsHTML}`;
+        metaContainer.appendChild(directorSpan);
+      }
+
+      // Update Tagline
+      if (details.tagline) {
+        const tagline = document.createElement('p');
+        tagline.id = 'detailsModalTagline';
+        tagline.textContent = details.tagline;
+        const titleSection = document.querySelector('.details-title-section');
+        if (titleSection) titleSection.insertBefore(tagline, metaContainer);
+      }
+
+      // 4. Update Overview
+      const overview = document.getElementById('detailsModalOverview');
+      if (overview) {
+        overview.classList.remove('skeleton-text');
+        overview.textContent = details.overview || 'Trama non disponibile.';
+      }
+
+      // 5. Update Cast
       const castHTML = details.cast.slice(0, 15).map(actor => `
             <div class="actor-card" data-person-id="${actor.id}">
                 <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
@@ -4269,32 +4380,12 @@
             </div>
         `).join('');
 
-      elements.detailsModalContent.innerHTML = `
-            <div class="details-backdrop" style="background-image: url(${backdropUrl})"></div>
-            <div class="details-header">
-                <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
-                <div class="details-title-section">
-                    <h2 id="detailsModalTitle">${media.title}</h2>
-                    <div class="details-ratings-container">${ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione disponibile</span>'}</div>
-                    <p id="detailsModalTagline">${details.tagline || ''}</p>
-                    <div id="detailsModalMeta">
-                        <span><i class="fas fa-calendar-alt"></i> ${details.release_date ? details.release_date.split('-')[0] : ''}</span>
-                        <span><i class="fas fa-clock"></i> ${formatRuntime(details.runtime)}</span>
-                        <span><i class="fas fa-film"></i> ${genres}</span>
-                        ${directorsHTML ? `<span><i class="fas fa-video"></i> Regia: ${directorsHTML}</span>` : ''}
-                    </div>
-                </div>
-            </div>
-            <div class="details-body">
-                <h3 class="details-section-title">Trama</h3>
-                <p id="detailsModalOverview">${details.overview || 'Trama non disponibile.'}</p>
-                <h3 class="details-section-title">Cast Principale</h3>
-                <div class="cast-scroller" id="detailsModalCast">
-                    ${castHTML}
-                </div>
-            </div>
-        `;
+      const castContainer = document.getElementById('detailsModalCast');
+      if (castContainer) {
+        castContainer.innerHTML = castHTML;
+      }
 
+      // Re-attach listeners
       elements.detailsModalContent.querySelectorAll('.actor-card, .director-link').forEach(card => {
         card.addEventListener('click', (e) => {
           e.preventDefault();
@@ -5023,11 +5114,10 @@
       });
     }
 
-    // Initialize back gesture support when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', setupBackGestureSupport);
-    } else {
+    if (document.readyState === 'complete') {
       setupBackGestureSupport();
+    } else {
+      window.addEventListener('load', setupBackGestureSupport);
     }
   </script>
 
