@@ -303,6 +303,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             width: 180px;
             transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s;
+            view-transition-name: card-active;
             position: relative;
             border: 1px solid var(--border-color);
             animation: fadeIn 0.5s ease-out both;
@@ -2802,6 +2803,31 @@
                 box-shadow: 0 4px 12px rgba(42, 157, 143, 0.4);
             }
         }
+
+        /* Animazione pulsante per gli scheletri */
+        .skeleton {
+            background: #2a2a2a;
+            background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
+            background-size: 200% 100%;
+            animation: skeleton-pulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes skeleton-pulse {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-text {
+            color: transparent !important;
+            background: #2a2a2a;
+            border-radius: 4px;
+            animation: skeleton-pulse 1.5s infinite ease-in-out;
+        }
     </style>
     <!-- END: Mobile-Friendly CSS Rules -->
 </head>
@@ -3410,7 +3436,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        document.addEventListener("DOMContentLoaded", init);
+        window.addEventListener("load", init);
 
         function init() {
             setupEventListeners();
@@ -3487,6 +3513,12 @@
                     return cleanItem;
                 });
                 categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => (typeof cat === 'string') ? { name: cat, hideProgress: false } : cat);
+                if (data.lastBackgroundUpdate) {
+                    localStorage.setItem('lastBackgroundUpdate', data.lastBackgroundUpdate);
+                }
+
+                if (isUpdateInProgress) return;
+
                 if (!isViewMode) {
                     renderFullUI();
                     triggerNewEpisodeCheck();
@@ -4145,13 +4177,13 @@
             await showDetailsModal(showId, true);
         }
 
-        async function showDetailsModal(showId, force = false) {
+        async function showDetailsModal(showId, force = false, silent = false) {
             const show = mediaList.find(m => m.id === showId);
             if (!show) return;
 
             if (!force) {
                 openModal(elements.detailsModal);
-                elements.detailsModalContent.innerHTML = `<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>`;
+                renderDetailsShell(show);
             }
 
             const tmdbDetails = await fetchBestTMDbDetails(show);
@@ -4240,10 +4272,12 @@
             });
 
             if (hasUpdates) {
-                await saveData();
-                renderMedia();
-                updateStats();
-                if (force) showNotification(`Dati aggiornati per ${show.title}!`, "success");
+                if (!silent) {
+                    await saveData();
+                    renderMedia();
+                    updateStats();
+                    if (force) showNotification(`Dati aggiornati per ${show.title}!`, "success");
+                }
             }
 
             currentShowCache = { show, tmdbDetails };
@@ -4254,72 +4288,128 @@
             return updateSummary;
         }
 
-        function populateDetailsModal(details, media) {
-            const backdropUrl = details.backdrop_path ? `https://image.tmdb.org/t/p/w1280${details.backdrop_path}` : '';
-            const posterUrl = media.poster || (details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : DEFAULT_POSTER);
-            const genres = details.genres.map(g => g.name).join(', ');
+        function renderDetailsShell(media) {
+            const posterUrl = media.poster || DEFAULT_POSTER;
+            elements.detailsModalContent.innerHTML = `
+                <div class="details-backdrop" style="background-color: #1a1a1a;"></div>
+                <div class="details-header">
+                    <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
+                    <div class="details-title-section">
+                        <div id="detailsModalHeader-main">
+                            <div style="flex-grow: 1;">
+                                <h2 id="detailsModalTitle">${media.title}</h2>
+                                <div class="details-ratings-container" id="shell-ratings">
+                                    <div class="skeleton" style="width:120px; height:20px; border-radius:10px;"></div>
+                                </div>
+                            </div>
+                            <!-- Placeholder per i bottoni a destra -->
+                            <div id="shell-buttons" style="display: flex; gap: 0.5rem; align-self: flex-start;">
+                                <div class="skeleton" style="width:38px; height:38px; border-radius:8px;"></div>
+                                <div class="skeleton" style="width:38px; height:38px; border-radius:8px;"></div>
+                                <div class="skeleton" style="width:100px; height:38px; border-radius:8px;"></div>
+                            </div>
+                        </div>
+                        <div id="detailsModalMeta">
+                            <span><i class="fas fa-calendar-alt"></i> ${media.year || ''}</span>
+                            <span id="shell-status" class="skeleton" style="width:80px; height:15px; display:inline-block;"></span>
+                            <span id="shell-genres" class="skeleton" style="width:100px; height:15px; display:inline-block;"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="details-body">
+                    <h3 class="details-section-title">Trama</h3>
+                    <p id="detailsModalOverview" class="skeleton-text">Caricamento descrizione...</p>
+                    <h3 class="details-section-title">Cast Principale</h3>
+                    <div class="cast-scroller" id="detailsModalCast">
+                        ${Array(6).fill('<div class="actor-card"><div class="actor-photo skeleton"></div></div>').join('')}
+                    </div>
+                </div>
+            `;
+        }
 
+        function populateDetailsModal(details, media) {
+            // 1. Sfondo e Poster
+            if (details.backdrop_path) {
+                const backdrop = elements.detailsModalContent.querySelector('.details-backdrop');
+                if (backdrop) {
+                    backdrop.style.backgroundImage = `url(https://image.tmdb.org/t/p/w1280${details.backdrop_path})`;
+                    backdrop.style.backgroundColor = 'transparent';
+                }
+            }
+            const posterImg = document.getElementById('detailsModalPoster');
+            if (posterImg) {
+                posterImg.src = media.poster || (details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : DEFAULT_POSTER);
+            }
+
+            // 2. Rating e Voti
             const rtState = getRottenTomatoesState(media.rottenTomatoes);
             const popcornState = getPopcornState(media.popcornRating);
-
             let ratingsHTML = '';
-            if (media.imdbRating && media.imdbRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`; }
-            if (rtState) { ratingsHTML += `<span class="rating-badge"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${media.rottenTomatoes}</span>`; }
-            if (popcornState) { ratingsHTML += `<span class="rating-badge"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`; }
-            if (media.metacriticRating && media.metacriticRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`; }
-            if (media.letterboxdRating && media.letterboxdRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`; }
+            if (media.imdbRating && media.imdbRating !== "N/A") ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`;
+            if (rtState) ratingsHTML += `<span class="rating-badge"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${media.rottenTomatoes}</span>`;
+            if (popcornState) ratingsHTML += `<span class="rating-badge"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`;
+            if (media.metacriticRating && media.metacriticRating !== "N/A") ratingsHTML += `<span class="rating-badge"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`;
+            if (media.letterboxdRating && media.letterboxdRating !== "N/A") ratingsHTML += `<span class="rating-badge"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`;
 
+            const shellRatings = document.getElementById('shell-ratings');
+            if (shellRatings) {
+                shellRatings.innerHTML = ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione</span>';
+            }
+
+            // 3. Bottoni Azione (Sostituiscono i quadrati skeleton)
+            const shellButtons = document.getElementById('shell-buttons');
+            if (shellButtons) {
+                shellButtons.innerHTML = `
+                    <button id="detailsModalFavoriteBtn" class="btn ${media.isFavorite ? 'is-favorite' : ''}" title="Aggiungi ai preferiti"><i class="fas fa-heart"></i></button>
+                    <button id="refreshShowBtn" class="btn btn-secondary" title="Aggiorna Dati Serie"><i class="fas fa-sync-alt"></i></button>
+                    <button id="showEpisodesBtn" class="btn btn-primary"><i class="fas fa-list-check"></i> Episodi</button>
+                `;
+            }
+
+            // 4. Meta Info (Stato e Generi)
+            const genres = details.genres.map(g => g.name).join(', ');
+            const shellStatus = document.getElementById('shell-status');
+            if (shellStatus) {
+                shellStatus.outerHTML = `<span><i class="fas fa-satellite-dish"></i> ${details.status}</span>`;
+            }
+            const shellGenres = document.getElementById('shell-genres');
+            if (shellGenres) {
+                shellGenres.outerHTML = genres ? `<span><i class="fas fa-film"></i> ${genres}</span>` : '';
+            }
+
+            // 5. Trama (Rimuovi classe skeleton)
+            const overview = document.getElementById('detailsModalOverview');
+            if (overview) {
+                overview.classList.remove('skeleton-text');
+                overview.textContent = details.overview || 'Trama non disponibile.';
+            }
+
+            // 6. Cast
             const castHTML = details.credits.cast.slice(0, 15).map(actor => `
-            <div class="actor-card" data-person-id="${actor.id}">
-                <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
-                <div class="actor-name">${actor.name}</div>
-                <div class="actor-character">${actor.character}</div>
-            </div>
-        `).join('');
+                <div class="actor-card" data-person-id="${actor.id}">
+                    <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
+                    <div class="actor-name">${actor.name}</div>
+                    <div class="actor-character">${actor.character}</div>
+                </div>
+            `).join('');
+            const shellCast = document.getElementById('detailsModalCast');
+            if (shellCast) {
+                shellCast.innerHTML = castHTML;
+            }
 
-            elements.detailsModalContent.innerHTML = `
-            <div class="details-backdrop" style="background-image: url(${backdropUrl})"></div>
-            <div class="details-header">
-                <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
-                <div class="details-title-section">
-                    <div id="detailsModalHeader-main">
-                        <div>
-                            <h2 id="detailsModalTitle">${media.title}</h2>
-                            <div class="details-ratings-container">${ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione disponibile</span>'}</div>
-                        </div>
-                        <div style="display: flex; gap: 0.5rem; align-self: flex-start; flex-shrink: 0;">
-                             <button id="detailsModalFavoriteBtn" class="btn ${media.isFavorite ? 'is-favorite' : ''}" title="Aggiungi ai preferiti"><i class="fas fa-heart"></i></button>
-                             <button id="refreshShowBtn" class="btn btn-secondary" title="Aggiorna Dati Serie"><i class="fas fa-sync-alt"></i></button>
-                             <button id="showEpisodesBtn" class="btn btn-primary" style="flex-shrink: 0;"><i class="fas fa-list-check"></i> Episodi</button>
-                        </div>
-                    </div>
-                    <div id="detailsModalMeta">
-                        <span><i class="fas fa-calendar-alt"></i> ${media.year}</span>
-                        <span><i class="fas fa-satellite-dish"></i> ${details.status}</span>
-                        ${genres ? `<span><i class="fas fa-film"></i> ${genres}</span>` : ''}
-                    </div>
-                </div>
-            </div>
-            <div class="details-body">
-                <h3 class="details-section-title">Trama</h3>
-                <p id="detailsModalOverview">${details.overview || 'Trama non disponibile.'}</p>
-                <h3 class="details-section-title">Cast Principale</h3>
-                <div class="cast-scroller" id="detailsModalCast">
-                    ${castHTML}
-                </div>
-            </div>
-        `;
+            // Ricollega i listener (perché abbiamo riscritto i bottoni)
+            const refreshBtn = elements.detailsModalContent.querySelector('#refreshShowBtn');
+            if (refreshBtn) refreshBtn.addEventListener('click', () => forceRefreshShow(media.id));
+
+            const episodesBtn = elements.detailsModalContent.querySelector('#showEpisodesBtn');
+            if (episodesBtn) episodesBtn.addEventListener('click', () => showEpisodesModal(media));
+
+            const favoriteBtn = elements.detailsModalContent.querySelector('#detailsModalFavoriteBtn');
+            if (favoriteBtn) favoriteBtn.addEventListener('click', () => toggleFavorite(media.id));
 
             elements.detailsModalContent.querySelectorAll('.actor-card').forEach(card => {
-                card.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    showActorModal(card.dataset.personId);
-                });
+                card.addEventListener('click', () => showActorModal(card.dataset.personId));
             });
-
-            elements.detailsModalContent.querySelector('#refreshShowBtn').addEventListener('click', () => forceRefreshShow(media.id));
-            elements.detailsModalContent.querySelector('#showEpisodesBtn').addEventListener('click', () => showEpisodesModal(media));
-            elements.detailsModalContent.querySelector('#detailsModalFavoriteBtn').addEventListener('click', () => toggleFavorite(media.id));
         }
 
         function showEpisodesModal(show) {
@@ -5355,6 +5445,9 @@
                 if (showsToUpdate.length === 0) {
                     if (force) showNotification("Nessuna serie con attività recente da aggiornare.", "warning");
                     localStorage.setItem('lastBackgroundUpdate', now);
+                    if (currentUser) {
+                        db.ref(`users/${currentUser.uid}/tvShowTracker/lastBackgroundUpdate`).set(now);
+                    }
                     displayLastUpdateTime();
                     isUpdateInProgress = false;
                     return;
@@ -5372,7 +5465,7 @@
                     elements.updateProgressText.textContent = `Controllo ${i + 1} di ${showsToUpdate.length}: ${show.title}...`;
 
                     try {
-                        const showChanges = await showDetailsModal(show.id, true);
+                        const showChanges = await showDetailsModal(show.id, true, true);
                         if (showChanges.length > 0) {
                             allChanges = allChanges.concat(showChanges);
                         }
@@ -5393,7 +5486,13 @@
                     showNotification("Nessun aggiornamento trovato.", "success");
                 }
 
+                await saveData();
+                renderFullUI();
+
                 localStorage.setItem('lastBackgroundUpdate', now);
+                if (currentUser) {
+                    db.ref(`users/${currentUser.uid}/tvShowTracker/lastBackgroundUpdate`).set(now);
+                }
                 displayLastUpdateTime();
             } finally {
                 isUpdateInProgress = false;
