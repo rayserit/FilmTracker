@@ -1308,6 +1308,18 @@
       font-weight: 600;
     }
 
+    .category-name-input {
+      background: var(--bg-color);
+      color: var(--text-color);
+      border: 1px solid var(--primary);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      outline: none;
+    }
+
     .friend-email {
       font-weight: 600;
     }
@@ -1697,7 +1709,18 @@
       border-radius: 50%;
       object-fit: cover;
       margin-bottom: 0.5rem;
-      background-color: var(--border-color);
+      background-color: #2b2b2b;
+      border: 2px solid var(--border-color);
+      display: block;
+    }
+
+    .actor-details-photo {
+      width: 120px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 12px;
+      background-color: #2b2b2b;
+      border: 1px solid var(--border-color);
     }
 
     .actor-name,
@@ -2771,7 +2794,7 @@
     const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ=");
     const MDBLIST_PROXY_URL = "https://serietvtracker.amrit-singh99mail-5e3.workers.dev";
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
-    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGQiLz48cGF0aCBkPSJtNDAgMzZhNC44IDQuOCAwIDEgMCAwLTkuNiA0LggNC44IDAgMCAwIDAgOS42em0wIDEuNmMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6bS0xMy4zMyAxNC44N2ExMi4wMiAxMi4wMiAwIDAgMCAyNi42NiAwYy0uNDctMi4wMi0yLjY4LTMuNTgtNS4zMy00LjA3LTEuMy0uMjUtMi42Ny0uNS00LS43My0xLjMzLS4yMy0yLjctLjMzLTQtLjMzcy0yLjY3LjEtNCwuMzNjLTEuMzMuMjItMi43LjQ4LTQgLjczLTIuNjUuNS00Ljg2IDIuMDYtNS4zMyA0LjA3eiIgZmlsbD0iIzY2NiIvPjwvc3ZnPg==";
+    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzJiMmIyYiIvPgogIDxnIGZpbGw9IiM0NDQiPgogICAgPGNpcmNsZSBjeD0iNTAiIGN5PSIzOCIgcj0iMTgiLz4KICAgIDxwYXRoIGQ9Ik0yMCw5NSBDMjAsNjUgMzAsNTggNTAsNTggQzcwLDU4IDgwLDY1IDgwLDk1IEw4MCwxMDAgTDIwLDEwMCBaIi8+CiAgPC9nPgo8L3N2Zz4=";
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
     const POPCORN_ICONS = { positive: "https://upload.wikimedia.org/wikipedia/commons/d/da/Rotten_Tomatoes_positive_audience.svg", negative: "https://upload.wikimedia.org/wikipedia/commons/6/63/Rotten_Tomatoes_negative_audience.svg" };
@@ -3516,18 +3539,36 @@
     }
 
     function renameCategory(cat, nameEl) {
-      const oldName = nameEl.textContent.trim();
+      if (DEFAULT_CATEGORIES.includes(cat)) return;
+
+      const oldName = cat;
       const input = document.createElement("input");
       input.type = "text";
       input.value = oldName;
-      nameEl.parentElement.innerHTML = "";
-      nameEl.parentElement.appendChild(input);
+      input.className = "category-name-input";
+      input.style.width = "100%";
+
+      nameEl.innerHTML = "";
+      nameEl.appendChild(input);
       input.focus();
+
       const save = () => {
         const newName = input.value.trim();
-        if (newName && newName !== cat && !categories.includes(newName)) {
-          mediaList.forEach(m => { if (m.category === cat) m.category = newName; });
-          categories[categories.indexOf(cat)] = newName;
+        if (newName && newName !== oldName) {
+          if (categories.includes(newName)) {
+            showNotification("Questa categoria esiste già", "warning");
+            renderCategoriesList();
+            return;
+          }
+          const catIndex = categories.indexOf(oldName);
+          if (catIndex !== -1) {
+            categories[catIndex] = newName;
+          }
+          mediaList.forEach(m => {
+            if (m.category === oldName) {
+              m.category = newName;
+            }
+          });
           saveData();
           renderFullUI();
           showNotification(`Categoria rinominata in "${newName}"`, "success");
@@ -3535,10 +3576,17 @@
           renderCategoriesList();
         }
       };
+
       input.addEventListener("blur", save);
       input.addEventListener("keydown", e => {
-        if (e.key === "Enter") input.blur();
-        if (e.key === "Escape") renderCategoriesList();
+        if (e.key === "Enter") {
+          e.preventDefault();
+          input.blur();
+        }
+        if (e.key === "Escape") {
+          e.preventDefault();
+          renderCategoriesList();
+        }
       });
     }
 
