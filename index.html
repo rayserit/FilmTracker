@@ -31,6 +31,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
+  <!-- Chart.js per Statistiche Avanzate -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     :root {
       --primary: #3A86FF;
@@ -1750,6 +1753,56 @@
       border: none;
     }
 
+    /* Rende cliccabili le statistiche in alto */
+    .stats-panel .stat-item {
+      cursor: pointer;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .stats-panel .stat-item:active {
+      transform: scale(0.95);
+    }
+
+    #advancedStatsModal {
+      z-index: 1200;
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .charts-container {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .chart-detail-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--section-tint);
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .chart-detail-poster {
+      width: 45px;
+      height: 65px;
+      object-fit: cover;
+      border-radius: 4px;
+      background-color: var(--border-color);
+    }
+
+    .chart-detail-info {
+      display: flex;
+      flex-direction: column;
+    }
+
     .actor-details-header {
       display: flex;
       gap: 1.5rem;
@@ -2597,6 +2650,51 @@
     </div>
   </div>
 
+  <!-- MODALE STATISTICHE AVANZATE -->
+  <div class="modal" id="advancedStatsModal">
+    <div class="modal-content" style="max-width: 800px; padding: 1.5rem;">
+      <h2 style="text-align: center; margin-top: 0; color: var(--primary);">Statistiche Avanzate</h2>
+
+      <div class="charts-container">
+        <!-- Grafico a Torta: Generi -->
+        <div class="chart-box">
+          <h3 style="text-align: center; font-size: 1rem; color: var(--text-secondary);">I tuoi Generi Preferiti</h3>
+          <div style="position: relative; height: 250px; width: 100%;">
+            <canvas id="genresChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Grafico a Barre: Attività Mensile -->
+        <div class="chart-box">
+          <h3 style="text-align: center; font-size: 1rem; color: var(--text-secondary);">Film Attivi negli ultimi 6 mesi
+          </h3>
+          <div style="position: relative; height: 250px; width: 100%;">
+            <canvas id="activityChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="border-top: none;">
+        <button onclick="closeModal(document.getElementById('advancedStatsModal'))" class="btn btn-secondary"
+          style="width: 100%;">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE DETTAGLI GRAFICO (Drill-down) -->
+  <div class="modal" id="chartDetailsModal" style="z-index: 1250;">
+    <div class="modal-content" style="max-width: 500px;">
+      <h2 id="chartDetailsTitle" style="text-align: center; margin-top: 0; color: var(--primary);">Dettagli</h2>
+      <div id="chartDetailsList"
+        style="max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding: 0.5rem;">
+        <!-- La lista dei film apparirà qui -->
+      </div>
+      <div class="modal-footer" style="border-top: none; padding-top: 1rem;">
+        <button onclick="closeModal(document.getElementById('chartDetailsModal'))" class="btn btn-secondary"
+          style="width: 100%;">Chiudi</button>
+      </div>
+    </div>
+  </div>
   <div class="modal" id="confirmModal">
     <div class="modal-content">
       <h2 id="confirmModalTitle"></h2>
@@ -2893,7 +2991,14 @@
       // Category Navigation Modal
       categoryNavModal: document.getElementById('categoryNavModal'),
       categoryNavList: document.getElementById('categoryNavList'),
-      closeCategoryNavBtn: document.getElementById('closeCategoryNavBtn')
+      closeCategoryNavBtn: document.getElementById('closeCategoryNavBtn'),
+      // Advanced Stats Modals
+      advancedStatsModal: document.getElementById('advancedStatsModal'),
+      genresChart: document.getElementById('genresChart'),
+      activityChart: document.getElementById('activityChart'),
+      chartDetailsModal: document.getElementById('chartDetailsModal'),
+      chartDetailsTitle: document.getElementById('chartDetailsTitle'),
+      chartDetailsList: document.getElementById('chartDetailsList'),
     };
 
     const defaultMediaProps = {
@@ -2907,7 +3012,8 @@
       metacriticRating: "N/A",
       letterboxdRating: "N/A",
       tmdbID: null,
-      italianTitle: null
+      italianTitle: null,
+      genres: []
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -3055,7 +3161,7 @@
       });
       elements.logoutBtn.addEventListener("click", () => {
         detachAllFriendListeners();
-        firebase.auth().signOut()
+        firebase.auth().signOut();
       });
 
       firebase.auth().onAuthStateChanged(user => {
@@ -3969,6 +4075,7 @@
           id: Date.now().toString(),
           title: enDetails.title,
           italianTitle: itDetails ? itDetails.title : enDetails.title,
+          genres: enDetails.genres ? enDetails.genres.map(g => g.name) : [],
           year: enDetails.release_date ? enDetails.release_date.split('-')[0] : "",
           poster: enDetails.poster_path ? `https://image.tmdb.org/t/p/w500${enDetails.poster_path}` : DEFAULT_POSTER,
           imdbID: enDetails.imdb_id,
@@ -4316,6 +4423,13 @@
       try {
         const details = await fetchTMDbDetails(media.imdbID, 'it-IT');
         if (details) {
+          if (details.genres) {
+            const newGenres = details.genres.map(g => g.name);
+            if (JSON.stringify(media.genres) !== JSON.stringify(newGenres)) {
+              media.genres = newGenres;
+              saveData();
+            }
+          }
           populateDetailsModal(details, media);
         } else {
           elements.detailsModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli non trovati.</p>';
@@ -5167,6 +5281,192 @@
     } else {
       window.addEventListener('load', setupBackGestureSupport);
     }
+
+    let genresChartInstance = null;
+    let activityChartInstance = null;
+
+    function renderAdvancedStats() {
+      const genreCounts = {};
+      mediaList.forEach(media => {
+        if (media.category === 'watched' || media.isCountedAsWatched) {
+          if (media.genres && Array.isArray(media.genres)) {
+            media.genres.forEach(g => {
+              genreCounts[g] = (genreCounts[g] || 0) + 1;
+            });
+          }
+        }
+      });
+
+      const sortedGenres = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const genreLabels = sortedGenres.map(g => g[0]);
+      const genreData = sortedGenres.map(g => g[1]);
+
+      const monthCounts = {};
+      const last6Months = [];
+
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        monthCounts[key] = 0;
+        last6Months.push(key);
+      }
+
+      mediaList.forEach(media => {
+        if (media.lastActivityAt) {
+          const d = new Date(media.lastActivityAt);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          if (monthCounts[key] !== undefined) {
+            monthCounts[key]++;
+          }
+        }
+      });
+
+      const activityData = last6Months.map(m => monthCounts[m]);
+      const activityLabels = last6Months.map(m => {
+        const [y, mo] = m.split('-');
+        const date = new Date(y, mo - 1);
+        return date.toLocaleDateString('it-IT', { month: 'short' }).toUpperCase();
+      });
+
+      const isDark = document.body.classList.contains('dark');
+      const textColor = isDark ? '#aaaaaa' : '#666666';
+      const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+      const bgColor = isDark ? '#1e1e1e' : '#ffffff';
+      const modernColors = ['#FF3366', '#20A4F3', '#FFD166', '#06D6A0', '#118AB2', '#073B4C'];
+
+      const ctxGenres = document.getElementById('genresChart').getContext('2d');
+      if (genresChartInstance) genresChartInstance.destroy();
+
+      genresChartInstance = new Chart(ctxGenres, {
+        type: 'doughnut',
+        data: {
+          labels: genreLabels.length ? genreLabels : ['Dati in elaborazione...'],
+          datasets: [{
+            data: genreData.length ? genreData : [1],
+            backgroundColor: genreData.length ? modernColors : ['#444'],
+            borderWidth: 3,
+            borderColor: bgColor,
+            hoverOffset: 15,
+            borderRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: 15 },
+          onHover: (event, chartElement) => {
+            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+          },
+          onClick: (event, elements) => {
+            if (elements.length > 0) {
+              showChartDetails('genre', genreLabels[elements[0].index]);
+            }
+          },
+          plugins: {
+            legend: { position: 'right', labels: { color: textColor, font: { family: 'Inter', size: 12 }, usePointStyle: true, boxWidth: 8 } },
+            tooltip: { backgroundColor: isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)', titleColor: isDark ? '#000' : '#fff', bodyColor: isDark ? '#000' : '#fff', padding: 12, cornerRadius: 8, displayColors: false }
+          }
+        }
+      });
+
+      const ctxActivity = document.getElementById('activityChart').getContext('2d');
+      if (activityChartInstance) activityChartInstance.destroy();
+
+      let gradient = ctxActivity.createLinearGradient(0, 0, 0, 300);
+      gradient.addColorStop(0, 'rgba(58, 134, 255, 0.6)');
+      gradient.addColorStop(1, 'rgba(58, 134, 255, 0.0)');
+
+      activityChartInstance = new Chart(ctxActivity, {
+        type: 'line',
+        data: {
+          labels: activityLabels,
+          datasets: [{
+            label: 'Film Attivi',
+            data: activityData,
+            backgroundColor: gradient,
+            borderColor: '#3A86FF',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#3A86FF',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onHover: (event, chartElement) => {
+            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+          },
+          onClick: (event, elements) => {
+            if (elements.length > 0) {
+              showChartDetails('activity', last6Months[elements[0].index], activityLabels[elements[0].index]);
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { backgroundColor: '#3A86FF', titleFont: { size: 13 }, bodyFont: { size: 14, weight: 'bold' }, padding: 12, cornerRadius: 8, displayColors: false, callbacks: { label: function (c) { return c.raw + ' Film modificati'; } } }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { color: textColor, precision: 0, stepSize: 1 }, grid: { color: gridColor, drawBorder: false } },
+            x: { ticks: { color: textColor, font: { family: 'Inter', weight: '600' } }, grid: { display: false, drawBorder: false } }
+          }
+        }
+      });
+    }
+
+    function showChartDetails(type, key, displayLabel = '') {
+      let filteredShows = [];
+      let title = '';
+
+      if (type === 'genre') {
+        title = `Genere: ${key}`;
+        filteredShows = mediaList.filter(m =>
+          (m.category === 'watched' || m.isCountedAsWatched) &&
+          m.genres && m.genres.includes(key)
+        );
+      } else if (type === 'activity') {
+        title = `Attività di ${displayLabel}`;
+        filteredShows = mediaList.filter(m => {
+          if (!m.lastActivityAt) return false;
+          const d = new Date(m.lastActivityAt);
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === key;
+        });
+      }
+
+      filteredShows.sort((a, b) => a.title.localeCompare(b.title));
+
+      elements.chartDetailsTitle.textContent = title;
+      const listContainer = elements.chartDetailsList;
+
+      if (filteredShows.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Nessun dato corrispondente.</p>';
+      } else {
+        listContainer.innerHTML = filteredShows.map(show => `
+            <div class="chart-detail-item">
+                <img src="${show.poster || DEFAULT_POSTER}" class="chart-detail-poster" onerror="this.src='${DEFAULT_POSTER}'">
+                <div class="chart-detail-info">
+                    <span style="font-weight: 700; font-size: 0.95rem;">${show.title}</span>
+                    <span style="font-size: 0.8rem; color: var(--primary);"><i class="fas fa-folder"></i> ${getCategoryName(show.category)}</span>
+                </div>
+            </div>
+        `).join('');
+      }
+
+      openModal(elements.chartDetailsModal);
+    }
+
+    // Add event listeners for the stats panel items
+    document.querySelectorAll('.stat-item').forEach(item => {
+      item.addEventListener('click', () => {
+        openModal(elements.advancedStatsModal);
+        renderAdvancedStats();
+      });
+    });
   </script>
 
 
