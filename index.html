@@ -2865,6 +2865,27 @@
           </div>
         </div>
 
+        <!-- AGGIORNA VOTI -->
+        <div class="settings-card" id="updateRatingsAction"
+          style="background: rgba(244, 162, 97, 0.1); border-color: rgba(244, 162, 97, 0.2);">
+          <div class="settings-icon" style="background: var(--warning); color: white;"><i
+              class="fas fa-star-half-alt"></i></div>
+          <div class="settings-info">
+            <span class="settings-title" style="color: var(--warning);">Aggiorna Voti</span>
+            <span class="settings-desc">Sincronizza IMDb, Letterboxd e Metacritic</span>
+          </div>
+        </div>
+
+        <!-- CRONOLOGIA AGGIORNAMENTI -->
+        <div class="settings-card" id="viewHistoryAction"
+          style="background: rgba(131, 56, 236, 0.1); border-color: rgba(131, 56, 236, 0.2);">
+          <div class="settings-icon" style="background: #8338ec; color: white;"><i class="fas fa-history"></i></div>
+          <div class="settings-info">
+            <span class="settings-title" style="color: #8338ec;">Storico Modifiche</span>
+            <span class="settings-desc">Visualizza gli ultimi aggiornamenti</span>
+          </div>
+        </div>
+
         <!-- RESET -->
         <div class="settings-card reset-card" id="resetAction">
           <div class="settings-icon"><i class="fas fa-trash-alt"></i></div>
@@ -2873,6 +2894,7 @@
             <span class="settings-desc">Cancella tutto (Azione irreversibile)</span>
           </div>
         </div>
+
         <input type="file" id="importFile" accept=".json" style="display: none;">
       </div>
 
@@ -2902,7 +2924,9 @@
     const MAX_NOTIFICATIONS = 50;
     const MAX_LOG_SIZE = 15;
 
+    let isUpdateInProgress = false;
     let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentTMDbSelection = null, currentUser = null, isViewMode = false, debounceTimeout, lazyLoadObserver, currentRewatchMediaId = null;
+    let updateHistory = JSON.parse(localStorage.getItem('movieUpdateHistory') || "[]");
     let followedFriends = [], lastCheckedTimestamps = {}, friendListeners = {};
     let statContributorIds = new Set();
     let ignoredDuplicateIds = new Set();
@@ -3231,6 +3255,8 @@
     function loadData() {
       if (!currentUser) return;
       const path = `users/${currentUser.uid}`;
+
+      // 1. Carica i Film
       db.ref(`${path}/mediaTracker`).on("value", snap => {
         const data = snap.val() || {};
         mediaList = (data.mediaList || []).map(item => ({ ...defaultMediaProps, ...item }));
@@ -3238,6 +3264,7 @@
         renderFullUI();
       });
 
+      // 2. Carica gli Amici
       db.ref(`${path}/social`).once("value", snapshot => {
         const data = snapshot.val() || {};
         followedFriends = data.followedFriends || [];
@@ -3247,6 +3274,24 @@
           renderFriendsList();
         }
       });
+
+      // 3. Sincronizza lo Storico Aggiornamenti dal Cloud
+      db.ref(`${path}/movieUpdateHistory`).on("value", snapshot => {
+        if (snapshot.exists()) {
+          updateHistory = snapshot.val();
+          // Aggiorniamo anche la memoria locale per il futuro
+          localStorage.setItem('movieUpdateHistory', JSON.stringify(updateHistory));
+        }
+      });
+
+      // 4. Sincronizza l'ultimo Export (Badge)
+      db.ref(`${path}/lastExport`).once("value", snapshot => {
+        if (snapshot.exists()) {
+          localStorage.setItem('lastFilmExport', snapshot.val());
+          if (typeof updateBackupBadge === 'function') updateBackupBadge(snapshot.val());
+        }
+      });
+
       hideLoader();
     }
 
@@ -3530,12 +3575,21 @@
       });
 
       let ratingsHTML = "";
-      const rtState = getRottenTomatoesState(media.rottenTomatoes);
-      const popcornState = getPopcornState(media.popcornRating);
 
-      if (media.imdbRating && media.imdbRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`; }
-      if (rtState) { ratingsHTML += `<span class="rating-badge"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${media.rottenTomatoes}</span>`; }
-      if (popcornState) { ratingsHTML += `<span class="rating-badge"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`; }
+      // 1. IMDb
+      if (media.imdbRating && media.imdbRating !== "N/A") {
+        ratingsHTML += `<span class="rating-badge" title="IMDb"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`;
+      }
+
+      // 2. Letterboxd
+      if (media.letterboxdRating && media.letterboxdRating !== "N/A") {
+        ratingsHTML += `<span class="rating-badge" title="Letterboxd"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`;
+      }
+
+      // 3. Metacritic
+      if (media.metacriticRating && media.metacriticRating !== "N/A") {
+        ratingsHTML += `<span class="rating-badge" title="Metacritic"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`;
+      }
 
       const ratingsSection = ratingsHTML ? `<div class="media-ratings">${ratingsHTML}</div>` : "";
 
@@ -4471,7 +4525,12 @@
     }
 
     function populateDetailsModal(details, media) {
-      // 1. Update backdrop
+      // 1. DEFINIZIONE VARIABILI (Importante: facciamolo subito!)
+      const genres = details.genres ? details.genres.map(g => g.name).join(', ') : '';
+      const directors = details.crew ? details.crew.filter(member => member.job === 'Director') : [];
+      const directorsHTML = directors.map(d => `<a href="#" class="director-link" data-person-id="${d.id}">${d.name}</a>`).join(', ');
+
+      // 2. Sfondo e Poster
       if (details.backdrop_path) {
         const backdrop = elements.detailsModalContent.querySelector('.details-backdrop');
         if (backdrop) {
@@ -4479,75 +4538,100 @@
           backdrop.style.backgroundColor = 'transparent';
         }
       }
-
-      // 2. Update Poster (in case API has a better one)
-      const posterUrl = media.poster || (details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : DEFAULT_POSTER);
       const posterImg = document.getElementById('detailsModalPoster');
-      if (posterImg) posterImg.src = posterUrl;
+      if (posterImg) {
+        posterImg.src = media.poster || (details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : DEFAULT_POSTER);
+      }
 
-      // 3. Update Meta & Ratings
-      const genres = details.genres.map(g => g.name).join(', ');
-      const directors = details.crew.filter(member => member.job === 'Director');
-      const directorsHTML = directors.map(d => `<a href="#" class="director-link" data-person-id="${d.id}">${d.name}</a>`).join(', ');
-
+      // 3. CALCOLO RATING E VOTI (Tutti inclusi)
       const rtState = getRottenTomatoesState(media.rottenTomatoes);
       const popcornState = getPopcornState(media.popcornRating);
 
       let ratingsHTML = '';
-      if (media.imdbRating && media.imdbRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`; }
-      if (rtState) { ratingsHTML += `<span class="rating-badge"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${media.rottenTomatoes}</span>`; }
-      if (popcornState) { ratingsHTML += `<span class="rating-badge"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`; }
-      if (media.metacriticRating && media.metacriticRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`; }
-      if (media.letterboxdRating && media.letterboxdRating !== "N/A") { ratingsHTML += `<span class="rating-badge"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`; }
 
+      // IMDb
+      if (media.imdbRating && media.imdbRating !== "N/A") {
+        ratingsHTML += `<span class="rating-badge" title="IMDb"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`;
+      }
+
+      // Rotten Tomatoes (Critica)
+      if (rtState) {
+        ratingsHTML += `<span class="rating-badge" title="Rotten Tomatoes"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${media.rottenTomatoes}</span>`;
+      }
+
+      // Rotten Tomatoes (Pubblico)
+      if (popcornState) {
+        ratingsHTML += `<span class="rating-badge" title="Audience Score"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`;
+      }
+
+      // Letterboxd
+      if (media.letterboxdRating && media.letterboxdRating !== "N/A") {
+        ratingsHTML += `<span class="rating-badge" title="Letterboxd"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`;
+      }
+
+      // Metacritic
+      if (media.metacriticRating && media.metacriticRating !== "N/A") {
+        ratingsHTML += `<span class="rating-badge" title="Metacritic"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`;
+      }
+
+      // Inserimento Voti
       const ratingsContainer = document.getElementById('shell-ratings');
       if (ratingsContainer) {
         ratingsContainer.innerHTML = ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione disponibile</span>';
       }
 
+      // 4. AGGIORNAMENTO META INFO
       const genresSpan = document.getElementById('shell-genres');
       if (genresSpan) {
-        genresSpan.outerHTML = `<span><i class="fas fa-film"></i> ${genres}</span>`;
+        genresSpan.outerHTML = genres ? `<span><i class="fas fa-film"></i> ${genres}</span>` : '';
       }
 
       const metaContainer = document.getElementById('detailsModalMeta');
       if (metaContainer && directorsHTML) {
+        // Puliamo eventuali registi aggiunti in precedenza per non duplicarli
+        const existingDirectors = metaContainer.querySelectorAll('.director-span');
+        existingDirectors.forEach(el => el.remove());
+
         const directorSpan = document.createElement('span');
+        directorSpan.className = 'director-span'; // Classe per identificarlo
         directorSpan.innerHTML = `<i class="fas fa-video"></i> Regia: ${directorsHTML}`;
         metaContainer.appendChild(directorSpan);
       }
 
-      // Update Tagline
+      // 5. Update Tagline
       if (details.tagline) {
-        const tagline = document.createElement('p');
-        tagline.id = 'detailsModalTagline';
+        let tagline = document.getElementById('detailsModalTagline');
+        if (!tagline) {
+          tagline = document.createElement('p');
+          tagline.id = 'detailsModalTagline';
+          const titleSection = document.querySelector('.details-title-section');
+          if (titleSection) titleSection.insertBefore(tagline, metaContainer);
+        }
         tagline.textContent = details.tagline;
-        const titleSection = document.querySelector('.details-title-section');
-        if (titleSection) titleSection.insertBefore(tagline, metaContainer);
       }
 
-      // 4. Update Overview
+      // 6. Update Overview
       const overview = document.getElementById('detailsModalOverview');
       if (overview) {
         overview.classList.remove('skeleton-text');
         overview.textContent = details.overview || 'Trama non disponibile.';
       }
 
-      // 5. Update Cast
-      const castHTML = details.cast.slice(0, 15).map(actor => `
-            <div class="actor-card" data-person-id="${actor.id}">
-                <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
-                <div class="actor-name">${actor.name}</div>
-                <div class="actor-character">${actor.character}</div>
-            </div>
-        `).join('');
+      // 7. Update Cast
+      const castHTML = details.cast ? details.cast.slice(0, 15).map(actor => `
+        <div class="actor-card" data-person-id="${actor.id}">
+            <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
+            <div class="actor-name">${actor.name}</div>
+            <div class="actor-character">${actor.character}</div>
+        </div>
+      `).join('') : '';
 
       const castContainer = document.getElementById('detailsModalCast');
       if (castContainer) {
         castContainer.innerHTML = castHTML;
       }
 
-      // Re-attach listeners
+      // 8. Re-attach listeners
       elements.detailsModalContent.querySelectorAll('.actor-card, .director-link').forEach(card => {
         card.addEventListener('click', (e) => {
           e.preventDefault();
@@ -4597,6 +4681,252 @@
         return null;
       }
     }
+
+    async function updateAllRatings() {
+      if (isUpdateInProgress) {
+        showNotification("Un aggiornamento è già in corso.", "warning");
+        return;
+      }
+      isUpdateInProgress = true;
+
+      const now = Date.now();
+      const SETTE_GIORNI = 7 * 24 * 60 * 60 * 1000;
+
+      // 1. Filtro
+      let itemsToUpdate = [];
+      let skippedCount = 0;
+
+      mediaList.forEach(m => {
+        if (!m.imdbID) return;
+        const lastRatingUpdate = m.lastRatingUpdate ? new Date(m.lastRatingUpdate).getTime() : 0;
+        if (now - lastRatingUpdate > SETTE_GIORNI) {
+          itemsToUpdate.push(m);
+        } else {
+          skippedCount++;
+        }
+      });
+      if (itemsToUpdate.length === 0) {
+        isUpdateInProgress = false;
+        return showNotification(`Tutti i voti sono aggiornati. (Risparmiate ${skippedCount} API)`, "success");
+      }
+
+      // 2. Setup UI
+      const progressModal = document.getElementById('updateProgressModal');
+      const progressText = document.getElementById('updateProgressText');
+      const progressFill = document.getElementById('updateProgressBarFill');
+      document.getElementById('updateProgressTitle').textContent = "Sincronizzazione Voti...";
+
+      closeModal(document.getElementById('settingsModal'));
+      setTimeout(() => { openModal(progressModal); }, 350);
+
+      let allChangesHTML = [];
+      let apiCallsMDBList = 0;
+
+      // --- NUOVO: CONTATORE DI ERRORI CONSECUTIVI ---
+      let consecutiveErrors = 0;
+      const MAX_ERRORS = 3;
+
+      // Helper icone
+      const getIconHtml = (src) => `<img src="${src}" style="width:14px; height:14px; object-fit:contain; vertical-align:middle; margin-right:4px;">`;
+
+      // 3. Ciclo
+      for (let i = 0; i < itemsToUpdate.length; i++) {
+        // --- FRENO DI EMERGENZA ---
+        if (consecutiveErrors >= MAX_ERRORS) {
+          console.warn("Troppi errori consecutivi. Interruzione aggiornamento per salvare le API.");
+          showNotification("Aggiornamento interrotto: probabile limite API raggiunto.", "error");
+          break; // ESCE DAL CICLO
+        }
+
+        const media = itemsToUpdate[i];
+
+        progressText.textContent = `(${i + 1}/${itemsToUpdate.length}) Controllo: ${media.title}...`;
+        progressFill.style.width = `${((i + 1) / itemsToUpdate.length) * 100}%`;
+
+        try {
+          const ratings = await fetchMDBListRatings(media.imdbID);
+          apiCallsMDBList++;
+
+          if (!ratings) {
+            // Se ratings è null, qualcosa non va
+            consecutiveErrors++;
+          } else {
+            // Se ha successo, resettiamo il contatore errori
+            consecutiveErrors = 0;
+            media.lastRatingUpdate = new Date().toISOString();
+
+            let changes = [];
+
+            const rtRating = ratings.find(r => r.source === 'tomatoes');
+            const popcornRating = ratings.find(r => r.source === 'tomatoesaudience');
+            const letterboxdRating = ratings.find(r => r.source === 'letterboxd');
+            const metacriticRating = ratings.find(r => r.source === 'metacritic');
+            const imdbRating = ratings.find(r => r.source === 'imdb');
+
+            // FUNZIONE INTELLIGENTE (con fix N/A e numeri)
+            const checkAndUpdate = (newObj, oldVal, iconSrc) => {
+              let oldString = String(oldVal).trim();
+              if (["undefined", "null", "N/A", "N/D", ""].includes(oldString)) oldString = "N/A";
+
+              if (!newObj || newObj.value == null) return oldVal;
+
+              let newString = String(newObj.value).trim();
+              if (["undefined", "null", "N/A", "N/D", ""].includes(newString)) newString = "N/A";
+
+              if (oldString === newString || (oldString === "N/A" && newString === "N/A")) return oldVal;
+
+              const oldNum = parseFloat(oldString);
+              const newNum = parseFloat(newString);
+              let isDifferent = oldString !== newString;
+              if (!isNaN(oldNum) && !isNaN(newNum)) isDifferent = oldNum !== newNum;
+
+              if (isDifferent) {
+                const iconHtml = getIconHtml(iconSrc);
+                changes.push(`<span style="display:inline-flex; align-items:center;">${iconHtml} ${oldString} <i class="fas fa-arrow-right" style="font-size:0.7em; color:var(--text-secondary); margin:0 6px;"></i> <span style="color:var(--primary); font-weight:bold;">${newString}</span></span>`);
+                return newString === "N/A" ? "N/A" : newString;
+              }
+              return oldVal;
+            };
+
+            media.imdbRating = checkAndUpdate(imdbRating, media.imdbRating, IMDB_STAR_ICON);
+            media.letterboxdRating = checkAndUpdate(letterboxdRating, media.letterboxdRating, LETTERBOXD_ICON);
+            media.metacriticRating = checkAndUpdate(metacriticRating, media.metacriticRating, METACRITIC_ICON);
+            media.rottenTomatoes = checkAndUpdate(rtRating, media.rottenTomatoes, ROTTEN_TOMATOES_ICONS.fresh);
+            media.popcornRating = checkAndUpdate(popcornRating, media.popcornRating, POPCORN_ICONS.positive);
+
+            if (changes.length > 0) {
+              const posterUrl = media.poster || DEFAULT_POSTER;
+              const itemHTML = `
+                        <div style="display:flex; gap:12px; align-items:center; padding: 10px; background: var(--section-tint); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color);">
+                            <img src="${posterUrl}" style="width:45px; height:65px; border-radius:6px; object-fit:cover; flex-shrink:0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                            <div style="display:flex; flex-direction:column; justify-content:center; gap: 4px;">
+                                <strong style="color:var(--text-color); font-size:0.95rem; line-height:1.2;">${media.title}</strong>
+                                <div style="display:flex; flex-wrap:wrap; gap: 10px; font-size:0.85rem; color:var(--text-secondary);">
+                                    ${changes.join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+              allChangesHTML.push(itemHTML);
+            }
+          }
+          await new Promise(r => setTimeout(r, 350));
+        } catch (err) {
+          console.error(`Errore voti per ${media.title}`, err);
+          consecutiveErrors++; // Incrementa errore anche qui
+        }
+      }
+
+      // 4. Fine aggiornamento
+      closeModal(progressModal);
+
+      setTimeout(() => {
+        const apiReportHTML = `
+            <div style="margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px dashed var(--border-color);">
+                <div style="font-size: 0.85rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase;">
+                    <i class="fas fa-server"></i> Report Consumo API
+                </div>
+                <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; line-height: 1.5;">
+                    <li><strong style="color: var(--primary);">${apiCallsMDBList}</strong> MDBList eseguite</li>
+                    <li><strong style="color: var(--success);">${skippedCount}</strong> Risparmiate (Cache 7gg)</li>
+                    ${consecutiveErrors >= MAX_ERRORS ? '<li><strong style="color: var(--danger);">⚠️ Interrotto per errori API</strong></li>' : ''}
+                </ul>
+            </div>
+        `;
+
+        let finalLogEntry = '';
+
+        if (allChangesHTML.length > 0) {
+          const logHeader = `<div style="margin-bottom: 0.8rem; color: var(--warning); font-weight: bold; font-size: 1.1rem;"><i class="fas fa-star"></i> Voti Aggiornati (${allChangesHTML.length})</div>`;
+          finalLogEntry = logHeader + allChangesHTML.join('') + apiReportHTML;
+
+          document.getElementById('updateSummaryList').innerHTML = `<li style="padding:0; border:none;">${finalLogEntry}</li>`;
+          openModal(document.getElementById('updateSummaryModal'));
+          addToUpdateHistory([finalLogEntry]);
+        } else {
+          // Se non ci sono cambiamenti ma abbiamo consumato API, mostriamo notifica
+          if (apiCallsMDBList > 0) {
+            finalLogEntry = `<div style="margin-bottom: 0.8rem; color: var(--primary); font-weight: bold; font-size: 1.1rem;"><i class="fas fa-check-circle"></i> Voti Controllati (Nessuna variazione)</div>` + apiReportHTML;
+            addToUpdateHistory([finalLogEntry]);
+          }
+          // Se abbiamo interrotto per errore, lo diciamo
+          if (consecutiveErrors >= MAX_ERRORS) {
+            showNotification("Aggiornamento interrotto. Verifica limiti API.", "error");
+          } else {
+            showNotification("Controllo completato.", "success");
+          }
+        }
+
+        saveData();
+        renderMedia();
+        isUpdateInProgress = false;
+
+      }, 350);
+    }
+
+    // Funzione per SALVARE nello storico
+    function addToUpdateHistory(changes) {
+      if (!changes || changes.length === 0) return;
+
+      const newEntry = {
+        timestamp: new Date().toISOString(),
+        items: changes // Array di stringhe/HTML
+      };
+
+      updateHistory.unshift(newEntry); // Aggiunge in cima
+      updateHistory = updateHistory.slice(0, 50); // Mantiene solo gli ultimi 50
+
+      localStorage.setItem('movieUpdateHistory', JSON.stringify(updateHistory));
+
+      // Salva anche su Firebase se loggato
+      if (currentUser) {
+        db.ref(`users/${currentUser.uid}/movieUpdateHistory`).set(updateHistory);
+      }
+    }
+
+    // Funzione per VISUALIZZARE lo storico
+    function renderUpdateHistory() {
+      const container = document.getElementById('historyList');
+      if (!container) return;
+
+      if (updateHistory.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color:var(--text-secondary); padding: 2rem;">Nessun aggiornamento registrato.</p>`;
+        return;
+      }
+
+      container.innerHTML = updateHistory.map(entry => `
+        <div style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+            <div style="font-size: 0.8rem; color: var(--primary); font-weight: bold; margin-bottom: 0.5rem;">
+                <i class="fas fa-clock"></i> ${new Date(entry.timestamp).toLocaleString()}
+            </div>
+            <div style="font-size: 0.9rem; line-height: 1.4;">
+                ${entry.items.join('')}
+            </div>
+        </div>
+    `).join('');
+    }
+
+    // Event Listeners per i nuovi modali
+    document.addEventListener('DOMContentLoaded', () => {
+      const closeSummaryBtn = document.getElementById('closeSummaryBtn');
+      if (closeSummaryBtn) {
+        closeSummaryBtn.addEventListener('click', () => {
+          closeModal(document.getElementById('updateSummaryModal'));
+        });
+      }
+
+      const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+      if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', () => {
+          if (confirm("Vuoi davvero cancellare tutto lo storico FILM?")) {
+            updateHistory = [];
+            localStorage.setItem('movieUpdateHistory', JSON.stringify(updateHistory));
+            if (currentUser) db.ref(`users/${currentUser.uid}/movieUpdateHistory`).set([]);
+            renderUpdateHistory();
+          }
+        });
+      }
+    });
 
     async function fetchMDBListRatings(imdbId) {
       if (!imdbId || !MDBLIST_PROXY_URL || MDBLIST_PROXY_URL === "INCOLLA_L_URL_DEL_TUO_WORKER_QUI") return null;
@@ -4847,6 +5177,22 @@
           setTimeout(() => {
             resetApp();
           }, 350);
+        });
+      }
+
+      const updateRatingsAction = document.getElementById('updateRatingsAction');
+      if (updateRatingsAction) {
+        updateRatingsAction.addEventListener('click', updateAllRatings);
+      }
+
+      const viewHistoryAction = document.getElementById('viewHistoryAction');
+      if (viewHistoryAction) {
+        viewHistoryAction.addEventListener('click', () => {
+          closeModal(document.getElementById('settingsModal'));
+          setTimeout(() => {
+            renderUpdateHistory();
+            openModal(document.getElementById('historyModal'));
+          }, 300);
         });
       }
 
@@ -5480,6 +5826,32 @@
       <div class="modal-footer" style="padding: 1rem; border-top: 1px solid var(--border-color);">
         <button onclick="closeModal(document.getElementById('digitalModal'))" class="btn btn-secondary"
           style="width: 100%;">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE RIEPILOGO AGGIORNAMENTI -->
+  <div class="modal" id="updateSummaryModal" style="z-index: 1200;">
+    <div class="modal-content" style="max-width: 500px;">
+      <h2 style="text-align:center; margin-top: 0;">Riepilogo Aggiornamenti</h2>
+      <ul id="updateSummaryList" style="list-style: none; padding: 0; max-height: 40vh; overflow-y: auto;"></ul>
+      <div class="modal-footer" style="padding-top: 1rem; border: none;">
+        <button id="closeSummaryBtn" class="btn btn-primary" style="width: 100%;">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="historyModal">
+
+    <div class="modal-content" style="max-width: 600px;">
+      <h2 style="text-align: center; margin-top: 0;">Storico Aggiornamenti</h2>
+      <div id="historyList" style="max-height: 60vh; overflow-y: auto; padding: 0.5rem;">
+        <!-- Qui verranno inseriti i log -->
+      </div>
+      <div class="modal-footer"
+        style="padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; gap: 1rem;">
+        <button id="clearHistoryBtn" class="btn btn-danger btn-small">Cancella Storico</button>
+        <button onclick="closeModal(document.getElementById('historyModal'))" class="btn btn-secondary">Chiudi</button>
       </div>
     </div>
   </div>
