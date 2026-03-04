@@ -704,10 +704,19 @@
             z-index: 1200;
         }
 
+        /* Allarghiamo il modale per dare spazio alle due colonne */
+        #settingsModal .modal-content {
+            width: 95%;
+            max-width: 750px;
+            /* Un po' più largo per stare comodi */
+            padding: 1.5rem;
+        }
+
         .settings-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+            display: grid;
+            /* Due colonne che si adattano, ma se lo spazio è pochissimo (mobile) vanno a una */
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
             margin: 1.5rem 0;
         }
 
@@ -719,36 +728,64 @@
             cursor: pointer;
             transition: all 0.2s ease;
             border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            gap: 15px;
+            height: 100%;
+            box-sizing: border-box;
+            /* Impedisce al contenuto interno di "spingere" fuori dai bordi */
+            min-width: 0;
         }
 
         .settings-card:active {
-            transform: scale(0.97);
+            transform: scale(0.98);
         }
 
         .settings-icon {
-            width: 45px;
-            height: 45px;
+            width: 44px;
+            height: 44px;
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
-            margin-right: 1rem;
+            flex-shrink: 0;
+            /* Impedisce all'icona di schiacciarsi */
         }
 
         .settings-info {
             display: flex;
             flex-direction: column;
+            min-width: 0;
+            /* Permette al testo di rimpicciolirsi se necessario */
+            flex: 1;
         }
 
         .settings-title {
             font-weight: 700;
             font-size: 1rem;
+            line-height: 1.2;
+            margin-bottom: 2px;
+            /* Permette di andare a capo se serve */
+            word-wrap: break-word;
         }
 
         .settings-desc {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             opacity: 0.7;
+            line-height: 1.3;
+            display: block;
+        }
+
+        /* Fix specifico per il badge dell'ultimo backup */
+        .last-backup-info {
+            grid-column: 1 / -1;
+            /* Occupa tutta la larghezza in fondo alla griglia */
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 10px;
         }
 
         /* Colori chiari e distinti */
@@ -3395,7 +3432,7 @@
     </div>
 
     <div class="modal" id="settingsModal">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content">
             <h2 style="text-align: center; margin-top: 0;">Centro Manutenzione</h2>
 
             <div class="settings-grid">
@@ -3439,6 +3476,17 @@
                     </div>
                 </div>
 
+                <!-- CAPSULA DEL TEMPO (HTML) -->
+                <div class="settings-card" id="exportHTMLAction"
+                    style="background: rgba(230, 126, 34, 0.1); border-color: rgba(230, 126, 34, 0.2);">
+                    <div class="settings-icon" style="background: #e67e22; color: white;"><i
+                            class="fas fa-file-code"></i></div>
+                    <div class="settings-info">
+                        <span class="settings-title" style="color: #e67e22;">Capsula del Tempo (.html)</span>
+                        <span class="settings-desc">Backup completo visualizzabile offline</span>
+                    </div>
+                </div>
+
                 <!-- RESET -->
                 <div class="settings-card reset-card" id="resetAction">
                     <div class="settings-icon"><i class="fas fa-trash-alt"></i></div>
@@ -3449,10 +3497,11 @@
                 </div>
                 <!-- Spostato qui per assicurarne il caricamento -->
                 <input type="file" id="importFile" accept=".json" style="display: none;">
-            </div>
 
-            <div id="lastBackupBadge" class="last-backup-info">
-                <i class="fas fa-history"></i> Ultimo backup: <span>Mai eseguito</span>
+                <!-- Badge ultimo backup dentro la griglia -->
+                <div id="lastBackupBadge" class="last-backup-info">
+                    <i class="fas fa-history"></i> Ultimo backup: <span>Mai eseguito</span>
+                </div>
             </div>
 
             <div class="modal-footer" style="border-top: none;">
@@ -4276,20 +4325,20 @@
             }
 
             let ratingsHTML = '';
+            const rtState = getRottenTomatoesState(show.rottenTomatoes);
+            const popcornState = getPopcornState(show.popcornRating);
 
-            // 1. IMDb
+            // IMDb
             if (show.imdbRating && show.imdbRating !== "N/A") {
-                ratingsHTML += `<span class="rating-badge" title="IMDb"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${show.imdbRating}</span>`;
+                ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${show.imdbRating}</span>`;
             }
-
-            // 2. Letterboxd
-            if (show.letterboxdRating && show.letterboxdRating !== "N/A") {
-                ratingsHTML += `<span class="rating-badge" title="Letterboxd"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${show.letterboxdRating}</span>`;
+            // Rotten Tomatoes Critica
+            if (rtState) {
+                ratingsHTML += `<span class="rating-badge"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${show.rottenTomatoes}</span>`;
             }
-
-            // 3. Metacritic
-            if (show.metacriticRating && show.metacriticRating !== "N/A") {
-                ratingsHTML += `<span class="rating-badge" title="Metacritic"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${show.metacriticRating}</span>`;
+            // Rotten Tomatoes Pubblico
+            if (popcornState) {
+                ratingsHTML += `<span class="rating-badge"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${show.popcornRating}</span>`;
             }
 
             const ratingsSection = ratingsHTML ? `<div class="media-ratings">${ratingsHTML}</div>` : "";
@@ -4744,7 +4793,6 @@
             // 3. Rating e Voti
             const rtState = getRottenTomatoesState(media.rottenTomatoes);
             const popcornState = getPopcornState(media.popcornRating);
-
             let ratingsHTML = '';
 
             // IMDb
@@ -4757,25 +4805,14 @@
                 ratingsHTML += `<span class="rating-badge" title="Rotten Tomatoes"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${media.rottenTomatoes}</span>`;
             }
 
-            // Rotten Tomatoes (Pubblico)
+            // Rotten Tomatoes (Pubblico / Popcorn)
             if (popcornState) {
                 ratingsHTML += `<span class="rating-badge" title="Audience Score"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`;
             }
 
-            // Letterboxd
-            if (media.letterboxdRating && media.letterboxdRating !== "N/A") {
-                ratingsHTML += `<span class="rating-badge" title="Letterboxd"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`;
-            }
-
-            // Metacritic
-            if (media.metacriticRating && media.metacriticRating !== "N/A") {
-                ratingsHTML += `<span class="rating-badge" title="Metacritic"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`;
-            }
-
-            // Inseriamo l'HTML nel contenitore dello Skeleton (o shell-ratings)
             const ratingsContainer = document.getElementById('shell-ratings');
             if (ratingsContainer) {
-                ratingsContainer.innerHTML = ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione</span>';
+                ratingsContainer.innerHTML = ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione disponibile</span>';
             }
 
             // 4. Bottoni Azione (Sostituiscono i quadrati skeleton)
@@ -6770,6 +6807,12 @@
 
             // Click sulle card interne
             document.getElementById('exportAction').addEventListener('click', exportData);
+
+            const exportHTMLAction = document.getElementById('exportHTMLAction');
+            if (exportHTMLAction) {
+                exportHTMLAction.addEventListener('click', exportToHTML);
+            }
+
             document.getElementById('importAction').addEventListener('click', () => {
                 if (elements.importFile) elements.importFile.click();
             });
@@ -7026,8 +7069,218 @@
         </div>
     </div>
 
+    <script>
+        // --- CAPSULA DEL TEMPO (HTML EXPORT) ---
+        // --- CAPSULA DEL TEMPO (HTML EXPORT UNIFICATO V3 - ORDINATA) ---
+        async function exportToHTML() {
+            if (!currentUser) return showNotification("Devi essere loggato per il backup completo.", "warning");
 
+            showNotification("Generazione backup ordinato in corso...", "warning");
 
+            try {
+                const [filmsSnap, tvSnap] = await Promise.all([
+                    db.ref(`users/${currentUser.uid}/mediaTracker`).once('value'),
+                    db.ref(`users/${currentUser.uid}/tvShowTracker`).once('value')
+                ]);
+
+                const filmsData = filmsSnap.val() ? (filmsSnap.val().mediaList || []) : [];
+                const tvData = tvSnap.val() ? (tvSnap.val().mediaList || []) : [];
+
+                // --- FUNZIONE HELPER PER GENERARE HTML RAGGRUPPATO ---
+                const generateSectionHtml = (list, type) => {
+                    if (list.length === 0) return '<p style="text-align:center; color:#666">Nessun elemento.</p>';
+
+                    // 1. Troviamo tutte le categorie uniche presenti nei dati
+                    const uniqueCats = [...new Set(list.map(item => item.category))];
+
+                    // Ordiniamo le categorie (opzionale: metti "In Corso" o "Watchlist" per prime)
+                    uniqueCats.sort();
+
+                    let finalHtml = '';
+
+                    uniqueCats.forEach(cat => {
+                        // Filtra elementi di questa categoria
+                        const itemsInCat = list.filter(item => item.category === cat);
+                        if (itemsInCat.length === 0) return;
+
+                        // Ordina per data (più recenti in alto)
+                        itemsInCat.sort((a, b) => new Date(b.lastActivityAt || b.addedAt) - new Date(a.lastActivityAt || a.addedAt));
+
+                        // Nome leggibile della categoria
+                        let displayCat = cat;
+                        if (type === 'film') {
+                            if (cat === 'watched') displayCat = 'Visti';
+                            if (cat === 'watchlist') displayCat = 'Da Vedere';
+                        }
+
+                        // Header della categoria
+                        finalHtml += `<div class="cat-group"><div class="cat-header">${displayCat} (${itemsInCat.length})</div>`;
+
+                        // Lista elementi
+                        itemsInCat.forEach(m => {
+                            const poster = m.poster && m.poster !== "N/A" ? m.poster : "";
+                            const imdbBadge = (m.imdbRating && m.imdbRating !== 'N/A') ? `<span class="tag tag-imdb">★ ${m.imdbRating}</span>` : '';
+
+                            let extraMeta = '';
+                            let rewatchBadge = '';
+
+                            if (type === 'film') {
+                                // Logica FILM
+                                extraMeta = `${m.year} • ${m.director || 'N/D'}`;
+                                if (m.rewatchCount > 0) rewatchBadge = `<span class="tag tag-rewatch">↺ ${m.rewatchCount}</span>`;
+                            } else {
+                                // Logica SERIE TV
+                                extraMeta = `${m.year} • ${m.status || ''}`;
+
+                                let totalRewatches = 0;
+                                if (m.rewatches) totalRewatches = Object.values(m.rewatches).reduce((a, b) => a + b, 0);
+                                if (totalRewatches > 0) rewatchBadge = `<span class="tag tag-rewatch">↺ ${totalRewatches} Ep.</span>`;
+
+                                // Mini tabella stagioni
+                                if (m.seasons) {
+                                    const sNums = Object.keys(m.seasons).sort((a, b) => Number(a) - Number(b));
+                                    if (sNums.length > 0) {
+                                        extraMeta += `<div class="season-mini-table">`;
+                                        sNums.forEach(sn => {
+                                            const season = m.seasons[sn];
+                                            const totalEps = season.episodes ? season.episodes.length : 0;
+                                            const watchedEps = season.episodes ? season.episodes.filter(ep => m.progress && m.progress[`${sn}-${ep.episode_number}`]).length : 0;
+                                            const isDone = watchedEps >= totalEps && totalEps > 0;
+                                            extraMeta += `<div class="season-row ${isDone ? 'done' : ''}">S${sn}: ${watchedEps}/${totalEps}</div>`;
+                                        });
+                                        extraMeta += `</div>`;
+                                    }
+                                }
+                            }
+
+                            finalHtml += `
+                        <div class="list-item">
+                            <img src="${poster}" class="item-poster">
+                            <div class="item-info">
+                                <div class="item-title">${m.title} ${m.isFavorite ? '<i class="fas fa-heart fav-icon"></i>' : ''}</div>
+                                <div class="item-meta">${extraMeta}</div>
+                                <div class="badges-row">
+                                    ${imdbBadge}
+                                    ${rewatchBadge}
+                                </div>
+                            </div>
+                        </div>`;
+                        });
+
+                        finalHtml += `</div>`; // Chiude cat-group
+                    });
+                    return finalHtml;
+                };
+
+                const filmsHtml = generateSectionHtml(filmsData, 'film');
+                const seriesHtml = generateSectionHtml(tvData, 'tv');
+
+                const finalHtml = generateHTMLTemplate("Backup Unificato V3", filmsHtml, seriesHtml);
+                downloadFile(finalHtml, "Capsula_V3_Ordinata");
+
+            } catch (e) {
+                console.error(e);
+                showNotification("Errore durante la generazione.", "error");
+            }
+        }
+
+        function generateHTMLTemplate(title, filmsHtml, seriesHtml) {
+            const now = new Date().toLocaleString('it-IT');
+            return `<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup V3 - ${now}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        
+        /* Layout Colonne */
+        .split-container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .column { flex: 1; min-width: 350px; background: #1a1a1a; border-radius: 12px; padding: 15px; border: 1px solid #333; }
+        .column-header { 
+            text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; 
+            font-size: 1.5rem; color: #fff; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .col-film .column-header { color: #3A86FF; border-color: #3A86FF; }
+        .col-tv .column-header { color: #2a9d8f; border-color: #2a9d8f; }
+
+        /* Gruppi Categorie */
+        .cat-group { margin-bottom: 20px; }
+        .cat-header { 
+            background: #333; color: #fff; padding: 5px 10px; border-radius: 4px; 
+            margin-bottom: 10px; font-size: 0.9rem; font-weight: bold; text-transform: uppercase;
+            border-left: 4px solid #777;
+        }
+        .col-film .cat-header { border-left-color: #3A86FF; }
+        .col-tv .cat-header { border-left-color: #2a9d8f; }
+
+        /* Card Elemento */
+        .list-item { 
+            display: flex; gap: 15px; background: #252525; padding: 10px; margin-bottom: 10px; 
+            border-radius: 8px; border: 1px solid #333; break-inside: avoid;
+        }
+        .item-poster { width: 60px; height: 90px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background: #000; }
+        .item-info { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+        .item-title { font-weight: bold; font-size: 1rem; color: #fff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-meta { font-size: 0.8rem; color: #aaa; margin-bottom: 4px; }
+        
+        .badges-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+        .tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; color: #000; font-weight: bold; }
+        .tag-imdb { background: #f5c518; }
+        .tag-rewatch { background: #ffbe0b; }
+        .fav-icon { color: #e74c3c; margin-left: 5px; }
+
+        .season-mini-table { margin-top: 5px; font-size: 0.75rem; background: #111; padding: 5px; border-radius: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        .season-row.done { color: #2a9d8f; }
+    </style>
+</head>
+<body>
+    <div style="text-align:center; margin-bottom:30px;">
+        <h1>Capsula del Tempo (Ordinata)</h1>
+        <p style="color:#777">Generata il ${now}</p>
+    </div>
+    <div class="split-container">
+        <div class="column col-film"><div class="column-header"><i class="fas fa-film"></i> Film</div>${filmsHtml}</div>
+        <div class="column col-tv"><div class="column-header"><i class="fas fa-tv"></i> Serie TV</div>${seriesHtml}</div>
+    </div>
+</body>
+</html>`;
+        }
+
+        // Scarica il file
+        function downloadFile(content, filename) {
+            const blob = new Blob([content], { type: "text/html;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${filename}_${new Date().toISOString().slice(0, 10)}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Aggiorna data ultimo backup
+            const now = new Date().toISOString();
+            const storageKey = window.location.pathname.includes('serietv') ? 'lastSeriesExport' : 'lastFilmExport';
+            localStorage.setItem(storageKey, now);
+            if (currentUser) db.ref(`users/${currentUser.uid}/lastExport`).set(now);
+            if (typeof updateBackupBadge === 'function') updateBackupBadge(now);
+
+            showNotification("Capsula del Tempo generata con successo!", "success");
+        }
+
+    </script>
+    <script>
+        // Registrazione Service Worker per PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA Service Worker registrato!', reg))
+                    .catch(err => console.log('Errore PWA:', err));
+            });
+        }
+    </script>
 </body>
 
 </html>
