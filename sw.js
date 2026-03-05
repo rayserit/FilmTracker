@@ -1,5 +1,5 @@
 // Versione V4 - Forza ricarica per fix icone Firefox
-const CACHE_NAME = 'tracker-hub-v4';
+const CACHE_NAME = 'tracker-hub-v5';
 
 const ASSETS_TO_CACHE = [
   './',
