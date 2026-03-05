@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Tracker Hub</title>
-    
+
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Icona per il Browser -->
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <!-- Icona per iPhone/iPad (PWA) -->
+    <link rel="apple-touch-icon" href="icon.svg">
 
     <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,18 +53,23 @@
         /* Luci ambientali sfocate sullo sfondo */
         .glow-film {
             position: absolute;
-            top: -10%; left: -10%;
-            width: 300px; height: 300px;
+            top: -10%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
             background: var(--film-color);
             filter: blur(150px);
             opacity: 0.4;
             z-index: -1;
             border-radius: 50%;
         }
+
         .glow-tv {
             position: absolute;
-            bottom: -10%; right: -10%;
-            width: 300px; height: 300px;
+            bottom: -10%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
             background: var(--tv-color);
             filter: blur(150px);
             opacity: 0.4;
@@ -125,6 +135,7 @@
         .hub-card:hover {
             transform: translateY(-5px);
         }
+
         .hub-card:active {
             transform: scale(0.96);
         }
@@ -134,6 +145,7 @@
             border-color: rgba(58, 134, 255, 0.5);
             box-shadow: 0 10px 30px rgba(58, 134, 255, 0.2);
         }
+
         .card-film .icon-wrapper {
             background: linear-gradient(135deg, #3A86FF, #00B4D8);
         }
@@ -143,6 +155,7 @@
             border-color: rgba(42, 157, 143, 0.5);
             box-shadow: 0 10px 30px rgba(42, 157, 143, 0.2);
         }
+
         .card-tv .icon-wrapper {
             background: linear-gradient(135deg, #2a9d8f, #4ecdc4);
         }
@@ -157,7 +170,7 @@
             font-size: 2rem;
             flex-shrink: 0;
             margin-right: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
         .card-content h2 {
@@ -184,11 +197,19 @@
         }
 
         @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
+
 <body>
 
     <!-- Luci di sfondo -->
@@ -229,4 +250,5 @@
     </div>
 
 </body>
+
 </html>
