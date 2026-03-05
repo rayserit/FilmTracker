@@ -1,6 +1,5 @@
-// CAMBIA QUESTO NUMERO OGNI VOLTA CHE AGGIORNI IL CODICE IMPORTANTE
-// (es. v2, v3, v4...) così forzi i browser a ricaricare tutto.
-const CACHE_NAME = 'tracker-hub-v3';
+// Versione V4 - Forza ricarica per fix icone Firefox
+const CACHE_NAME = 'tracker-hub-v4';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -13,8 +12,8 @@ const ASSETS_TO_CACHE = [
   './icon-512.png'
 ];
 
-// Installazione
 self.addEventListener('install', (event) => {
+  console.log('[SW] Install');
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -23,12 +22,13 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Attivazione
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activate');
   event.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
         if (key !== CACHE_NAME) {
+          console.log('[SW] Deleting old cache:', key);
           return caches.delete(key);
         }
       }));
@@ -37,15 +37,15 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Strategia: Network First
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        return caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
-        });
+        if (networkResponse.status === 200) {
+          const cacheCopy = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, cacheCopy));
+        }
+        return networkResponse;
       })
       .catch(() => {
         return caches.match(event.request);
