@@ -1,6 +1,6 @@
 // CAMBIA QUESTO NUMERO OGNI VOLTA CHE AGGIORNI IL CODICE IMPORTANTE
 // (es. v2, v3, v4...) così forzi i browser a ricaricare tutto.
-const CACHE_NAME = 'tracker-hub-v2';
+const CACHE_NAME = 'tracker-hub-v3';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -9,7 +9,8 @@ const ASSETS_TO_CACHE = [
   './serietv_tracker.html',
   './manifest.json',
   './icon.svg',
-  './icon-192.png'
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 // Installazione
