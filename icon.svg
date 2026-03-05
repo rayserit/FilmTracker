@@ -1,6 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
-  <rect width="800" height="800" fill="white"/>
-  <g transform="translate(80, 144)">
-    <path fill="#2a9d8f" d="M592 0H48A48 48 0 0 0 0 48v320a48 48 0 0 0 48 48h160v32a32 32 0 0 0 32 32h160a32 32 0 0 0 32-32v-32h160a48 48 0 0 0 48-48V48a48 48 0 0 0-48-48zm-16 352H64V64h512zM272 448h96v-32h-96z"/>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3A86FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2a9d8f;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
+      <feOffset dx="0" dy="10" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Sfondo Arrotondato (Squircle) -->
+  <rect x="0" y="0" width="512" height="512" rx="120" fill="url(#grad)" />
+  
+  <!-- Fori superiori (Punch holes luminosi) -->
+  <g fill="white" fill-opacity="0.4">
+    <circle cx="85" cy="70" r="18" />
+    <circle cx="170" cy="70" r="18" />
+    <circle cx="256" cy="70" r="18" />
+    <circle cx="342" cy="70" r="18" />
+    <circle cx="427" cy="70" r="18" />
+  </g>
+  
+  <!-- Simbolo Play -->
+  <path d="M210 160 L400 256 L210 352 Z" fill="white" fill-opacity="0.95" filter="url(#shadow)" />
+  
+  <!-- Fori inferiori -->
+  <g fill="white" fill-opacity="0.4">
+    <circle cx="85" cy="442" r="18" />
+    <circle cx="170" cy="442" r="18" />
+    <circle cx="256" cy="442" r="18" />
+    <circle cx="342" cy="442" r="18" />
+    <circle cx="427" cy="442" r="18" />
   </g>
 </svg>
