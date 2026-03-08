@@ -172,30 +172,42 @@
       color: var(--primary);
     }
 
+    /* CORREZIONE TOP BAR */
     .top-bar {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(30, 30, 30, 0.8);
-      /* Colore scuro semi-trasparente */
-      backdrop-filter: blur(15px);
-      /* Sfocatura dello sfondo */
-      -webkit-backdrop-filter: blur(15px);
-      border-bottom: 1px solid var(--border-color);
-      padding: 10px 20px;
+      background: rgba(10, 10, 15, 0.8) !important;
+      backdrop-filter: blur(15px) !important;
+      -webkit-backdrop-filter: blur(15px) !important;
+      border-bottom: 1px solid var(--glass-border) !important;
+      padding: 10px 15px;
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start;
+      /* Sposta tutto a sinistra */
       align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 15px;
+      /* <--- Questo è il valore che controlla la distanza tra switch e ricerca */
       margin-bottom: 1.5rem;
     }
 
+    /* Questa classe deve contenere Switch e Ricerca/Filtri */
     .top-bar-left {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 15px;
+      /* Distanza tra Switch e Ricerca */
       flex-wrap: wrap;
+      margin-right: auto;
+      /* <--- MAGIA: spinge tutto ciò che segue a destra */
+    }
+
+    /* Assicurati che lo switch non abbia margini aggiuntivi */
+    .tracker-switch {
+      margin: 0 !important;
+      margin-right: 0 !important;
+      flex-shrink: 0;
     }
 
     .top-bar-left h1 {
@@ -205,15 +217,42 @@
       color: var(--primary);
     }
 
+    /* Assicurati che la barra di destra non sia forzata a sinistra */
     .top-bar-right {
       display: flex;
       align-items: center;
       gap: 0.75rem;
       flex-wrap: wrap;
+      margin-left: 0;
+      /* Assicura che i bottoni a destra rimangano al loro posto */
     }
 
     .search-box {
       max-width: 300px;
+    }
+
+    /* --- SEARCH CONTAINER --- */
+    .search-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    input.search-box {
+      padding-left: 2.2rem !important;
+      height: 38px !important;
+      padding-top: 0.5rem !important;
+      padding-bottom: 0.5rem !important;
+      box-sizing: border-box !important;
     }
 
     .filter-select {
@@ -2076,66 +2115,69 @@
         -webkit-text-size-adjust: 100%;
       }
 
-      /* 1. NASCONDI TUTTA LA PARTE DESTRA (Pulsanti Desktop) */
-      .top-bar-right {
-        display: none !important;
-      }
-
-      /* 2. SISTEMA LA BARRA SUPERIORE */
+      /* --- TOP BAR MOBILE: Struttura a riga singola --- */
       .top-bar {
-        padding: 0.5rem 0.75rem;
-        margin-bottom: 0.5rem;
-        height: auto;
-        min-height: 60px;
-        display: flex;
-        align-items: center;
+        padding: 0.5rem 0.75rem !important;
+        margin-bottom: 0.5rem !important;
+        height: auto !important;
+        min-height: 60px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        /* Forza riga */
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
       }
 
-      /* 3. RIGA UNICA: Switch - Search - Filter */
+      /* Lo Switch */
+      .tracker-switch {
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+      }
+
+      /* Contenitore Ricerca + Filtro */
       .top-bar-left {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        width: 100% !important;
+        flex-grow: 1 !important;
         gap: 10px !important;
         align-items: center !important;
-        justify-content: space-between !important;
+        min-width: 0 !important;
       }
 
-      /* Lo Switch a sinistra */
-      .tracker-switch {
-        flex-shrink: 0 !important;
-        order: 1;
-      }
-
-      /* La barra di ricerca al centro che si espande */
-      .search-box {
+      /* Barra di ricerca */
+      .search-container {
         flex-grow: 1 !important;
         min-width: 0 !important;
-        /* Permette il restringimento */
-        width: 100% !important;
-        max-width: none !important;
-        margin: 0 !important;
-        order: 2;
-        height: 40px;
+        display: flex;
+        width: 100%;
       }
 
-      /* Il tasto filtro a destra */
+      .search-box {
+        width: 100% !important;
+        height: 40px !important;
+        margin: 0 !important;
+      }
+
+      /* Tasto Filtro */
       #mobileFilterBtn {
         display: flex !important;
         flex-shrink: 0 !important;
-        order: 3;
-        width: 40px;
-        height: 40px;
-        padding: 0;
+        width: 40px !important;
+        height: 40px !important;
+        padding: 0 !important;
         justify-content: center;
         align-items: center;
       }
 
-      /* Nascondi titoli e select nativi */
+      /* Nascondi elementi desktop */
+      .top-bar-right,
       #topBarTitle,
       .top-bar-left h1,
-      .top-bar-left .filter-select {
+      .top-bar-left .filter-select,
+      .top-bar-left .custom-select-wrapper {
         display: none !important;
       }
 
@@ -2663,45 +2705,284 @@
       transform: scale(1);
     }
 
+    /* Forza lo sfondo scuro sui tag <select> standard e input date */
+    select,
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"] {
+      background-color: #1e1e24 !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      border-radius: 8px;
+      padding: 0.5rem 1rem !important;
+      height: 38px !important;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="white" viewBox="0 0 16 16"><path d="M4 6h8l-4 5z"/></svg>') !important;
+      background-repeat: no-repeat !important;
+      background-position: right 10px center !important;
+      box-sizing: border-box !important;
+    }
+
+    select option {
+      background-color: #1e1e24 !important;
+      color: #ffffff !important;
+    }
+
+    /* Allinea la custom select nel modale aggiunta */
+    #addMediaCategoryCustom {
+      width: auto;
+      min-width: 140px;
+      /* Larghezza minima */
+      max-width: 200px;
+      /* Non farla diventare gigante */
+    }
+
+    /* Assicurati che il box titolo prenda lo spazio rimanente */
+    .form-row input#mediaTitle {
+      flex: 2;
+      /* Più largo degli altri */
+    }
+
+    /* --- RESTYLING FILTRI E INPUT --- */
+    select.filter-select {
+      appearance: none;
+      /* Rimuove lo stile di default di Windows/Mac */
+      -webkit-appearance: none;
+      background-color: rgba(30, 30, 35, 0.8) !important;
+      /* Sfondo scuro vetro */
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      border-radius: 8px;
+      padding: 0.5rem 2rem 0.5rem 1rem;
+      /* Spazio a destra per la freccina */
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      /* Freccina custom (perché abbiamo tolto quella di sistema) */
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="white" viewBox="0 0 16 16"><path d="M4 6h8l-4 5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    /* Stile della tendina quando viene aperta (Dropdown list) */
+    select.filter-select option {
+      background-color: #1e1e24;
+      /* Sfondo scuro solido */
+      color: #ffffff;
+      padding: 10px;
+    }
+
+    input.search-box::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* --- NUOVO STILE PER I FILTRI CUSTOM --- */
+    .custom-select-wrapper {
+      position: relative;
+      min-width: 180px;
+    }
+
+    .custom-select {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      background-color: rgba(30, 30, 35, 0.8);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      height: 38px;
+      box-sizing: border-box;
+    }
+
+    .custom-select:hover {
+      border-color: var(--primary);
+    }
+
+    .selected-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .selected-option i {
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .select-arrow {
+      flex-shrink: 0;
+      margin-left: 8px;
+      transition: transform 0.2s ease;
+    }
+
+    .custom-select-wrapper.open .select-arrow {
+      transform: rotate(180deg);
+    }
+
+    .custom-options {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      background-color: #1e1e24;
+      /* Adattato al tema */
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+      flex-direction: column;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      z-index: 2000 !important;
+      /* Fix stratificazione modale aggiungi media */
+    }
+
+    .custom-select-wrapper.open .custom-options {
+      display: flex;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 15px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+      color: #ffffff;
+    }
+
+    .option:hover {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .option i {
+      width: 16px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .option:hover i {
+      color: white;
+    }
+
     @media (max-width: 768px) {
 
       /* 1. SPEGNI L'ANIMAZIONE DELLO SFONDO SU MOBILE */
+      .glow-film,
+      .glow-tv,
       .glow-1,
       .glow-2 {
         animation: none !important;
-        filter: blur(80px) !important;
-        opacity: 0.1 !important;
+        opacity: 0.05 !important;
       }
 
-      /* 2. RIMUOVI IL VETRO DALLE CARD SCORREVOLI */
+      /* 2. SPEGNI IL BLUR SU TUTTO CIÒ CHE SCORRE O SI APRE */
+      .modal-content,
       .media-card,
       .stat-item,
+      .settings-card,
       .digital-item,
       .management-card,
-      .chart-detail-item {
+      .context-menu,
+      input,
+      select {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-        background: #18181c !important;
+        background-color: #1a1a1f !important;
+        /* Grigio solido molto scuro ed elegante */
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
       }
 
-      /* 3. ALLEGERISCI IL MENU CONTESTUALE (BOTTOM SHEET) */
-      .context-menu {
-        background: #1e1e24 !important;
+      /* 2.1 FIX: Forza lo stile Search senza Blur E blocca zoom iOS */
+      .search-box {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
+        background-color: #1a1a1f !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+        font-size: 16px !important;
+        /* Forza 16px per evitare lo zoom automatico di iOS */
+        font-family: 'Inter', sans-serif !important;
       }
 
-      /* 4. MANTIENI IL VETRO SOLO DOVE SERVE */
-      .top-bar,
+      .search-box::placeholder {
+        font-size: 14px !important;
+      }
+
+      /* --- BOTTOM NAV MOBILE (Allineamento Perfetto) --- */
       .bottom-nav {
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        background: rgba(15, 15, 20, 0.7) !important;
+        display: grid !important;
+        grid-template-columns: repeat(5, 1fr);
+        height: 65px;
+        padding-bottom: env(safe-area-inset-bottom);
+        background: rgba(15, 15, 20, 0.8) !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        align-items: center;
+        /* Centra verticalmente l'intera griglia */
       }
 
-      /* 5. RIMUOVI TRANSIZIONI INUTILI ALLO SCROLL */
+      .bottom-nav-btn {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100%;
+        height: 100%;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.7rem;
+        gap: 4px;
+        /* Sostituisce i vecchi margini sballati */
+      }
+
+      .bottom-nav-btn i {
+        font-size: 1.25rem;
+        margin: 0 !important;
+        /* Rimuove margini che spingono l'icona giù */
+      }
+
+      .bottom-nav-btn.active {
+        color: var(--primary);
+      }
+
+      /* Il tasto centrale (+) */
+      .bottom-nav-btn.add-btn {
+        grid-column: 3;
+        transform: translateY(-15px);
+        width: 56px !important;
+        height: 56px !important;
+        border-radius: 50%;
+        border: 4px solid #1a1a1f;
+        /* Colore di stacco */
+        box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
+        background: var(--primary) !important;
+        color: white !important;
+      }
+
+      /* 4. RIMUOVI TRANSIZIONI INUTILI ALLO SCROLL */
       .media-card {
         transition: transform 0.15s ease-out !important;
       }
@@ -2756,28 +3037,48 @@
     </button>
   </div>
 
+
   <div class="top-bar">
+    <div class="tracker-switch">
+      <a href="film_tracker.html" class="tracker-switch-btn active" title="Vai a Film Tracker"><i
+          class="fas fa-film"></i></a>
+      <a href="serietv_tracker.html" class="tracker-switch-btn" title="Vai a Serie TV Tracker"><i
+          class="fas fa-tv"></i></a>
+    </div>
     <div class="top-bar-left">
-      <h1><i class="fas fa-film"></i> Film</h1>
-      <div class="tracker-switch">
-        <a href="film_tracker.html" class="tracker-switch-btn active" title="Vai a Film Tracker"><i
-            class="fas fa-film"></i></a>
-        <a href="serietv_tracker.html" class="tracker-switch-btn" title="Vai a Serie TV Tracker"><i
-            class="fas fa-tv"></i></a>
+      <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="searchInput" class="search-box" placeholder="Cerca film o saga...">
       </div>
-      <input type="text" id="searchInput" class="search-box" placeholder="Cerca film...">
-      <button id="mobileFilterBtn" class="btn btn-secondary"><i class="fas fa-filter"></i></button>
-      <select id="categoryFilter" class="filter-select">
-        <option value="all">Tutte le categorie</option>
-        <option value="favorites">Solo Preferiti</option>
-      </select>
-      <select id="sortFilter" class="filter-select">
-        <option value="saga-alpha" selected>Saga / Alfabetico</option>
-        <option value="alpha">Solo Alfabetico</option>
-        <option value="added">Ultimi aggiunti</option>
-        <option value="rating">Valutazione</option>
-        <option value="year">Anno di uscita</option>
-      </select>
+
+      <!-- NUOVI FILTRI CUSTOM -->
+      <div class="custom-select-wrapper">
+        <div class="custom-select" id="categoryFilter" data-value="all">
+          <span class="selected-option"><i class="fas fa-folder"></i> Tutte le categorie</span>
+          <i class="fas fa-chevron-down select-arrow"></i>
+        </div>
+        <div class="custom-options" id="categoryOptions">
+          <!-- Le opzioni saranno generate da JS -->
+        </div>
+      </div>
+
+      <div class="custom-select-wrapper">
+        <div class="custom-select" id="sortFilter" data-value="saga-alpha">
+          <span class="selected-option"><i class="fas fa-sort-alpha-down"></i> Saga / Alfabetico</span>
+          <i class="fas fa-chevron-down select-arrow"></i>
+        </div>
+        <div class="custom-options" id="sortOptions">
+          <div class="option" data-value="saga-alpha"><i class="fas fa-sort-alpha-down"></i> Saga / Alfabetico</div>
+          <div class="option" data-value="alpha"><i class="fas fa-font"></i> Solo Alfabetico</div>
+          <div class="option" data-value="added"><i class="fas fa-clock"></i> Ultimi aggiunti</div>
+          <div class="option" data-value="rating"><i class="fas fa-star"></i> Valutazione</div>
+          <div class="option" data-value="year"><i class="fas fa-calendar"></i> Anno di uscita</div>
+        </div>
+      </div>
+
+      <button id="mobileFilterBtn" class="btn btn-secondary" title="Filtri">
+        <i class="fas fa-filter"></i>
+      </button>
     </div>
     <div class="top-bar-right">
       <button id="mediaManagementBtn" class="btn btn-primary" title="Gestione"><i class="fas fa-plus"></i></button>
@@ -2847,9 +3148,24 @@
           <h2>Aggiungi un nuovo Film</h2>
           <div class="add-media-form">
             <div class="form-row">
-              <input type="text" id="mediaTitle" placeholder="Titolo film...">
-              <select id="addMediaCategorySelect"></select>
-              <button id="searchTMDbBtn" class="btn btn-secondary"><i class="fas fa-search"></i> Cerca</button>
+              <!-- Input Titolo -->
+              <input type="text" id="mediaTitle" placeholder="Titolo film..." style="flex: 2;">
+
+              <!-- Custom Select per le Categorie (Sostituisce <select>) -->
+              <div class="custom-select-wrapper" style="min-width: 150px;">
+                <div class="custom-select" id="addMediaCategoryCustom" data-value="watchlist">
+                  <span class="selected-option"><i class="fas fa-folder"></i> Seleziona...</span>
+                  <i class="fas fa-chevron-down select-arrow"></i>
+                </div>
+                <div class="custom-options" id="addMediaCategoryOptions">
+                  <!-- Popolato via JS -->
+                </div>
+              </div>
+
+              <!-- Tasto Ricerca piccolo -->
+              <button id="searchTMDbBtn" class="btn btn-secondary" style="width: 45px; padding: 0;">
+                <i class="fas fa-search"></i>
+              </button>
             </div>
             <div id="tmdbResults" class="tmdb-results-container"></div>
           </div>
@@ -2981,7 +3297,8 @@
 
         <!-- Grafico a Barre: Attività Mensile -->
         <div class="chart-box">
-          <h3 style="text-align: center; font-size: 1rem; color: var(--text-secondary);">Film Attivi negli ultimi 6 mesi
+          <h3 style="text-align: center; font-size: 1rem; color: var(--text-secondary);">Film Attivi negli ultimi 6
+            mesi
           </h3>
           <div style="position: relative; height: 250px; width: 100%;">
             <canvas id="activityChart"></canvas>
@@ -3067,13 +3384,7 @@
       </div>
       <div class="filter-modal-section">
         <label for="mobileSortFilter">Ordina per</label>
-        <select id="mobileSortFilter">
-          <option value="saga-alpha" selected>Saga / Alfabetico</option>
-          <option value="alpha">Solo Alfabetico</option>
-          <option value="added">Ultimi aggiunti</option>
-          <option value="rating">Valutazione</option>
-          <option value="year">Anno di uscita</option>
-        </select>
+        <select id="mobileSortFilter"></select>
       </div>
       <div class="modal-footer" style="border: none; padding-bottom: 0;">
         <button id="applyFiltersBtn" class="btn btn-primary">Applica</button>
@@ -3278,7 +3589,7 @@
       mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), mediaManagementModal: document.getElementById("mediaManagementModal"),
       mediaTitle: document.getElementById("mediaTitle"), searchTMDbBtn: document.getElementById("searchTMDbBtn"),
       tmdbResults: document.getElementById("tmdbResults"), saveMediaBtn: document.getElementById("saveMediaBtn"),
-      addMediaCategorySelect: document.getElementById("addMediaCategorySelect"), newCategoryName: document.getElementById("newCategoryName"),
+      newCategoryName: document.getElementById("newCategoryName"),
       addCategoryBtn: document.getElementById("addCategoryBtn"), categoriesList: document.getElementById("categoriesList"),
       closeManagementModal: document.getElementById("closeManagementModal"),
       notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"),
@@ -3480,7 +3791,7 @@
                 });
               }
               showNotification("Login effettuato", "success");
-              elements.authForms.classList.remove("active");
+              elements.authModal.classList.remove("active"); // Changed from elements.authForms to elements.authModal
             })
             .catch(err => showNotification(getAuthErrorMessage(err), "error"));
         } else {
@@ -3501,7 +3812,7 @@
               .then((userCredential) => {
                 db.ref(`users/${userCredential.user.uid}/email`).set(email);
                 showNotification("Registrazione completata!", "success");
-                elements.authForms.classList.remove("active");
+                elements.authModal.classList.remove("active"); // Changed from elements.authForms to elements.authModal
               })
               .catch(err => showNotification(getAuthErrorMessage(err), "error"));
           }
@@ -3743,9 +4054,9 @@
     }
 
     function renderMedia() {
-      const selectedCategory = elements.categoryFilter.value;
+      const selectedCategory = document.getElementById('categoryFilter').dataset.value || 'all';
       const searchTerm = elements.searchInput.value.toLowerCase();
-      const sortBy = elements.sortFilter.value;
+      const sortBy = document.getElementById('sortFilter').dataset.value || 'saga-alpha';
 
       document.querySelectorAll(".media-section").forEach(section => {
         section.style.display = 'block';
@@ -4082,7 +4393,7 @@
       const save = () => {
         const newName = input.value.trim();
         if (newName && newName !== oldName) {
-          if (categories.includes(newName)) {
+          if (categories.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
             showNotification("Questa categoria esiste già", "warning");
             renderCategoriesList();
             return;
@@ -4098,7 +4409,7 @@
           });
           saveData();
           renderFullUI();
-          showNotification(`Categoria rinominata in "${newName}"`, "success");
+          showNotification(`Categoria "${newName}" creata`, "success");
         } else {
           renderCategoriesList();
         }
@@ -4127,17 +4438,67 @@
     }
 
     function updateCategoryFilter() {
-      const current = elements.categoryFilter.value;
-      elements.categoryFilter.innerHTML = `<option value="all">Tutte le categorie</option><option value="favorites">Solo Preferiti</option>${categories.map(cat => `<option value="${cat}">${getCategoryName(cat)}</option>`).join("")}`;
-      elements.categoryFilter.value = current;
-      elements.mobileCategoryFilter.innerHTML = elements.categoryFilter.innerHTML;
-      elements.mobileCategoryFilter.value = current;
+      const optionsContainer = document.getElementById('categoryOptions');
+      const select = document.getElementById('categoryFilter');
+
+      // Voci fisse
+      let html = `
+          <div class="option" data-value="all"><i class="fas fa-folder"></i> Tutte le categorie</div>
+          <div class="option" data-value="favorites"><i class="fas fa-heart"></i> Solo Preferiti</div>
+      `;
+
+      categories.forEach(cat => {
+        const catName = typeof cat === 'string' ? cat : cat.name;
+        const display = (typeof getCategoryName === 'function') ? getCategoryName(catName) : catName;
+
+        let icon = "fa-tag";
+        if (display === "Da Vedere" || catName === "watchlist") icon = "fa-bookmark";
+        if (display === "Visti" || catName === "watched" || display === "Completate") icon = "fa-check-circle";
+        if (display === "In Corso") icon = "fa-play-circle";
+
+        html += `<div class="option" data-value="${catName}"><i class="fas ${icon}"></i> ${display}</div>`;
+      });
+
+      if (optionsContainer) optionsContainer.innerHTML = html;
+
+      // Seleziona "Tutte" di default solo se non c'è già un valore
+      if (!select.dataset.value) select.dataset.value = "all";
+
+      // Aggiorna il testo visualizzato per i custom select
+      const updateSelectedText = (targetSelect, targetOptionsContainer) => {
+        const selectedValue = targetSelect.dataset.value;
+        const selectedOptionElement = targetOptionsContainer.querySelector(`.option[data-value="${selectedValue}"]`);
+        if (selectedOptionElement) {
+          targetSelect.querySelector('.selected-option').innerHTML = selectedOptionElement.innerHTML;
+        } else {
+          // Fallback if the selected value is no longer valid (e.g., category deleted)
+          targetSelect.dataset.value = 'all';
+          targetSelect.querySelector('.selected-option').innerHTML = `<i class="fas fa-folder"></i> Tutte le categorie`;
+        }
+      };
+
+      if (select && optionsContainer) updateSelectedText(select, optionsContainer);
     }
 
+
     function populateAddMediaCategorySelect() {
-      const lastUsed = localStorage.getItem("lastUsedCategory");
-      elements.addMediaCategorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${getCategoryName(cat)}</option>`).join("");
-      if (lastUsed && categories.includes(lastUsed)) elements.addMediaCategorySelect.value = lastUsed;
+      const optionsContainer = document.getElementById('addMediaCategoryOptions');
+      const select = document.getElementById('addMediaCategoryCustom');
+
+      // Genera le opzioni dinamiche
+      optionsContainer.innerHTML = categories.map(cat => {
+        const catName = typeof cat === 'string' ? cat : cat.name;
+        const display = getCategoryName(catName);
+        return `<div class="option" data-value="${catName}"><i class="fas fa-folder"></i> ${display}</div>`;
+      }).join("");
+
+      // Imposta valore iniziale (es. "Da Vedere" o l'ultimo usato)
+      const lastUsed = localStorage.getItem("lastUsedCategory") || categories[0];
+      const defaultCatName = typeof lastUsed === 'string' ? lastUsed : lastUsed.name;
+      select.dataset.value = defaultCatName;
+      select.querySelector('.selected-option').innerHTML = `<i class="fas fa-folder"></i> ${getCategoryName(defaultCatName)}`;
+
+
     }
 
     function getCategoryName(cat) {
@@ -4519,7 +4880,7 @@
           return showNotification("Dettagli non trovati o IMDb ID mancante.", "error");
         }
 
-        const category = elements.addMediaCategorySelect.value;
+        const category = document.getElementById('addMediaCategoryCustom').dataset.value;
         localStorage.setItem("lastUsedCategory", category);
 
         if (mediaList.some(m => m.imdbID === enDetails.imdb_id && m.category === category)) {
@@ -4642,8 +5003,11 @@
         categories = [...DEFAULT_CATEGORIES];
         saveData();
         elements.searchInput.value = "";
-        elements.categoryFilter.value = "all";
-        elements.sortFilter.value = "saga-alpha";
+        // Reset custom dropdown selections
+        const catFilter = document.getElementById('categoryFilter');
+        if (catFilter) { catFilter.dataset.value = 'all'; const st = catFilter.querySelector('.selected-option'); if (st) st.innerHTML = '<i class="fas fa-folder"></i> Tutte le categorie'; }
+        const sortFilter = document.getElementById('sortFilter');
+        if (sortFilter) { sortFilter.dataset.value = 'saga-alpha'; const st2 = sortFilter.querySelector('.selected-option'); if (st2) st2.innerHTML = '<i class="fas fa-sort-alpha-down"></i> Saga / Alfabetico'; }
         renderFullUI();
         showNotification("Applicazione resettata", "success");
       });
@@ -4664,7 +5028,18 @@
 
     function loadSortOrder() {
       const sort = localStorage.getItem("mediaTrackerSortOrder");
-      if (sort) elements.sortFilter.value = sort;
+      if (sort) {
+        const sortSelect = document.getElementById('sortFilter');
+        if (sortSelect) {
+          sortSelect.dataset.value = sort;
+          // Aggiorna il testo visualizzato del custom select
+          const optionEl = document.querySelector(`#sortOptions .option[data-value="${sort}"]`);
+          if (optionEl) {
+            const selectedText = sortSelect.querySelector('.selected-option');
+            if (selectedText) selectedText.innerHTML = optionEl.innerHTML;
+          }
+        }
+      }
     }
 
     function showNotification(text, type = "success") {
@@ -4772,10 +5147,11 @@
           item.addEventListener('click', () => {
             const friendId = item.dataset.friendId;
             if (friendId) {
-              const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+              // Costruiamo il percorso base fisso
+              const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
               const url = isTV
-                ? `${baseUrl}/serietv_tracker.html?view=${friendId}`
-                : `${baseUrl}/index.html?view=${friendId}`;
+                ? `${window.location.origin}${path}serietv_tracker.html?view=${friendId}`
+                : `${window.location.origin}${path}film_tracker.html?view=${friendId}`;
               window.open(url, '_blank');
             }
           });
@@ -4816,10 +5192,11 @@
           item.addEventListener('click', () => {
             const friendId = item.dataset.friendId;
             if (friendId) {
-              const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+              // Costruiamo il percorso base fisso
+              const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
               const url = isTV
-                ? `${baseUrl}/serietv_tracker.html?view=${friendId}`
-                : `${baseUrl}/index.html?view=${friendId}`;
+                ? `${window.location.origin}${path}serietv_tracker.html?view=${friendId}`
+                : `${window.location.origin}${path}film_tracker.html?view=${friendId}`;
               window.open(url, '_blank');
             }
           });
@@ -5022,7 +5399,7 @@
       // 7. Update Cast
       const castHTML = details.cast ? details.cast.slice(0, 15).map(actor => `
         <div class="actor-card" data-person-id="${actor.id}">
-            <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
+            <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w500${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
             <div class="actor-name">${actor.name}</div>
             <div class="actor-character">${actor.character}</div>
         </div>
@@ -5519,13 +5896,58 @@
       elements.addCategoryBtn.addEventListener("click", () => addCategory(elements.newCategoryName.value));
       elements.searchTMDbBtn.addEventListener("click", searchTMDb);
       document.addEventListener("click", e => {
-        if (e.target === elements.posterModal) closeModal(elements.posterModal);
-        if (e.target === elements.detailsModal) closeModal(elements.detailsModal);
-        if (e.target === elements.actorModal) closeModal(elements.actorModal);
-        if (e.target === elements.categoryNavModal) closeModal(elements.categoryNavModal);
-        if (e.target === elements.filterSortModal) closeModal(elements.filterSortModal);
-        if (e.target === elements.mobileMenuModal) closeModal(elements.mobileMenuModal);
-        if (e.target === elements.mobileNotificationsModal) closeModal(elements.mobileNotificationsModal);
+        // --- 1. Gestione universale Custom Select (Delegazione globale) ---
+        // Cerca se il click è avvenuto su una "custom-select"
+        const customSelect = e.target.closest('.custom-select');
+
+        // Se ho cliccato su una select, gestisco l'apertura
+        if (customSelect) {
+          e.stopPropagation(); // Fondamentale: impedisce al listener globale di chiuderlo
+          const wrapper = customSelect.parentElement;
+
+          // Chiudi tutti gli altri menu aperti
+          document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+            if (w !== wrapper) w.classList.remove('open');
+          });
+
+          // Toggle del menu corrente
+          wrapper.classList.toggle('open');
+          return; // Esce dalla funzione
+        }
+
+        // Se il click NON è su una select, chiudi tutti i menu aperti
+        const isOption = e.target.closest('.custom-options .option');
+        if (!isOption) {
+          document.querySelectorAll('.custom-select-wrapper').forEach(w => w.classList.remove('open'));
+        }
+
+        // Gestione selezione opzione
+        if (isOption) {
+          const wrapper = isOption.closest('.custom-select-wrapper');
+          const select = wrapper.querySelector('.custom-select');
+
+          select.dataset.value = isOption.dataset.value;
+          select.querySelector('.selected-option').innerHTML = isOption.innerHTML;
+          wrapper.classList.remove('open');
+
+          // Se è un filtro principale per il rendering, aggiorna la vista
+          if (wrapper.id !== 'addMediaCategoryCustom' && typeof renderMedia === 'function') {
+            renderMedia();
+          }
+        }
+
+        // --- 2. Gestione Modali (Click-to-close) ---
+        // Verifica se il click è avvenuto su un elemento con classe 'modal'
+        if (e.target.classList.contains('modal')) {
+          closeModal(e.target);
+        }
+        // Fix: se clicchi nello spazio vuoto tra il contenuto del modale e i bordi
+        else if (e.target.closest('.modal') && !e.target.closest('.modal-content')) {
+          const modal = e.target.closest('.modal');
+          closeModal(modal);
+        }
+
+        // --- 3. Gestione Dropdown Notifiche ---
         if (!e.target.closest('.notification-bell-container')) {
           elements.notificationDropdown.classList.remove('visible');
         }
@@ -5609,17 +6031,15 @@
         clearTimeout(debounceTimeout);
         debounceTimeout = setTimeout(renderMedia, 300);
       });
-      elements.categoryFilter.addEventListener("change", renderMedia);
-      elements.sortFilter.addEventListener("change", () => {
-        localStorage.setItem("mediaTrackerSortOrder", elements.sortFilter.value);
-        renderMedia();
-      });
+      // NOTA: i filtri custom (div) usano click/dataset. I 'change' listener qui sotto sono rimossi.
       elements.shareBtn.addEventListener("click", () => {
         if (!currentUser) return showNotification("Devi essere loggato per condividere.", "warning");
         const link = `${window.location.origin}${window.location.pathname}?view=${currentUser.uid}`;
-        elements.shareLinkInput.value = link;
-        elements.shareModal.style.display = "flex";
-        document.body.classList.add("modal-open");
+
+        const input = elements.shareModal.querySelector('input');
+        if (input) input.value = link;
+
+        openModal(elements.shareModal);
       });
       elements.copyShareLinkBtn.addEventListener("click", () => {
         navigator.clipboard.writeText(elements.shareLinkInput.value);
@@ -5660,20 +6080,51 @@
       elements.mobileMenuUserActionBtn.addEventListener('click', () => { (currentUser) ? elements.logoutBtn.click() : elements.authToggle.click(); closeModal(elements.mobileMenuModal); });
       elements.mobileMenuThemeBtn.addEventListener('click', () => { elements.themeToggle.click(); });
 
-      // --- Filter Modal Listeners ---
-      elements.mobileFilterBtn.addEventListener('click', () => {
-        elements.mobileCategoryFilter.value = elements.categoryFilter.value;
-        elements.mobileSortFilter.value = elements.sortFilter.value;
-        openModal(elements.filterSortModal);
-        requestAnimationFrame(() => elements.filterSortModal.classList.add('visible'));
-      });
-      elements.applyFiltersBtn.addEventListener('click', () => {
-        elements.categoryFilter.value = elements.mobileCategoryFilter.value;
-        elements.sortFilter.value = elements.mobileSortFilter.value;
-        localStorage.setItem("mediaTrackerSortOrder", elements.sortFilter.value);
-        renderMedia();
-        closeModal(elements.filterSortModal);
-      });
+      // --- FILTRI MOBILI ---
+      if (elements.mobileFilterBtn) {
+        elements.mobileFilterBtn.addEventListener('click', () => {
+          const catSelectDesktop = document.getElementById('categoryFilter');
+          const sortSelectDesktop = document.getElementById('sortFilter');
+
+          // Popola i select mobili con le opzioni dei custom dropdown desktop
+          elements.mobileCategoryFilter.innerHTML = document.getElementById('categoryOptions').innerHTML
+            .replace(/<div class="option"/g, '<option')
+            .replace(/<\/div>/g, '</option>')
+            .replace(/data-value=/g, 'value=')
+            .replace(/<i class="[^"]*"><\/i> /g, '');
+          elements.mobileSortFilter.innerHTML = document.getElementById('sortOptions').innerHTML
+            .replace(/<div class="option"/g, '<option')
+            .replace(/<\/div>/g, '</option>')
+            .replace(/data-value=/g, 'value=')
+            .replace(/<i class="[^"]*"><\/i> /g, '');
+
+          // Sincronizza i valori attuali
+          elements.mobileCategoryFilter.value = catSelectDesktop.dataset.value || 'all';
+          elements.mobileSortFilter.value = sortSelectDesktop.dataset.value || 'saga-alpha';
+
+          openModal(elements.filterSortModal);
+        });
+      }
+
+      if (elements.applyFiltersBtn) {
+        elements.applyFiltersBtn.addEventListener('click', () => {
+          const catSelect = document.getElementById('categoryFilter');
+          const sortSelect = document.getElementById('sortFilter');
+
+          // Aggiorna i filtri custom desktop con i valori scelti nel modale mobile
+          catSelect.dataset.value = elements.mobileCategoryFilter.value;
+          const catOptionEl = document.querySelector(`#categoryOptions .option[data-value="${catSelect.dataset.value}"]`);
+          if (catOptionEl) catSelect.querySelector('.selected-option').innerHTML = catOptionEl.innerHTML;
+
+          sortSelect.dataset.value = elements.mobileSortFilter.value;
+          const sortOptionEl = document.querySelector(`#sortOptions .option[data-value="${sortSelect.dataset.value}"]`);
+          if (sortOptionEl) sortSelect.querySelector('.selected-option').innerHTML = sortOptionEl.innerHTML;
+
+          renderMedia();
+          closeModal(elements.filterSortModal);
+        });
+      }
+
 
       // --- Category Navigation Modal Listeners ---
       elements.closeCategoryNavBtn.addEventListener('click', () => closeModal(elements.categoryNavModal));
@@ -5798,7 +6249,7 @@
         const cardBtn = document.querySelector(`.media-card[data-id="${mediaId}"] .favorite-btn`);
         if (cardBtn) cardBtn.classList.toggle('is-favorite', media.isFavorite);
 
-        if (elements.categoryFilter.value === 'favorites') {
+        if (document.getElementById('categoryFilter').dataset.value === 'favorites') {
           renderMedia();
         }
       }
@@ -5982,6 +6433,21 @@
           // Stringa Regista • Genere • Durata
           const metaString = `${movie.director || 'N/D'} • ${movie.genre || 'N/D'} • ${movie.duration || 'N/D'}`;
 
+          // --- Nuova Badge Voto ---
+          // Pulisci il rating prima di creare l'HTML
+          let rating = movie.rating;
+          const ratingNum = parseFloat(rating);
+
+          // Se il voto è <= 0 (come il -0.1 placeholder), consideralo come "non disponibile"
+          if (isNaN(ratingNum) || ratingNum <= 0) {
+            rating = null;
+          }
+
+          const ratingBadge = rating ? `
+            <span style="background: rgba(245, 197, 24, 0.1); color: #f5c518; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: 1px solid #f5c518; margin-top: 5px; display: inline-block;">
+                <i class="fas fa-star"></i> ${rating}
+            </span>` : '';
+
           return `
             <div class="digital-item">
                 <div class="digital-still-wrapper">
@@ -5995,6 +6461,7 @@
                     <span class="digital-meta" style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-top: 2px;">
                         ${metaString}
                     </span>
+                    <div>${ratingBadge}</div>
                 </div>
                 <!-- TASTO AGGIUNGI RAPIDO -->
                 <button onclick="closeModal(document.getElementById('digitalModal')); addNewMedia('${movie.tmdbId}')" 
@@ -6058,7 +6525,7 @@
       for (let i = 5; i >= 0; i--) {
         const d = new Date();
         d.setMonth(d.getMonth() - i);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const key = `${d.getFullYear()} -${String(d.getMonth() + 1).padStart(2, '0')} `;
         monthCounts[key] = 0;
         last6Months.push(key);
       }
@@ -6066,7 +6533,7 @@
       mediaList.forEach(media => {
         if (media.lastActivityAt) {
           const d = new Date(media.lastActivityAt);
-          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const key = `${d.getFullYear()} -${String(d.getMonth() + 1).padStart(2, '0')} `;
           if (monthCounts[key] !== undefined) {
             monthCounts[key]++;
           }
@@ -6175,17 +6642,17 @@
       let title = '';
 
       if (type === 'genre') {
-        title = `Genere: ${key}`;
+        title = `Genere: ${key} `;
         filteredShows = mediaList.filter(m =>
           (m.category === 'watched' || m.isCountedAsWatched) &&
           m.genres && m.genres.includes(key)
         );
       } else if (type === 'activity') {
-        title = `Attività di ${displayLabel}`;
+        title = `Attività di ${displayLabel} `;
         filteredShows = mediaList.filter(m => {
           if (!m.lastActivityAt) return false;
           const d = new Date(m.lastActivityAt);
-          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === key;
+          return `${d.getFullYear()} -${String(d.getMonth() + 1).padStart(2, '0')} ` === key;
         });
       }
 
@@ -6198,12 +6665,12 @@
         listContainer.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Nessun dato corrispondente.</p>';
       } else {
         listContainer.innerHTML = filteredShows.map(show => `
-            <div class="chart-detail-item">
-                <img src="${show.poster || DEFAULT_POSTER}" class="chart-detail-poster" onerror="this.src='${DEFAULT_POSTER}'">
-                <div class="chart-detail-info">
-                    <span style="font-weight: 700; font-size: 0.95rem;">${show.title}</span>
-                    <span style="font-size: 0.8rem; color: var(--primary);"><i class="fas fa-folder"></i> ${getCategoryName(show.category)}</span>
-                </div>
+          < div class="chart-detail-item" >
+            <img src="${show.poster || DEFAULT_POSTER}" class="chart-detail-poster" onerror="this.src='${DEFAULT_POSTER}'">
+              <div class="chart-detail-info">
+                <span style="font-weight: 700; font-size: 0.95rem;">${show.title}</span>
+                <span style="font-size: 0.8rem; color: var(--primary);"><i class="fas fa-folder"></i> ${getCategoryName(show.category)}</span>
+              </div>
             </div>
         `).join('');
       }
@@ -6226,7 +6693,7 @@
 
       try {
         const [filmsSnap, tvSnap] = await Promise.all([
-          db.ref(`users/${currentUser.uid}/mediaTracker`).once('value'),
+          db.ref(`users / ${currentUser.uid}/mediaTracker`).once('value'),
           db.ref(`users/${currentUser.uid}/tvShowTracker`).once('value')
         ]);
 
