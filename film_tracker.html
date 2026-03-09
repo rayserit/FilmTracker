@@ -2299,6 +2299,33 @@
         padding: 0;
         background: transparent;
         margin-bottom: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      /* --- STATISTICHE MESE CORRENTE --- */
+      .stats-container-month {
+        background: rgba(255, 255, 255, 0.03);
+        padding: 1.5rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .stats-container-month .stat-value {
+        font-size: 1.8rem;
+        color: var(--primary);
+        text-shadow: 0 0 20px rgba(58, 134, 255, 0.3);
+      }
+
+      .stats-container-month .stat-item {
+        background: rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease, border-color 0.2s ease;
+      }
+
+      #btnMonthAdded:hover,
+      #btnMonthWatched:hover {
+        transform: scale(1.02);
+        border-color: var(--primary) !important;
       }
 
       .section-header {
@@ -2606,6 +2633,35 @@
       box-shadow: var(--glass-shadow);
       transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
         border-color 0.3s, box-shadow 0.3s, background 0.3s !important;
+    }
+
+    #chartDetailsList {
+      padding: 10px !important;
+    }
+
+    .chart-detail-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+    }
+
+    .chart-detail-poster {
+      width: 40px;
+      height: 60px;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+
+    /* --- STATI PARTICOLARI CARDS --- */
+    .media-card.is-stat-contributor {
+      border-top: 2px dashed var(--primary) !important;
+    }
+
+    .media-card.is-high-priority {
+      border: 2px dashed var(--warning) !important;
     }
 
     /* 5. Hover Effects "Magnetici" e Fisici */
@@ -3285,6 +3341,25 @@
   <div class="modal" id="advancedStatsModal">
     <div class="modal-content" style="max-width: 800px; padding: 1.5rem;">
       <h2 style="text-align: center; margin-top: 0; color: var(--primary);">Statistiche Avanzate</h2>
+
+      <!-- Statistiche Mese Corrente -->
+      <div class="stats-container-month" style="margin-top: 1rem;">
+        <h3 style="text-align: center; font-size: 1rem; color: var(--text-secondary); margin-bottom: 1rem;">
+          Attività di <span id="currentMonthName">...</span>
+        </h3>
+        <div class="stats-container">
+          <div class="stat-item" id="btnMonthAdded" style="border: 1px solid var(--primary); cursor: pointer;">
+            <i class="fas fa-plus-circle stat-icon" style="color: var(--primary);"></i>
+            <span class="stat-name">Aggiunti</span>
+            <div class="stat-value" id="monthAdded">0</div>
+          </div>
+          <div class="stat-item" id="btnMonthWatched" style="border: 1px solid var(--tv-accent); cursor: pointer;">
+            <i class="fas fa-eye stat-icon" style="color: var(--tv-accent);"></i>
+            <span class="stat-name">Visti</span>
+            <div class="stat-value" id="monthWatched">0</div>
+          </div>
+        </div>
+      </div>
 
       <div class="charts-container">
         <!-- Grafico a Torta: Generi -->
@@ -4119,16 +4194,20 @@
         const grid = document.getElementById(`${cat}Grid`);
         if (section && grid) {
           if (grid.children.length === 0) {
-            if (selectedCategory === 'all' || selectedCategory === cat) {
-              grid.innerHTML = `<div class="empty-state"><i class="fas fa-film"></i><p>Nessun film in questa categoria.</p></div>`;
-            } else {
-              section.style.display = 'none';
-            }
+            // Nascondi la sezione se la griglia è vuota
+            section.style.display = 'none';
           } else {
+            section.style.display = 'block';
             hasContent = true;
           }
         }
       });
+
+      // Show global empty state if NO categories have content
+      const noResultsMsg = document.getElementById('noResultsGlobal');
+      if (noResultsMsg) {
+        noResultsMsg.style.display = hasContent ? 'none' : 'block';
+      }
 
       if (selectedCategory === 'favorites' && !filteredMedia.length) {
         renderCategorySections();
@@ -6504,6 +6583,29 @@
     let activityChartInstance = null;
 
     function renderAdvancedStats() {
+      // --- LOGICA MESE CORRENTE ---
+      const now = new Date();
+      const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      document.getElementById('currentMonthName').textContent = now.toLocaleDateString('it-IT', { month: 'long' });
+
+      let addedCount = 0;
+      let watchedCount = 0;
+
+      mediaList.forEach(m => {
+        if (m.addedAt && m.addedAt.startsWith(currentMonthKey)) {
+          addedCount++;
+        }
+        if (m.lastActivityAt && m.lastActivityAt.startsWith(currentMonthKey)) {
+          if (m.category === 'watched' || m.isCountedAsWatched) {
+            watchedCount++;
+          }
+        }
+      });
+
+      document.getElementById('monthAdded').textContent = addedCount;
+      document.getElementById('monthWatched').textContent = watchedCount;
+
+      // --- LOGICA GRAFICI ---
       const genreCounts = {};
       mediaList.forEach(media => {
         if (media.category === 'watched' || media.isCountedAsWatched) {
@@ -6635,6 +6737,20 @@
           }
         }
       });
+      setupMonthStatsListeners();
+    }
+
+    function setupMonthStatsListeners() {
+      const now = new Date();
+      const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      document.getElementById('btnMonthAdded').onclick = () => {
+        showChartDetails('monthAdded', currentMonthKey, now.toLocaleDateString('it-IT', { month: 'long' }));
+      };
+
+      document.getElementById('btnMonthWatched').onclick = () => {
+        showChartDetails('monthWatched', currentMonthKey, now.toLocaleDateString('it-IT', { month: 'long' }));
+      };
     }
 
     function showChartDetails(type, key, displayLabel = '') {
@@ -6642,37 +6758,71 @@
       let title = '';
 
       if (type === 'genre') {
-        title = `Genere: ${key} `;
+        title = `Genere: ${key}`;
         filteredShows = mediaList.filter(m =>
           (m.category === 'watched' || m.isCountedAsWatched) &&
           m.genres && m.genres.includes(key)
         );
       } else if (type === 'activity') {
-        title = `Attività di ${displayLabel} `;
+        title = `Attività di ${displayLabel}`;
         filteredShows = mediaList.filter(m => {
           if (!m.lastActivityAt) return false;
           const d = new Date(m.lastActivityAt);
-          return `${d.getFullYear()} -${String(d.getMonth() + 1).padStart(2, '0')} ` === key;
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === key;
         });
+      } else if (type === 'monthAdded') {
+        title = `Aggiunti a ${displayLabel}`;
+        filteredShows = mediaList.filter(m => m.addedAt && m.addedAt.startsWith(key));
+      } else if (type === 'monthWatched') {
+        title = `Visti a ${displayLabel}`;
+        filteredShows = mediaList.filter(m =>
+          m.lastActivityAt &&
+          m.lastActivityAt.startsWith(key) &&
+          (m.category === 'watched' || m.isCountedAsWatched)
+        );
       }
 
-      filteredShows.sort((a, b) => a.title.localeCompare(b.title));
+      // 1. Raggruppiamo i risultati per categoria
+      const grouped = filteredShows.reduce((acc, show) => {
+        const cat = show.category;
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(show);
+        return acc;
+      }, {});
 
       elements.chartDetailsTitle.textContent = title;
       const listContainer = elements.chartDetailsList;
+      listContainer.innerHTML = ''; // Svuota il contenitore
 
       if (filteredShows.length === 0) {
         listContainer.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Nessun dato corrispondente.</p>';
       } else {
-        listContainer.innerHTML = filteredShows.map(show => `
-          < div class="chart-detail-item" >
-            <img src="${show.poster || DEFAULT_POSTER}" class="chart-detail-poster" onerror="this.src='${DEFAULT_POSTER}'">
-              <div class="chart-detail-info">
-                <span style="font-weight: 700; font-size: 0.95rem;">${show.title}</span>
-                <span style="font-size: 0.8rem; color: var(--primary);"><i class="fas fa-folder"></i> ${getCategoryName(show.category)}</span>
-              </div>
-            </div>
-        `).join('');
+        // 2. Creiamo una mini-sezione per ogni categoria trovata
+        Object.keys(grouped).forEach(cat => {
+          const catSection = document.createElement('div');
+          catSection.style.marginBottom = '1.5rem';
+
+          catSection.innerHTML = `
+                <h4 style="color: var(--primary); margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+                    ${getCategoryName(cat)} (${grouped[cat].length})
+                </h4>
+            `;
+
+          grouped[cat].sort((a, b) => a.title.localeCompare(b.title)).forEach(show => {
+            const item = document.createElement('div');
+            item.className = 'chart-detail-item';
+            item.style.marginBottom = '8px';
+            item.innerHTML = `
+                    <img src="${show.poster || DEFAULT_POSTER}" class="chart-detail-poster" onerror="this.src='${DEFAULT_POSTER}'">
+                    <div class="chart-detail-info">
+                        <span style="font-weight: 700; font-size: 0.95rem;">${show.title}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-secondary);">${show.year || 'N/D'}</span>
+                    </div>
+                `;
+            catSection.appendChild(item);
+          });
+          listContainer.appendChild(catSection);
+        });
       }
 
       openModal(elements.chartDetailsModal);
