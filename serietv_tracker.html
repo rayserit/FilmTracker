@@ -1443,6 +1443,35 @@
             margin-top: 1.5rem;
         }
 
+        /* --- STATI PARTICOLARI CARDS --- */
+        .media-card.is-stat-contributor {
+            border-top: 2px dashed var(--primary) !important;
+        }
+
+        .media-card.is-high-priority {
+            border: 2px dashed var(--warning) !important;
+        }
+
+        #chartDetailsList {
+            padding: 10px !important;
+        }
+
+        .chart-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+
+        .chart-detail-poster {
+            width: 40px;
+            height: 60px;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+
         #detailsModalOverview {
             line-height: 1.6;
         }
@@ -2798,6 +2827,33 @@
                 padding: 0;
                 background: transparent;
                 margin-bottom: 1rem;
+                transition: all 0.3s ease;
+            }
+
+            /* --- STATISTICHE MESE CORRENTE --- */
+            .stats-container-month {
+                background: rgba(255, 255, 255, 0.03);
+                padding: 1.5rem;
+                border-radius: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                margin-bottom: 2rem;
+            }
+
+            .stats-container-month .stat-value {
+                font-size: 1.8rem;
+                color: var(--primary);
+                text-shadow: 0 0 20px rgba(58, 134, 255, 0.3);
+            }
+
+            .stats-container-month .stat-item {
+                background: rgba(0, 0, 0, 0.2);
+                transition: transform 0.2s ease, border-color 0.2s ease;
+            }
+
+            #btnMonthAdded:hover,
+            #btnMonthWatched:hover {
+                transform: scale(1.02);
+                border-color: var(--primary) !important;
             }
 
             .section-header {
@@ -3759,6 +3815,27 @@
         <div class="modal-content" style="max-width: 800px; padding: 1.5rem;">
             <h2 style="text-align: center; margin-top: 0; color: var(--primary);">Statistiche Avanzate</h2>
 
+            <!-- Statistiche Mese Corrente -->
+            <div class="stats-container-month" style="margin-top: 1rem;">
+                <h3 style="text-align: center; font-size: 1rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    Attività di <span id="currentMonthName">...</span>
+                </h3>
+                <div class="stats-container">
+                    <div class="stat-item" id="btnMonthAdded"
+                        style="border: 1px solid var(--primary); cursor: pointer;">
+                        <i class="fas fa-plus-circle stat-icon" style="color: var(--primary);"></i>
+                        <span class="stat-name">Aggiunte</span>
+                        <div class="stat-value" id="monthAdded">0</div>
+                    </div>
+                    <div class="stat-item" id="btnMonthWatched"
+                        style="border: 1px solid var(--tv-accent); cursor: pointer;">
+                        <i class="fas fa-eye stat-icon" style="color: var(--tv-accent);"></i>
+                        <span class="stat-name">Viste/Attive</span>
+                        <div class="stat-value" id="monthWatched">0</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="charts-container">
                 <!-- Grafico a Torta: Generi -->
                 <div class="chart-box">
@@ -4453,6 +4530,28 @@
         let activityChartInstance = null;
 
         function renderAdvancedStats() {
+            // --- LOGICA MESE CORRENTE ---
+            const now = new Date();
+            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('currentMonthName').textContent = now.toLocaleDateString('it-IT', { month: 'long' });
+
+            let addedCount = 0;
+            let watchedCount = 0;
+
+            mediaList.forEach(m => {
+                if (m.addedAt && m.addedAt.startsWith(currentMonthKey)) {
+                    addedCount++;
+                }
+                if (m.lastActivityAt && m.lastActivityAt.startsWith(currentMonthKey)) {
+                    if (!m.isDropped && m.category !== 'Da Vedere') {
+                        watchedCount++;
+                    }
+                }
+            });
+
+            document.getElementById('monthAdded').textContent = addedCount;
+            document.getElementById('monthWatched').textContent = watchedCount;
+
             // --- 1. PREPARAZIONE DATI GENERI ---
             const genreCounts = {};
             mediaList.forEach(show => {
@@ -4625,6 +4724,21 @@
                     }
                 }
             });
+
+            setupMonthStatsListeners();
+        }
+
+        function setupMonthStatsListeners() {
+            const now = new Date();
+            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            document.getElementById('btnMonthAdded').onclick = () => {
+                showChartDetails('monthAdded', currentMonthKey, now.toLocaleDateString('it-IT', { month: 'long' }));
+            };
+
+            document.getElementById('btnMonthWatched').onclick = () => {
+                showChartDetails('monthWatched', currentMonthKey, now.toLocaleDateString('it-IT', { month: 'long' }));
+            };
         }
 
         // --- NUOVA FUNZIONE PER MOSTRARE LA LISTA ---
@@ -4647,27 +4761,61 @@
                     const showKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
                     return showKey === key;
                 });
+            } else if (type === 'monthAdded') {
+                title = `Aggiunte a ${displayLabel}`;
+                filteredShows = mediaList.filter(show => show.addedAt && show.addedAt.startsWith(key));
+            } else if (type === 'monthWatched') {
+                title = `Viste/Attive a ${displayLabel}`;
+                filteredShows = mediaList.filter(show =>
+                    show.lastActivityAt &&
+                    show.lastActivityAt.startsWith(key) &&
+                    !show.isDropped &&
+                    show.category !== 'Da Vedere'
+                );
             }
 
-            // Ordine alfabetico
-            filteredShows.sort((a, b) => a.title.localeCompare(b.title));
+            // 1. Raggruppiamo i risultati per categoria
+            const grouped = filteredShows.reduce((acc, show) => {
+                const cat = show.category;
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(show);
+                return acc;
+            }, {});
 
             // Scriviamo nel modale
             document.getElementById('chartDetailsTitle').textContent = title;
             const listContainer = document.getElementById('chartDetailsList');
+            listContainer.innerHTML = ''; // Svuota il contenitore
 
             if (filteredShows.length === 0) {
                 listContainer.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Nessun dato corrispondente.</p>';
             } else {
-                listContainer.innerHTML = filteredShows.map(show => `
-            <div class="chart-detail-item">
-                <img src="${show.poster || DEFAULT_POSTER}" class="chart-detail-poster" onerror="this.src='${DEFAULT_POSTER}'">
-                <div class="chart-detail-info">
-                    <span style="font-weight: 700; font-size: 0.95rem;">${show.title}</span>
-                    <span style="font-size: 0.8rem; color: var(--primary);"><i class="fas fa-folder"></i> ${show.category}</span>
-                </div>
-            </div>
-        `).join('');
+                // 2. Creiamo una mini-sezione per ogni categoria trovata
+                Object.keys(grouped).forEach(cat => {
+                    const catSection = document.createElement('div');
+                    catSection.style.marginBottom = '1.5rem';
+
+                    catSection.innerHTML = `
+                        <h4 style="color: var(--primary); margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+                            ${cat} (${grouped[cat].length})
+                        </h4>
+                    `;
+
+                    grouped[cat].sort((a, b) => a.title.localeCompare(b.title)).forEach(show => {
+                        const item = document.createElement('div');
+                        item.className = 'chart-detail-item';
+                        item.style.marginBottom = '8px';
+                        item.innerHTML = `
+                            <img src="${show.poster || DEFAULT_POSTER}" class="chart-detail-poster" onerror="this.src='${DEFAULT_POSTER}'">
+                            <div class="chart-detail-info">
+                                <span style="font-weight: 700; font-size: 0.95rem;">${show.title}</span>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary);">${show.year || 'N/D'}</span>
+                            </div>
+                        `;
+                        catSection.appendChild(item);
+                    });
+                    listContainer.appendChild(catSection);
+                });
             }
 
             // Apriamo il modale sopra a quello dei grafici
@@ -4846,28 +4994,31 @@
 
             let hasContent = false;
             categories.forEach(catObj => {
-                const categoryName = catObj.name;
+                const categoryName = typeof catObj === 'string' ? catObj : catObj.name;
                 const section = document.querySelector(`.media-section[data-category="${categoryName}"]`);
                 if (!section) return;
 
                 const grid = section.querySelector('.media-grid');
                 const countEl = section.querySelector('.category-count');
+                if (!grid) return;
 
                 const count = grid.children.length;
                 if (countEl) countEl.textContent = count;
 
-                if (selectedCategory !== 'all' && selectedCategory !== 'favorites' && categoryName !== selectedCategory) {
-                    section.style.display = 'none';
-                } else if (count === 0 && selectedCategory === 'favorites') {
+                // Se la griglia è vuota, nascondi l'intera sezione fluidamente
+                if (count === 0) {
                     section.style.display = 'none';
                 } else {
                     section.style.display = 'block';
                     hasContent = true;
-                    if (grid.children.length === 0) {
-                        grid.innerHTML = `<div class="empty-state"><i class="fas fa-tv"></i><p>Nessuna serie TV qui.</p></div>`;
-                    }
                 }
             });
+
+            // Show global empty state if NO categories have content
+            const noResultsMsg = document.getElementById('noResultsGlobal');
+            if (noResultsMsg) {
+                noResultsMsg.style.display = hasContent ? 'none' : 'block';
+            }
 
             if (selectedCategory === 'favorites' && !filteredMedia.length) {
                 renderCategorySections();
@@ -4886,6 +5037,9 @@
             const card = document.createElement("div");
             card.className = "media-card";
             card.dataset.id = show.id;
+
+            // Ripristino logica status e priorità
+            if (show.priority === 'high') card.classList.add("is-high-priority");
             if (statContributorIds.has(show.id)) card.classList.add("is-stat-contributor");
             if (ignoredDuplicateIds.has(show.id)) card.classList.add("is-duplicate");
 
@@ -7518,6 +7672,10 @@
             });
 
             // Ricerca
+            elements.searchInput.addEventListener("input", () => {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(renderMedia, 300);
+            });
             elements.searchTMDbBtn.addEventListener("click", searchTMDb);
             elements.mediaTitle.addEventListener("keydown", e => { if (e.key === "Enter") searchTMDb(); });
 
