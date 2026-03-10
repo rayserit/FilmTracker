@@ -3607,7 +3607,8 @@
                     <i class="fas fa-chevron-down select-arrow"></i>
                 </div>
                 <div class="custom-options" id="sortOptions">
-                    <div class="option" data-value="added"><i class="fas fa-clock"></i> Ultime attività</div>
+                    <div class="option" data-value="added"><i class="fas fa-plus-square"></i> Ultimi aggiunti</div>
+                    <div class="option" data-value="activity"><i class="fas fa-clock"></i> Ultime modifiche</div>
                     <div class="option" data-value="alpha"><i class="fas fa-sort-alpha-down"></i> Alfabetico</div>
                     <div class="option" data-value="rating"><i class="fas fa-star"></i> Valutazione</div>
                     <div class="option" data-value="year"><i class="fas fa-calendar"></i> Anno di uscita</div>
@@ -3998,7 +3999,13 @@
             </div>
             <div class="filter-modal-section">
                 <label for="mobileSortFilter">Ordina per</label>
-                <select id="mobileSortFilter"></select>
+                <select id="mobileSortFilter">
+                    <option value="added" selected>Ultimi aggiunti</option>
+                    <option value="activity">Ultime modifiche</option>
+                    <option value="alpha">Alfabetico</option>
+                    <option value="rating">Valutazione</option>
+                    <option value="year">Anno di uscita</option>
+                </select>
             </div>
             <div class="modal-footer" style="border: none; padding-bottom: 0;">
                 <button id="applyFiltersBtn" class="btn btn-primary">Applica</button>
@@ -4975,12 +4982,17 @@
                     case "alpha": return a.title.localeCompare(b.title);
                     case "rating": return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
                     case "year": return (b.year.split('–')[0] || 0) - (a.year.split('–')[0] || 0);
+                    case "activity":
+                        // Sort dropped shows to the bottom
+                        if (a.isDropped && !b.isDropped) return 1;
+                        if (!a.isDropped && b.isDropped) return -1;
+                        return new Date(b.lastActivityAt || b.addedAt) - new Date(a.lastActivityAt || a.addedAt);
                     case "added":
                     default:
                         // Sort dropped shows to the bottom
                         if (a.isDropped && !b.isDropped) return 1;
                         if (!a.isDropped && b.isDropped) return -1;
-                        return new Date(b.lastActivityAt || b.addedAt) - new Date(a.lastActivityAt || a.addedAt);
+                        return new Date(b.addedAt || 0) - new Date(a.addedAt || 0);
                 }
             });
 
