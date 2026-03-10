@@ -3126,7 +3126,8 @@
         <div class="custom-options" id="sortOptions">
           <div class="option" data-value="saga-alpha"><i class="fas fa-sort-alpha-down"></i> Saga / Alfabetico</div>
           <div class="option" data-value="alpha"><i class="fas fa-font"></i> Solo Alfabetico</div>
-          <div class="option" data-value="added"><i class="fas fa-clock"></i> Ultimi aggiunti</div>
+          <div class="option" data-value="added"><i class="fas fa-plus-square"></i> Ultimi aggiunti</div>
+          <div class="option" data-value="activity"><i class="fas fa-clock"></i> Ultime modifiche</div>
           <div class="option" data-value="rating"><i class="fas fa-star"></i> Valutazione</div>
           <div class="option" data-value="year"><i class="fas fa-calendar"></i> Anno di uscita</div>
         </div>
@@ -3459,7 +3460,14 @@
       </div>
       <div class="filter-modal-section">
         <label for="mobileSortFilter">Ordina per</label>
-        <select id="mobileSortFilter"></select>
+        <select id="mobileSortFilter">
+          <option value="saga-alpha" selected>Saga / Alfabetico</option>
+          <option value="alpha">Solo Alfabetico</option>
+          <option value="added">Ultimi aggiunti</option>
+          <option value="activity">Ultime modifiche</option>
+          <option value="rating">Valutazione</option>
+          <option value="year">Anno di uscita</option>
+        </select>
       </div>
       <div class="modal-footer" style="border: none; padding-bottom: 0;">
         <button id="applyFiltersBtn" class="btn btn-primary">Applica</button>
@@ -4175,11 +4183,17 @@
             return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
           case "year":
             return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+          case "activity":
+            // NUOVO: Ordina per "Ultima Attività" (inclusi rewatch, spostamenti, ecc.)
+            const activityTimeA = a.lastActivityAt || a.addedAt;
+            const activityTimeB = b.lastActivityAt || b.addedAt;
+            return new Date(activityTimeB) - new Date(activityTimeA);
           case "added":
           default:
-            const timeA = a.lastActivityAt || a.addedAt;
-            const timeB = b.lastActivityAt || b.addedAt;
-            return new Date(timeB) - new Date(timeA);
+            // MODIFICATO: Ora "Ultimi aggiunti" è PURAMENTE la data di creazione iniziale
+            const addedTimeA = a.addedAt || 0;
+            const addedTimeB = b.addedAt || 0;
+            return new Date(addedTimeB) - new Date(addedTimeA);
         }
       });
 
