@@ -3607,9 +3607,9 @@
                     <i class="fas fa-chevron-down select-arrow"></i>
                 </div>
                 <div class="custom-options" id="sortOptions">
-                    <div class="option" data-value="added"><i class="fas fa-plus-square"></i> Ultimi aggiunti</div>
-                    <div class="option" data-value="activity"><i class="fas fa-clock"></i> Ultime modifiche</div>
                     <div class="option" data-value="alpha"><i class="fas fa-sort-alpha-down"></i> Alfabetico</div>
+                    <div class="option" data-value="activity"><i class="fas fa-clock"></i> Ultime modifiche</div>
+                    <div class="option" data-value="added"><i class="fas fa-plus-square"></i> Ultimi aggiunti</div>
                     <div class="option" data-value="rating"><i class="fas fa-star"></i> Valutazione</div>
                     <div class="option" data-value="year"><i class="fas fa-calendar"></i> Anno di uscita</div>
                 </div>
@@ -4000,9 +4000,9 @@
             <div class="filter-modal-section">
                 <label for="mobileSortFilter">Ordina per</label>
                 <select id="mobileSortFilter">
-                    <option value="added" selected>Ultimi aggiunti</option>
-                    <option value="activity">Ultime modifiche</option>
                     <option value="alpha">Alfabetico</option>
+                    <option value="activity">Ultime modifiche</option>
+                    <option value="added">Ultimi aggiunti</option>
                     <option value="rating">Valutazione</option>
                     <option value="year">Anno di uscita</option>
                 </select>
@@ -6680,17 +6680,27 @@
         function showConfirmModal(title, body, onConfirm) { elements.confirmModalTitle.textContent = title; elements.confirmModalBody.textContent = body; openModal(elements.confirmModal); const confirmHandler = () => { closeModal(elements.confirmModal); onConfirm(); cleanup(); }; const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); }; const cleanup = () => { elements.confirmModalConfirm.removeEventListener("click", confirmHandler); elements.confirmModalCancel.removeEventListener("click", cancelHandler); }; elements.confirmModalConfirm.addEventListener("click", confirmHandler); elements.confirmModalCancel.addEventListener("click", cancelHandler); }
         function setupLazyLoading() { if (lazyLoadObserver) lazyLoadObserver.disconnect(); lazyLoadObserver = new IntersectionObserver((entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { const img = entry.target; img.src = img.dataset.src; img.classList.remove("lazy"); observer.unobserve(img); } }); }, { rootMargin: "200px" }); document.querySelectorAll(".lazy").forEach(img => lazyLoadObserver.observe(img)); }
         function loadSortOrder() {
-            const sort = localStorage.getItem("tvShowSortOrder");
-            if (sort) {
-                const sortSelect = document.getElementById('sortFilter');
-                if (sortSelect) {
-                    sortSelect.dataset.value = sort;
-                    const optionEl = document.querySelector(`#sortOptions .option[data-value="${sort}"]`);
-                    if (optionEl) {
-                        const selectedText = sortSelect.querySelector('.selected-option');
-                        if (selectedText) selectedText.innerHTML = optionEl.innerHTML;
-                    }
+            // 1. Legge la memoria. Se è vuota, imposta 'alpha' (Alfabetico) come default iniziale.
+            let savedSort = localStorage.getItem("tvShowSortOrder");
+            if (!savedSort) {
+                savedSort = "alpha";
+                localStorage.setItem("tvShowSortOrder", savedSort);
+            }
+
+            // 2. Aggiorna il menu Desktop (Custom Select)
+            const sortSelectDesktop = document.getElementById('sortFilter');
+            if (sortSelectDesktop) {
+                sortSelectDesktop.dataset.value = savedSort;
+                const optionEl = document.querySelector(`#sortOptions .option[data-value="${savedSort}"]`);
+                if (optionEl) {
+                    sortSelectDesktop.querySelector('.selected-option').innerHTML = optionEl.innerHTML;
                 }
+            }
+
+            // 3. Aggiorna il menu Mobile
+            const mobileSort = document.getElementById('mobileSortFilter');
+            if (mobileSort) {
+                mobileSort.value = savedSort;
             }
         }
 
@@ -7384,7 +7394,7 @@
                 </div>`;
                 card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
                 card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
-                    const url = `${window.location.origin}${window.location.pathname.replace('serietv_tracker.html', 'index.html')}?view=${e.currentTarget.dataset.id}`;
+                    const url = `${window.location.origin}${window.location.pathname.replace('serietv_tracker.html', 'film_tracker.html')}?view=${e.currentTarget.dataset.id}`;
                     window.open(url, '_blank');
                 });
                 card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
@@ -7726,6 +7736,14 @@
                     select.dataset.value = isOption.dataset.value;
                     select.querySelector('.selected-option').innerHTML = isOption.innerHTML;
                     wrapper.classList.remove('open');
+
+                    // --- NUOVO: SALVA LA SCELTA NEL LOCAL STORAGE ---
+                    if (select.id === 'sortFilter') {
+                        // Riconosce in automatico se sei in Film o Serie TV
+                        const storageKey = window.location.pathname.includes('serietv') ? 'tvShowSortOrder' : 'mediaTrackerSortOrder';
+                        localStorage.setItem(storageKey, isOption.dataset.value);
+                    }
+                    // ------------------------------------------------
 
                     // Se è un filtro della dashboard, aggiorna la pagina
                     if (wrapper.id !== 'addMediaCategoryCustom' && typeof renderMedia === 'function') {
