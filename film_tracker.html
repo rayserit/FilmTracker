@@ -403,17 +403,30 @@
       flex-wrap: nowrap;
     }
 
+    /* Stile base trasparente (Usato dentro il Modale Dettagli) */
     .rating-badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.2rem;
+      gap: 0.3rem;
+      background: transparent;
+      padding: 0;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    /* Ripristino Stile a "Pillola" SOLO per le Card nella griglia frontale */
+    .media-card .rating-badge {
       background: rgba(0, 0, 0, 0.05);
       padding: 0.2rem 0.4rem;
       border-radius: 12px;
       font-size: 0.75rem;
+      font-weight: normal;
+      gap: 0.2rem;
     }
 
-    body.dark .rating-badge {
+    /* Colore della Pillola in Dark Mode */
+    body.dark .media-card .rating-badge {
       background: rgba(255, 255, 255, 0.08);
     }
 
@@ -421,6 +434,14 @@
       width: 14px;
       height: 14px;
       object-fit: contain;
+    }
+
+    .details-ratings-container {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      align-items: center;
     }
 
     .card-actions {
@@ -1675,97 +1696,210 @@
       z-index: 1001;
     }
 
-    .details-backdrop {
-      width: 100%;
-      height: 250px;
-      background-size: cover;
-      background-position: center 25%;
-      position: relative;
+    /* --- NUOVO LAYOUT DETTAGLI FILM (2 COLONNE) --- */
+    #detailsModal .modal-content {
+      max-width: 1000px !important;
+      padding: 0 !important;
+      overflow-x: hidden;
+      background: var(--bg-color);
     }
 
-    .details-backdrop::after {
-      content: '';
+    .details-hero {
+      position: relative;
+      width: 100%;
+      padding-top: 50px;
+      min-height: 280px;
+    }
+
+    .details-backdrop {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      bottom: 0;
-      background: linear-gradient(to top, var(--card-bg) 0%, rgba(0, 0, 0, 0.5) 100%);
+      height: 100%;
+      background-size: cover;
+      background-position: center 25%;
+      z-index: 1;
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 100%);
+      opacity: 0.3;
     }
 
-    .details-header {
+    .details-hero-content {
       position: relative;
-      display: flex;
-      padding: 1.5rem;
-      margin-top: -100px;
       z-index: 2;
+      display: flex;
+      gap: 2.5rem;
+      padding: 0 3rem 2rem 3rem;
+      align-items: flex-end;
     }
 
     #detailsModalPoster {
-      width: 150px;
-      height: 225px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      width: 200px;
+      aspect-ratio: 2 / 3;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
       flex-shrink: 0;
-      margin-right: 1.5rem;
-    }
-
-    .details-title-section {
-      padding-top: 100px;
-      flex-grow: 1;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     #detailsModalTitle {
-      margin: 0;
-      font-size: 1.75rem;
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin: 0 0 10px 0;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     }
 
-    .details-ratings-container {
+    .meta-badges {
       display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
       flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-top: 0.75rem;
     }
 
-    #detailsModalTagline {
-      font-style: italic;
-      color: var(--text-secondary);
-      margin-top: 0.5rem;
-    }
-
-    #detailsModalMeta {
-      margin-top: 0.5rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      font-size: 0.9rem;
-    }
-
-    .director-link {
-      color: var(--primary);
-      text-decoration: none;
+    .meta-pill {
+      background: transparent;
+      padding: 0;
+      border: none;
+      font-size: 0.85rem;
       font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Versione bottone (es. Preferiti) per mantenerlo cliccabile visivamente */
+    button.meta-pill {
       cursor: pointer;
+      color: white;
+      transition: opacity 0.2s;
     }
 
-    .director-link:hover {
-      text-decoration: underline;
+    button.meta-pill:hover {
+      opacity: 0.8;
     }
 
-    .details-body {
-      padding: 0 1.5rem 1.5rem 1.5rem;
+    /* GRIGLIA PRINCIPALE */
+    .details-main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+      column-gap: 3rem;
+      /* Spazio orizzontale mantenuto ampio */
+      row-gap: 0.5rem;
+      /* Spazio verticale ridotto al minimo */
+      padding: 0 3rem 3rem 3rem;
+      position: relative;
+      z-index: 2;
     }
 
-    .details-section-title {
-      font-weight: 600;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 0.5rem;
-      margin-bottom: 1rem;
-      margin-top: 1.5rem;
+    .details-left-col,
+    .details-right-col {
+      min-width: 0;
+      /* Importantissimo per le rotelle di scorrimento laterali */
+    }
+
+    .section-label {
+      color: var(--primary);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin: 2rem 0 10px 0;
+      font-weight: 800;
     }
 
     #detailsModalOverview {
       line-height: 1.6;
+      color: #ccc;
+      font-size: 0.95rem;
+    }
+
+    .genre-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .genre-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+    }
+
+    /* BOX GESTIONE (SUBTLE) */
+    .management-box {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .management-box select {
+      width: 100% !important;
+      margin-bottom: 10px;
+      background: #111 !important;
+      color: white;
+    }
+
+    .management-box .btn {
+      width: 100%;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .management-box .btn-danger {
+      background: transparent;
+      border: 1px solid rgba(255, 68, 68, 0.3);
+      color: var(--danger);
+    }
+
+    .management-box .btn-danger:hover {
+      background: rgba(255, 68, 68, 0.1);
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .modal-close-btn:hover {
+      background: var(--primary);
+    }
+
+    @media (max-width: 768px) {
+      .details-main-grid {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+        column-gap: 0;
+        row-gap: 1.5rem;
+        /* Su mobile serve un po' di spazio perché si impilano 4 blocchi */
+      }
+
+      .details-hero-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      #detailsModalTitle {
+        font-size: 1.8rem;
+      }
     }
 
     .cast-scroller {
@@ -1854,6 +1988,37 @@
       .charts-container {
         grid-template-columns: 1fr 1fr;
       }
+    }
+
+    /* Container per il gruppo di categoria nel modale statistiche */
+    .stats-category-group {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stats-category-title {
+      color: var(--primary);
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 8px;
+    }
+
+    .stats-category-count {
+      background: var(--primary);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.7rem;
     }
 
     .chart-detail-item {
@@ -2181,11 +2346,10 @@
         display: none !important;
       }
 
-      /* --- STATISTICHE: GRIGLIA 4 COLONNE PER LE PRIME 4 STATISTICHE --- */
+      /* --- STATISTICHE: GRIGLIA 5 COLONNE --- */
       .stats-container {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        /* 4 colonne per le prime 4 statistiche */
+        grid-template-columns: repeat(5, 1fr);
         gap: 0.4rem;
         padding-bottom: 0;
         overflow: visible;
@@ -2206,35 +2370,12 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
       }
 
-      /* Le prime 4 statistiche sulla stessa riga */
-      .stat-item:nth-child(1),
-      .stat-item:nth-child(2),
-      .stat-item:nth-child(3),
-      .stat-item:nth-child(4) {
-        grid-row: 1;
-      }
-
-      /* L'ultima stat (Ore) su una riga intera sotto */
-      .stat-item:nth-child(5) {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        flex-direction: row;
-        gap: 1rem;
-        padding: 0.75rem;
-      }
-
       .stat-value {
-        font-size: 1.3rem;
-        /* Numeri leggermente più piccoli per stare in 4 colonne */
-        margin-bottom: 0.3rem;
+        font-size: 1.1rem;
+        margin-bottom: 0.2rem;
         line-height: 1;
         font-weight: 700;
         color: var(--text-color);
-      }
-
-      .stat-item:nth-child(5) .stat-value {
-        margin-bottom: 0;
-        font-size: 1.2rem;
       }
 
       /* Nasconde il testo ma prepara il contenitore per l'icona */
@@ -2355,11 +2496,15 @@
       .media-meta {
         display: flex;
         font-size: 0.65rem;
-        justify-content: center;
+        justify-content: space-between;
         gap: 0.3rem;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         margin-top: 0.2rem;
         color: var(--text-secondary);
+      }
+
+      .media-meta .year-label {
+        display: none;
       }
 
       /* --- MODALE DETTAGLI FILM (CENTRATO) --- */
@@ -2386,57 +2531,7 @@
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
       }
 
-      .details-title-section {
-        padding: 0;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
 
-      #detailsModalHeader-main {
-        flex-direction: column;
-        width: 100%;
-        gap: 0.5rem;
-        align-items: center;
-      }
-
-      #detailsModalTitle {
-        font-size: 1.75rem;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-        text-align: center;
-        width: 100%;
-        line-height: 1.2;
-      }
-
-      .details-ratings-container {
-        justify-content: center;
-        margin-bottom: 1rem;
-        width: 100%;
-      }
-
-      #detailsModalHeader-main>div:last-child {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        width: 100%;
-        margin-top: 0.5rem;
-      }
-
-      #detailsModalHeader-main>div:last-child .btn {
-        flex: 0 1 auto;
-        padding: 0.6rem 1.2rem;
-      }
-
-      #detailsModalMeta {
-        justify-content: center;
-        font-size: 0.8rem;
-        opacity: 0.8;
-      }
-
-      .details-body {
-        padding: 0 1rem 2rem 1rem;
-      }
 
       /* --- NOTIFICHE --- */
       #mobileNotificationsModal {
@@ -2493,11 +2588,17 @@
       /* Forza il tasto + ad occupare la colonna centrale (la 3) */
       .bottom-nav-btn.add-btn {
         grid-column: 3;
+        justify-self: center;
+        align-self: center;
         transform: translateY(-15px);
-        width: 56px;
-        height: 56px;
+        width: 56px !important;
+        height: 56px !important;
+        border-radius: 50%;
         border: 4px solid var(--bg-color);
         box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
+        background: var(--primary) !important;
+        color: white !important;
+        margin: 0 !important;
       }
     }
 
@@ -2506,22 +2607,22 @@
       transition: opacity 0.3s ease-in-out;
     }
 
-    /* Animazione pulsante per gli scheletri */
-    .skeleton {
-      background: #2a2a2a;
-      background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
-      background-size: 200% 100%;
-      animation: skeleton-pulse 1.5s infinite ease-in-out;
+    /* Animazione pulsante per gli scheletri (ottimizzata: usa opacity) */
+    @keyframes skeleton-pulse {
+
+      0%,
+      100% {
+        opacity: 0.4;
+      }
+
+      50% {
+        opacity: 0.8;
+      }
     }
 
-    @keyframes skeleton-pulse {
-      0% {
-        background-position: 200% 0;
-      }
-
-      100% {
-        background-position: -200% 0;
-      }
+    .skeleton {
+      background: #2a2a2a !important;
+      animation: skeleton-pulse 1.5s infinite ease-in-out;
     }
 
     .skeleton-text {
@@ -3099,9 +3200,12 @@
         color: var(--primary);
       }
 
-      /* Il tasto centrale (+) */
       .bottom-nav-btn.add-btn {
         grid-column: 3;
+        justify-self: center;
+        /* Centra orizzontalmente nella colonna */
+        align-self: center;
+        /* Centra verticalmente nella cella */
         transform: translateY(-15px);
         width: 56px !important;
         height: 56px !important;
@@ -3111,6 +3215,7 @@
         box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
         background: var(--primary) !important;
         color: white !important;
+        margin: 0 !important;
       }
 
       /* 4. RIMUOVI TRANSIZIONI INUTILI ALLO SCROLL */
@@ -3255,7 +3360,7 @@
         <span class="stat-name">Rivisti</span>
         <div class="stat-value" id="statRewatched">0</div>
       </div>
-      <div class="stat-item" title="Tempo Totale">
+      <div class="stat-item" id="statHoursItem" title="Tempo Totale">
         <i class="fas fa-clock stat-icon"></i>
         <span class="stat-name">Tempo Totale</span>
         <div class="stat-value" id="statHours">0h 0m</div>
@@ -3336,7 +3441,7 @@
     </div>
   </div>
 
-  <div class="modal" id="rewatchModal">
+  <div class="modal" id="rewatchModal" style="z-index: 1500;">
     <div class="modal-content">
       <h2 id="rewatchModalTitle">Modifica Rewatch</h2>
       <p>Specifica il numero di volte che hai rivisto il film (0 = visto una sola volta).</p>
@@ -4475,9 +4580,9 @@
         <div class="media-info">
           <h3 class="media-title" title="${media.title}">${media.title}</h3>
           <div class="media-meta">
-            ${media.year ? `<span>${media.year}</span>` : ""}
-            ${media.runtime ? `<span><i class="fas fa-clock"></i> ${formatRuntime(media.runtime)}</span>` : ""}
-            ${(media.rewatchCount && media.rewatchCount > 0) ? `<span title="${media.rewatchCount} Rewatch"><i class="fas fa-redo" style="font-size: 0.8em;"></i> ${media.rewatchCount}</span>` : ""}
+            <span class="year-label">${media.year || 'N/D'}</span>
+            <span>${media.runtime ? formatRuntime(media.runtime) : ''}</span>
+            ${(media.imdbRating && media.imdbRating !== 'N/A') ? `<span><i class="fas fa-star" style="color:#f5c518; font-size:0.7rem;"></i> ${media.imdbRating}</span>` : ''}
           </div>
           ${ratingsSection}
         </div>
@@ -5468,149 +5573,136 @@
 
     function renderDetailsShell(media) {
       const posterUrl = media.poster || DEFAULT_POSTER;
-
       elements.detailsModalContent.innerHTML = `
-        <div class="details-backdrop" style="background-color: #1a1a1a;"></div>
-        <div class="details-header">
-            <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
-            <div class="details-title-section">
-                <h2 id="detailsModalTitle">${media.title}</h2>
-                <div class="details-ratings-container" id="shell-ratings">
-                    <div class="skeleton" style="width:100px; height:20px; border-radius:10px;"></div>
-                </div>
-                <div id="detailsModalMeta">
-                    <span><i class="fas fa-calendar-alt"></i> ${media.year || ''}</span>
-                    <span><i class="fas fa-clock"></i> ${formatRuntime(media.runtime || 0)}</span>
-                    <span id="shell-genres" class="skeleton" style="width:80px; height:15px; display:inline-block;"></span>
+            <div class="details-hero">
+                <button class="modal-close-btn" id="detailsModalCloseNew"><i class="fas fa-times"></i></button>
+                <div class="details-backdrop"></div>
+                <div class="details-hero-content">
+                    <img id="detailsModalPoster" src="${posterUrl}">
+                    <div class="details-title-area">
+                        <h2 id="detailsModalTitle">${media.title}</h2>
+                        <div id="detailsModalMeta" class="meta-badges"></div>
+                        <div id="shell-ratings" class="details-ratings-container"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="details-body">
-            <h3 class="details-section-title">Trama</h3>
-            <p id="detailsModalOverview" class="skeleton-text">Caricamento descrizione...</p>
-            
-            <h3 class="details-section-title">Cast Principale</h3>
-            <div class="cast-scroller" id="detailsModalCast">
-                ${Array(5).fill('<div class="actor-card"><div class="actor-photo skeleton"></div></div>').join('')}
+        <div class="details-main-grid">
+            <!-- Row 1: Trama e Meta Destra -->
+            <div class="details-left-col">
+                <div id="detailsModalTagline" style="font-style:italic; opacity:0.7; margin-bottom:1rem; font-size:0.95rem;"></div>
+                <h4 class="section-label" style="margin-bottom:0.5rem;">TRAMA</h4>
+                <p id="detailsModalOverview" class="skeleton-text" style="margin-top:0; margin-bottom:0;"></p>
             </div>
-        </div>
-      `;
+            <div class="details-right-col">
+                <div id="shell-year-runtime"></div>
+                <h4 class="section-label" style="margin-bottom:0.5rem;">REGIA</h4>
+                <div id="shell-director" style="font-weight:600; color:white; margin-bottom:0;"></div>
+            </div>
+
+            <!-- Row 2: Cast e Gestione -->
+            <div class="details-left-col">
+                <h4 class="section-label" style="margin-top:0.5rem; margin-bottom:0.5rem;">CAST PRINCIPALE</h4>
+                <div id="detailsModalCast" class="cast-scroller"></div>
+            </div>
+            <div class="details-right-col">
+                <div id="shell-management-box" style="margin-top:0.5rem; padding:1.2rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+                    <h4 class="section-label" style="margin-top:0; margin-bottom:0.8rem; font-size:0.7rem; opacity:0.6;">GESTIONE</h4>
+                    <div id="shell-management"></div>
+                </div>
+            </div>
+        </div>`;
+
+      document.getElementById('detailsModalCloseNew').onclick = () => closeModal(elements.detailsModal);
     }
 
     function populateDetailsModal(details, media) {
-      // 1. DEFINIZIONE VARIABILI (Importante: facciamolo subito!)
-      const genres = details.genres ? details.genres.map(g => g.name).join(', ') : '';
-      const directors = details.crew ? details.crew.filter(member => member.job === 'Director') : [];
-      const directorsHTML = directors.map(d => `<a href="#" class="director-link" data-person-id="${d.id}">${d.name}</a>`).join(', ');
+      // 1. Sfondo
+      const backdrop = elements.detailsModalContent.querySelector('.details-backdrop');
+      if (details.backdrop_path) backdrop.style.backgroundImage = `url(https://image.tmdb.org/t/p/w1280${details.backdrop_path})`;
 
-      // 2. Sfondo e Poster
-      if (details.backdrop_path) {
-        const backdrop = elements.detailsModalContent.querySelector('.details-backdrop');
-        if (backdrop) {
-          backdrop.style.backgroundImage = `url(https://image.tmdb.org/t/p/w1280${details.backdrop_path})`;
-          backdrop.style.backgroundColor = 'transparent';
-        }
+      // 2. Metadata (Sottili - Solo Preferiti in Hero)
+      let metaHTML = '';
+      if (!isViewMode) {
+        metaHTML += `<button id="modalFavBtn" class="meta-pill" style="color:${media.isFavorite ? '#ff4444' : 'rgba(255,255,255,0.7)'}; transition: color 0.2s;"><i class="fas fa-heart"></i> ${media.isFavorite ? 'Preferito' : 'Aggiungi'}</button>`;
       }
-      const posterImg = document.getElementById('detailsModalPoster');
-      if (posterImg) {
-        posterImg.src = media.poster || (details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : DEFAULT_POSTER);
-      }
+      document.getElementById('detailsModalMeta').innerHTML = metaHTML;
 
-      // 3. CALCOLO RATING E VOTI (Tutti inclusi)
-      const rtState = getRottenTomatoesState(media.rottenTomatoes);
-      const popcornState = getPopcornState(media.popcornRating);
-
-      let ratingsHTML = '';
-
-      // IMDb
-      if (media.imdbRating && media.imdbRating !== "N/A") {
-        ratingsHTML += `<span class="rating-badge" title="IMDb"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`;
-      }
-
-      // Rotten Tomatoes (Critica)
-      if (rtState) {
-        ratingsHTML += `<span class="rating-badge" title="Rotten Tomatoes"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${media.rottenTomatoes}</span>`;
-      }
-
-      // Rotten Tomatoes (Pubblico)
-      if (popcornState) {
-        ratingsHTML += `<span class="rating-badge" title="Audience Score"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`;
-      }
-
-      // Letterboxd
-      if (media.letterboxdRating && media.letterboxdRating !== "N/A") {
-        ratingsHTML += `<span class="rating-badge" title="Letterboxd"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`;
-      }
-
-      // Metacritic
-      if (media.metacriticRating && media.metacriticRating !== "N/A") {
-        ratingsHTML += `<span class="rating-badge" title="Metacritic"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`;
-      }
-
-      // Inserimento Voti
-      const ratingsContainer = document.getElementById('shell-ratings');
-      if (ratingsContainer) {
-        ratingsContainer.innerHTML = ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione disponibile</span>';
-      }
-
-      // 4. AGGIORNAMENTO META INFO
-      const genresSpan = document.getElementById('shell-genres');
-      if (genresSpan) {
-        genresSpan.outerHTML = genres ? `<span><i class="fas fa-film"></i> ${genres}</span>` : '';
-      }
-
-      const metaContainer = document.getElementById('detailsModalMeta');
-      if (metaContainer && directorsHTML) {
-        // Puliamo eventuali registi aggiunti in precedenza per non duplicarli
-        const existingDirectors = metaContainer.querySelectorAll('.director-span');
-        existingDirectors.forEach(el => el.remove());
-
-        const directorSpan = document.createElement('span');
-        directorSpan.className = 'director-span'; // Classe per identificarlo
-        directorSpan.innerHTML = `<i class="fas fa-video"></i> Regia: ${directorsHTML}`;
-        metaContainer.appendChild(directorSpan);
-      }
-
-      // 5. Update Tagline
-      if (details.tagline) {
-        let tagline = document.getElementById('detailsModalTagline');
-        if (!tagline) {
-          tagline = document.createElement('p');
-          tagline.id = 'detailsModalTagline';
-          const titleSection = document.querySelector('.details-title-section');
-          if (titleSection) titleSection.insertBefore(tagline, metaContainer);
-        }
-        tagline.textContent = details.tagline;
-      }
-
-      // 6. Update Overview
-      const overview = document.getElementById('detailsModalOverview');
-      if (overview) {
-        overview.classList.remove('skeleton-text');
-        overview.textContent = details.overview || 'Trama non disponibile.';
-      }
-
-      // 7. Update Cast
-      const castHTML = details.cast ? details.cast.slice(0, 15).map(actor => `
-        <div class="actor-card" data-person-id="${actor.id}">
-            <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w500${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
-            <div class="actor-name">${actor.name}</div>
-            <div class="actor-character">${actor.character}</div>
+      // 2.1 Info e Generi Unificati (Destra)
+      let rightMetaHTML = `
+        <h4 class="section-label" style="margin-bottom:0.4rem;">INFO</h4>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1rem;">
+          <span class="genre-pill" style="background:var(--primary); color:white; border:none; cursor:default;">${media.year || 'N/D'}</span>
+          <span class="genre-pill" style="background:rgba(255,255,255,0.1); border:none; cursor:default;">${media.runtime ? formatRuntime(media.runtime) : 'N/D'}</span>
         </div>
-      `).join('') : '';
+        <h4 class="section-label" style="margin-bottom:0.5rem;">GENERI</h4>
+        <div class="genre-badges" style="margin-bottom:1rem;">
+          ${details.genres ? details.genres.map(g => `<span class="genre-pill">${g.name}</span>`).join('') : ''}
+        </div>
+      `;
+      document.getElementById('shell-year-runtime').innerHTML = rightMetaHTML;
 
-      const castContainer = document.getElementById('detailsModalCast');
-      if (castContainer) {
-        castContainer.innerHTML = castHTML;
+      // 3. Voti
+      const rt = getRottenTomatoesState(media.rottenTomatoes);
+      const pop = getPopcornState(media.popcornRating);
+      let rHTML = '';
+      if (media.imdbRating && media.imdbRating !== "N/A") rHTML += `<span class="rating-badge" title="IMDb"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`;
+      if (rt) rHTML += `<span class="rating-badge" title="Rotten Tomatoes"><img src="${ROTTEN_TOMATOES_ICONS[rt]}" class="rating-icon">&nbsp;${media.rottenTomatoes}</span>`;
+      if (pop) rHTML += `<span class="rating-badge" title="Audience Score"><img src="${POPCORN_ICONS[pop]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`;
+
+      // Aggiunta Letterboxd e Metacritic
+      if (media.letterboxdRating && media.letterboxdRating !== "N/A") {
+        rHTML += `<span class="rating-badge" title="Letterboxd"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`;
+      }
+      if (media.metacriticRating && media.metacriticRating !== "N/A") {
+        rHTML += `<span class="rating-badge" title="Metacritic"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`;
       }
 
-      // 8. Re-attach listeners
-      elements.detailsModalContent.querySelectorAll('.actor-card, .director-link').forEach(card => {
-        card.addEventListener('click', (e) => {
-          e.preventDefault();
-          showActorModal(card.dataset.personId);
-        });
-      });
+      document.getElementById('shell-ratings').innerHTML = rHTML;
+
+      // 4. Testi
+      document.getElementById('detailsModalTagline').textContent = details.tagline ? `"${details.tagline}"` : '';
+      const overview = document.getElementById('detailsModalOverview');
+      overview.classList.remove('skeleton-text');
+      overview.textContent = details.overview || 'Trama non disponibile.';
+
+      // 5. Destra: Regia
+      const director = details.crew.find(c => c.job === 'Director');
+      document.getElementById('shell-director').textContent = director ? director.name : 'N/D';
+
+      // 6. Cast
+      document.getElementById('detailsModalCast').innerHTML = details.cast.slice(0, 12).map(a => `
+            <div class="actor-card" onclick="showActorModal('${a.id}')">
+                <img src="${a.profile_path ? 'https://image.tmdb.org/t/p/w200' + a.profile_path : DEFAULT_ACTOR_PHOTO}" class="actor-photo">
+                <div class="actor-name">${a.name}</div>
+                <div class="actor-character">${a.character}</div>
+            </div>`).join('');
+
+      // 7. Management (Dentro box con outline nel shell)
+      if (!isViewMode) {
+        document.getElementById('shell-management').innerHTML = `
+                <div class="management-content">
+                    <div class="custom-select-wrapper" style="width: 100%;">
+                        <div class="custom-select" id="modalCategorySelect" data-value="${media.category || categories[0]}" data-media-id="${media.id}" style="background-color:rgba(255,255,255,0.05); border-radius:8px; border:1px solid rgba(255,255,255,0.1); color:white; padding: 10px 15px; display:flex; justify-content: space-between; align-items:center;">
+                            <span class="selected-option" style="font-size: 0.9rem;"><i class="fas fa-folder"></i> ${getCategoryName(media.category || categories[0])}</span>
+                            <i class="fas fa-chevron-down" style="font-size:0.8em; opacity:0.5;"></i>
+                        </div>
+                        <div class="custom-options" style="background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:8px; width:100%; z-index:10;">
+                            ${categories.map(c => `<div class="option" data-value="${c}" style="padding:10px 15px; font-size:0.9rem;"><i class="fas fa-folder"></i> ${getCategoryName(c)}</div>`).join('')}
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button id="modalRewatchBtn" class="btn btn-secondary" style="flex:1; justify-content:center; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"><i class="fas fa-redo"></i> Rewatch (${media.rewatchCount || 0})</button>
+                        <button id="modalDeleteBtn" class="btn btn-danger" style="flex:1; justify-content:center;"><i class="fas fa-trash"></i> Elimina</button>
+                    </div>
+                </div>`;
+
+        // Listeners
+        // Il listener su modalCategorySelect (Custom Dropdown) è ora gestito globalmente assieme agli altri in setupEventListeners()
+        document.getElementById('modalRewatchBtn').onclick = () => openRewatchModal(media.id);
+        document.getElementById('modalDeleteBtn').onclick = () => { closeModal(elements.detailsModal); deleteMedia(media.id); };
+        document.getElementById('modalFavBtn').onclick = () => { toggleFavorite(media.id); populateDetailsModal(details, mediaList.find(m => m.id === media.id)); };
+      }
     }
 
     async function fetchTMDbDetails(imdbId, lang = 'it-IT') {
@@ -6124,13 +6216,19 @@
           select.querySelector('.selected-option').innerHTML = isOption.innerHTML;
           wrapper.classList.remove('open');
 
-          // --- NUOVO: SALVA LA SCELTA NEL LOCAL STORAGE ---
+          // --- FIX: SALVA LA SCELTA NEL LOCAL STORAGE ---
           if (select.id === 'sortFilter') {
-            // Riconosce in automatico se sei in Film o Serie TV
             const storageKey = window.location.pathname.includes('serietv') ? 'tvShowSortOrder' : 'mediaTrackerSortOrder';
             localStorage.setItem(storageKey, isOption.dataset.value);
           }
-          // ------------------------------------------------
+
+          // --- GESTIONE CAMBIO CATEGORIA DAL MODALE DETTAGLI ---
+          if (select.id === 'modalCategorySelect') {
+            // Il dataset media-id lo iniettiamo nel div del custom-select
+            moveMediaToCategory(select.dataset.mediaId, isOption.dataset.value);
+            // moveMediaToCategory esegue già saveData() e renderMedia()
+            return;
+          }
 
           // Se è un filtro principale per il rendering, aggiorna la vista
           if (wrapper.id !== 'addMediaCategoryCustom' && typeof renderMedia === 'function') {
@@ -6907,10 +7005,7 @@
 
       if (type === 'genre') {
         title = `Genere: ${key}`;
-        filteredShows = mediaList.filter(m =>
-          (m.category === 'watched' || m.isCountedAsWatched) &&
-          m.genres && m.genres.includes(key)
-        );
+        filteredShows = mediaList.filter(m => (m.category === 'watched' || m.isCountedAsWatched) && m.genres && m.genres.includes(key));
       } else if (type === 'activity') {
         title = `Attività di ${displayLabel}`;
         filteredShows = mediaList.filter(m => {
@@ -6923,57 +7018,58 @@
         filteredShows = mediaList.filter(m => m.addedAt && m.addedAt.startsWith(key));
       } else if (type === 'monthWatched') {
         title = `Visti a ${displayLabel}`;
-        filteredShows = mediaList.filter(m =>
-          m.lastActivityAt &&
-          m.lastActivityAt.startsWith(key) &&
-          (m.category === 'watched' || m.isCountedAsWatched)
-        );
+        filteredShows = mediaList.filter(m => m.lastActivityAt && m.lastActivityAt.startsWith(key) && (m.category === 'watched' || m.isCountedAsWatched));
       }
 
-      // 1. Raggruppiamo i risultati per categoria
+      // 1. Raggruppamento rigoroso
       const grouped = filteredShows.reduce((acc, show) => {
-        const cat = show.category;
+        const cat = show.category || 'Senza Categoria';
         if (!acc[cat]) acc[cat] = [];
         acc[cat].push(show);
         return acc;
       }, {});
 
-      elements.chartDetailsTitle.textContent = title;
-      const listContainer = elements.chartDetailsList;
-      listContainer.innerHTML = ''; // Svuota il contenitore
+      document.getElementById('chartDetailsTitle').textContent = title;
+      const listContainer = document.getElementById('chartDetailsList');
+      listContainer.innerHTML = '';
 
       if (filteredShows.length === 0) {
-        listContainer.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Nessun dato corrispondente.</p>';
+        listContainer.innerHTML = '<p style="text-align:center; padding:2rem; opacity:0.5;">Nessun dato corrispondente.</p>';
       } else {
-        // 2. Creiamo una mini-sezione per ogni categoria trovata
-        Object.keys(grouped).forEach(cat => {
-          const catSection = document.createElement('div');
-          catSection.style.marginBottom = '1.5rem';
+        // 2. Ciclo sulle categorie per creare i DIV separati
+        Object.keys(grouped).sort().forEach(cat => {
+          const groupDiv = document.createElement('div');
+          groupDiv.className = 'stats-category-group';
 
-          catSection.innerHTML = `
-                <h4 style="color: var(--primary); margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
-                    ${getCategoryName(cat)} (${grouped[cat].length})
-                </h4>
-            `;
+          const displayCatName = typeof getCategoryName === 'function' ? getCategoryName(cat) : cat;
+
+          groupDiv.innerHTML = `
+                    <div class="stats-category-title">
+                        ${displayCatName}
+                        <span class="stats-category-count">${grouped[cat].length}</span>
+                    </div>
+                    <div class="category-items-list"></div>
+                `;
+
+          const itemsList = groupDiv.querySelector('.category-items-list');
 
           grouped[cat].sort((a, b) => a.title.localeCompare(b.title)).forEach(show => {
             const item = document.createElement('div');
             item.className = 'chart-detail-item';
             item.style.marginBottom = '8px';
             item.innerHTML = `
-                    <img src="${show.poster || DEFAULT_POSTER}" class="chart-detail-poster" onerror="this.src='${DEFAULT_POSTER}'">
-                    <div class="chart-detail-info">
-                        <span style="font-weight: 700; font-size: 0.95rem;">${show.title}</span>
-                        <span style="font-size: 0.75rem; color: var(--text-secondary);">${show.year || 'N/D'}</span>
-                    </div>
-                `;
-            catSection.appendChild(item);
+                        <img src="${show.poster || DEFAULT_POSTER}" class="chart-detail-poster" onerror="this.src='${DEFAULT_POSTER}'">
+                        <div class="chart-detail-info">
+                            <span style="font-weight: 700; font-size: 0.95rem;">${show.title}</span>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">${show.year || 'N/D'}</span>
+                        </div>
+                    `;
+            itemsList.appendChild(item);
           });
-          listContainer.appendChild(catSection);
+          listContainer.appendChild(groupDiv);
         });
       }
-
-      openModal(elements.chartDetailsModal);
+      openModal(document.getElementById('chartDetailsModal'));
     }
 
     // Add event listeners for the stats panel items
