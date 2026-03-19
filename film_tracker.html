@@ -2980,6 +2980,66 @@
         font-family: 'Inter', sans-serif !important;
       }
 
+      /* FIX MOBILE SELECT ARROWS */
+      #mobileCategoryFilter,
+      #mobileSortFilter {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        padding-right: 35px !important;
+        /* Spazio vitale per la freccia */
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="white" viewBox="0 0 16 16"><path d="M4 6h8l-4 5z"/></svg>') !important;
+        background-repeat: no-repeat !important;
+        background-position: calc(100% - 15px) center !important;
+        background-size: 12px !important;
+      }
+
+      /* STATISTICHE SCROLLABILI ORIZZONTALI (MOBILE) */
+      .stats-container {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        gap: 12px !important;
+        padding-bottom: 10px !important;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .stats-container::-webkit-scrollbar {
+        display: none;
+      }
+
+      .stat-item {
+        flex: 0 0 auto !important;
+        width: 130px !important;
+        min-height: 80px !important;
+        padding: 10px !important;
+        scroll-snap-align: start;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+      }
+
+      .stat-name {
+        display: block !important;
+        font-size: 0.75rem !important;
+        margin-top: 4px;
+        opacity: 0.8;
+      }
+
+      .stat-icon {
+        font-size: 1.3rem !important;
+        margin-bottom: 4px !important;
+      }
+
+      .stat-value {
+        font-size: 1.3rem !important;
+      }
+
+      .stat-label::after {
+        display: none !important;
+      }
+
       .search-box::placeholder {
         font-size: 14px !important;
       }
@@ -3152,7 +3212,6 @@
       </div>
       <button id="shareBtn" class="btn btn-secondary" title="Condividi Libreria"><i
           class="fas fa-share-alt"></i></button>
-      <button id="themeToggle" class="btn btn-secondary" title="Cambia Tema"><i class="fas fa-moon"></i></button>
       <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger" title="Logout"><i
             class="fas fa-sign-out-alt"></i></button></div>
       <button id="authToggle" class="btn btn-secondary" title="Login / Registrati"><i class="fas fa-user"></i></button>
@@ -3425,7 +3484,6 @@
         <button class="btn" id="mobileSettingsBtn">
           <i class="fas fa-cog"></i>Gestione Dati & Backup
         </button>
-        <button class="btn" id="mobileMenuThemeBtn"><i class="fas fa-moon"></i>Cambia Tema</button>
       </div>
       <div class="modal-footer" style="border: none; padding-bottom: 0;">
         <button id="mobileMenuCloseBtn" class="btn btn-danger">Chiudi</button>
@@ -3768,7 +3826,7 @@
     function init() {
       setupEventListeners();
       setupManagementModal();
-      loadTheme();
+
       loadSortOrder();
       updateSwitcherLinksInViewMode();
       handleViewMode() || setupAuthListeners();
@@ -6095,7 +6153,12 @@
       if (exportAction) exportAction.addEventListener('click', exportData);
 
       const exportHTMLAction = document.getElementById('exportHTMLAction');
-      if (exportHTMLAction) exportHTMLAction.addEventListener('click', exportToHTML);
+      if (exportHTMLAction) {
+        exportHTMLAction.addEventListener('click', () => {
+          closeModal(document.getElementById('settingsModal'));
+          setTimeout(exportToHTML, 300); // Chiude il modale prima di elaborare
+        });
+      }
 
       const importAction = document.getElementById('importAction');
       if (importAction) {
@@ -6136,7 +6199,6 @@
       if (elements.importFile) {
         elements.importFile.addEventListener("change", e => importData(e.target.files[0]));
       }
-      elements.themeToggle.addEventListener("click", toggleTheme);
       elements.searchInput.addEventListener("input", () => {
         clearTimeout(debounceTimeout);
         debounceTimeout = setTimeout(renderMedia, 300);
@@ -6188,7 +6250,24 @@
       elements.mobileNotificationsCloseBtn.addEventListener('click', () => closeModal(elements.mobileNotificationsModal));
       elements.markAllReadMobileBtn.addEventListener('click', markAllNotificationsAsRead);
       elements.mobileMenuUserActionBtn.addEventListener('click', () => { (currentUser) ? elements.logoutBtn.click() : elements.authToggle.click(); closeModal(elements.mobileMenuModal); });
-      elements.mobileMenuThemeBtn.addEventListener('click', () => { elements.themeToggle.click(); });
+
+      if (elements.mobileMenuShareBtn) {
+        elements.mobileMenuShareBtn.addEventListener('click', () => {
+          closeModal(elements.mobileMenuModal);
+          if (!currentUser) {
+            setTimeout(() => showNotification("Devi essere loggato per condividere.", "warning"), 300);
+            return;
+          }
+
+          setTimeout(() => {
+            const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+            const link = `${window.location.origin}${path}film_tracker.html?view=${currentUser.uid}`;
+
+            document.getElementById('shareLinkInput').value = link;
+            openModal(document.getElementById('shareModal'));
+          }, 300);
+        });
+      }
 
       // --- FILTRI MOBILI ---
       if (elements.mobileFilterBtn) {
@@ -6229,6 +6308,10 @@
           sortSelect.dataset.value = elements.mobileSortFilter.value;
           const sortOptionEl = document.querySelector(`#sortOptions .option[data-value="${sortSelect.dataset.value}"]`);
           if (sortOptionEl) sortSelect.querySelector('.selected-option').innerHTML = sortOptionEl.innerHTML;
+
+          // --- FIX: SALVATAGGIO IN MEMORIA ---
+          const storageKey = window.location.pathname.includes('serietv') ? 'tvShowSortOrder' : 'mediaTrackerSortOrder';
+          localStorage.setItem(storageKey, elements.mobileSortFilter.value);
 
           renderMedia();
           closeModal(elements.filterSortModal);
@@ -6874,7 +6957,7 @@
 
       try {
         const [filmsSnap, tvSnap] = await Promise.all([
-          db.ref(`users / ${currentUser.uid}/mediaTracker`).once('value'),
+          db.ref(`users/${currentUser.uid}/mediaTracker`).once('value'),
           db.ref(`users/${currentUser.uid}/tvShowTracker`).once('value')
         ]);
 
