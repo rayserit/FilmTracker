@@ -2945,18 +2945,14 @@
       .glow-film,
       .glow-tv,
       .glow-1,
-      .glow-2 {
-        animation: none !important;
-        opacity: 0.05 !important;
+      .glow-2,
+      .bg-glows {
+        display: none !important;
       }
 
       /* 2. SPEGNI IL BLUR SU TUTTO CIÒ CHE SCORRE O SI APRE */
       .modal-content,
-      .media-card,
-      .stat-item,
-      .settings-card,
       .digital-item,
-      .management-card,
       .context-menu,
       input,
       select {
@@ -2966,6 +2962,25 @@
         /* Grigio solido molto scuro ed elegante */
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+      }
+
+      /* 3. ACCELERAZIONE HARDWARE MOBILE (60 FPS) */
+      .media-card,
+      .stat-item,
+      .settings-card,
+      .management-card,
+      .chart-detail-item {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background-color: #1c1c21 !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+        transform: translateZ(0);
+        will-change: transform;
+      }
+
+      .media-card * {
+        box-shadow: none !important;
       }
 
       /* 2.1 FIX: Forza lo stile Search senza Blur E blocca zoom iOS */
@@ -4255,10 +4270,25 @@
         }
       });
 
-      filteredMedia.forEach(media => {
-        const grid = document.getElementById(`${media.category}Grid`);
-        if (grid) grid.appendChild(createMediaCard(media));
+      // --- INIZIO OTTIMIZZAZIONE RENDERING ---
+      const fragments = {};
+      categories.forEach(cat => {
+        fragments[cat] = document.createDocumentFragment();
       });
+
+      filteredMedia.forEach(media => {
+        if (fragments[media.category]) {
+          fragments[media.category].appendChild(createMediaCard(media));
+        }
+      });
+
+      categories.forEach(cat => {
+        const grid = document.getElementById(`${cat}Grid`);
+        if (grid && fragments[cat].childNodes.length > 0) {
+          grid.appendChild(fragments[cat]);
+        }
+      });
+      // --- FINE OTTIMIZZAZIONE RENDERING ---
 
       let hasContent = false;
       categories.forEach(cat => {
@@ -4432,9 +4462,13 @@
             <button class="card-btn" data-action="delete" title="Elimina"><i class="fas fa-trash"></i></button>
         </div>`;
 
+      const optimizedPoster = (media.poster && media.poster.includes('w500'))
+        ? media.poster.replace('w500', 'w342')
+        : (fixPosterUrl(media.poster) || DEFAULT_POSTER);
+
       card.innerHTML = `
         <div class="poster-container">
-          <img data-src="${fixPosterUrl(media.poster) || DEFAULT_POSTER}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'">
+          <img data-src="${optimizedPoster}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'">
           <button class="favorite-btn ${media.isFavorite ? 'is-favorite' : ''}" title="Aggiungi ai preferiti"><i class="fas fa-heart"></i></button>
           ${actionsHTML}
         </div>
