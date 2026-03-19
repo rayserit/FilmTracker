@@ -3602,73 +3602,56 @@
 
         @media (max-width: 768px) {
 
-            /* 1. SPEGNI L'ANIMAZIONE DELLO SFONDO SU MOBILE */
-            .glow-film,
-            .glow-tv,
+            /* ============================================
+               KILL SWITCH COMPLETO PER EFFETTI GRAFICI
+            ============================================ */
+            * {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+
+            .bg-glows,
             .glow-1,
-            .glow-2,
-            .bg-glows {
+            .glow-2 {
                 display: none !important;
             }
 
-            /* 2. SPEGNI IL BLUR SU TUTTO CIÒ CHE SCORRE O SI APRE */
-            .modal-content,
-            .digital-item,
-            .context-menu,
-            input,
-            select {
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                background-color: #1a1a1f !important;
-                /* Grigio solido molto scuro ed elegante */
-                border: 1px solid rgba(255, 255, 255, 0.05) !important;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+            .skeleton,
+            .episode-still.lazy,
+            .calendar-still-wrapper {
+                animation: none !important;
+                background: #2a2a2a !important;
+                opacity: 0.6;
             }
 
-            /* 3. ACCELERAZIONE HARDWARE MOBILE (60 FPS) */
-            .media-card,
-            .stat-item,
-            .settings-card,
-            .management-card,
-            .chart-detail-item {
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                background-color: #1c1c21 !important;
-                border: 1px solid rgba(255, 255, 255, 0.05) !important;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
-                transform: translateZ(0);
-                will-change: transform;
-            }
-
-            .media-card * {
-                box-shadow: none !important;
-            }
-
-            /* 2.1 FIX: Forza lo stile Search senza Blur E blocca zoom iOS */
+            /* ============================================
+               LAYOUT CRITICO - SEARCH & FILTERS
+            ============================================ */
             .search-box {
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
                 background-color: #1a1a1f !important;
                 border: 1px solid rgba(255, 255, 255, 0.05) !important;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+                box-shadow: none !important;
                 font-size: 16px !important;
+                /* Blocca zoom iOS */
                 font-family: 'Inter', sans-serif !important;
             }
 
-            /* FIX MOBILE SELECT ARROWS */
             #mobileCategoryFilter,
             #mobileSortFilter {
                 appearance: none !important;
                 -webkit-appearance: none !important;
                 padding-right: 35px !important;
-                /* Spazio vitale per la freccia */
                 background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="white" viewBox="0 0 16 16"><path d="M4 6h8l-4 5z"/></svg>') !important;
                 background-repeat: no-repeat !important;
                 background-position: calc(100% - 15px) center !important;
                 background-size: 12px !important;
             }
 
-            /* STATISTICHE SCROLLABILI ORIZZONTALI (MOBILE) */
+            /* ============================================
+               STATS SCROLLABILI ORIZZONTALI
+            ============================================ */
             .stats-container {
                 display: flex !important;
                 flex-wrap: nowrap !important;
@@ -3677,7 +3660,6 @@
                 padding-bottom: 10px !important;
                 scroll-snap-type: x mandatory;
                 scrollbar-width: none;
-                -ms-overflow-style: none;
             }
 
             .stats-container::-webkit-scrollbar {
@@ -3688,49 +3670,131 @@
                 flex: 0 0 auto !important;
                 width: 130px !important;
                 min-height: 80px !important;
-                padding: 10px !important;
                 scroll-snap-align: start;
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: center !important;
+                contain: layout style;
             }
 
-            .stat-name {
-                display: block !important;
-                font-size: 0.75rem !important;
-                margin-top: 4px;
-                opacity: 0.8;
+            /* ============================================
+               CARDS & RENDERING (VELOCE)
+            ============================================ */
+            .media-card,
+            .stat-item,
+            .settings-card,
+            .management-card,
+            .chart-detail-item {
+                background-color: #1c1c21 !important;
+                border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                box-shadow: none !important;
+                transform: translateZ(0);
+                will-change: transform;
+                contain: layout style;
             }
 
-            .stat-icon {
-                font-size: 1.3rem !important;
-                margin-bottom: 4px !important;
+            .media-card {
+                transition: transform 0.15s ease-out !important;
+                animation: fadeIn 0.2s ease-out both !important;
             }
 
-            .stat-value {
-                font-size: 1.3rem !important;
+            .media-card:active {
+                transform: scale(0.97) !important;
             }
 
-            .stat-label::after {
+            .episode-item,
+            .calendar-item {
+                transition: none !important;
+            }
+
+            .media-card .card-actions,
+            .media-card .favorite-btn {
                 display: none !important;
             }
 
-            .search-box::placeholder {
-                font-size: 14px !important;
+            /* ============================================
+               MODALI - OTTIMIZZAZIONE SCROLL
+            ============================================ */
+            .modal-content,
+            .modal {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background: #121212 !important;
             }
 
-            /* --- BOTTOM NAV MOBILE (Allineamento Perfetto) --- */
+            #episodesModalContent {
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
+                contain: strict;
+                will-change: scroll-position;
+            }
+
+            .season-header {
+                background-color: #1a1a1f !important;
+                will-change: transform;
+                transform: translateZ(0);
+            }
+
+            /* Stagioni chiuse: nascondi dal rendering */
+            .season-episodes[style="max-height: none;"],
+            .season-episodes:not([style*="max-height"]) {
+                content-visibility: hidden;
+            }
+
+            .season-episodes {
+                transition: none !important;
+            }
+
+            /* ============================================
+               EPISODI - EFFETTI VISIVI LEGGERI
+            ============================================ */
+            .episode-item:not(.watched) .episode-still {
+                filter: none !important;
+                opacity: 0.45;
+                transition: opacity 0.15s !important;
+            }
+
+            .episode-item:not(.watched):active .episode-still {
+                opacity: 1;
+            }
+
+            .episode-item:not(.watched) .episode-overview {
+                filter: none !important;
+                opacity: 0;
+                user-select: none;
+                pointer-events: none;
+            }
+
+            .episode-item:not(.watched):active .episode-overview {
+                opacity: 0.8;
+            }
+
+            .episode-title.spoiler {
+                filter: blur(4px) !important;
+            }
+
+            .episode-title.spoiler:hover,
+            .episode-title.spoiler:active {
+                filter: none !important;
+            }
+
+            .episode-still-wrapper {
+                transform: translateZ(0);
+                will-change: transform;
+                contain: layout style;
+            }
+
+            /* ============================================
+               BOTTOM NAV (LAYOUT CRITICO)
+            ============================================ */
             .bottom-nav {
                 display: grid !important;
                 grid-template-columns: repeat(5, 1fr);
-                /* 5 colonne di larghezza identica */
                 height: 65px;
                 padding-bottom: env(safe-area-inset-bottom);
                 background: #1a1a1f !important;
-                /* Colore scuro solido per performance */
                 border-top: 1px solid rgba(255, 255, 255, 0.05);
                 align-items: center;
-                /* Centra verticalmente */
             }
 
             .bottom-nav-btn {
@@ -3738,32 +3802,14 @@
                 flex-direction: column !important;
                 justify-content: center !important;
                 align-items: center !important;
-                width: 100%;
-                height: 100%;
-                padding: 0 !important;
-                margin: 0 !important;
-                background: transparent;
-                color: var(--text-secondary);
                 font-size: 0.7rem;
                 gap: 4px;
             }
 
-            .bottom-nav-btn i {
-                font-size: 1.25rem;
-                margin: 0 !important;
-            }
-
-            .bottom-nav-btn.active {
-                color: var(--primary);
-            }
-
-            /* Il tasto centrale (+) */
             .bottom-nav-btn.add-btn {
                 grid-column: 3;
                 justify-self: center;
-                /* Centra orizzontalmente nella colonna */
                 align-self: center;
-                /* Centra verticalmente nella cella */
                 transform: translateY(-15px);
                 width: 56px !important;
                 height: 56px !important;
@@ -3775,12 +3821,9 @@
                 margin: 0 !important;
             }
 
-            /* 4. RIMUOVI TRANSIZIONI INUTILI ALLO SCROLL */
-            .media-card {
-                transition: transform 0.15s ease-out !important;
-            }
-
-            /* Su Mobile diventa un Bottom Sheet */
+            /* ============================================
+               CONTEXT MENU (BOTTOM SHEET)
+            ============================================ */
             .context-menu {
                 top: auto !important;
                 left: 0 !important;
@@ -3789,6 +3832,7 @@
                 border-radius: 24px 24px 0 0;
                 transform: translateY(100%);
                 padding-bottom: env(safe-area-inset-bottom);
+                background: #1a1a1f !important;
             }
 
             .context-menu.visible {
@@ -3800,36 +3844,28 @@
                 font-size: 1rem;
             }
 
-            /* Nascondiamo le icone hover fluttuanti su mobile perché usiamo il long tap */
-            .media-card .card-actions,
-            .media-card .favorite-btn {
-                display: none !important;
+            /* ============================================
+               MISC
+            ============================================ */
+            .top-bar {
+                background: rgba(18, 18, 18, 0.98) !important;
             }
 
-            /* --- FIX PERFORMANCE MODALE EPISODI (SICURI) --- */
-            .season-header {
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                background-color: #1a1a1f !important;
+            @media (prefers-reduced-motion: reduce) {
+                * {
+                    animation: none !important;
+                    transition: none !important;
+                }
             }
 
-            #episodesModalContent {
-                -webkit-overflow-scrolling: touch;
-                overscroll-behavior: contain;
-                will-change: scroll-position;
-            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
 
-            /* Disabilita il blur spoiler su mobile, usa opacity invece */
-            .episode-item:not(.watched) .episode-overview,
-            .episode-item:not(.watched) .episode-still {
-                filter: none !important;
-                opacity: 0.5;
-            }
-
-            .episode-item:not(.watched):hover .episode-overview,
-            .episode-item:not(.watched):hover .episode-still {
-                opacity: 1;
-                transition: opacity 0.2s;
+                to {
+                    opacity: 1;
+                }
             }
         }
     </style>
@@ -6101,6 +6137,9 @@
             const seasonRewatchBtnHTML = `<button class="btn btn-secondary season-rewatch-btn" title="Imposta rewatch per la stagione" data-show-id="${show.id}" data-season-number="${seasonNumber}"><i class="fas fa-sync-alt"></i></button>`;
 
             let firstUnwatchedFound = false;
+            const isMobile = window.innerWidth <= 768;
+            const stillSize = isMobile ? 'w185' : 'w300';
+
             const allSeasonEpisodes = hasEpisodes ? episodes.map(ep => {
                 const isWatched = show.progress[`${seasonNumber}-${ep.episode_number}`];
                 const rewatchCount = show.rewatches?.[`${seasonNumber}-${ep.episode_number}`] || 0;
@@ -6114,7 +6153,7 @@
                 return `
             <div class="episode-item ${isWatched ? 'watched' : ''}" id="item-${show.id}-${seasonNumber}-${ep.episode_number}" onclick="toggleEpisodeWatched('${show.id}', '${seasonNumber}', '${ep.episode_number}')">
                 <div class="episode-still-wrapper">
-                    <img data-src="${ep.still_path ? `https://image.tmdb.org/t/p/w300${ep.still_path}` : EMPTY_STILL_PLACEHOLDER}" class="episode-still lazy" onerror="this.src='${EMPTY_STILL_PLACEHOLDER}'">
+                    <img data-src="${ep.still_path ? `https://image.tmdb.org/t/p/${stillSize}${ep.still_path}` : EMPTY_STILL_PLACEHOLDER}" class="episode-still lazy" onerror="this.src='${EMPTY_STILL_PLACEHOLDER}'">
                     <div class="episode-status-overlay"><i class="fas fa-check"></i></div>
                 </div>
                 <div class="episode-details">
@@ -6913,7 +6952,24 @@
         }
         function showNotification(text, type = "success") { elements.notificationText.textContent = text; elements.notification.className = `notification ${type}`; elements.notification.style.display = "block"; setTimeout(() => elements.notification.style.display = "none", 3000); }
         function showConfirmModal(title, body, onConfirm) { elements.confirmModalTitle.textContent = title; elements.confirmModalBody.textContent = body; openModal(elements.confirmModal); const confirmHandler = () => { closeModal(elements.confirmModal); onConfirm(); cleanup(); }; const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); }; const cleanup = () => { elements.confirmModalConfirm.removeEventListener("click", confirmHandler); elements.confirmModalCancel.removeEventListener("click", cancelHandler); }; elements.confirmModalConfirm.addEventListener("click", confirmHandler); elements.confirmModalCancel.addEventListener("click", cancelHandler); }
-        function setupLazyLoading() { if (lazyLoadObserver) lazyLoadObserver.disconnect(); lazyLoadObserver = new IntersectionObserver((entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { const img = entry.target; img.src = img.dataset.src; img.classList.remove("lazy"); observer.unobserve(img); } }); }, { rootMargin: "200px" }); document.querySelectorAll(".lazy").forEach(img => lazyLoadObserver.observe(img)); }
+        function setupLazyLoading() {
+            if (lazyLoadObserver) lazyLoadObserver.disconnect();
+            const isMobile = window.innerWidth <= 768;
+            lazyLoadObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.remove("lazy");
+                        observer.unobserve(img);
+                    }
+                });
+            }, {
+                rootMargin: isMobile ? "100px" : "200px",
+                threshold: 0
+            });
+            document.querySelectorAll(".lazy").forEach(img => lazyLoadObserver.observe(img));
+        }
         function loadSortOrder() {
             // 1. Legge la memoria. Se è vuota, imposta 'alpha' (Alfabetico) come default iniziale.
             let savedSort = localStorage.getItem("tvShowSortOrder");
