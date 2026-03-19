@@ -512,17 +512,30 @@
             flex-wrap: nowrap;
         }
 
+        /* Stile base trasparente (Usato dentro il Modale Dettagli) */
         .rating-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.2rem;
+            gap: 0.3rem;
+            background: transparent;
+            padding: 0;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Ripristino Stile a "Pillola" SOLO per le Card nella griglia frontale */
+        .media-card .rating-badge {
             background: rgba(0, 0, 0, 0.05);
             padding: 0.2rem 0.4rem;
             border-radius: 12px;
             font-size: 0.75rem;
+            font-weight: normal;
+            gap: 0.2rem;
         }
 
-        body.dark .rating-badge {
+        /* Colore della Pillola in Dark Mode */
+        body.dark .media-card .rating-badge {
             background: rgba(255, 255, 255, 0.08);
         }
 
@@ -530,6 +543,14 @@
             width: 14px;
             height: 14px;
             object-fit: contain;
+        }
+
+        .details-ratings-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+            align-items: center;
         }
 
         .media-progress {
@@ -1193,9 +1214,255 @@
             max-width: 800px;
         }
 
+        /* --- NUOVO LAYOUT DETTAGLI SERIE TV (2 COLONNE) --- */
         #detailsModal .modal-content {
-            max-width: 900px;
+            max-width: 1000px !important;
+            padding: 0 !important;
+            overflow-x: hidden;
+            background: var(--bg-color);
+        }
+
+        .details-hero {
+            position: relative;
+            width: 100%;
+            padding-top: 50px;
+            min-height: 280px;
+        }
+
+        .details-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background-size: cover;
+            background-position: center 25%;
+            z-index: 1;
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 100%);
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 100%);
+            opacity: 0.3;
+        }
+
+        .details-hero-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            gap: 2.5rem;
+            padding: 0 3rem 2rem 3rem;
+            align-items: flex-end;
+        }
+
+        #detailsModalPoster {
+            width: 200px;
+            aspect-ratio: 2 / 3;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #detailsModalTitle {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .meta-badges {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .meta-pill {
+            background: transparent;
             padding: 0;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Versione bottone (es. Preferiti) */
+        button.meta-pill {
+            cursor: pointer;
+            color: white;
+            transition: opacity 0.2s;
+            background: transparent;
+            border: none;
+        }
+
+        button.meta-pill:hover {
+            opacity: 0.8;
+        }
+
+        /* GRIGLIA PRINCIPALE */
+        .details-main-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+            column-gap: 3rem;
+            /* Spazio orizzontale mantenuto ampio */
+            row-gap: 0.5rem;
+            /* Spazio verticale ridotto al minimo */
+            padding: 0 3rem 3rem 3rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .details-left-col,
+        .details-right-col {
+            min-width: 0;
+        }
+
+        .section-label {
+            color: var(--primary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 2rem 0 10px 0;
+            font-weight: 800;
+        }
+
+        #detailsModalOverview {
+            line-height: 1.6;
+            color: #ccc;
+            font-size: 0.95rem;
+        }
+
+        .genre-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .genre-pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        /* BOX GESTIONE (SUBTLE) */
+        .management-box {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .management-box select {
+            width: 100% !important;
+            margin-bottom: 10px;
+            background: #111 !important;
+            color: white;
+        }
+
+        .management-box .btn {
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .management-box .btn-danger {
+            background: transparent;
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            color: var(--danger);
+        }
+
+        .management-box .btn-danger:hover {
+            background: rgba(255, 68, 68, 0.1);
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal-close-btn:hover {
+            background: var(--primary);
+        }
+
+        .cast-scroller {
+            display: flex;
+            overflow-x: auto;
+            gap: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        .actor-card {
+            text-align: center;
+            width: 100px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .actor-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 0.5rem;
+            background-color: #2b2b2b;
+            border: 2px solid var(--border-color);
+            display: block;
+        }
+
+        .actor-details-photo {
+            width: 120px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            background-color: #2b2b2b;
+            border: 1px solid var(--border-color);
+        }
+
+        .actor-name,
+        .actor-character {
+            font-size: 0.8rem;
+            user-select: text;
+        }
+
+        .actor-character {
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .details-main-grid {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+                column-gap: 0;
+                row-gap: 1.5rem;
+                /* Su mobile serve un po' di spazio perché si impilano 4 blocchi */
+            }
+
+            .details-hero-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            #detailsModalTitle {
+                font-size: 1.8rem;
+            }
         }
 
         #episodesModal {
@@ -1361,23 +1628,9 @@
             border-top: 1px solid var(--border-color);
         }
 
-        .details-backdrop {
-            width: 100%;
-            height: 250px;
-            background-size: cover;
-            background-position: center 25%;
-            position: relative;
-        }
 
-        .details-backdrop::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(to top, var(--card-bg) 0%, rgba(0, 0, 0, 0.5) 100%);
-        }
+
+
 
         .details-header {
             position: relative;
@@ -1387,61 +1640,11 @@
             z-index: 2;
         }
 
-        #detailsModalPoster {
-            width: 150px;
-            height: 225px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            flex-shrink: 0;
-            margin-right: 1.5rem;
-        }
 
-        .details-title-section {
-            padding-top: 100px;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
 
-        #detailsModalTitle {
-            margin: 0;
-            font-size: 1.75rem;
-        }
 
-        .details-ratings-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-top: 0.75rem;
-        }
 
-        #detailsModalHeader-main {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1rem;
-        }
 
-        #detailsModalMeta {
-            margin-top: 0.5rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        .details-body {
-            padding: 0 1.5rem 1.5rem 1.5rem;
-        }
-
-        .details-section-title {
-            font-weight: 600;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
-            margin-top: 1.5rem;
-        }
 
         /* --- STATI PARTICOLARI CARDS --- */
         .media-card.is-stat-contributor {
@@ -1454,6 +1657,37 @@
 
         #chartDetailsList {
             padding: 10px !important;
+        }
+
+        /* Container per il gruppo di categoria nel modale statistiche */
+        .stats-category-group {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-category-title {
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }
+
+        .stats-category-count {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
         }
 
         .chart-detail-item {
@@ -2898,81 +3132,21 @@
                 margin-top: 4px;
             }
 
-            /* --- MODALE DETTAGLI SERIE (CENTRATO) --- */
-            #detailsModal .modal-content {
-                padding: 0;
-                width: 100%;
-                height: 100vh;
-                border-radius: 0;
-                overflow-y: auto;
+            /* --- MODALE DETTAGLI SERIE (CENTRATO MOBILE) --- */
+            /* Sovrascriviamo le regole di layout standard */
+            .details-main-grid {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
             }
 
-            .details-header {
+            .details-hero-content {
                 flex-direction: column;
                 align-items: center;
-                margin-top: -90px;
-                padding: 1rem;
                 text-align: center;
-            }
-
-            #detailsModalPoster {
-                width: 130px;
-                height: 195px;
-                margin: 0 0 1rem 0;
-                border: 2px solid rgba(255, 255, 255, 0.2);
-                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-            }
-
-            .details-title-section {
-                padding: 0;
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-
-            #detailsModalHeader-main {
-                flex-direction: column;
-                width: 100%;
-                gap: 0.5rem;
-                align-items: center;
             }
 
             #detailsModalTitle {
-                font-size: 1.75rem;
-                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-                text-align: center;
-                width: 100%;
-                line-height: 1.2;
-            }
-
-            .details-ratings-container {
-                justify-content: center;
-                margin-bottom: 1rem;
-                width: 100%;
-            }
-
-            #detailsModalHeader-main>div:last-child {
-                display: flex;
-                justify-content: center;
-                gap: 1rem;
-                width: 100%;
-                margin-top: 0.5rem;
-            }
-
-            #detailsModalHeader-main>div:last-child .btn {
-                flex: 0 1 auto;
-                padding: 0.6rem 1.2rem;
-            }
-
-            #detailsModalMeta {
-                justify-content: center;
-                font-size: 0.8rem;
-                opacity: 0.8;
-            }
-
-            .details-body {
-                padding: 0 1rem 2rem 1rem;
+                font-size: 1.8rem;
             }
 
             /* --- LISTA EPISODI --- */
@@ -3073,22 +3247,23 @@
             }
         }
 
-        /* Animazione pulsante per gli scheletri */
-        .skeleton {
-            background: #2a2a2a;
-            background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
-            background-size: 200% 100%;
-            animation: skeleton-pulse 1.5s infinite ease-in-out;
+        /* Animazione pulsante per gli scheletri (ottimizzata: usa opacity) */
+        @keyframes skeleton-pulse {
+
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
         }
 
-        @keyframes skeleton-pulse {
-            0% {
-                background-position: 200% 0;
-            }
-
-            100% {
-                background-position: -200% 0;
-            }
+        .skeleton,
+        .episode-still.lazy {
+            background: #2a2a2a !important;
+            animation: skeleton-pulse 1.5s infinite ease-in-out;
         }
 
         .skeleton-text {
@@ -3585,19 +3760,19 @@
             /* Il tasto centrale (+) */
             .bottom-nav-btn.add-btn {
                 grid-column: 3;
-                /* MAGIA: Forza il bottone ESATTAMENTE al centro */
+                justify-self: center;
+                /* Centra orizzontalmente nella colonna */
+                align-self: center;
+                /* Centra verticalmente nella cella */
                 transform: translateY(-15px);
                 width: 56px !important;
                 height: 56px !important;
                 border-radius: 50%;
                 border: 4px solid #1a1a1f;
-                /* Bordo di stacco per fondersi con la barra */
                 box-shadow: 0 4px 12px rgba(42, 157, 143, 0.4);
-                /* Ombra verde acqua */
                 background: var(--primary) !important;
                 color: white !important;
                 margin: 0 !important;
-                /* Rimuove il vecchio margin che sballava l'asse */
             }
 
             /* 4. RIMUOVI TRANSIZIONI INUTILI ALLO SCROLL */
@@ -3629,6 +3804,32 @@
             .media-card .card-actions,
             .media-card .favorite-btn {
                 display: none !important;
+            }
+
+            /* --- FIX PERFORMANCE MODALE EPISODI (SICURI) --- */
+            .season-header {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background-color: #1a1a1f !important;
+            }
+
+            #episodesModalContent {
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
+                will-change: scroll-position;
+            }
+
+            /* Disabilita il blur spoiler su mobile, usa opacity invece */
+            .episode-item:not(.watched) .episode-overview,
+            .episode-item:not(.watched) .episode-still {
+                filter: none !important;
+                opacity: 0.5;
+            }
+
+            .episode-item:not(.watched):hover .episode-overview,
+            .episode-item:not(.watched):hover .episode-still {
+                opacity: 1;
+                transition: opacity 0.2s;
             }
         }
     </style>
@@ -3981,7 +4182,7 @@
         </div>
     </div>
 
-    <div class="modal" id="rewatchModal">
+    <div class="modal" id="rewatchModal" style="z-index: 1500;">
         <div class="modal-content">
             <h2 id="rewatchModalTitle">Modifica Rewatch</h2>
             <p>Specifica il numero di volte che hai rivisto (0 = visto una sola volta).</p>
@@ -4854,7 +5055,7 @@
                 );
             }
 
-            // 1. Raggruppiamo i risultati per categoria
+            // 1. Raggruppamento
             const grouped = filteredShows.reduce((acc, show) => {
                 const cat = show.category;
                 if (!acc[cat]) acc[cat] = [];
@@ -4862,24 +5063,31 @@
                 return acc;
             }, {});
 
-            // Scriviamo nel modale
             document.getElementById('chartDetailsTitle').textContent = title;
             const listContainer = document.getElementById('chartDetailsList');
-            listContainer.innerHTML = ''; // Svuota il contenitore
+            listContainer.innerHTML = '';
 
             if (filteredShows.length === 0) {
-                listContainer.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Nessun dato corrispondente.</p>';
+                listContainer.innerHTML = '<p style="text-align:center; padding:2rem; opacity:0.5;">Nessun dato corrispondente.</p>';
             } else {
-                // 2. Creiamo una mini-sezione per ogni categoria trovata
+                // 2. Creazione sezioni divise
                 Object.keys(grouped).forEach(cat => {
-                    const catSection = document.createElement('div');
-                    catSection.style.marginBottom = '1.5rem';
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'stats-category-group';
 
-                    catSection.innerHTML = `
-                        <h4 style="color: var(--primary); margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
-                            ${cat} (${grouped[cat].length})
-                        </h4>
+                    // Ottieni il nome vero della categoria TV da categories[]
+                    const catObj = categories.find(c => c.id === cat);
+                    const displayCatName = catObj ? catObj.name : cat;
+
+                    groupDiv.innerHTML = `
+                        <div class="stats-category-title">
+                            ${displayCatName}
+                            <span class="stats-category-count">${grouped[cat].length}</span>
+                        </div>
+                        <div class="category-items-list"></div>
                     `;
+
+                    const itemsList = groupDiv.querySelector('.category-items-list');
 
                     grouped[cat].sort((a, b) => a.title.localeCompare(b.title)).forEach(show => {
                         const item = document.createElement('div');
@@ -4892,13 +5100,11 @@
                                 <span style="font-size: 0.75rem; color: var(--text-secondary);">${show.year || 'N/D'}</span>
                             </div>
                         `;
-                        catSection.appendChild(item);
+                        itemsList.appendChild(item);
                     });
-                    listContainer.appendChild(catSection);
+                    listContainer.appendChild(groupDiv);
                 });
             }
-
-            // Apriamo il modale sopra a quello dei grafici
             openModal(document.getElementById('chartDetailsModal'));
         }
 
@@ -5252,7 +5458,6 @@
             const optimizedPoster = (show.poster && show.poster.includes('w500'))
                 ? show.poster.replace('w500', 'w342')
                 : (show.poster || DEFAULT_POSTER);
-
             card.innerHTML = `
         <div class="poster-container">
             <img data-src="${optimizedPoster}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'">
@@ -5628,149 +5833,162 @@
         function renderDetailsShell(media) {
             const posterUrl = media.poster || DEFAULT_POSTER;
             elements.detailsModalContent.innerHTML = `
-                <div class="details-backdrop" style="background-color: #1a1a1a;"></div>
-                <div class="details-header">
-                    <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
-                    <div class="details-title-section">
-                        <div id="detailsModalHeader-main">
-                            <div style="flex-grow: 1;">
-                                <h2 id="detailsModalTitle">${media.title}</h2>
-                                <div class="details-ratings-container" id="shell-ratings">
-                                    <div class="skeleton" style="width:120px; height:20px; border-radius:10px;"></div>
-                                </div>
+                <div class="details-hero">
+                    <button class="modal-close-btn" id="detailsModalCloseNew"><i class="fas fa-times"></i></button>
+                    <div class="details-backdrop"></div>
+                    <div class="details-hero-content">
+                        <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
+                        <div class="details-title-area" style="flex-grow: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px; margin-bottom: 5px;">
+                                <h2 id="detailsModalTitle" style="margin: 0;">${media.title}</h2>
+                                <div id="shell-episodes-btn"></div>
                             </div>
-                            <!-- Placeholder per i bottoni a destra -->
-                            <div id="shell-buttons" style="display: flex; gap: 0.5rem; align-self: flex-start;">
-                                <div class="skeleton" style="width:38px; height:38px; border-radius:8px;"></div>
-                                <div class="skeleton" style="width:38px; height:38px; border-radius:8px;"></div>
-                                <div class="skeleton" style="width:100px; height:38px; border-radius:8px;"></div>
-                            </div>
-                        </div>
-                        <div id="detailsModalMeta">
-                            <span><i class="fas fa-calendar-alt"></i> ${media.year || ''}</span>
-                            <span id="shell-status" class="skeleton" style="width:80px; height:15px; display:inline-block;"></span>
-                            <span id="shell-genres" class="skeleton" style="width:100px; height:15px; display:inline-block;"></span>
+                            <div id="detailsModalMeta" class="meta-badges"></div>
+                            <div id="shell-ratings" class="details-ratings-container"></div>
                         </div>
                     </div>
                 </div>
-                <div class="details-body">
-                    <h3 class="details-section-title">Trama</h3>
-                    <p id="detailsModalOverview" class="skeleton-text">Caricamento descrizione...</p>
-                    <h3 class="details-section-title">Cast Principale</h3>
-                    <div class="cast-scroller" id="detailsModalCast">
-                        ${Array(6).fill('<div class="actor-card"><div class="actor-photo skeleton"></div></div>').join('')}
-                    </div>
+        <div class="details-main-grid">
+            <!-- Row 1: Trama e Meta Destra -->
+            <div class="details-left-col">
+                <div id="detailsModalTagline" style="font-style:italic; opacity:0.7; margin-bottom:1rem; font-size:0.95rem;"></div>
+                <h4 class="section-label" style="margin-bottom:0.5rem;">TRAMA</h4>
+                <p id="detailsModalOverview" class="skeleton-text" style="margin-top:0; margin-bottom:0;"></p>
+            </div>
+            <div class="details-right-col">
+                <div id="shell-year-runtime"></div>
+                <h4 class="section-label" style="margin-bottom:0.5rem;">CREATORE / RETE</h4>
+                <div id="shell-creator" style="font-weight:600; color:white; margin-bottom:0;"></div>
+            </div>
+
+            <!-- Row 2: Cast e Gestione -->
+            <div class="details-left-col">
+                <h4 class="section-label" style="margin-top:0.5rem; margin-bottom:0.5rem;">CAST PRINCIPALE</h4>
+                <div class="cast-scroller" id="detailsModalCast"></div>
+            </div>
+            <div class="details-right-col">
+                <div id="shell-management-box" style="margin-top:0.5rem; padding:1.2rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+                    <h4 class="section-label" style="margin-top:0; margin-bottom:0.8rem; font-size:0.7rem; opacity:0.6;">GESTIONE</h4>
+                    <div id="shell-management"></div>
                 </div>
-            `;
+            </div>
+        </div>`;
+
+            document.getElementById('detailsModalCloseNew').onclick = () => closeModal(elements.detailsModal);
         }
 
         function populateDetailsModal(details, media) {
-            // 1. DEFINIZIONE VARIABILI (Importante: facciamolo subito!)
-            const genres = details.genres ? details.genres.map(g => g.name).join(', ') : '';
-            // Per le serie tv usiamo credits.cast invece di cast
-            const cast = (details.credits && details.credits.cast) ? details.credits.cast : [];
-
-            // 2. Sfondo e Poster
-            if (details.backdrop_path) {
-                const backdrop = elements.detailsModalContent.querySelector('.details-backdrop');
-                if (backdrop) {
-                    backdrop.style.backgroundImage = `url(https://image.tmdb.org/t/p/w1280${details.backdrop_path})`;
-                    backdrop.style.backgroundColor = 'transparent';
-                }
-            }
-            const posterImg = document.getElementById('detailsModalPoster');
-            if (posterImg) {
-                posterImg.src = media.poster || (details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : DEFAULT_POSTER);
+            // 1. Sfondo
+            const backdrop = elements.detailsModalContent.querySelector('.details-backdrop');
+            if (details.backdrop_path && backdrop) {
+                backdrop.style.backgroundImage = `url(https://image.tmdb.org/t/p/w1280${details.backdrop_path})`;
             }
 
-            // 3. Rating e Voti
+            // 2. Metadata Pills (Solo Preferiti in Hero)
+            let metaHTML = '';
+            if (!isViewMode) {
+                metaHTML += `<button id="modalFavBtn" class="meta-pill" style="color:${media.isFavorite ? '#ff4444' : 'rgba(255,255,255,0.7)'}; transition: color 0.2s;"><i class="fas fa-heart"></i> ${media.isFavorite ? 'Preferito' : 'Aggiungi'}</button>`;
+            }
+            document.getElementById('detailsModalMeta').innerHTML = metaHTML;
+
+            // 2.1 Info e Generi Unificati (Destra)
+            let rightMetaHTML = `
+                <h4 class="section-label" style="margin-bottom:0.4rem;">INFO</h4>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1rem;">
+                    <span class="genre-pill" style="background:var(--primary); color:white; border:none; cursor:default;">${media.year || 'N/D'}</span>
+                    <span class="genre-pill" style="background:rgba(255,255,255,0.1); border:none; cursor:default;">${details.status || 'N/D'}</span>
+                </div>
+                <h4 class="section-label" style="margin-bottom:0.5rem;">GENERI</h4>
+                <div class="genre-badges" style="margin-bottom:1rem;">
+                    ${details.genres ? details.genres.map(g => `<span class="genre-pill">${g.name}</span>`).join('') : ''}
+                </div>
+            `;
+            document.getElementById('shell-year-runtime').innerHTML = rightMetaHTML;
+
+            // Il Tasto Episodi ancorato in alto a destra, di fianco al titolo ("come nel vecchio")
+            const episodesContainer = document.getElementById('shell-episodes-btn');
+            if (episodesContainer) {
+                episodesContainer.innerHTML = `<button id="showEpisodesBtn" class="btn btn-primary"><i class="fas fa-list-check"></i> Episodi</button>`;
+            }
+
+            // 3. Voti
             const rtState = getRottenTomatoesState(media.rottenTomatoes);
             const popcornState = getPopcornState(media.popcornRating);
             let ratingsHTML = '';
+            if (media.imdbRating && media.imdbRating !== "N/A") ratingsHTML += `<span class="rating-badge" title="IMDb"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`;
+            if (rtState) ratingsHTML += `<span class="rating-badge" title="Rotten Tomatoes"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${media.rottenTomatoes}</span>`;
+            if (popcornState) ratingsHTML += `<span class="rating-badge" title="Audience Score"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`;
+            if (media.letterboxdRating && media.letterboxdRating !== "N/A") ratingsHTML += `<span class="rating-badge" title="Letterboxd"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`;
+            if (media.metacriticRating && media.metacriticRating !== "N/A") ratingsHTML += `<span class="rating-badge" title="Metacritic"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`;
+            document.getElementById('shell-ratings').innerHTML = ratingsHTML;
 
-            // IMDb
-            if (media.imdbRating && media.imdbRating !== "N/A") {
-                ratingsHTML += `<span class="rating-badge" title="IMDb"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`;
-            }
-
-            // Rotten Tomatoes (Critica)
-            if (rtState) {
-                ratingsHTML += `<span class="rating-badge" title="Rotten Tomatoes"><img src="${ROTTEN_TOMATOES_ICONS[rtState]}" class="rating-icon">&nbsp;${media.rottenTomatoes}</span>`;
-            }
-
-            // Rotten Tomatoes (Pubblico / Popcorn)
-            if (popcornState) {
-                ratingsHTML += `<span class="rating-badge" title="Audience Score"><img src="${POPCORN_ICONS[popcornState]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`;
-            }
-
-            // Letterboxd
-            if (media.letterboxdRating && media.letterboxdRating !== "N/A") {
-                ratingsHTML += `<span class="rating-badge" title="Letterboxd"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`;
-            }
-
-            // Metacritic
-            if (media.metacriticRating && media.metacriticRating !== "N/A") {
-                ratingsHTML += `<span class="rating-badge" title="Metacritic"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`;
-            }
-
-            const ratingsContainer = document.getElementById('shell-ratings');
-            if (ratingsContainer) {
-                ratingsContainer.innerHTML = ratingsHTML || '<span style="font-size: 0.9rem; color: var(--text-secondary);">Nessuna valutazione disponibile</span>';
-            }
-
-            // 4. Bottoni Azione (Sostituiscono i quadrati skeleton)
-            const shellButtons = document.getElementById('shell-buttons');
-            if (shellButtons) {
-                shellButtons.innerHTML = `
-                    <button id="detailsModalFavoriteBtn" class="btn ${media.isFavorite ? 'is-favorite' : ''}" title="Aggiungi ai preferiti"><i class="fas fa-heart"></i></button>
-                    <button id="refreshShowBtn" class="btn btn-secondary" title="Aggiorna Dati Serie"><i class="fas fa-sync-alt"></i></button>
-                    <button id="showEpisodesBtn" class="btn btn-primary"><i class="fas fa-list-check"></i> Episodi</button>
-                `;
-            }
-
-            // 5. Meta Info (Stato e Generi)
-            const shellStatus = document.getElementById('shell-status');
-            if (shellStatus) {
-                shellStatus.outerHTML = `<span><i class="fas fa-satellite-dish"></i> ${details.status}</span>`;
-            }
-            const shellGenres = document.getElementById('shell-genres');
-            if (shellGenres) {
-                shellGenres.outerHTML = genres ? `<span><i class="fas fa-film"></i> ${genres}</span>` : '';
-            }
-
-            // 6. Trama (Rimuovi classe skeleton)
+            // 4. Testi
+            document.getElementById('detailsModalTagline').textContent = details.tagline ? `"${details.tagline}"` : '';
             const overview = document.getElementById('detailsModalOverview');
-            if (overview) {
-                overview.classList.remove('skeleton-text');
-                overview.textContent = details.overview || 'Trama non disponibile.';
+            overview.classList.remove('skeleton-text');
+            overview.textContent = details.overview || 'Trama non disponibile.';
+
+            // 5. Destra: Creatore
+            const creator = details.created_by && details.created_by.length > 0 ? details.created_by[0].name : (details.networks && details.networks.length > 0 ? details.networks[0].name : 'N/D');
+            document.getElementById('shell-creator').textContent = creator;
+
+            // 6. Cast
+            const cast = (details.credits && details.credits.cast) ? details.credits.cast : [];
+            document.getElementById('detailsModalCast').innerHTML = cast.slice(0, 12).map(a => `
+                <div class="actor-card" onclick="showActorModal('${a.id}')">
+                    <img src="${a.profile_path ? 'https://image.tmdb.org/t/p/w200' + a.profile_path : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
+                    <div class="actor-name">${a.name}</div>
+                    <div class="actor-character">${a.character}</div>
+                </div>`).join('');
+
+            // 7. Destra: Box Gestione
+            if (!isViewMode) {
+                const getCatIcon = (catId) => {
+                    const c = categories.find(cat => (cat.id) === catId);
+                    return c ? c.icon : 'fa-folder';
+                };
+                const getCatName = (catId) => {
+                    const c = categories.find(cat => (cat.id) === catId);
+                    return c ? c.name : catId;
+                };
+
+                const currentCatId = media.category || categories[0].id;
+
+                // Tolti dal Box: tasto Favorito e tasto Episodi. Rimangono solo Categoria, Update e Delete
+                document.getElementById('shell-management').innerHTML = `
+                    <div class="management-content">
+                        
+                        <div class="custom-select-wrapper" style="width: 100%;">
+                            <div class="custom-select" id="modalCategorySelect" data-value="${currentCatId}" data-media-id="${media.id}" style="background-color:rgba(255,255,255,0.05); border-radius:8px; border:1px solid rgba(255,255,255,0.1); color:white; padding: 10px 15px; display:flex; justify-content: space-between; align-items:center;">
+                                <span class="selected-option" style="font-size: 0.9rem;"><i class="fas ${getCatIcon(currentCatId)}"></i> ${getCatName(currentCatId)}</span>
+                                <i class="fas fa-chevron-down" style="font-size:0.8em; opacity:0.5;"></i>
+                            </div>
+                            <div class="custom-options" style="background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:8px; width:100%; z-index:10;">
+                                ${categories.map(c => `
+                                    <div class="option" data-value="${c.id}" style="padding:10px 15px; font-size:0.9rem;"><i class="fas ${c.icon}"></i> ${c.name}</div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button id="refreshShowBtn" class="btn btn-secondary" style="flex:1; justify-content:center; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"><i class="fas fa-sync-alt"></i> Aggiorna</button>
+                            <button id="modalDeleteBtn" class="btn btn-danger" style="flex:1; justify-content:center;"><i class="fas fa-trash"></i> Elimina</button>
+                        </div>
+                    </div>`;
+
+                // Listeners (I bottoni Fav ed Episodi ora si trovano nel template principale hero)
+                const episodesBtn = document.getElementById('showEpisodesBtn');
+                if (episodesBtn) episodesBtn.onclick = () => showEpisodesModal(media);
+
+                const refreshBtn = document.getElementById('refreshShowBtn');
+                if (refreshBtn) refreshBtn.onclick = () => forceRefreshShow(media.id);
+
+                const favBtn = document.getElementById('modalFavBtn');
+                if (favBtn) favBtn.onclick = () => { toggleFavorite(media.id); populateDetailsModal(details, mediaList.find(m => m.id === media.id)); };
+
+                const deleteBtn = document.getElementById('modalDeleteBtn');
+                if (deleteBtn) deleteBtn.onclick = () => { closeModal(elements.detailsModal); deleteShow(media.id); };
             }
-
-            // 7. Cast
-            const castHTML = cast.slice(0, 15).map(actor => `
-                <div class="actor-card" data-person-id="${actor.id}">
-                    <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w200${actor.profile_path}` : DEFAULT_ACTOR_PHOTO}" class="actor-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
-                    <div class="actor-name">${actor.name}</div>
-                    <div class="actor-character">${actor.character}</div>
-                </div>
-            `).join('');
-            const shellCast = document.getElementById('detailsModalCast');
-            if (shellCast) {
-                shellCast.innerHTML = castHTML;
-            }
-
-            // Ricollega i listener (perché abbiamo riscritto i bottoni)
-            const refreshBtn = elements.detailsModalContent.querySelector('#refreshShowBtn');
-            if (refreshBtn) refreshBtn.addEventListener('click', () => forceRefreshShow(media.id));
-
-            const episodesBtn = elements.detailsModalContent.querySelector('#showEpisodesBtn');
-            if (episodesBtn) episodesBtn.addEventListener('click', () => showEpisodesModal(media));
-
-            const favoriteBtn = elements.detailsModalContent.querySelector('#detailsModalFavoriteBtn');
-            if (favoriteBtn) favoriteBtn.addEventListener('click', () => toggleFavorite(media.id));
-
-            elements.detailsModalContent.querySelectorAll('.actor-card').forEach(card => {
-                card.addEventListener('click', () => showActorModal(card.dataset.personId));
-            });
         }
 
         function showEpisodesModal(show) {
@@ -5793,7 +6011,7 @@
                 return createSeasonBlockHTML(show, { ...season, season_number: seasonNum });
             }).join('');
 
-            elements.episodesModalContent.innerHTML = `<h2>Progresso episodi: ${show.title}</h2><div class="seasons-container">${seasonsHTML}</div>`;
+            elements.episodesModalContent.innerHTML = `<h2 style="margin: 1.5rem;">Progresso episodi: ${show.title}</h2>\n        <div class="seasons-container">${seasonsHTML}</div>`;
 
             sortedSeasonNumbers.forEach(setupSeasonEventListeners);
 
@@ -5866,13 +6084,11 @@
         function createSeasonBlockHTML(show, season) {
             const seasonNumber = season.season_number;
             const episodes = season.episodes || [];
-
-            const watchedInSeason = Object.keys(show.progress).filter(key => key.startsWith(`${seasonNumber}-`)).length;
+            const watchedInSeason = Object.keys(show.progress || {}).filter(key => key.startsWith(`${seasonNumber}-`)).length;
             const episodeCount = episodes.length;
             const isSeasonComplete = watchedInSeason === episodeCount && episodeCount > 0;
             const hasEpisodes = episodeCount > 0;
 
-            // Check if WHOLE season is rewatched (all eps have rewatch > 0)
             let isSeasonRewatched = false;
             if (hasEpisodes && show.rewatches) {
                 isSeasonRewatched = episodes.every(ep => (show.rewatches[`${seasonNumber}-${ep.episode_number}`] || 0) > 0);
@@ -5885,35 +6101,28 @@
             const seasonRewatchBtnHTML = `<button class="btn btn-secondary season-rewatch-btn" title="Imposta rewatch per la stagione" data-show-id="${show.id}" data-season-number="${seasonNumber}"><i class="fas fa-sync-alt"></i></button>`;
 
             let firstUnwatchedFound = false;
-
             const allSeasonEpisodes = hasEpisodes ? episodes.map(ep => {
                 const isWatched = show.progress[`${seasonNumber}-${ep.episode_number}`];
                 const rewatchCount = show.rewatches?.[`${seasonNumber}-${ep.episode_number}`] || 0;
                 let titleSpoilerClass = '';
 
                 if (!isWatched) {
-                    if (!firstUnwatchedFound) {
-                        firstUnwatchedFound = true; // This is the NEXT episode to watch, so show title
-                    } else {
-                        titleSpoilerClass = 'spoiler'; // Future episodes are spoilers
-                    }
+                    if (!firstUnwatchedFound) firstUnwatchedFound = true;
+                    else titleSpoilerClass = 'spoiler';
                 }
 
                 return `
             <div class="episode-item ${isWatched ? 'watched' : ''}" id="item-${show.id}-${seasonNumber}-${ep.episode_number}" onclick="toggleEpisodeWatched('${show.id}', '${seasonNumber}', '${ep.episode_number}')">
                 <div class="episode-still-wrapper">
-                     <img data-src="${ep.still_path ? `https://image.tmdb.org/t/p/w300${ep.still_path}` : EMPTY_STILL_PLACEHOLDER}" class="episode-still lazy" onerror="this.src='${EMPTY_STILL_PLACEHOLDER}'">
-                     <div class="episode-status-overlay"><i class="fas fa-check"></i></div>
+                    <img data-src="${ep.still_path ? `https://image.tmdb.org/t/p/w300${ep.still_path}` : EMPTY_STILL_PLACEHOLDER}" class="episode-still lazy" onerror="this.src='${EMPTY_STILL_PLACEHOLDER}'">
+                    <div class="episode-status-overlay"><i class="fas fa-check"></i></div>
                 </div>
                 <div class="episode-details">
                     <div class="episode-meta-row">
-                        <!-- SINISTRA: Numero + Data + Countdown -->
                         <div class="episode-meta-left">
                             <span class="episode-number">${seasonNumber > 0 ? `S${seasonNumber}` : 'SP'} E${ep.episode_number}</span>
                             ${formatAirDate(ep.air_date)}
                         </div>
-
-                        <!-- DESTRA: Solo Rewatch (se presente) -->
                         <div class="episode-meta-right">
                              <div class="episode-rewatch-badge ${rewatchCount === 0 ? 'zero-count' : ''}" onclick="event.stopPropagation(); openRewatchModal({showId: '${show.id}', seasonNumber: '${seasonNumber}', episodeNumber: '${ep.episode_number}'})">
                                 <i class="fas fa-sync-alt"></i>
@@ -5921,8 +6130,6 @@
                              </div>
                         </div>
                     </div>
-                    
-                    <!-- TITOLO + DURATA -->
                     <div class="episode-title ${titleSpoilerClass}">
                         ${ep.name || `Episodio ${ep.episode_number}`}
                         ${ep.runtime ? `<span class="episode-runtime-badge"><i class="fas fa-clock"></i> ${ep.runtime}m</span>` : ''}
@@ -5981,86 +6188,16 @@
             }
         }
 
-        async function showActorModal(personId) {
-            openModal(elements.actorModal);
-            elements.actorModalContent.innerHTML = '<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>';
-            const actorDetails = await fetchTMDbActorDetailsWithFallback(personId);
-            if (actorDetails) {
-                populateActorModal(actorDetails);
-            } else {
-                elements.actorModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli attore non trovati.</p>';
-            }
-        }
-
-        async function fetchTMDbActorDetailsWithFallback(personId) {
-            let details = await fetchTMDbActorDetails(personId, 'it-IT');
-            if (details && !details.biography) {
-                const en_details = await fetchTMDbActorDetails(personId, 'en-US');
-                if (en_details) details.biography = en_details.biography;
-            }
-            return details;
-        }
-
-        async function fetchTMDbActorDetails(personId, lang = 'it-IT') {
-            try {
-                const [detailsRes, creditsRes] = await Promise.all([
-                    fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${TMDB_KEY}&language=${lang}`),
-                    fetch(`https://api.themoviedb.org/3/person/${personId}/tv_credits?api_key=${TMDB_KEY}&language=${lang}`)
-                ]);
-                if (!detailsRes.ok || !creditsRes.ok) return null;
-
-                const details = await detailsRes.json();
-                const credits = await creditsRes.json();
-                credits.cast.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
-
-                return { ...details, tv_credits: credits };
-            } catch (err) {
-                console.error("Error fetching actor details:", err);
-                return null;
-            }
-        }
-
-        function populateActorModal(details) {
-            const photoUrl = details.profile_path ? `https://image.tmdb.org/t/p/w500${details.profile_path}` : DEFAULT_ACTOR_PHOTO;
-            const filmographyHTML = (details.tv_credits?.cast || []).slice(0, 15).map(show => {
-                if (!show.poster_path) return '';
-                return `
-            <div class="film-card-small" data-imdb-id="${show.id}" title="${show.name}">
-                <img src="https://image.tmdb.org/t/p/w200${show.poster_path}" onerror="this.src='${DEFAULT_POSTER}'">
-                <div class="film-card-small-title">${show.name}</div>
-            </div>`;
-            }).join('');
-
-            elements.actorModalContent.innerHTML = `
-            <div class="actor-details-header">
-                <img src="${photoUrl}" class="actor-details-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
-                <div class="actor-details-info">
-                    <h2>${details.name}</h2>
-                    <ul>
-                        <li><strong>Nascita:</strong> ${details.birthday ? new Date(details.birthday).toLocaleDateString('it-IT') : 'N/A'}</li>
-                        <li><strong>Luogo:</strong> ${details.place_of_birth || 'N/A'}</li>
-                    </ul>
-                    ${details.imdb_id ? `<a href="https://www.imdb.com/name/${details.imdb_id}/" target="_blank" class="btn btn-imdb"><i class="fab fa-imdb"></i> Vedi su IMDb</a>` : ''}
-                </div>
-            </div>
-            <div>
-                ${filmographyHTML ? `<h3 class="details-section-title">Filmografia Selezionata (TV)</h3><div class="filmography-scroller">${filmographyHTML}</div>` : ''}
-                <h3 class="details-section-title">Biografia</h3>
-                <p>${details.biography || 'Biografia non disponibile.'}</p>
-            </div>
-        `;
-        }
-
         async function toggleSeasonWatched(showId, seasonNumber, watch) {
             const show = mediaList.find(m => m.id === showId);
             if (!show) return;
 
-            // 1. Aggiorna i dati in memoria
+            const episodes = show.seasons[seasonNumber]?.episodes || [];
             const duplicates = mediaList.filter(d => (d.imdbID && d.imdbID === show.imdbID) || (d.tmdbID && d.tmdbID === show.tmdbID));
 
             duplicates.forEach(dup => {
-                if (dup.seasons[seasonNumber] && dup.seasons[seasonNumber].episodes) {
-                    dup.seasons[seasonNumber].episodes.forEach(ep => {
+                if (dup.progress) {
+                    episodes.forEach(ep => {
                         const key = `${seasonNumber}-${ep.episode_number}`;
                         if (watch) dup.progress[key] = true;
                         else delete dup.progress[key];
@@ -6112,7 +6249,11 @@
             updateStats();
         }
 
+        let isTogglingEpisode = false;
         function toggleEpisodeWatched(showId, season, episode) {
+            if (isTogglingEpisode) return;
+            isTogglingEpisode = true;
+            setTimeout(() => { isTogglingEpisode = false; }, 150);
             // Find the show
             const show = mediaList.find(m => m.id === showId);
             if (!show) return;
@@ -7837,6 +7978,12 @@
                         localStorage.setItem(storageKey, isOption.dataset.value);
                     }
                     // ------------------------------------------------
+
+                    // --- GESTIONE CAMBIO CATEGORIA DAL MODALE DETTAGLI ---
+                    if (select.id === 'modalCategorySelect') {
+                        moveShowToCategory(select.dataset.mediaId, isOption.dataset.value);
+                        return; // moveShowToCategory salva e fa il render
+                    }
 
                     // Se è un filtro della dashboard, aggiorna la pagina
                     if (wrapper.id !== 'addMediaCategoryCustom' && typeof renderMedia === 'function') {
