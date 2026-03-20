@@ -1308,9 +1308,15 @@
             /* Spazio orizzontale mantenuto ampio */
             row-gap: 0.5rem;
             /* Spazio verticale ridotto al minimo */
-            padding: 0 3rem 3rem 3rem;
             position: relative;
             z-index: 2;
+        }
+
+        /* DESKTOP: padding normale */
+        @media (min-width: 769px) {
+            .details-main-grid {
+                padding: 0 3rem 3rem 3rem;
+            }
         }
 
         .details-left-col,
@@ -3149,6 +3155,16 @@
                 font-size: 1.8rem;
             }
 
+            #detailsModal .modal-content {
+                padding: 0;
+                width: 100%;
+                height: auto !important;
+                min-height: unset !important;
+                border-radius: 20px 20px 0 0;
+                max-height: 95vh;
+                overflow-y: auto;
+            }
+
             /* --- LISTA EPISODI --- */
             #episodesModal .modal-content {
                 height: 100vh;
@@ -3769,13 +3785,17 @@
                 opacity: 0.8;
             }
 
+            /* Titolo spoiler: opacity invece di blur */
             .episode-title.spoiler {
-                filter: blur(4px) !important;
+                filter: none !important;
+                opacity: 0;
+                user-select: none;
+                pointer-events: none;
+                transition: none !important;
             }
 
-            .episode-title.spoiler:hover,
-            .episode-title.spoiler:active {
-                filter: none !important;
+            .episode-item:not(.watched):active .episode-title.spoiler {
+                opacity: 0.8;
             }
 
             .episode-still-wrapper {
@@ -3866,6 +3886,114 @@
                 to {
                     opacity: 1;
                 }
+            }
+
+            /* ============================================
+               MODALE DETTAGLI - CENTRO ELEMENTI MOBILE
+            ============================================ */
+
+            /* Hero content centrato */
+            .details-hero-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 0 1.5rem 1.5rem 1.5rem;
+            }
+
+            #detailsModalTitle {
+                font-size: 1.6rem;
+                text-align: center;
+                width: 100%;
+            }
+
+            /* Episodi/Dettagli btn centrato */
+            #shell-episodes-btn {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                margin-top: 8px;
+            }
+
+            /* Titolo + bottone episodi in colonna centrata */
+            .details-title-area>div:first-child {
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* ♥ Aggiungi centrato */
+            #detailsModalMeta {
+                justify-content: center;
+                width: 100%;
+                margin-top: 8px;
+            }
+
+            /* Rating badges centrati */
+            #shell-ratings {
+                justify-content: center;
+                width: 100%;
+                margin-top: 8px;
+                gap: 12px;
+            }
+
+            /* Chevron button */
+            .details-chevron-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                margin-top: 12px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 20px;
+                padding: 6px 20px;
+                color: rgba(255, 255, 255, 0.6);
+                cursor: pointer;
+                transition: background 0.2s;
+            }
+
+            .details-chevron-btn i {
+                transition: transform 0.3s ease;
+            }
+
+            .details-chevron-btn.expanded i {
+                transform: rotate(180deg);
+            }
+
+            .details-chevron-btn:active {
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            /* Pannello espandibile: nascosto di default con display none */
+            .details-expand-panel {
+                display: none;
+            }
+
+            .details-expand-panel.expanded {
+                display: block;
+            }
+
+            .details-expand-panel .details-main-grid {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+                column-gap: 0;
+                row-gap: 1.5rem;
+            }
+        }
+
+        /* Su desktop il pannello è sempre visibile */
+        @media (min-width: 769px) {
+            .details-chevron-btn {
+                display: none;
+            }
+
+            .details-expand-panel {
+                max-height: none !important;
+                overflow: visible !important;
+            }
+
+            .details-main-grid {
+                padding: 0 3rem 3rem 3rem;
             }
         }
     </style>
@@ -5881,36 +6009,55 @@
                             </div>
                             <div id="detailsModalMeta" class="meta-badges"></div>
                             <div id="shell-ratings" class="details-ratings-container"></div>
+                            <!-- CHEVRON -->
+                            <button id="detailsChevronBtn" class="details-chevron-btn">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
-        <div class="details-main-grid">
-            <!-- Row 1: Trama e Meta Destra -->
-            <div class="details-left-col">
-                <div id="detailsModalTagline" style="font-style:italic; opacity:0.7; margin-bottom:1rem; font-size:0.95rem;"></div>
-                <h4 class="section-label" style="margin-bottom:0.5rem;">TRAMA</h4>
-                <p id="detailsModalOverview" class="skeleton-text" style="margin-top:0; margin-bottom:0;"></p>
-            </div>
-            <div class="details-right-col">
-                <div id="shell-year-runtime"></div>
-                <h4 class="section-label" style="margin-bottom:0.5rem;">CREATORE / RETE</h4>
-                <div id="shell-creator" style="font-weight:600; color:white; margin-bottom:0;"></div>
-            </div>
-
-            <!-- Row 2: Cast e Gestione -->
-            <div class="details-left-col">
-                <h4 class="section-label" style="margin-top:0.5rem; margin-bottom:0.5rem;">CAST PRINCIPALE</h4>
-                <div class="cast-scroller" id="detailsModalCast"></div>
-            </div>
-            <div class="details-right-col">
-                <div id="shell-management-box" style="margin-top:0.5rem; padding:1.2rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
-                    <h4 class="section-label" style="margin-top:0; margin-bottom:0.8rem; font-size:0.7rem; opacity:0.6;">GESTIONE</h4>
-                    <div id="shell-management"></div>
-                </div>
-            </div>
-        </div>`;
+                <!-- PANNELLO ESPANDIBILE -->
+                <div id="detailsExpandPanel" class="details-expand-panel">
+                    <div class="details-main-grid">
+                        <div class="details-left-col">
+                            <div id="detailsModalTagline" style="font-style:italic; opacity:0.7; margin-bottom:1rem; font-size:0.95rem;"></div>
+                            <h4 class="section-label" style="margin-bottom:0.5rem;">TRAMA</h4>
+                            <p id="detailsModalOverview" class="skeleton-text" style="margin-top:0; margin-bottom:0;"></p>
+                        </div>
+                        <div class="details-right-col">
+                            <div id="shell-year-runtime"></div>
+                            <h4 class="section-label" style="margin-bottom:0.5rem;">CREATORE / RETE</h4>
+                            <div id="shell-creator" style="font-weight:600; color:white; margin-bottom:0;"></div>
+                        </div>
+                        <div class="details-left-col">
+                            <h4 class="section-label" style="margin-top:0.5rem; margin-bottom:0.5rem;">CAST PRINCIPALE</h4>
+                            <div class="cast-scroller" id="detailsModalCast"></div>
+                        </div>
+                        <div class="details-right-col">
+                            <div id="shell-management-box" style="margin-top:0.5rem; padding:1.2rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+                                <h4 class="section-label" style="margin-top:0; margin-bottom:0.8rem; font-size:0.7rem; opacity:0.6;">GESTIONE</h4>
+                                <div id="shell-management"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
 
             document.getElementById('detailsModalCloseNew').onclick = () => closeModal(elements.detailsModal);
+
+            // Nasconde il pannello su mobile all'apertura
+            if (window.innerWidth <= 768) {
+                document.getElementById('detailsExpandPanel').style.display = 'none';
+            }
+
+            // Listener chevron
+            document.getElementById('detailsChevronBtn').addEventListener('click', () => {
+                const panel = document.getElementById('detailsExpandPanel');
+                const btn = document.getElementById('detailsChevronBtn');
+                const isHidden = panel.style.display === 'none' || panel.style.display === '';
+
+                panel.style.display = isHidden ? 'block' : 'none';
+                btn.classList.toggle('expanded', isHidden);
+            });
         }
 
         function populateDetailsModal(details, media) {
