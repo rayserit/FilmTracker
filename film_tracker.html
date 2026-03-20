@@ -1788,9 +1788,15 @@
       /* Spazio orizzontale mantenuto ampio */
       row-gap: 0.5rem;
       /* Spazio verticale ridotto al minimo */
-      padding: 0 3rem 3rem 3rem;
       position: relative;
       z-index: 2;
+    }
+
+    /* DESKTOP: padding normale */
+    @media (min-width: 769px) {
+      .details-main-grid {
+        padding: 0 3rem 3rem 3rem;
+      }
     }
 
     .details-left-col,
@@ -3042,74 +3048,176 @@
 
     @media (max-width: 768px) {
 
-      /* 1. SPEGNI L'ANIMAZIONE DELLO SFONDO SU MOBILE */
-      .glow-film,
-      .glow-tv,
+      /* Hero: rimuovi lo spazio eccessivo sopra */
+      .details-hero {
+        padding-top: 0 !important;
+        min-height: unset !important;
+      }
+
+      /* Poster più grande, come nel serie TV tracker */
+      #detailsModalPoster {
+        width: 180px !important;
+        height: auto !important;
+        aspect-ratio: 2 / 3;
+        margin-bottom: 1rem;
+      }
+
+      /* Hero content: centra correttamente */
+      .details-hero-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 1.5rem 1.5rem 1.5rem 1.5rem;
+      }
+
+      /* Backdrop: altezza ridotta su mobile */
+      .details-backdrop {
+        height: 100%;
+      }
+
+      /* ============================================
+         KILL SWITCH EFFETTI GRAFICI
+      ============================================ */
+
+      * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+      .bg-glows,
       .glow-1,
-      .glow-2,
-      .bg-glows {
+      .glow-2 {
         display: none !important;
       }
 
-      /* 2. SPEGNI IL BLUR SU TUTTO CIÒ CHE SCORRE O SI APRE */
-      .modal-content,
-      .digital-item,
-      .context-menu,
-      input,
-      select {
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        background-color: #1a1a1f !important;
-        /* Grigio solido molto scuro ed elegante */
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+      .skeleton {
+        animation: none !important;
+        background: #2a2a2a !important;
+        opacity: 0.6;
       }
 
-      /* 3. ACCELERAZIONE HARDWARE MOBILE (60 FPS) */
+      /* ============================================
+         TOP BAR E BOTTOM NAV
+      ============================================ */
+
+      .top-bar {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(18, 18, 18, 0.98) !important;
+      }
+
+      .bottom-nav {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: #1a1a1f !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+      }
+
+      /* ============================================
+         CARDS GRIGLIA
+      ============================================ */
+
       .media-card,
       .stat-item,
       .settings-card,
       .management-card,
-      .chart-detail-item {
+      .chart-detail-item,
+      .digital-item {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
         background-color: #1c1c21 !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+        box-shadow: none !important;
         transform: translateZ(0);
         will-change: transform;
+        contain: layout style;
       }
 
       .media-card * {
         box-shadow: none !important;
       }
 
-      /* 2.1 FIX: Forza lo stile Search senza Blur E blocca zoom iOS */
-      .search-box {
+      .media-card {
+        transition: transform 0.15s ease-out !important;
+        animation: fadeIn 0.2s ease-out both !important;
+      }
+
+      .media-card:active {
+        transform: scale(0.97) !important;
+        transition: transform 0.1s !important;
+      }
+
+      /* ============================================
+         MODALI
+      ============================================ */
+
+      .modal-content,
+      .modal {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+      #detailsModal .modal-content {
+        padding: 0;
+        width: 100%;
+        height: auto !important;
+        /* era 100vh, causa lo spazio vuoto */
+        min-height: unset !important;
+        border-radius: 20px 20px 0 0;
+        /* arrotondato come gli altri modali */
+        max-height: 95vh;
+        /* limite per non uscire dallo schermo */
+        overflow-y: auto;
+        background: #121212 !important;
+      }
+
+      input,
+      select,
+      .context-menu {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
         background-color: #1a1a1f !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+        box-shadow: none !important;
+      }
+
+      .search-box {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background-color: #1a1a1f !important;
         font-size: 16px !important;
-        /* Forza 16px per evitare lo zoom automatico di iOS */
-        font-family: 'Inter', sans-serif !important;
       }
 
-      /* FIX MOBILE SELECT ARROWS */
-      #mobileCategoryFilter,
-      #mobileSortFilter {
-        appearance: none !important;
-        -webkit-appearance: none !important;
-        padding-right: 35px !important;
-        /* Spazio vitale per la freccia */
-        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="white" viewBox="0 0 16 16"><path d="M4 6h8l-4 5z"/></svg>') !important;
-        background-repeat: no-repeat !important;
-        background-position: calc(100% - 15px) center !important;
-        background-size: 12px !important;
+      /* Context menu bottom sheet */
+      .context-menu {
+        top: auto !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 100%;
+        border-radius: 24px 24px 0 0;
+        transform: translateY(100%);
+        padding-bottom: env(safe-area-inset-bottom);
       }
 
-      /* STATISTICHE SCROLLABILI ORIZZONTALI (MOBILE) */
+      .context-menu.visible {
+        transform: translateY(0);
+      }
+
+      .context-menu-item {
+        padding: 1rem 1.5rem;
+        font-size: 1rem;
+      }
+
+      /* Nascondi hover fluttuanti */
+      .media-card .card-actions,
+      .media-card .favorite-btn {
+        display: none !important;
+      }
+
+      /* ============================================
+         STATISTICHE SCROLLABILI
+      ============================================ */
+
       .stats-container {
         display: flex !important;
         flex-wrap: nowrap !important;
@@ -3152,26 +3260,113 @@
         font-size: 1.3rem !important;
       }
 
-      .stat-label::after {
+      /* ============================================
+         GRIGLIA FILM
+      ============================================ */
+
+      .media-section {
+        padding: 0;
+        background: transparent;
+        margin-bottom: 1rem;
+      }
+
+      .section-header {
+        padding: 0 0.5rem 0.5rem 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .media-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.75rem;
+        padding: 0 0.25rem;
+      }
+
+      .media-title {
+        font-size: 0.8rem;
+      }
+
+      .media-ratings {
+        display: none;
+      }
+
+      /* ============================================
+         TOP BAR STRUTTURA
+      ============================================ */
+
+      body {
+        padding: 0.5rem;
+        padding-bottom: 80px;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      .top-bar {
+        padding: 0.5rem 0.75rem !important;
+        margin-bottom: 0.5rem !important;
+        min-height: 60px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
+      }
+
+      .tracker-switch {
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+      }
+
+      .top-bar-left {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        flex-grow: 1 !important;
+        gap: 10px !important;
+        align-items: center !important;
+        min-width: 0 !important;
+      }
+
+      .search-container {
+        flex-grow: 1 !important;
+        min-width: 0 !important;
+        display: flex;
+        width: 100%;
+      }
+
+      .search-box {
+        width: 100% !important;
+        height: 40px !important;
+        margin: 0 !important;
+      }
+
+      #mobileFilterBtn {
+        display: flex !important;
+        flex-shrink: 0 !important;
+        width: 40px !important;
+        height: 40px !important;
+        padding: 0 !important;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .top-bar-right,
+      #topBarTitle,
+      .top-bar-left h1,
+      .top-bar-left .filter-select,
+      .top-bar-left .custom-select-wrapper {
         display: none !important;
       }
 
-      .search-box::placeholder {
-        font-size: 14px !important;
-      }
+      /* ============================================
+         BOTTOM NAV STRUTTURA
+      ============================================ */
 
-      /* --- BOTTOM NAV MOBILE (Allineamento Perfetto) --- */
       .bottom-nav {
         display: grid !important;
         grid-template-columns: repeat(5, 1fr);
         height: 65px;
         padding-bottom: env(safe-area-inset-bottom);
-        background: rgba(15, 15, 20, 0.8) !important;
-        backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
         align-items: center;
-        /* Centra verticalmente l'intera griglia */
       }
 
       .bottom-nav-btn {
@@ -3187,13 +3382,11 @@
         color: var(--text-secondary);
         font-size: 0.7rem;
         gap: 4px;
-        /* Sostituisce i vecchi margini sballati */
       }
 
       .bottom-nav-btn i {
         font-size: 1.25rem;
         margin: 0 !important;
-        /* Rimuove margini che spingono l'icona giù */
       }
 
       .bottom-nav-btn.active {
@@ -3203,50 +3396,155 @@
       .bottom-nav-btn.add-btn {
         grid-column: 3;
         justify-self: center;
-        /* Centra orizzontalmente nella colonna */
         align-self: center;
-        /* Centra verticalmente nella cella */
         transform: translateY(-15px);
         width: 56px !important;
         height: 56px !important;
         border-radius: 50%;
         border: 4px solid #1a1a1f;
-        /* Colore di stacco */
         box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
         background: var(--primary) !important;
         color: white !important;
-        margin: 0 !important;
       }
 
-      /* 4. RIMUOVI TRANSIZIONI INUTILI ALLO SCROLL */
-      .media-card {
-        transition: transform 0.15s ease-out !important;
+      /* ============================================
+         MOBILE FILTER SELECT
+      ============================================ */
+
+      #mobileCategoryFilter,
+      #mobileSortFilter {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        padding-right: 35px !important;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="white" viewBox="0 0 16 16"><path d="M4 6h8l-4 5z"/></svg>') !important;
+        background-repeat: no-repeat !important;
+        background-position: calc(100% - 15px) center !important;
+        background-size: 12px !important;
       }
 
-      /* Su Mobile diventa un Bottom Sheet */
-      .context-menu {
-        top: auto !important;
-        left: 0 !important;
-        bottom: 0 !important;
+      /* ============================================
+         ANIMAZIONI RIDOTTE
+      ============================================ */
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+
+        to {
+          opacity: 1;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      /* ============================================
+         MODALE DETTAGLI - CENTRO ELEMENTI MOBILE
+      ============================================ */
+
+      /* Hero content centrato */
+      .details-hero-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 0 1.5rem 1.5rem 1.5rem;
+      }
+
+      #detailsModalTitle {
+        font-size: 1.6rem;
+        text-align: center;
         width: 100%;
-        border-radius: 24px 24px 0 0;
-        transform: translateY(100%);
-        padding-bottom: env(safe-area-inset-bottom);
       }
 
-      .context-menu.visible {
-        transform: translateY(0);
+      /* Extra btn (se presente) centrato */
+      #shell-extra-btn {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 8px;
       }
 
-      .context-menu-item {
-        padding: 1rem 1.5rem;
-        font-size: 1rem;
+      /* Titolo area in colonna centrata */
+      .details-title-area>div:first-child {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
       }
 
-      /* Nascondiamo le icone hover fluttuanti su mobile perché usiamo il long tap */
-      .media-card .card-actions,
-      .media-card .favorite-btn {
-        display: none !important;
+      /* ♥ Aggiungi centrato */
+      #detailsModalMeta {
+        justify-content: center;
+        width: 100%;
+        margin-top: 8px;
+      }
+
+      /* Rating badges centrati */
+      #shell-ratings {
+        justify-content: center;
+        width: 100%;
+        margin-top: 8px;
+        gap: 12px;
+      }
+
+      /* Chevron button */
+      .details-chevron-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin-top: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 6px 20px;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .details-chevron-btn i {
+        transition: transform 0.3s ease;
+      }
+
+      .details-chevron-btn.expanded i {
+        transform: rotate(180deg);
+      }
+
+      .details-chevron-btn:active {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      /* Pannello espandibile: nascosto di default con display none */
+      .details-expand-panel {
+        display: none;
+      }
+
+      .details-expand-panel.expanded {
+        display: block;
+      }
+
+      .details-expand-panel .details-main-grid {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+        column-gap: 0;
+        row-gap: 1.5rem;
+      }
+    }
+
+    /* Su desktop il pannello è sempre visibile */
+    @media (min-width: 769px) {
+      .details-chevron-btn {
+        display: none;
+      }
+
+      .details-expand-panel {
+        max-height: none !important;
+        overflow: visible !important;
       }
     }
   </style>
@@ -5574,45 +5872,67 @@
     function renderDetailsShell(media) {
       const posterUrl = media.poster || DEFAULT_POSTER;
       elements.detailsModalContent.innerHTML = `
-            <div class="details-hero">
-                <button class="modal-close-btn" id="detailsModalCloseNew"><i class="fas fa-times"></i></button>
-                <div class="details-backdrop"></div>
-                <div class="details-hero-content">
-                    <img id="detailsModalPoster" src="${posterUrl}">
-                    <div class="details-title-area">
-                        <h2 id="detailsModalTitle">${media.title}</h2>
-                        <div id="detailsModalMeta" class="meta-badges"></div>
-                        <div id="shell-ratings" class="details-ratings-container"></div>
+        <div class="details-hero">
+            <button class="modal-close-btn" id="detailsModalCloseNew"><i class="fas fa-times"></i></button>
+            <div class="details-backdrop"></div>
+            <div class="details-hero-content">
+                <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
+                <div class="details-title-area" style="flex-grow: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px; margin-bottom: 5px;">
+                        <h2 id="detailsModalTitle" style="margin: 0;">${media.title}</h2>
+                        <div id="shell-extra-btn"></div>
                     </div>
+                    <div id="detailsModalMeta" class="meta-badges"></div>
+                    <div id="shell-ratings" class="details-ratings-container"></div>
+                    <!-- CHEVRON -->
+                    <button id="detailsChevronBtn" class="details-chevron-btn">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
                 </div>
             </div>
-        <div class="details-main-grid">
-            <!-- Row 1: Trama e Meta Destra -->
-            <div class="details-left-col">
-                <div id="detailsModalTagline" style="font-style:italic; opacity:0.7; margin-bottom:1rem; font-size:0.95rem;"></div>
-                <h4 class="section-label" style="margin-bottom:0.5rem;">TRAMA</h4>
-                <p id="detailsModalOverview" class="skeleton-text" style="margin-top:0; margin-bottom:0;"></p>
-            </div>
-            <div class="details-right-col">
-                <div id="shell-year-runtime"></div>
-                <h4 class="section-label" style="margin-bottom:0.5rem;">REGIA</h4>
-                <div id="shell-director" style="font-weight:600; color:white; margin-bottom:0;"></div>
-            </div>
-
-            <!-- Row 2: Cast e Gestione -->
-            <div class="details-left-col">
-                <h4 class="section-label" style="margin-top:0.5rem; margin-bottom:0.5rem;">CAST PRINCIPALE</h4>
-                <div id="detailsModalCast" class="cast-scroller"></div>
-            </div>
-            <div class="details-right-col">
-                <div id="shell-management-box" style="margin-top:0.5rem; padding:1.2rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
-                    <h4 class="section-label" style="margin-top:0; margin-bottom:0.8rem; font-size:0.7rem; opacity:0.6;">GESTIONE</h4>
-                    <div id="shell-management"></div>
+        </div>
+        <!-- PANNELLO ESPANDIBILE -->
+        <div id="detailsExpandPanel" class="details-expand-panel">
+            <div class="details-main-grid">
+                <div class="details-left-col">
+                    <div id="detailsModalTagline" style="font-style:italic; opacity:0.7; margin-bottom:1rem; font-size:0.95rem;"></div>
+                    <h4 class="section-label" style="margin-bottom:0.5rem;">TRAMA</h4>
+                    <p id="detailsModalOverview" class="skeleton-text" style="margin-top:0; margin-bottom:0;"></p>
+                </div>
+                <div class="details-right-col">
+                    <div id="shell-year-runtime"></div>
+                    <h4 class="section-label" style="margin-bottom:0.5rem;">REGIA</h4>
+                    <div id="shell-director" style="font-weight:600; color:white; margin-bottom:0;"></div>
+                </div>
+                <div class="details-left-col">
+                    <h4 class="section-label" style="margin-top:0.5rem; margin-bottom:0.5rem;">CAST PRINCIPALE</h4>
+                    <div class="cast-scroller" id="detailsModalCast"></div>
+                </div>
+                <div class="details-right-col">
+                    <div id="shell-management-box" style="margin-top:0.5rem; padding:1.2rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+                        <h4 class="section-label" style="margin-top:0; margin-bottom:0.8rem; font-size:0.7rem; opacity:0.6;">GESTIONE</h4>
+                        <div id="shell-management"></div>
+                    </div>
                 </div>
             </div>
         </div>`;
 
       document.getElementById('detailsModalCloseNew').onclick = () => closeModal(elements.detailsModal);
+
+      // Nasconde il pannello su mobile all'apertura
+      if (window.innerWidth <= 768) {
+        document.getElementById('detailsExpandPanel').style.display = 'none';
+      }
+
+      // Listener chevron
+      document.getElementById('detailsChevronBtn').addEventListener('click', () => {
+        const panel = document.getElementById('detailsExpandPanel');
+        const btn = document.getElementById('detailsChevronBtn');
+        const isHidden = panel.style.display === 'none' || panel.style.display === '';
+
+        panel.style.display = isHidden ? 'block' : 'none';
+        btn.classList.toggle('expanded', isHidden);
+      });
     }
 
     function populateDetailsModal(details, media) {
