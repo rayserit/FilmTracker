@@ -2288,6 +2288,7 @@
 
       /* --- TOP BAR MOBILE: Struttura a riga singola --- */
       .top-bar {
+        transition: transform 0.3s ease !important;
         padding: 0.5rem 0.75rem !important;
         margin-bottom: 0.5rem !important;
         height: auto !important;
@@ -2299,6 +2300,10 @@
         justify-content: space-between !important;
         flex-wrap: nowrap !important;
         gap: 10px !important;
+      }
+
+      .top-bar.hidden {
+        transform: translateY(-100%);
       }
 
       /* Lo Switch */
@@ -4275,6 +4280,33 @@
       loadSortOrder();
       updateSwitcherLinksInViewMode();
       handleViewMode() || setupAuthListeners();
+
+      // Hide/show top bar on scroll (mobile only)
+      if (window.innerWidth <= 768) {
+        let lastScrollY = 0;
+        let ticking = false;
+
+        window.addEventListener('scroll', () => {
+          if (!ticking) {
+            requestAnimationFrame(() => {
+              const currentScrollY = window.scrollY;
+              const topBar = document.querySelector('.top-bar');
+
+              if (currentScrollY > lastScrollY && currentScrollY > 60) {
+                // Scroll verso il basso: nascondi
+                topBar.classList.add('hidden');
+              } else {
+                // Scroll verso l'alto: mostra
+                topBar.classList.remove('hidden');
+              }
+
+              lastScrollY = currentScrollY;
+              ticking = false;
+            });
+            ticking = true;
+          }
+        }, { passive: true });
+      }
     }
 
     function updateSwitcherLinksInViewMode() {
