@@ -2546,12 +2546,20 @@
       }
 
       #mobileNotificationsModal .modal-content {
-        width: 95%;
-        margin: 0 auto 85px auto;
-        border-radius: 16px;
-        height: auto;
-        max-height: 60vh;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        width: 90% !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        margin: 0 !important;
+        position: absolute !important;
+        bottom: 80px !important;
+        border-radius: 16px !important;
+        height: auto !important;
+        max-height: 60vh !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+      }
+
+      #mobileNotificationsModal.visible .modal-content {
+        transform: translateX(-50%) !important;
       }
 
       .notification-list {
