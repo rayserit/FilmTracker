@@ -2931,6 +2931,7 @@
 
             /* 2. SISTEMA LA BARRA SUPERIORE */
             .top-bar {
+                transition: transform 0.3s ease;
                 padding: 0.5rem 0.75rem;
                 margin-bottom: 0.5rem;
                 height: auto;
@@ -2940,6 +2941,10 @@
                 gap: 10px;
                 /* Distanza fissa e ravvicinata tra Switch e Ricerca */
                 flex-wrap: nowrap;
+            }
+
+            .top-bar.hidden {
+                transform: translateY(-100%);
             }
 
             /* Lo Switch a sinistra */
@@ -4770,11 +4775,37 @@
 
         function init() {
             setupEventListeners();
-
             loadSortOrder();
             updateSwitcherLinksInViewMode();
             handleViewMode() || setupAuthListeners();
             loadData(); // Moved here to ensure custom selects are set up first
+
+            // Hide/show top bar on scroll (mobile only)
+            if (window.innerWidth <= 768) {
+                let lastScrollY = 0;
+                let ticking = false;
+
+                window.addEventListener('scroll', () => {
+                    if (!ticking) {
+                        requestAnimationFrame(() => {
+                            const currentScrollY = window.scrollY;
+                            const topBar = document.querySelector('.top-bar');
+
+                            if (currentScrollY > lastScrollY && currentScrollY > 60) {
+                                // Scroll verso il basso: nascondi
+                                topBar.classList.add('hidden');
+                            } else {
+                                // Scroll verso l'alto: mostra
+                                topBar.classList.remove('hidden');
+                            }
+
+                            lastScrollY = currentScrollY;
+                            ticking = false;
+                        });
+                        ticking = true;
+                    }
+                }, { passive: true });
+            }
         }
 
         function updateSwitcherLinksInViewMode() {
