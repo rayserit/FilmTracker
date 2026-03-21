@@ -3579,6 +3579,158 @@
         overflow: visible !important;
       }
     }
+
+    /* --- FIX MODALE ATTORE --- */
+    #actorModal .modal-content {
+      max-width: 1000px !important;
+      width: 95%;
+      padding: 0 !important;
+      /* Rimuove padding interni per far respirare l'Hero */
+      overflow-x: hidden;
+    }
+
+    /* Gestione delle locandine nella filmografia */
+    .actor-filmography-grid .film-card-small {
+      width: 110px;
+      /* Più piccole per vederne di più insieme */
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .actor-filmography-grid .film-card-small img {
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      object-fit: cover;
+      border-radius: 6px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      display: block;
+    }
+
+    /* Contenitore filmografia a tutta larghezza */
+    .actor-filmography-fullwidth {
+      grid-column: 1 / -1;
+      width: 100%;
+      margin-top: 1rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .actor-filmography-grid {
+      display: flex;
+      overflow-x: auto;
+      gap: 18px;
+      padding: 10px 0 20px 0;
+      scrollbar-width: thin;
+    }
+
+    .actor-filmography-grid::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .actor-filmography-grid::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 10px;
+    }
+
+    /* Responsive Mobile */
+    @media (max-width: 768px) {
+      #actorModal .details-hero-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 1.5rem !important;
+      }
+
+      #actorModal #detailsModalPoster {
+        width: 120px !important;
+        height: 120px !important;
+        margin-bottom: 1rem;
+      }
+
+      #actorModal #detailsModalTitle {
+        font-size: 1.8rem !important;
+      }
+
+      #actorModal .details-main-grid {
+        grid-template-columns: 1fr !important;
+        /* Stack verticale su mobile */
+        padding: 1.5rem !important;
+        gap: 1.5rem !important;
+      }
+
+      .actor-filmography-grid {
+        gap: 12px;
+      }
+
+      .actor-filmography-grid .film-card-small {
+        width: 100px;
+        /* Ancora più compatte su mobile */
+      }
+    }
+
+    @media (max-width: 768px) {
+
+      /* KILL SWITCH GRAFICO PER PERFORMANCE MOBILE */
+      * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+      .bg-glows {
+        display: none !important;
+      }
+
+      .modal-content,
+      .context-menu,
+      .media-card {
+        background-color: #1c1c21 !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        box-shadow: none !important;
+      }
+
+      /* DETTAGLI MODAL - CENTRATURA MOBILE */
+      .details-hero-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 0 1.5rem 1.5rem 1.5rem;
+      }
+
+      #detailsModalTitle {
+        font-size: 1.6rem;
+        width: 100%;
+      }
+
+      #detailsModalMeta,
+      #shell-ratings,
+      #shell-episodes-btn,
+      #shell-extra-btn {
+        justify-content: center;
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      /* STATS SCROLLABILI */
+      .stats-container {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        gap: 12px;
+        padding-bottom: 10px;
+        scroll-snap-type: x mandatory;
+      }
+
+      .stat-item {
+        flex: 0 0 120px;
+        scroll-snap-align: start;
+      }
+
+      #actorModal #detailsModalPoster {
+        width: 140px !important;
+        height: 140px !important;
+        margin-top: 10px;
+      }
+    }
   </style>
 </head>
 
@@ -6062,9 +6214,14 @@
       overview.classList.remove('skeleton-text');
       overview.textContent = details.overview || 'Trama non disponibile.';
 
-      // 5. Destra: Regia
+      // --- REGIA CLICCABILE ---
       const director = details.crew.find(c => c.job === 'Director');
-      document.getElementById('shell-director').textContent = director ? director.name : 'N/D';
+      const directorEl = document.getElementById('shell-director');
+      if (director) {
+        directorEl.innerHTML = `<span style="cursor:pointer; color:var(--primary); font-weight:700;" onclick="showActorModal('${director.id}')">${director.name}</span>`;
+      } else {
+        directorEl.textContent = 'N/D';
+      }
 
       // 6. Cast
       document.getElementById('detailsModalCast').innerHTML = details.cast.slice(0, 12).map(a => `
@@ -6144,121 +6301,74 @@
       }
     }
 
+    // --- AGGIORNAMENTO VOTI INTELLIGENTE (CON CACHE 7GG) ---
     async function updateAllRatings() {
-      if (isUpdateInProgress) {
-        showNotification("Un aggiornamento è già in corso.", "warning");
-        return;
-      }
+      if (isUpdateInProgress) return showNotification("Aggiornamento già in corso.", "warning");
       isUpdateInProgress = true;
 
       const now = Date.now();
       const SETTE_GIORNI = 7 * 24 * 60 * 60 * 1000;
-
-      // 1. Filtro
-      let itemsToUpdate = [];
-      let skippedCount = 0;
-
-      mediaList.forEach(m => {
-        if (!m.imdbID) return;
-        const lastRatingUpdate = m.lastRatingUpdate ? new Date(m.lastRatingUpdate).getTime() : 0;
-        if (now - lastRatingUpdate > SETTE_GIORNI) {
-          itemsToUpdate.push(m);
-        } else {
-          skippedCount++;
-        }
+      let itemsToUpdate = mediaList.filter(m => {
+        const last = m.lastRatingUpdate ? new Date(m.lastRatingUpdate).getTime() : 0;
+        return m.imdbID && (now - last > SETTE_GIORNI);
       });
+
       if (itemsToUpdate.length === 0) {
         isUpdateInProgress = false;
-        return showNotification(`Tutti i voti sono aggiornati. (Risparmiate ${skippedCount} API)`, "success");
+        return showNotification("Tutti i voti sono aggiornati (Cache 7gg attiva).", "success");
       }
 
-      // 2. Setup UI
-      const progressModal = document.getElementById('updateProgressModal');
-      const progressText = document.getElementById('updateProgressText');
-      const progressFill = document.getElementById('updateProgressBarFill');
-      document.getElementById('updateProgressTitle').textContent = "Sincronizzazione Voti...";
-
-      closeModal(document.getElementById('settingsModal'));
-      setTimeout(() => { openModal(progressModal); }, 350);
-
+      openModal(elements.updateProgressModal);
       let allChangesHTML = [];
-      let apiCallsMDBList = 0;
-
-      // --- NUOVO: CONTATORE DI ERRORI CONSECUTIVI ---
       let consecutiveErrors = 0;
-      const MAX_ERRORS = 3;
-
-      // Helper icone
       const getIconHtml = (src) => `<img src="${src}" style="width:14px; height:14px; object-fit:contain; vertical-align:middle; margin-right:4px;">`;
 
-      // 3. Ciclo
       for (let i = 0; i < itemsToUpdate.length; i++) {
-        // --- FRENO DI EMERGENZA ---
-        if (consecutiveErrors >= MAX_ERRORS) {
-          console.warn("Troppi errori consecutivi. Interruzione aggiornamento per salvare le API.");
-          showNotification("Aggiornamento interrotto: probabile limite API raggiunto.", "error");
-          break; // ESCE DAL CICLO
-        }
-
+        if (consecutiveErrors >= 3) break;
         const media = itemsToUpdate[i];
-
-        progressText.textContent = `(${i + 1}/${itemsToUpdate.length}) Controllo: ${media.title}...`;
-        progressFill.style.width = `${((i + 1) / itemsToUpdate.length) * 100}%`;
+        elements.updateProgressBarFill.style.width = `${((i + 1) / itemsToUpdate.length) * 100}%`;
+        elements.updateProgressText.textContent = `Sincronizzazione: ${media.title}...`;
 
         try {
           const ratings = await fetchMDBListRatings(media.imdbID);
-          apiCallsMDBList++;
+          if (!ratings) { consecutiveErrors++; continue; }
+          consecutiveErrors = 0;
 
-          if (!ratings) {
-            // Se ratings è null, qualcosa non va
-            consecutiveErrors++;
-          } else {
-            // Se ha successo, resettiamo il contatore errori
-            consecutiveErrors = 0;
-            media.lastRatingUpdate = new Date().toISOString();
+          let changes = [];
+          const rtRating = ratings.find(r => r.source === 'tomatoes');
+          const popcornRating = ratings.find(r => r.source === 'tomatoesaudience');
+          const letterboxdRating = ratings.find(r => r.source === 'letterboxd');
+          const metacriticRating = ratings.find(r => r.source === 'metacritic');
+          const imdbRating = ratings.find(r => r.source === 'imdb');
 
-            let changes = [];
+          const checkAndUpdate = (newObj, oldVal, iconSrc) => {
+            let oldString = String(oldVal).trim();
+            if (["undefined", "null", "N/A", "N/D", ""].includes(oldString)) oldString = "N/A";
+            if (!newObj || newObj.value == null) return oldVal;
+            let newString = String(newObj.value).trim();
+            if (["undefined", "null", "N/A", "N/D", ""].includes(newString)) newString = "N/A";
+            if (oldString === newString || (oldString === "N/A" && newString === "N/A")) return oldVal;
+            const oldNum = parseFloat(oldString);
+            const newNum = parseFloat(newString);
+            let isDifferent = oldString !== newString;
+            if (!isNaN(oldNum) && !isNaN(newNum)) isDifferent = oldNum !== newNum;
+            if (isDifferent) {
+              const iconHtml = getIconHtml(iconSrc);
+              changes.push(`<span style="display:inline-flex; align-items:center;">${iconHtml} ${oldString} <i class="fas fa-arrow-right" style="font-size:0.7em; color:var(--text-secondary); margin:0 6px;"></i> <span style="color:var(--primary); font-weight:bold;">${newString}</span></span>`);
+              return newString === "N/A" ? "N/A" : newString;
+            }
+            return oldVal;
+          };
 
-            const rtRating = ratings.find(r => r.source === 'tomatoes');
-            const popcornRating = ratings.find(r => r.source === 'tomatoesaudience');
-            const letterboxdRating = ratings.find(r => r.source === 'letterboxd');
-            const metacriticRating = ratings.find(r => r.source === 'metacritic');
-            const imdbRating = ratings.find(r => r.source === 'imdb');
+          media.imdbRating = checkAndUpdate(imdbRating, media.imdbRating, IMDB_STAR_ICON);
+          media.letterboxdRating = checkAndUpdate(letterboxdRating, media.letterboxdRating, LETTERBOXD_ICON);
+          media.metacriticRating = checkAndUpdate(metacriticRating, media.metacriticRating, METACRITIC_ICON);
+          media.rottenTomatoes = checkAndUpdate(rtRating, media.rottenTomatoes, ROTTEN_TOMATOES_ICONS.fresh);
+          media.popcornRating = checkAndUpdate(popcornRating, media.popcornRating, POPCORN_ICONS.positive);
 
-            // FUNZIONE INTELLIGENTE (con fix N/A e numeri)
-            const checkAndUpdate = (newObj, oldVal, iconSrc) => {
-              let oldString = String(oldVal).trim();
-              if (["undefined", "null", "N/A", "N/D", ""].includes(oldString)) oldString = "N/A";
-
-              if (!newObj || newObj.value == null) return oldVal;
-
-              let newString = String(newObj.value).trim();
-              if (["undefined", "null", "N/A", "N/D", ""].includes(newString)) newString = "N/A";
-
-              if (oldString === newString || (oldString === "N/A" && newString === "N/A")) return oldVal;
-
-              const oldNum = parseFloat(oldString);
-              const newNum = parseFloat(newString);
-              let isDifferent = oldString !== newString;
-              if (!isNaN(oldNum) && !isNaN(newNum)) isDifferent = oldNum !== newNum;
-
-              if (isDifferent) {
-                const iconHtml = getIconHtml(iconSrc);
-                changes.push(`<span style="display:inline-flex; align-items:center;">${iconHtml} ${oldString} <i class="fas fa-arrow-right" style="font-size:0.7em; color:var(--text-secondary); margin:0 6px;"></i> <span style="color:var(--primary); font-weight:bold;">${newString}</span></span>`);
-                return newString === "N/A" ? "N/A" : newString;
-              }
-              return oldVal;
-            };
-
-            media.imdbRating = checkAndUpdate(imdbRating, media.imdbRating, IMDB_STAR_ICON);
-            media.letterboxdRating = checkAndUpdate(letterboxdRating, media.letterboxdRating, LETTERBOXD_ICON);
-            media.metacriticRating = checkAndUpdate(metacriticRating, media.metacriticRating, METACRITIC_ICON);
-            media.rottenTomatoes = checkAndUpdate(rtRating, media.rottenTomatoes, ROTTEN_TOMATOES_ICONS.fresh);
-            media.popcornRating = checkAndUpdate(popcornRating, media.popcornRating, POPCORN_ICONS.positive);
-
-            if (changes.length > 0) {
-              const posterUrl = media.poster || DEFAULT_POSTER;
-              const itemHTML = `
+          if (changes.length > 0) {
+            const posterUrl = media.poster || DEFAULT_POSTER;
+            allChangesHTML.push(`
                         <div style="display:flex; gap:12px; align-items:center; padding: 10px; background: var(--section-tint); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color);">
                             <img src="${posterUrl}" style="width:45px; height:65px; border-radius:6px; object-fit:cover; flex-shrink:0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                             <div style="display:flex; flex-direction:column; justify-content:center; gap: 4px;">
@@ -6267,63 +6377,27 @@
                                     ${changes.join('')}
                                 </div>
                             </div>
-                        </div>
-                    `;
-              allChangesHTML.push(itemHTML);
-            }
+                        </div>`);
           }
-          await new Promise(r => setTimeout(r, 350));
-        } catch (err) {
-          console.error(`Errore voti per ${media.title}`, err);
-          consecutiveErrors++; // Incrementa errore anche qui
-        }
+          media.lastRatingUpdate = new Date().toISOString();
+        } catch (e) { consecutiveErrors++; }
+        await new Promise(r => setTimeout(r, 400));
       }
 
-      // 4. Fine aggiornamento
-      closeModal(progressModal);
+      closeModal(elements.updateProgressModal);
 
-      setTimeout(() => {
-        const apiReportHTML = `
-            <div style="margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px dashed var(--border-color);">
-                <div style="font-size: 0.85rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase;">
-                    <i class="fas fa-server"></i> Report Consumo API
-                </div>
-                <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; line-height: 1.5;">
-                    <li><strong style="color: var(--primary);">${apiCallsMDBList}</strong> MDBList eseguite</li>
-                    <li><strong style="color: var(--success);">${skippedCount}</strong> Risparmiate (Cache 7gg)</li>
-                    ${consecutiveErrors >= MAX_ERRORS ? '<li><strong style="color: var(--danger);">⚠️ Interrotto per errori API</strong></li>' : ''}
-                </ul>
-            </div>
-        `;
+      if (allChangesHTML.length > 0) {
+        const logHeader = `<div style="margin-bottom: 0.8rem; color: var(--warning); font-weight: bold; font-size: 1.1rem;"><i class="fas fa-star"></i> Voti Aggiornati (${allChangesHTML.length})</div>`;
+        const finalLogEntry = logHeader + allChangesHTML.join('');
+        document.getElementById('updateSummaryList').innerHTML = `<li style="padding:0; border:none;">${finalLogEntry}</li>`;
+        openModal(document.getElementById('updateSummaryModal'));
+        addToUpdateHistory([finalLogEntry]);
+      }
 
-        let finalLogEntry = '';
-
-        if (allChangesHTML.length > 0) {
-          const logHeader = `<div style="margin-bottom: 0.8rem; color: var(--warning); font-weight: bold; font-size: 1.1rem;"><i class="fas fa-star"></i> Voti Aggiornati (${allChangesHTML.length})</div>`;
-          finalLogEntry = logHeader + allChangesHTML.join('') + apiReportHTML;
-
-          document.getElementById('updateSummaryList').innerHTML = `<li style="padding:0; border:none;">${finalLogEntry}</li>`;
-          openModal(document.getElementById('updateSummaryModal'));
-          addToUpdateHistory([finalLogEntry]);
-        } else {
-          // Se non ci sono cambiamenti ma abbiamo consumato API, mostriamo notifica
-          if (apiCallsMDBList > 0) {
-            finalLogEntry = `<div style="margin-bottom: 0.8rem; color: var(--primary); font-weight: bold; font-size: 1.1rem;"><i class="fas fa-check-circle"></i> Voti Controllati (Nessuna variazione)</div>` + apiReportHTML;
-            addToUpdateHistory([finalLogEntry]);
-          }
-          // Se abbiamo interrotto per errore, lo diciamo
-          if (consecutiveErrors >= MAX_ERRORS) {
-            showNotification("Aggiornamento interrotto. Verifica limiti API.", "error");
-          } else {
-            showNotification("Controllo completato.", "success");
-          }
-        }
-
-        saveData();
-        renderMedia();
-        isUpdateInProgress = false;
-
-      }, 350);
+      saveData();
+      renderMedia();
+      isUpdateInProgress = false;
+      showNotification("Sincronizzazione completata.", "success");
     }
 
     // Funzione per SALVARE nello storico
@@ -6406,112 +6480,110 @@
 
     async function showActorModal(personId) {
       openModal(elements.actorModal);
-      elements.actorModalContent.innerHTML = '<div style="text-align: center; padding: 4rem;"><i class="fas fa-spinner fa-3x loading-spinner"></i></div>';
+      elements.actorModalContent.innerHTML = `
+            <div style="height: 400px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px;">
+                <i class="fas fa-spinner fa-3x loading-spinner" style="color: var(--primary);"></i>
+                <span style="opacity: 0.6; letter-spacing: 1px;">CARICAMENTO PROFILO...</span>
+            </div>`;
 
-      const actorDetails = await fetchTMDbActorDetails(personId);
-
-      if (actorDetails) {
-        populateActorModal(actorDetails);
-      } else {
-        elements.actorModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli non trovati.</p>';
-      }
-    }
-
-    async function fetchTMDbActorDetails(personId) {
       try {
-        const [detailsRes, creditsRes] = await Promise.all([
+        const [detailsRes, movieRes] = await Promise.all([
           fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${TMDB_KEY}&language=it-IT`),
-          fetch(`https://api.themoviedb.org/3/person/${personId}/movie_credits?api_key=${TMDB_KEY}&language=it-IT`)
+          fetch(`https://api.themoviedb.org/3/person/${personId}/combined_credits?api_key=${TMDB_KEY}&language=it-IT`)
         ]);
-        if (!detailsRes.ok || !creditsRes.ok) return null;
 
         let details = await detailsRes.json();
-        const credits = await creditsRes.json();
+        const credits = await movieRes.json();
 
         if (!details.biography) {
-          const enDetailsRes = await fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${TMDB_KEY}&language=en-US`);
-          if (enDetailsRes.ok) {
-            const enDetails = await enDetailsRes.json();
-            details.biography = enDetails.biography;
-          }
+          const enRes = await fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${TMDB_KEY}&language=en-US`);
+          const enDetails = await enRes.json();
+          details.biography = enDetails.biography;
         }
 
-        return { ...details, movie_credits: credits };
+        populateActorModal({ ...details, combined_credits: credits });
       } catch (err) {
-        console.error("Error fetching TMDb actor details:", err);
-        return null;
+        elements.actorModalContent.innerHTML = '<p style="text-align:center; padding: 5rem;">Impossibile caricare i dettagli.</p>';
       }
     }
 
     function populateActorModal(details) {
       const photoUrl = details.profile_path ? `https://image.tmdb.org/t/p/w500${details.profile_path}` : DEFAULT_ACTOR_PHOTO;
+      const backdropUrl = details.profile_path ? `https://image.tmdb.org/t/p/w1280${details.profile_path}` : '';
 
-      let filmographyHTML = '';
-      let filmographyTitle = 'Filmografia Selezionata';
-
+      // Filtro Popolarità (come concordato)
+      let rawList = [];
       if (details.known_for_department === 'Directing') {
-        filmographyTitle = 'Filmografia Selezionata (Regista)';
-        const directedFilms = [];
-        const processedIds = new Set();
-        details.movie_credits.crew.forEach(film => {
-          if (film.job === 'Director' && !processedIds.has(film.id)) {
-            directedFilms.push(film);
-            processedIds.add(film.id);
-          }
-        });
-        directedFilms.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
-        filmographyHTML = directedFilms.slice(0, 15).map(film => {
-          if (!film.poster_path) return '';
-          return `
-                <div class="film-card-small" data-tmdb-url="https://www.themoviedb.org/movie/${film.id}" title="${film.title}">
-                    <img src="https://image.tmdb.org/t/p/w200${film.poster_path}" onerror="this.src='${DEFAULT_POSTER}'">
-                    <div class="film-card-small-title">${film.title}</div>
-                </div>`;
-        }).join('');
+        rawList = (details.combined_credits?.crew || []).filter(c => c.job === 'Director');
       } else {
-        filmographyTitle = 'Filmografia Selezionata (Attore)';
-        details.movie_credits.cast.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
-        filmographyHTML = details.movie_credits.cast.slice(0, 15).map(film => {
-          if (!film.poster_path) return '';
-          return `
-                <div class="film-card-small" data-tmdb-url="https://www.themoviedb.org/movie/${film.id}" title="${film.title}">
-                    <img src="https://image.tmdb.org/t/p/w200${film.poster_path}" onerror="this.src='${DEFAULT_POSTER}'">
-                    <div class="film-card-small-title">${film.title}</div>
-                </div>`;
-        }).join('');
+        rawList = (details.combined_credits?.cast || []).filter(c =>
+          c.character && !/self|himself|herself/i.test(c.character)
+        );
       }
 
+      const seen = new Set();
+      const credits = rawList
+        .filter(c => {
+          if (!c.poster_path || seen.has(c.id)) return false;
+          seen.add(c.id);
+          return true;
+        })
+        .sort((a, b) => b.popularity - a.popularity)
+        .slice(0, 30);
+
+      const filmographyHTML = credits.map(c => `
+            <div class="film-card-small" onclick="window.open('https://www.themoviedb.org/${c.media_type}/${c.id}', '_blank')">
+                <img src="https://image.tmdb.org/t/p/w342${c.poster_path}" onerror="this.src='${DEFAULT_POSTER}'">
+                <div class="film-card-small-title" style="margin-top:8px; font-weight:600; font-size:0.75rem; color:#fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height:1.2;">${c.title || c.name}</div>
+                <div style="font-size:0.7rem; opacity:0.5; margin-top:2px;">${(c.release_date || c.first_air_date || '').split('-')[0]}</div>
+            </div>
+        `).join('');
+
+      // Costruzione HTML (La X non c'è più qui, viene usata quella fissa del contenitore)
       elements.actorModalContent.innerHTML = `
-            <div class="actor-details-header">
-                <img src="${photoUrl}" class="actor-details-photo" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'">
-                <div class="actor-details-info">
-                    <h2>${details.name}</h2>
-                    <ul>
-                        <li><strong>Nascita:</strong> ${details.birthday ? new Date(details.birthday).toLocaleDateString('it-IT') : 'N/A'}</li>
-                        <li><strong>Luogo:</strong> ${details.place_of_birth || 'N/A'}</li>
-                    </ul>
-                    ${details.imdb_id ? `<a href="https://www.imdb.com/name/${details.imdb_id}/" target="_blank" class="btn btn-imdb"><i class="fab fa-imdb"></i> Vedi su IMDb</a>` : ''}
+            <div class="details-hero" style="min-height: auto; padding-top: 40px;">
+                <div class="details-backdrop" style="background-image: url('${backdropUrl}'); opacity: 0.15; filter: grayscale(100%) blur(20px);"></div>
+                <div class="details-hero-content" style="padding-bottom: 2rem;">
+                    <img id="detailsModalPoster" src="${photoUrl}" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'" 
+                         style="border-radius: 50%; width: 140px; height: 140px; object-fit: cover; border: 4px solid var(--primary); box-shadow: 0 0 20px rgba(0,0,0,0.5); flex-shrink:0;">
+                    <div class="details-title-area" style="flex-grow: 1;">
+                        <h2 id="detailsModalTitle" style="font-size: 2.2rem; margin: 0;">${details.name}</h2>
+                        <div class="meta-badges" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+                            <span class="meta-pill" style="background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;"><i class="fas fa-user-tag"></i> ${details.known_for_department}</span>
+                            ${details.birthday ? `<span class="meta-pill" style="background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;"><i class="fas fa-birthday-cake"></i> ${new Date(details.birthday).toLocaleDateString('it-IT')}</span>` : ''}
+                            <span class="meta-pill" style="background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;"><i class="fas fa-fire"></i> Pop: ${details.popularity?.toFixed(0)}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div>
-                <h3 class="details-section-title">${filmographyTitle}</h3>
-                <div class="filmography-scroller" id="filmographyScroller">
-                    ${filmographyHTML}
+            
+            <div class="details-main-grid" style="padding: 0 3rem 2rem 3rem; display: grid; grid-template-columns: 2fr 1fr; gap: 3rem;">
+                <div class="details-left-col">
+                    <h4 class="section-label" style="color: var(--primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 10px;">Biografia</h4>
+                    <div id="detailsModalOverview" style="font-size: 0.9rem; color: #ccc; line-height: 1.6; max-height: 200px; overflow-y: auto; padding-right: 10px;">
+                        ${details.biography || 'Biografia non disponibile per questo profilo.'}
+                    </div>
                 </div>
-                <h3 class="details-section-title">Biografia</h3>
-                <p>${details.biography || 'Biografia non disponibile.'}</p>
+                
+                <div class="details-right-col">
+                    <h4 class="section-label" style="color: var(--primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 10px;">Dati Personali</h4>
+                    <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem;">
+                        <p style="margin: 0 0 10px 0;"><span style="opacity:0.5; font-size:0.65rem; display:block; text-transform:uppercase;">Luogo di Nascita</span> <strong>${details.place_of_birth || 'N/D'}</strong></p>
+                        ${details.deathday ? `<p style="margin: 0 0 10px 0;"><span style="opacity:0.5; font-size:0.65rem; display:block; text-transform:uppercase;">Decesso</span> <strong>${new Date(details.deathday).toLocaleDateString('it-IT')}</strong></p>` : ''}
+                        <div style="margin-top: 15px;">
+                            ${details.imdb_id ? `<a href="https://www.imdb.com/name/${details.imdb_id}/" target="_blank" class="btn btn-small" style="background:#f5c518; color:#000; border:none; width:100%; display:flex; justify-content:center; align-items:center; height:32px; font-weight:700;"><i class="fab fa-imdb" style="margin-right:8px;"></i> Profilo IMDb</a>` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actor-filmography-fullwidth" style="grid-column: 1 / -1; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
+                    <h4 class="section-label" style="color: var(--primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 15px;">Lavori Conosciuti</h4>
+                    <div class="actor-filmography-grid" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px;">
+                        ${filmographyHTML}
+                    </div>
+                </div>
             </div>
         `;
-
-      const filmographyScroller = document.getElementById('filmographyScroller');
-      if (filmographyScroller) {
-        filmographyScroller.scrollLeft = 0;
-        filmographyScroller.querySelectorAll('.film-card-small').forEach(card => {
-          card.addEventListener('click', () => {
-            window.open(card.dataset.tmdbUrl, '_blank');
-          });
-        });
-      }
     }
 
     async function addFriend() {
@@ -6979,22 +7051,20 @@
 
     /* --- GESTIONE MODALI E BACK GESTURE (HISTORY API) --- */
 
-    // 1. Nuova funzione unificata per aprire i modali
+    // --- GESTIONE MODALI AVANZATA (HISTORY API) ---
     function openModal(modal) {
       if (!modal) return;
-
-      // Se il modale è già aperto, non fare nulla per evitare doppi stati
       if (modal.classList.contains('visible')) return;
+
+      const alreadyOpen = document.querySelector('.modal.visible');
+      if (alreadyOpen && alreadyOpen !== modal) {
+        alreadyOpen.style.filter = "blur(4px) brightness(0.7)";
+      }
 
       modal.style.display = 'flex';
       document.body.classList.add('modal-open');
+      setTimeout(() => modal.classList.add('visible'), 10);
 
-      // Aspetta un micro-secondo e aggiungi la classe per l'animazione
-      setTimeout(() => {
-        modal.classList.add('visible');
-      }, 10);
-
-      // Aggiungiamo uno stato alla cronologia del browser.
       if (!history.state || history.state.modalId !== modal.id) {
         history.pushState({ modalId: modal.id }, '', window.location.href);
       }
@@ -7003,38 +7073,22 @@
     // 2. Nuova funzione unificata per chiudere i modali
     function closeModal(modal) {
       if (modal && modal.classList.contains('visible')) {
-        // Invece di nasconderlo direttamente, diciamo al browser di "tornare indietro".
-        // Questo attiverà l'evento 'popstate' (vedi punto 3), che chiuderà visivamente il modale con animazione.
         history.back();
       }
     }
 
-    // 3. Gestore dell'evento "Torna Indietro" (Swipe o Tasto fisico)
     window.addEventListener('popstate', (event) => {
-      // Troviamo tutti i modali attualmente visibili (quelli con la classe .visible)
-      const visibleModals = Array.from(document.querySelectorAll('.modal'))
-        .filter(m => m.classList.contains('visible'));
-
+      const visibleModals = Array.from(document.querySelectorAll('.modal.visible'));
       if (visibleModals.length > 0) {
-        // Ordiniamo per z-index decrescente per chiudere prima quello più in alto
-        visibleModals.sort((a, b) => {
-          const zA = parseInt(window.getComputedStyle(a).zIndex) || 0;
-          const zB = parseInt(window.getComputedStyle(b).zIndex) || 0;
-          return zB - zA;
-        });
-
-        // Chiudiamo visivamente il modale più in alto con animazione
+        visibleModals.sort((a, b) => (parseInt(window.getComputedStyle(b).zIndex) || 0) - (parseInt(window.getComputedStyle(a).zIndex) || 0));
         const topModal = visibleModals[0];
         topModal.classList.remove('visible');
-
-        // Aspetta che l'animazione finisca (300ms) prima di fare display: none
         setTimeout(() => {
           topModal.style.display = 'none';
-
-          // Se non ci sono altri modali visibili, riattiviamo lo scroll del body
-          if (!document.querySelector('.modal.visible')) {
-            document.body.classList.remove('modal-open');
-          }
+          topModal.style.filter = "";
+          const nextModal = document.querySelector('.modal.visible');
+          if (nextModal) nextModal.style.filter = "";
+          if (!document.querySelector('.modal.visible')) document.body.classList.remove('modal-open');
         }, 300);
       }
     });
