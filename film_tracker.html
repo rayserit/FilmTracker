@@ -396,6 +396,11 @@
       align-items: center;
     }
 
+    /* Nasconde il voto duplicato su Desktop */
+    .imdb-mobile-only {
+      display: none;
+    }
+
     .media-ratings {
       display: flex;
       gap: 0.25rem;
@@ -746,6 +751,13 @@
     @media (max-width: 768px) {
       body {
         padding: 0.5rem;
+      }
+
+      .imdb-mobile-only {
+        display: inline-flex;
+        /* Lo mostra su Mobile */
+        align-items: center;
+        gap: 4px;
       }
 
       .top-bar {
@@ -5091,7 +5103,7 @@
           <div class="media-meta">
             <span class="year-label">${media.year || 'N/D'}</span>
             <span>${media.runtime ? formatRuntime(media.runtime) : ''}</span>
-            ${(media.imdbRating && media.imdbRating !== 'N/A') ? `<span><i class="fas fa-star" style="color:#f5c518; font-size:0.7rem;"></i> ${media.imdbRating}</span>` : ''}
+            ${(media.imdbRating && media.imdbRating !== 'N/A') ? `<span class="imdb-mobile-only"><i class="fas fa-star" style="color:#f5c518; font-size:0.7rem;"></i> ${media.imdbRating}</span>` : ''}
           </div>
           ${ratingsSection}
         </div>
