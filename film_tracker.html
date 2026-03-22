@@ -3663,20 +3663,52 @@
         font-size: 1.8rem !important;
       }
 
+      /* Impedisce al modale di oscillare lateralmente */
+      #actorModal .modal-content {
+        overflow-x: hidden !important;
+        padding: 0 !important;
+      }
+
+      /* Riduce il padding della griglia su mobile per dare respiro ai bordi */
       #actorModal .details-main-grid {
-        grid-template-columns: 1fr !important;
-        /* Stack verticale su mobile */
-        padding: 1.5rem !important;
-        gap: 1.5rem !important;
+        padding: 1rem 1.2rem 2rem 1.2rem !important;
+        display: block !important;
+        /* Forza il layout verticale */
+      }
+
+      /* Fix per la Bio che su mobile deve occupare tutto lo spazio */
+      #actorModal .details-left-col,
+      #actorModal .details-right-col {
+        width: 100% !important;
+        min-width: 0;
+        margin-bottom: 1.5rem;
+      }
+
+      /* FIX SCORRIMENTO FILMOGRAFIA */
+      .actor-filmography-fullwidth {
+        width: calc(100% + 2.4rem);
+        /* Estende il contenitore oltre il padding */
+        margin-left: -1.2rem;
+        /* Centra l'estensione */
+        overflow: hidden;
       }
 
       .actor-filmography-grid {
+        display: flex !important;
+        overflow-x: auto !important;
+        /* Momentum scrolling per iOS */
+        -webkit-overflow-scrolling: touch;
         gap: 12px;
+        padding: 0 1.2rem 15px 1.2rem;
+        /* Padding interno per non far toccare i bordi ai film durante lo scroll */
+        scroll-snap-type: x proximity;
       }
 
       .actor-filmography-grid .film-card-small {
-        width: 100px;
-        /* Ancora più compatte su mobile */
+        width: 110px;
+        /* Locandine leggermente più piccole su mobile per vederne di più */
+        flex-shrink: 0;
+        scroll-snap-align: start;
       }
     }
 
