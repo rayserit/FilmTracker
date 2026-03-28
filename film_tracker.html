@@ -3775,6 +3775,22 @@
         margin-top: 10px;
       }
     }
+
+    /* Stile per trama/bio espandibile */
+    .plot-container { position: relative; margin-bottom: 15px; }
+    .expandable-text {
+        font-size: 0.95rem; line-height: 1.6; color: #ccc;
+        display: -webkit-box; -webkit-box-orient: vertical;
+        overflow: hidden; -webkit-line-clamp: 4; line-clamp: 4;
+    }
+    @media (min-width: 769px) { .expandable-text { -webkit-line-clamp: 10; line-clamp: 10; } }
+    .expandable-text.expanded { -webkit-line-clamp: unset !important; line-clamp: unset !important; display: block; }
+    .read-more-btn {
+        background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--primary); padding: 3px 12px; border-radius: 4px; font-size: 0.75rem;
+        font-weight: 700; cursor: pointer; margin-top: 8px; display: none; text-transform: uppercase;
+    }
+    .read-more-btn:hover { background: rgba(255, 255, 255, 0.15); }
   </style>
 </head>
 
@@ -6152,7 +6168,9 @@
                 <div class="details-left-col">
                     <div id="detailsModalTagline" style="font-style:italic; opacity:0.7; margin-bottom:1rem; font-size:0.95rem;"></div>
                     <h4 class="section-label" style="margin-bottom:0.5rem;">TRAMA</h4>
-                    <p id="detailsModalOverview" class="skeleton-text" style="margin-top:0; margin-bottom:0;"></p>
+                    <div id="detailsModalOverviewContainer">
+                        <p id="detailsModalOverview" class="skeleton-text" style="margin-top:0; margin-bottom:0;"></p>
+                    </div>
                 </div>
                 <div class="details-right-col">
                     <div id="shell-year-runtime"></div>
@@ -6179,32 +6197,45 @@
         document.getElementById('detailsExpandPanel').style.display = 'none';
       }
 
-      // --- GESTIONE SWIPE PER ESPANDERE (TIPO APPLE MUSIC) ---
+      // --- GESTIONE PANNELLO ESPANDIBILE (SWIPE & CLICK) ---
       const chevronBtn = document.getElementById('detailsChevronBtn');
       const hero = elements.detailsModalContent.querySelector('.details-hero');
-      let swipeStartY = 0;
+      const panel = document.getElementById('detailsExpandPanel');
 
-      if (hero) {
-        hero.addEventListener('touchstart', (e) => {
-          swipeStartY = e.touches[0].clientY;
-        }, { passive: true });
+      if (chevronBtn && panel) {
+          // 1. Rende la freccetta cliccabile col dito!
+          chevronBtn.style.pointerEvents = 'auto';
+          chevronBtn.onclick = (e) => {
+              e.stopPropagation();
+              if (panel.style.display === 'none' || panel.style.display === '') {
+                  panel.style.display = 'block';
+                  chevronBtn.classList.add('expanded');
+                  panel.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                  panel.style.display = 'none';
+                  chevronBtn.classList.remove('expanded');
+              }
+          };
 
-        hero.addEventListener('touchend', (e) => {
-          const swipeEndY = e.changedTouches[0].clientY;
-          const deltaY = swipeEndY - swipeStartY;
-          const panel = document.getElementById('detailsExpandPanel');
+          // 2. Mantiene il supporto allo Swipe per chi preferisce trascinare
+          let swipeStartY = 0;
+          hero.addEventListener('touchstart', (e) => {
+              swipeStartY = e.touches[0].clientY;
+          }, { passive: true });
 
-          if (deltaY < -40) {
-            // Swipe verso l'ALTO: APRI (Mostra i dettagli)
-            panel.style.display = 'block';
-            chevronBtn.classList.add('expanded');
-            panel.scrollIntoView({ behavior: 'smooth' });
-          } else if (deltaY > 40) {
-            // Swipe verso il BASSO: CHIUDI (Torna all'hero compatto)
-            panel.style.display = 'none';
-            chevronBtn.classList.remove('expanded');
-          }
-        }, { passive: true });
+          hero.addEventListener('touchend', (e) => {
+              const swipeEndY = e.changedTouches[0].clientY;
+              const deltaY = swipeEndY - swipeStartY;
+
+              if (deltaY < -40) { // Swipe SU
+                  panel.style.display = 'block';
+                  chevronBtn.classList.add('expanded');
+                  panel.scrollIntoView({ behavior: 'smooth' });
+              } else if (deltaY > 40) { // Swipe GIÙ
+                  panel.style.display = 'none';
+                  chevronBtn.classList.remove('expanded');
+              }
+          }, { passive: true });
       }
     }
 
@@ -6254,9 +6285,12 @@
 
       // 4. Testi
       document.getElementById('detailsModalTagline').textContent = details.tagline ? `"${details.tagline}"` : '';
-      const overview = document.getElementById('detailsModalOverview');
-      overview.classList.remove('skeleton-text');
-      overview.textContent = details.overview || 'Trama non disponibile.';
+      document.getElementById('detailsModalOverviewContainer').innerHTML = `
+        <div class="plot-container">
+            <div class="expandable-text" id="detailsModalOverview">${details.overview || 'Trama non disponibile.'}</div>
+            <button class="read-more-btn" onclick="togglePlot(this)">Leggi Tutto</button>
+        </div>
+      `;
 
       // --- REGIA CLICCABILE ---
       const director = details.crew.find(c => c.job === 'Director');
@@ -6301,6 +6335,7 @@
         document.getElementById('modalDeleteBtn').onclick = () => { closeModal(elements.detailsModal); deleteMedia(media.id); };
         document.getElementById('modalFavBtn').onclick = () => { toggleFavorite(media.id); populateDetailsModal(details, mediaList.find(m => m.id === media.id)); };
       }
+      if (window.applyTextTruncation) window.applyTextTruncation('detailsModalOverview');
     }
 
     async function fetchTMDbDetails(imdbId, lang = 'it-IT') {
@@ -6604,8 +6639,9 @@
             <div class="details-main-grid" style="padding: 0 3rem 2rem 3rem; display: grid; grid-template-columns: 2fr 1fr; gap: 3rem;">
                 <div class="details-left-col">
                     <h4 class="section-label" style="color: var(--primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 10px;">Biografia</h4>
-                    <div id="detailsModalOverview" style="font-size: 0.9rem; color: #ccc; line-height: 1.6; max-height: 200px; overflow-y: auto; padding-right: 10px;">
-                        ${details.biography || 'Biografia non disponibile per questo profilo.'}
+                    <div class="plot-container">
+                        <div class="expandable-text" id="actorBioText">${details.biography || 'Nessuna biografia disponibile.'}</div>
+                        <button class="read-more-btn" onclick="togglePlot(this)">Leggi Tutto</button>
                     </div>
                 </div>
                 
@@ -6628,6 +6664,7 @@
                 </div>
             </div>
         `;
+      if (window.applyTextTruncation) window.applyTextTruncation('actorBioText');
     }
 
     async function addFriend() {
@@ -7140,51 +7177,57 @@
     // --- BACK GESTURE IMPLEMENTATION FOR MOBILE MODALS ---
     let touchStartX = 0;
     let touchStartY = 0;
-    let touchEndX = 0;
-    let touchEndY = 0;
     let isSwipingBack = false;
 
     function handleTouchStart(e) {
-      touchStartX = e.changedTouches[0].screenX;
-      touchStartY = e.changedTouches[0].screenY;
+      // Registriamo la posizione iniziale del tocco
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
       isSwipingBack = false;
     }
 
     function handleTouchMove(e) {
-      if (!touchStartX || !touchStartY) return;
+      if (touchStartX === 0) return;
 
-      touchEndX = e.changedTouches[0].screenX;
-      touchEndY = e.changedTouches[0].screenY;
+      let touchCurrentX = e.touches[0].clientX;
+      let touchCurrentY = e.touches[0].clientY;
 
-      const deltaX = touchEndX - touchStartX;
-      const deltaY = touchEndY - touchStartY;
+      const deltaX = touchCurrentX - touchStartX;
+      const deltaY = touchCurrentY - touchStartY;
 
-      // Check if this is a horizontal swipe to the right
-      if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 50) {
-        isSwipingBack = true;
-        e.preventDefault();
+      // --- LOGICA DI PROTEZIONE ---
+      // 1. Il gesto deve iniziare negli ultimi 40 pixel a sinistra (Edge Swipe come iOS/Android)
+      // 2. Oppure: se il tocco NON è iniziato sul bordo, verifichiamo che l'utente non stia 
+      //    toccando una zona a scorrimento orizzontale (come la lista attori)
+      const isEdgeSwipe = touchStartX < 40;
+      const isHorizontalScroller = e.target.closest('.actor-filmography-grid, .cast-scroller, .filmography-scroller, .stats-container');
+
+      // Se stiamo scorrendo una lista orizzontale e NON è un Edge Swipe, annulliamo la chiusura
+      if (isHorizontalScroller && !isEdgeSwipe) {
+        return;
+      }
+
+      // Se il movimento è prevalentemente orizzontale verso destra e abbastanza lungo
+      if (deltaX > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Solo se è un Edge Swipe (inizia dal bordo) permettiamo la chiusura fluida
+        if (isEdgeSwipe) {
+          isSwipingBack = true;
+          // Preveniamo lo scroll della pagina mentre chiudiamo
+          if (e.cancelable) e.preventDefault();
+        }
       }
     }
 
     function handleTouchEnd(e) {
-      if (!touchStartX || !touchStartY) return;
-
-      const deltaX = touchEndX - touchStartX;
-      const deltaY = touchEndY - touchStartY;
-
-      // Check if it's a valid back gesture (swipe right with minimal vertical movement)
-      if (isSwipingBack && Math.abs(deltaX) > 100 && Math.abs(deltaY) < 100) {
+      if (isSwipingBack) {
         const modal = e.currentTarget;
-        if (modal && modal.classList.contains('modal') && modal.style.display === 'flex') {
+        if (modal && modal.classList.contains('modal')) {
           closeModal(modal);
         }
       }
-
-      // Reset values
+      // Reset variabili
       touchStartX = 0;
       touchStartY = 0;
-      touchEndX = 0;
-      touchEndY = 0;
       isSwipingBack = false;
     }
 
@@ -7192,12 +7235,10 @@
     function setupBackGestureSupport() {
       const modals = document.querySelectorAll('.modal');
       modals.forEach(modal => {
-        // Skip modals that shouldn't be closed with back gesture
-        if (modal.id === 'confirmModal') return;
-
-        modal.addEventListener('touchstart', handleTouchStart, { passive: false });
-        modal.addEventListener('touchmove', handleTouchMove, { passive: false });
-        modal.addEventListener('touchend', handleTouchEnd, { passive: false });
+        if (modal.id === 'confirmModal') return; // Non chiudere i modali di conferma per errore
+        modal.addEventListener('touchstart', handleTouchStart, { passive: true });
+        modal.addEventListener('touchmove', handleTouchMove, { passive: false }); // false per poter usare preventDefault
+        modal.addEventListener('touchend', handleTouchEnd, { passive: true });
       });
     }
 
@@ -7222,97 +7263,14 @@
       }
     });
 
-    async function loadDigitalCalendar() {
-      const listContainer = document.getElementById('digitalList');
-      if (!listContainer) return;
 
-      listContainer.innerHTML = `<div style="text-align:center; padding: 3rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i></div>`;
 
-      try {
-        const response = await fetch(`${MDBLIST_PROXY_URL}?mode=digital`);
-        const movies = await response.json();
-
-        if (!movies || movies.length === 0) {
-          listContainer.innerHTML = "<p style='text-align:center;'>Nessun dato trovato.</p>";
-          return;
-        }
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        // Filtro: film usciti da non più di 5 giorni o futuri
-        const filtered = movies.filter(m => m.timestamp > (today.getTime() - (5 * 24 * 60 * 60 * 1000)));
-        filtered.sort((a, b) => a.timestamp - b.timestamp);
-
-        listContainer.innerHTML = filtered.map(movie => {
-          const relDate = new Date(movie.date);
-
-          // Badge per data incerta
-          const tbcBadge = movie.rdWarning ? `<span style="color: var(--danger); font-size: 0.7rem; font-weight: 800; margin-left: 5px;">(TBC)</span>` : '';
-
-          // Stringa Regista • Genere • Durata
-          const metaString = `${movie.director || 'N/D'} • ${movie.genre || 'N/D'} • ${movie.duration || 'N/D'}`;
-
-          // --- Nuova Badge Voto ---
-          // Pulisci il rating prima di creare l'HTML
-          let rating = movie.rating;
-          const ratingNum = parseFloat(rating);
-
-          // Se il voto è <= 0 (come il -0.1 placeholder), consideralo come "non disponibile"
-          if (isNaN(ratingNum) || ratingNum <= 0) {
-            rating = null;
-          }
-
-          const ratingBadge = rating ? `
-            <span style="background: rgba(245, 197, 24, 0.1); color: #f5c518; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: 1px solid #f5c518; margin-top: 5px; display: inline-block;">
-                <i class="fas fa-star"></i> ${rating}
-            </span>` : '';
-
-          return `
-            <div class="digital-item">
-                <div class="digital-still-wrapper">
-                    <img src="${movie.still}" class="digital-still" onerror="this.src='${DEFAULT_POSTER}'">
-                </div>
-                <div class="digital-info">
-                    <span class="digital-title">${movie.title}</span>
-                    <span class="digital-release-date" style="color: var(--primary); font-weight: 600; font-size: 0.85rem;">
-                        <i class="fas fa-calendar-day"></i> ${relDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })} ${tbcBadge}
-                    </span>
-                    <span class="digital-meta" style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-top: 2px;">
-                        ${metaString}
-                    </span>
-                    <div>${ratingBadge}</div>
-                </div>
-                <!-- TASTO AGGIUNGI RAPIDO -->
-                <button onclick="closeModal(document.getElementById('digitalModal')); addNewMedia('${movie.tmdbId}')" 
-                        class="btn btn-primary" 
-                        style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 50%;" 
-                        title="Aggiungi alla Watchlist">
-                    <i class="fas fa-plus"></i>
-                </button>
-            </div>`;
-        }).join('');
-
-      } catch (error) {
-        listContainer.innerHTML = "<p style='text-align:center; color: var(--danger);'>Errore di caricamento.</p>";
-      }
-    }
-
+    // Listener Nuvola
     const digitalBtn = document.getElementById('digitalBtn');
-    if (digitalBtn) {
-      digitalBtn.addEventListener('click', () => {
-        openModal(document.getElementById('digitalModal'));
-        loadDigitalCalendar();
-      });
-    }
+    if (digitalBtn) digitalBtn.addEventListener('click', () => window.open("https://whenondigital.com/", "_blank"));
 
     const mobileDigitalBtn = document.getElementById('mobileDigitalBtn');
-    if (mobileDigitalBtn) {
-      mobileDigitalBtn.addEventListener('click', () => {
-        openModal(document.getElementById('digitalModal'));
-        loadDigitalCalendar();
-      });
-    }
+    if (mobileDigitalBtn) mobileDigitalBtn.addEventListener('click', () => window.open("https://whenondigital.com/", "_blank"));
 
     if (document.readyState === 'complete') {
       setupBackGestureSupport();
@@ -7772,22 +7730,44 @@
       showNotification("Capsula del Tempo generata con successo!", "success");
     }
 
+    // Funzione per espandere/contrarre
+window.applyTextTruncation = function(containerId) {
+    const textEl = document.getElementById(containerId);
+    if (!textEl) return;
+    const btn = textEl.nextElementSibling;
+    if (!btn || !btn.classList.contains('read-more-btn')) return;
+
+    // Osservatore che si attiva automaticamente ogni volta che il pannello viene aperto
+    const observer = new ResizeObserver(() => {
+        // Se il testo è visibile e NON è già espanso
+        if (textEl.clientHeight > 0 && !textEl.classList.contains('expanded')) {
+            // Controlla se l'altezza reale (scrollHeight) è maggiore di quella visibile (clientHeight)
+            if (textEl.scrollHeight > textEl.clientHeight + 2) {
+                btn.style.display = 'inline-block';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+    });
+    
+    observer.observe(textEl);
+};
+
+window.togglePlot = function(btn) {
+    const textEl = btn.previousElementSibling;
+    if (textEl.classList.contains('expanded')) {
+        textEl.classList.remove('expanded');
+        btn.textContent = "Leggi Tutto";
+        textEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+        textEl.classList.add('expanded');
+        btn.textContent = "Mostra Meno";
+    }
+};
   </script>
 
 
-  <!-- MODALE DIGITAL CALENDAR -->
-  <div class="modal" id="digitalModal">
-    <div class="modal-content">
-      <h2 style="text-align: center; margin: 1rem 0;">Prossime Uscite Digitali</h2>
-      <div id="digitalList" style="flex: 1; overflow-y: auto; padding: 0 1rem 1rem 1rem;">
-        <!-- I film appariranno qui -->
-      </div>
-      <div class="modal-footer" style="padding: 1rem; border-top: 1px solid var(--border-color);">
-        <button onclick="closeModal(document.getElementById('digitalModal'))" class="btn btn-secondary"
-          style="width: 100%;">Chiudi</button>
-      </div>
-    </div>
-  </div>
+
 
   <!-- MODALE RIEPILOGO AGGIORNAMENTI -->
   <div class="modal" id="updateSummaryModal" style="z-index: 1200;">
