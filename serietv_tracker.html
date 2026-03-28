@@ -2912,6 +2912,57 @@
             width: 100%;
         }
 
+        /* Stile per trama/bio espandibile */
+        .plot-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .expandable-text {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #ccc;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            /* Configurazione Mobile (Default) */
+            -webkit-line-clamp: 4; 
+            line-clamp: 4;
+        }
+
+        /* Configurazione Desktop per Simmetria */
+        @media (min-width: 769px) {
+            .expandable-text {
+                -webkit-line-clamp: 10;
+                line-clamp: 10;
+            }
+        }
+
+        .expandable-text.expanded {
+            -webkit-line-clamp: unset;
+            line-clamp: unset;
+            display: block;
+        }
+
+        .read-more-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--primary);
+            padding: 3px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+            display: none;
+            text-transform: uppercase;
+        }
+
+        .read-more-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            text-decoration: none;
+        }
+
         /* END: Mobile Menu and Notifications Modals Styles */
     </style>
 
@@ -6252,7 +6303,10 @@
                         <div class="details-left-col">
                             <div id="detailsModalTagline" style="font-style:italic; opacity:0.7; margin-bottom:1rem; font-size:0.95rem;"></div>
                             <h4 class="section-label" style="margin-bottom:0.5rem;">TRAMA</h4>
-                            <p id="detailsModalOverview" class="skeleton-text" style="margin-top:0; margin-bottom:0;"></p>
+                            <div class="plot-container">
+                                <div class="expandable-text skeleton-text" id="detailsModalOverview" style="margin-top:0; margin-bottom:0;"></div>
+                                <button class="read-more-btn" onclick="togglePlot(this)">Leggi Tutto</button>
+                            </div>
                         </div>
                         <div class="details-right-col">
                             <div id="shell-year-runtime"></div>
@@ -6279,12 +6333,28 @@
                 document.getElementById('detailsExpandPanel').style.display = 'none';
             }
 
-            // --- GESTIONE SWIPE PER ESPANDERE (TIPO APPLE MUSIC) ---
+            // --- GESTIONE PANNELLO ESPANDIBILE (SWIPE & CLICK) ---
             const chevronBtn = document.getElementById('detailsChevronBtn');
             const hero = elements.detailsModalContent.querySelector('.details-hero');
-            let swipeStartY = 0;
+            const panel = document.getElementById('detailsExpandPanel');
 
-            if (hero) {
+            if (chevronBtn && panel) {
+                // 1. Rende la freccetta cliccabile col dito!
+                chevronBtn.style.pointerEvents = 'auto';
+                chevronBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (panel.style.display === 'none' || panel.style.display === '') {
+                        panel.style.display = 'block';
+                        chevronBtn.classList.add('expanded');
+                        panel.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                        panel.style.display = 'none';
+                        chevronBtn.classList.remove('expanded');
+                    }
+                };
+
+                // 2. Mantiene il supporto allo Swipe per chi preferisce trascinare
+                let swipeStartY = 0;
                 hero.addEventListener('touchstart', (e) => {
                     swipeStartY = e.touches[0].clientY;
                 }, { passive: true });
@@ -6292,16 +6362,12 @@
                 hero.addEventListener('touchend', (e) => {
                     const swipeEndY = e.changedTouches[0].clientY;
                     const deltaY = swipeEndY - swipeStartY;
-                    const panel = document.getElementById('detailsExpandPanel');
 
-                    if (deltaY < -40) {
-                        // Swipe verso l'ALTO: APRI (Mostra i dettagli)
+                    if (deltaY < -40) { // Swipe SU
                         panel.style.display = 'block';
                         chevronBtn.classList.add('expanded');
-                        // Se apriamo andiamo giù per mostrare l'inizio del pannello
                         panel.scrollIntoView({ behavior: 'smooth' });
-                    } else if (deltaY > 40) {
-                        // Swipe verso il BASSO: CHIUDI (Torna all'hero compatto)
+                    } else if (deltaY > 40) { // Swipe GIÙ
                         panel.style.display = 'none';
                         chevronBtn.classList.remove('expanded');
                     }
@@ -6358,7 +6424,9 @@
             document.getElementById('detailsModalTagline').textContent = details.tagline ? `"${details.tagline}"` : '';
             const overview = document.getElementById('detailsModalOverview');
             overview.classList.remove('skeleton-text');
+            overview.classList.remove('expanded');
             overview.textContent = details.overview || 'Trama non disponibile.';
+            if (window.applyTextTruncation) window.applyTextTruncation('detailsModalOverview');
 
             // --- CREATORE CLICCABILE ---
             const creator = details.created_by && details.created_by.length > 0 ? details.created_by[0] : null;
@@ -8154,17 +8222,12 @@
 
             duplicates.forEach(dup => {
                 if (!dup.rewatches) dup.rewatches = {};
-
                 const updateLogic = (sNum, eNum) => {
                     const key = `${sNum}-${eNum}`;
-                    if (count > 0) {
-                        dup.rewatches[key] = count;
-                        dup.progress[key] = true; // Se c'è rewatch, è per forza visto
-                    } else {
-                        delete dup.rewatches[key];
-                    }
+                    if (count > 0) { dup.rewatches[key] = count; dup.progress[key] = true; } 
+                    else { delete dup.rewatches[key]; }
 
-                    // AGGIORNAMENTO DOM CHIRURGICO (Niente sfarfallio del modale)
+                    // AGGIORNAMENTO DOM CHIRURGICO
                     const item = document.getElementById(`item-${showId}-${sNum}-${eNum}`);
                     if (item) {
                         if (count > 0) item.classList.add('watched');
@@ -8181,22 +8244,15 @@
                     }
                 };
 
-                if (episodeNumber) {
-                    updateLogic(seasonNumber, episodeNumber);
-                } else {
-                    // Intera stagione
-                    show.seasons[seasonNumber]?.episodes.forEach(ep => updateLogic(seasonNumber, ep.episode_number));
-                }
+                if (episodeNumber) updateLogic(seasonNumber, episodeNumber);
+                else show.seasons[seasonNumber]?.episodes.forEach(ep => updateLogic(seasonNumber, ep.episode_number));
                 updateShowCategoryAndTimestamps(dup);
             });
 
-            // Aggiorna l'icona della stagione nell'header se necessario
             updateSeasonHeaderUI(showId, seasonNumber);
-
             closeModal(elements.rewatchModal);
             updateStats();
             await saveData();
-            showNotification("Rewatch aggiornato", "success");
         }
 
         // Nuova funzione helper per aggiornare l'header della stagione
@@ -8658,6 +8714,99 @@
                 elements.forceUpdateBtnMobile.addEventListener('click', () => { forceUpdate(); closeModal(elements.mobileMenuModal); });
             }
 
+            // --- BACK GESTURE IMPLEMENTATION FOR MOBILE MODALS ---
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let isSwipingBack = false;
+
+            function handleTouchStart(e) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                isSwipingBack = false;
+            }
+
+            function handleTouchMove(e) {
+                if (touchStartX === 0) return;
+
+                let touchCurrentX = e.touches[0].clientX;
+                let touchCurrentY = e.touches[0].clientY;
+
+                const deltaX = touchCurrentX - touchStartX;
+                const deltaY = touchCurrentY - touchStartY;
+
+                const isEdgeSwipe = touchStartX < 40;
+                const isHorizontalScroller = e.target.closest('.actor-filmography-grid, .cast-scroller, .filmography-scroller, .stats-container, .seasons-scroller');
+
+                if (isHorizontalScroller && !isEdgeSwipe) {
+                    return;
+                }
+
+                if (deltaX > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                    if (isEdgeSwipe) {
+                        isSwipingBack = true;
+                        if (e.cancelable) e.preventDefault();
+                    }
+                }
+            }
+
+            function handleTouchEnd(e) {
+                if (isSwipingBack) {
+                    const modal = e.currentTarget;
+                    if (modal && (modal.classList.contains('modal') || modal.id === 'floatingMenu')) {
+                        closeModal(modal);
+                    }
+                }
+                touchStartX = 0;
+                touchStartY = 0;
+                isSwipingBack = false;
+            }
+
+            function setupBackGestureSupport() {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (modal.id === 'confirmModal') return;
+                    modal.addEventListener('touchstart', handleTouchStart, { passive: true });
+                    modal.addEventListener('touchmove', handleTouchMove, { passive: false });
+                    modal.addEventListener('touchend', handleTouchEnd, { passive: true });
+                });
+            }
+
+            window.applyTextTruncation = function(containerId) {
+                const textEl = document.getElementById(containerId);
+                if (!textEl) return;
+                const btn = textEl.nextElementSibling;
+                if (!btn || !btn.classList.contains('read-more-btn')) return;
+
+                // Osservatore che si attiva automaticamente ogni volta che il pannello viene aperto
+                const observer = new ResizeObserver(() => {
+                    // Se il testo è visibile e NON è già espanso
+                    if (textEl.clientHeight > 0 && !textEl.classList.contains('expanded')) {
+                        // Controlla se l'altezza reale (scrollHeight) è maggiore di quella visibile (clientHeight)
+                        if (textEl.scrollHeight > textEl.clientHeight + 2) {
+                            btn.style.display = 'inline-block';
+                        } else {
+                            btn.style.display = 'none';
+                        }
+                    }
+                });
+                
+                observer.observe(textEl);
+            };
+
+            window.togglePlot = function(btn) {
+                const textEl = btn.previousElementSibling;
+                if (textEl.classList.contains('expanded')) {
+                    textEl.classList.remove('expanded');
+                    btn.textContent = "Leggi Tutto";
+                    textEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    textEl.classList.add('expanded');
+                    btn.textContent = "Mostra Meno";
+                }
+            };
+
+            setupBackGestureSupport();
+
             // Keyboard shortcuts
             document.addEventListener('keydown', (e) => {
                 // Chiudi modale con ESC
@@ -8996,6 +9145,9 @@
                 }
 
                 populateActorModal({ ...details, combined_credits: credits });
+                if (window.applyTextTruncation) {
+                    setTimeout(() => window.applyTextTruncation('actorModalOverview'), 50);
+                }
             } catch (err) {
                 elements.actorModalContent.innerHTML = '<p style="text-align:center; padding: 5rem;">Impossibile caricare i dettagli.</p>';
             }
@@ -9054,8 +9206,11 @@
                 <div class="details-main-grid" style="padding: 0 3rem 2rem 3rem; display: grid; grid-template-columns: 2fr 1fr; gap: 3rem;">
                     <div class="details-left-col">
                         <h4 class="section-label" style="color: var(--primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 10px;">Biografia</h4>
-                        <div id="detailsModalOverview" style="font-size: 0.9rem; color: #ccc; line-height: 1.6; max-height: 200px; overflow-y: auto; padding-right: 10px;">
-                            ${details.biography || 'Biografia non disponibile per questo profilo.'}
+                        <div class="plot-container">
+                            <div class="expandable-text" id="actorModalOverview" style="margin-top:0; margin-bottom:0;">
+                                ${details.biography || 'Biografia non disponibile per questo profilo.'}
+                            </div>
+                            <button class="read-more-btn" onclick="togglePlot(this)">Leggi Tutto</button>
                         </div>
                     </div>
                     
