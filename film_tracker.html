@@ -959,10 +959,17 @@
       z-index: 1200 !important;
     }
 
+    /* --- LAYOUT DIGITAL RELEASE (DESKTOP: GRIGLIA NETFLIX-STYLE) --- */
+    #digitalModal .modal-content {
+      max-width: 1200px !important;
+      width: 95%;
+    }
+
     #digitalList {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 1rem;
+      align-items: stretch;
     }
 
     .digital-item {
@@ -974,6 +981,8 @@
       border: 1px solid var(--border-color);
       align-items: center;
       transition: transform 0.2s;
+      height: 100%;
+      box-sizing: border-box;
     }
 
     .digital-item:active {
@@ -3774,6 +3783,17 @@
         height: 140px !important;
         margin-top: 10px;
       }
+
+      /* --- MOBILE: Digital Release torna a colonna singola --- */
+      #digitalModal .modal-content {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+
+      #digitalList {
+        display: flex !important;
+        flex-direction: column !important;
+      }
     }
 
     /* Stile per trama/bio espandibile */
@@ -4463,6 +4483,8 @@
       chartDetailsModal: document.getElementById('chartDetailsModal'),
       chartDetailsTitle: document.getElementById('chartDetailsTitle'),
       chartDetailsList: document.getElementById('chartDetailsList'),
+      // Digital Release button
+      digitalBtn: document.getElementById('digitalBtn'),
     };
 
     const defaultMediaProps = {
@@ -6902,7 +6924,11 @@
       elements.closeShareModalBtn.addEventListener("click", () => closeModal(elements.shareModal));
       elements.closeViewBtn.addEventListener("click", () => { window.location.href = window.location.pathname; });
       elements.detailsModalClose.addEventListener('click', () => closeModal(elements.detailsModal));
-      actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
+
+      // FIX: Aggiunto "elements." che mancava e causava il blocco del codice
+      if (elements.actorModalClose) {
+        elements.actorModalClose.addEventListener('click', () => closeModal(elements.actorModal));
+      }
 
       document.querySelectorAll('.quick-rewatch-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -6911,6 +6937,22 @@
           updateRewatchModalButtons(count);
         });
       });
+
+      // --- TASTO DIGITAL RELEASE (MODALE IN-APP) ---
+      const handleDigitalClick = () => {
+        openModal(document.getElementById('digitalModal'));
+        loadDigitalCalendar();
+      };
+
+      if (elements.digitalBtn) {
+        elements.digitalBtn.addEventListener('click', handleDigitalClick);
+      }
+      const mobileDigitalBtn = document.getElementById('mobileDigitalBtn');
+      if (mobileDigitalBtn) {
+        mobileDigitalBtn.addEventListener('click', handleDigitalClick);
+      }
+      // ------------------------------------------
+
       elements.rewatchCountInput.addEventListener('input', () => {
         const count = parseInt(elements.rewatchCountInput.value);
         updateRewatchModalButtons(count);
@@ -7265,12 +7307,7 @@
 
 
 
-    // Listener Nuvola
-    const digitalBtn = document.getElementById('digitalBtn');
-    if (digitalBtn) digitalBtn.addEventListener('click', () => window.open("https://whenondigital.com/", "_blank"));
 
-    const mobileDigitalBtn = document.getElementById('mobileDigitalBtn');
-    if (mobileDigitalBtn) mobileDigitalBtn.addEventListener('click', () => window.open("https://whenondigital.com/", "_blank"));
 
     if (document.readyState === 'complete') {
       setupBackGestureSupport();
@@ -7764,6 +7801,98 @@ window.togglePlot = function(btn) {
         btn.textContent = "Mostra Meno";
     }
 };
+
+async function loadDigitalCalendar() {
+  const listContainer = document.getElementById('digitalList');
+  if (!listContainer) return;
+
+  listContainer.innerHTML = `<div style="text-align:center; padding: 3rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i><p style="margin-top:10px; opacity:0.6;">Caricamento intero mese in corso...</p></div>`;
+
+  try {
+    const response = await fetch(`${MDBLIST_PROXY_URL}?mode=digital`);
+    if (!response.ok) throw new Error("Errore del server");
+
+    let movies = await response.json();
+
+    if (!movies || movies.length === 0) {
+      listContainer.innerHTML = "<p style='text-align:center; padding:2rem;'>Nessun dato trovato per questo periodo.</p>";
+      return;
+    }
+
+    // Ordina tutti i film per data crescente
+    movies.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+    // --- Ricerca Simultanea su TMDb per tutto il mese ---
+    await Promise.all(movies.map(async (movie) => {
+      // Formattazione Data in Italiano
+      if (movie.timestamp) {
+        const d = new Date(movie.timestamp);
+        const opzioniData = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        const dataItaliana = d.toLocaleDateString('it-IT', opzioniData);
+        movie.displayDate = dataItaliana.charAt(0).toUpperCase() + dataItaliana.slice(1);
+      } else {
+        movie.displayDate = movie.date || 'N/A';
+      }
+
+      movie.hqPoster = movie.still || '';
+      movie.rating = movie.rating || null;
+
+      try {
+        // Cerca il film su TMDb tramite titolo per avere poster + voto aggiornati
+        const tmdbSearch = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(movie.title)}&language=it-IT`);
+        const searchData = await tmdbSearch.json();
+
+        if (searchData.results && searchData.results.length > 0) {
+          const tmdbMovie = searchData.results[0];
+          // Sovrascrive tmdbId con quello trovato su TMDb (più affidabile)
+          movie.tmdbId = tmdbMovie.id;
+          if (tmdbMovie.poster_path) {
+            movie.hqPoster = `https://image.tmdb.org/t/p/w342${tmdbMovie.poster_path}`;
+          }
+          if (tmdbMovie.vote_average && tmdbMovie.vote_average > 0) {
+            movie.rating = tmdbMovie.vote_average.toFixed(1);
+          }
+        }
+      } catch (e) {
+        console.warn('TMDb fetch fallito per:', movie.title);
+      }
+    }));
+
+    // Disegniamo la lista completa
+    listContainer.innerHTML = movies.map(movie => {
+      const ratingBadge = movie.rating ? `
+        <span style="background:rgba(245,197,24,0.1);color:#f5c518;padding:2px 6px;border-radius:4px;font-size:0.75rem;font-weight:bold;border:1px solid #f5c518;margin-top:5px;display:inline-block;">
+          <i class="fas fa-star"></i> ${movie.rating}
+        </span>` : '';
+
+      const safeTmdbId = (movie.tmdbId || '').toString();
+      const hasId = !!safeTmdbId;
+
+      return `
+        <div class="digital-item">
+          <div class="digital-still-wrapper" style="aspect-ratio:2/3;">
+            <img src="${movie.hqPoster}" class="digital-still" onerror="this.src='${DEFAULT_POSTER}'" style="object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+          </div>
+          <div class="digital-info">
+            <span class="digital-title">${movie.title || 'Titolo sconosciuto'}</span>
+            <span class="digital-release-date" style="text-transform:capitalize;">
+              <i class="fas fa-calendar-alt"></i> ${movie.displayDate}
+            </span>
+            <div>${ratingBadge}</div>
+          </div>
+          <button onclick="${hasId ? `closeModal(document.getElementById('digitalModal')); addNewMedia('${safeTmdbId}');` : `showNotification('ID film non trovato', 'warning');`}"
+                  class="btn btn-primary"
+                  style="width:38px;height:38px;padding:0;flex-shrink:0;border-radius:50%;opacity:${hasId ? '1' : '0.4'};"
+                  title="${hasId ? 'Aggiungi alla Watchlist' : 'Film non trovato su TMDb'}">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>`;
+    }).join('');
+
+  } catch (error) {
+    listContainer.innerHTML = `<p style='text-align:center;color:var(--danger);padding:2rem;'>Errore: ${error.message}</p>`;
+  }
+}
   </script>
 
 
@@ -7791,6 +7920,19 @@ window.togglePlot = function(btn) {
         style="padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; gap: 1rem;">
         <button id="clearHistoryBtn" class="btn btn-danger btn-small">Cancella Storico</button>
         <button onclick="closeModal(document.getElementById('historyModal'))" class="btn btn-secondary">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE DIGITAL CALENDAR -->
+  <div class="modal" id="digitalModal">
+    <div class="modal-content" style="max-width: 600px;">
+      <h2 style="text-align: center; margin: 1rem 0; color: var(--primary);"><i class="fas fa-cloud"></i> Uscite digitali del mese</h2>
+      <div id="digitalList" style="flex: 1; overflow-y: auto; padding: 0 1rem 1rem 1rem; max-height: 65vh;">
+        <!-- I film appariranno qui -->
+      </div>
+      <div class="modal-footer" style="padding: 1rem; border-top: 1px solid var(--border-color);">
+        <button onclick="closeModal(document.getElementById('digitalModal'))" class="btn btn-secondary" style="width: 100%;">Chiudi</button>
       </div>
     </div>
   </div>
