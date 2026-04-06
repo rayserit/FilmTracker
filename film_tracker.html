@@ -3797,20 +3797,52 @@
     }
 
     /* Stile per trama/bio espandibile */
-    .plot-container { position: relative; margin-bottom: 15px; }
+    .plot-container {
+      position: relative;
+      margin-bottom: 15px;
+    }
+
     .expandable-text {
-        font-size: 0.95rem; line-height: 1.6; color: #ccc;
-        display: -webkit-box; -webkit-box-orient: vertical;
-        overflow: hidden; -webkit-line-clamp: 4; line-clamp: 4;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #ccc;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      -webkit-line-clamp: 4;
+      line-clamp: 4;
     }
-    @media (min-width: 769px) { .expandable-text { -webkit-line-clamp: 10; line-clamp: 10; } }
-    .expandable-text.expanded { -webkit-line-clamp: unset !important; line-clamp: unset !important; display: block; }
+
+    @media (min-width: 769px) {
+      .expandable-text {
+        -webkit-line-clamp: 10;
+        line-clamp: 10;
+      }
+    }
+
+    .expandable-text.expanded {
+      -webkit-line-clamp: unset !important;
+      line-clamp: unset !important;
+      display: block;
+    }
+
     .read-more-btn {
-        background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1);
-        color: var(--primary); padding: 3px 12px; border-radius: 4px; font-size: 0.75rem;
-        font-weight: 700; cursor: pointer; margin-top: 8px; display: none; text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--primary);
+      padding: 3px 12px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      display: none;
+      text-transform: uppercase;
     }
-    .read-more-btn:hover { background: rgba(255, 255, 255, 0.15); }
+
+    .read-more-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
   </style>
 </head>
 
@@ -4372,7 +4404,7 @@
   <script>
     const OMDb_API_KEY = "2526ef70";
     const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ=");
-    const MDBLIST_PROXY_URL = "https://serietvtracker.amrit-singh99mail-5e3.workers.dev";
+    const MDBLIST_PROXY_URL = "https://serietvtracker.rayser.workers.dev";
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
     const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzJiMmIyYiIvPgogIDxnIGZpbGw9IiM0NDQiPgogICAgPGNpcmNsZSBjeD0iNTAiIGN5PSIzOCIgcj0iMTgiLz4KICAgIDxwYXRoIGQ9Ik0yMCw5NSBDMjAsNjUgMzAsNTggNTAsNTggQzcwLDU4IDgwLDY1IDgwLDk1IEw4MCwxMDAgTDIwLDEwMCBaIi8+CiAgPC9nPgo8L3N2Zz4=";
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
@@ -6225,39 +6257,39 @@
       const panel = document.getElementById('detailsExpandPanel');
 
       if (chevronBtn && panel) {
-          // 1. Rende la freccetta cliccabile col dito!
-          chevronBtn.style.pointerEvents = 'auto';
-          chevronBtn.onclick = (e) => {
-              e.stopPropagation();
-              if (panel.style.display === 'none' || panel.style.display === '') {
-                  panel.style.display = 'block';
-                  chevronBtn.classList.add('expanded');
-                  panel.scrollIntoView({ behavior: 'smooth' });
-              } else {
-                  panel.style.display = 'none';
-                  chevronBtn.classList.remove('expanded');
-              }
-          };
+        // 1. Rende la freccetta cliccabile col dito!
+        chevronBtn.style.pointerEvents = 'auto';
+        chevronBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (panel.style.display === 'none' || panel.style.display === '') {
+            panel.style.display = 'block';
+            chevronBtn.classList.add('expanded');
+            panel.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            panel.style.display = 'none';
+            chevronBtn.classList.remove('expanded');
+          }
+        };
 
-          // 2. Mantiene il supporto allo Swipe per chi preferisce trascinare
-          let swipeStartY = 0;
-          hero.addEventListener('touchstart', (e) => {
-              swipeStartY = e.touches[0].clientY;
-          }, { passive: true });
+        // 2. Mantiene il supporto allo Swipe per chi preferisce trascinare
+        let swipeStartY = 0;
+        hero.addEventListener('touchstart', (e) => {
+          swipeStartY = e.touches[0].clientY;
+        }, { passive: true });
 
-          hero.addEventListener('touchend', (e) => {
-              const swipeEndY = e.changedTouches[0].clientY;
-              const deltaY = swipeEndY - swipeStartY;
+        hero.addEventListener('touchend', (e) => {
+          const swipeEndY = e.changedTouches[0].clientY;
+          const deltaY = swipeEndY - swipeStartY;
 
-              if (deltaY < -40) { // Swipe SU
-                  panel.style.display = 'block';
-                  chevronBtn.classList.add('expanded');
-                  panel.scrollIntoView({ behavior: 'smooth' });
-              } else if (deltaY > 40) { // Swipe GIÙ
-                  panel.style.display = 'none';
-                  chevronBtn.classList.remove('expanded');
-              }
-          }, { passive: true });
+          if (deltaY < -40) { // Swipe SU
+            panel.style.display = 'block';
+            chevronBtn.classList.add('expanded');
+            panel.scrollIntoView({ behavior: 'smooth' });
+          } else if (deltaY > 40) { // Swipe GIÙ
+            panel.style.display = 'none';
+            chevronBtn.classList.remove('expanded');
+          }
+        }, { passive: true });
       }
     }
 
@@ -7768,107 +7800,107 @@
     }
 
     // Funzione per espandere/contrarre
-window.applyTextTruncation = function(containerId) {
-    const textEl = document.getElementById(containerId);
-    if (!textEl) return;
-    const btn = textEl.nextElementSibling;
-    if (!btn || !btn.classList.contains('read-more-btn')) return;
+    window.applyTextTruncation = function (containerId) {
+      const textEl = document.getElementById(containerId);
+      if (!textEl) return;
+      const btn = textEl.nextElementSibling;
+      if (!btn || !btn.classList.contains('read-more-btn')) return;
 
-    // Osservatore che si attiva automaticamente ogni volta che il pannello viene aperto
-    const observer = new ResizeObserver(() => {
+      // Osservatore che si attiva automaticamente ogni volta che il pannello viene aperto
+      const observer = new ResizeObserver(() => {
         // Se il testo è visibile e NON è già espanso
         if (textEl.clientHeight > 0 && !textEl.classList.contains('expanded')) {
-            // Controlla se l'altezza reale (scrollHeight) è maggiore di quella visibile (clientHeight)
-            if (textEl.scrollHeight > textEl.clientHeight + 2) {
-                btn.style.display = 'inline-block';
-            } else {
-                btn.style.display = 'none';
-            }
+          // Controlla se l'altezza reale (scrollHeight) è maggiore di quella visibile (clientHeight)
+          if (textEl.scrollHeight > textEl.clientHeight + 2) {
+            btn.style.display = 'inline-block';
+          } else {
+            btn.style.display = 'none';
+          }
         }
-    });
-    
-    observer.observe(textEl);
-};
+      });
 
-window.togglePlot = function(btn) {
-    const textEl = btn.previousElementSibling;
-    if (textEl.classList.contains('expanded')) {
+      observer.observe(textEl);
+    };
+
+    window.togglePlot = function (btn) {
+      const textEl = btn.previousElementSibling;
+      if (textEl.classList.contains('expanded')) {
         textEl.classList.remove('expanded');
         btn.textContent = "Leggi Tutto";
         textEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
+      } else {
         textEl.classList.add('expanded');
         btn.textContent = "Mostra Meno";
-    }
-};
-
-async function loadDigitalCalendar() {
-  const listContainer = document.getElementById('digitalList');
-  if (!listContainer) return;
-
-  listContainer.innerHTML = `<div style="text-align:center; padding: 3rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i><p style="margin-top:10px; opacity:0.6;">Caricamento intero mese in corso...</p></div>`;
-
-  try {
-    const response = await fetch(`${MDBLIST_PROXY_URL}?mode=digital`);
-    if (!response.ok) throw new Error("Errore del server");
-
-    let movies = await response.json();
-
-    if (!movies || movies.length === 0) {
-      listContainer.innerHTML = "<p style='text-align:center; padding:2rem;'>Nessun dato trovato per questo periodo.</p>";
-      return;
-    }
-
-    // Ordina tutti i film per data crescente
-    movies.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-
-    // --- Ricerca Simultanea su TMDb per tutto il mese ---
-    await Promise.all(movies.map(async (movie) => {
-      // Formattazione Data in Italiano
-      if (movie.timestamp) {
-        const d = new Date(movie.timestamp);
-        const opzioniData = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-        const dataItaliana = d.toLocaleDateString('it-IT', opzioniData);
-        movie.displayDate = dataItaliana.charAt(0).toUpperCase() + dataItaliana.slice(1);
-      } else {
-        movie.displayDate = movie.date || 'N/A';
       }
+    };
 
-      movie.hqPoster = movie.still || '';
-      movie.rating = movie.rating || null;
+    async function loadDigitalCalendar() {
+      const listContainer = document.getElementById('digitalList');
+      if (!listContainer) return;
+
+      listContainer.innerHTML = `<div style="text-align:center; padding: 3rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i><p style="margin-top:10px; opacity:0.6;">Caricamento intero mese in corso...</p></div>`;
 
       try {
-        // Cerca il film su TMDb tramite titolo per avere poster + voto aggiornati
-        const tmdbSearch = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(movie.title)}&language=it-IT`);
-        const searchData = await tmdbSearch.json();
+        const response = await fetch(`${MDBLIST_PROXY_URL}?mode=digital`);
+        if (!response.ok) throw new Error("Errore del server");
 
-        if (searchData.results && searchData.results.length > 0) {
-          const tmdbMovie = searchData.results[0];
-          // Sovrascrive tmdbId con quello trovato su TMDb (più affidabile)
-          movie.tmdbId = tmdbMovie.id;
-          if (tmdbMovie.poster_path) {
-            movie.hqPoster = `https://image.tmdb.org/t/p/w342${tmdbMovie.poster_path}`;
-          }
-          if (tmdbMovie.vote_average && tmdbMovie.vote_average > 0) {
-            movie.rating = tmdbMovie.vote_average.toFixed(1);
-          }
+        let movies = await response.json();
+
+        if (!movies || movies.length === 0) {
+          listContainer.innerHTML = "<p style='text-align:center; padding:2rem;'>Nessun dato trovato per questo periodo.</p>";
+          return;
         }
-      } catch (e) {
-        console.warn('TMDb fetch fallito per:', movie.title);
-      }
-    }));
 
-    // Disegniamo la lista completa
-    listContainer.innerHTML = movies.map(movie => {
-      const ratingBadge = movie.rating ? `
+        // Ordina tutti i film per data crescente
+        movies.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+        // --- Ricerca Simultanea su TMDb per tutto il mese ---
+        await Promise.all(movies.map(async (movie) => {
+          // Formattazione Data in Italiano
+          if (movie.timestamp) {
+            const d = new Date(movie.timestamp);
+            const opzioniData = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            const dataItaliana = d.toLocaleDateString('it-IT', opzioniData);
+            movie.displayDate = dataItaliana.charAt(0).toUpperCase() + dataItaliana.slice(1);
+          } else {
+            movie.displayDate = movie.date || 'N/A';
+          }
+
+          movie.hqPoster = movie.still || '';
+          movie.rating = movie.rating || null;
+
+          try {
+            // Cerca il film su TMDb tramite titolo per avere poster + voto aggiornati
+            const tmdbSearch = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(movie.title)}&language=it-IT`);
+            const searchData = await tmdbSearch.json();
+
+            if (searchData.results && searchData.results.length > 0) {
+              const tmdbMovie = searchData.results[0];
+              // Sovrascrive tmdbId con quello trovato su TMDb (più affidabile)
+              movie.tmdbId = tmdbMovie.id;
+              if (tmdbMovie.poster_path) {
+                movie.hqPoster = `https://image.tmdb.org/t/p/w342${tmdbMovie.poster_path}`;
+              }
+              if (tmdbMovie.vote_average && tmdbMovie.vote_average > 0) {
+                movie.rating = tmdbMovie.vote_average.toFixed(1);
+              }
+            }
+          } catch (e) {
+            console.warn('TMDb fetch fallito per:', movie.title);
+          }
+        }));
+
+        // Disegniamo la lista completa
+        listContainer.innerHTML = movies.map(movie => {
+          const ratingBadge = movie.rating ? `
         <span style="background:rgba(245,197,24,0.1);color:#f5c518;padding:2px 6px;border-radius:4px;font-size:0.75rem;font-weight:bold;border:1px solid #f5c518;margin-top:5px;display:inline-block;">
           <i class="fas fa-star"></i> ${movie.rating}
         </span>` : '';
 
-      const safeTmdbId = (movie.tmdbId || '').toString();
-      const hasId = !!safeTmdbId;
+          const safeTmdbId = (movie.tmdbId || '').toString();
+          const hasId = !!safeTmdbId;
 
-      return `
+          return `
         <div class="digital-item">
           <div class="digital-still-wrapper" style="aspect-ratio:2/3;">
             <img src="${movie.hqPoster}" class="digital-still" onerror="this.src='${DEFAULT_POSTER}'" style="object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
@@ -7887,12 +7919,12 @@ async function loadDigitalCalendar() {
             <i class="fas fa-plus"></i>
           </button>
         </div>`;
-    }).join('');
+        }).join('');
 
-  } catch (error) {
-    listContainer.innerHTML = `<p style='text-align:center;color:var(--danger);padding:2rem;'>Errore: ${error.message}</p>`;
-  }
-}
+      } catch (error) {
+        listContainer.innerHTML = `<p style='text-align:center;color:var(--danger);padding:2rem;'>Errore: ${error.message}</p>`;
+      }
+    }
   </script>
 
 
@@ -7927,12 +7959,14 @@ async function loadDigitalCalendar() {
   <!-- MODALE DIGITAL CALENDAR -->
   <div class="modal" id="digitalModal">
     <div class="modal-content" style="max-width: 600px;">
-      <h2 style="text-align: center; margin: 1rem 0; color: var(--primary);"><i class="fas fa-cloud"></i> Uscite digitali del mese</h2>
+      <h2 style="text-align: center; margin: 1rem 0; color: var(--primary);"><i class="fas fa-cloud"></i> Uscite
+        digitali del mese</h2>
       <div id="digitalList" style="flex: 1; overflow-y: auto; padding: 0 1rem 1rem 1rem; max-height: 65vh;">
         <!-- I film appariranno qui -->
       </div>
       <div class="modal-footer" style="padding: 1rem; border-top: 1px solid var(--border-color);">
-        <button onclick="closeModal(document.getElementById('digitalModal'))" class="btn btn-secondary" style="width: 100%;">Chiudi</button>
+        <button onclick="closeModal(document.getElementById('digitalModal'))" class="btn btn-secondary"
+          style="width: 100%;">Chiudi</button>
       </div>
     </div>
   </div>
