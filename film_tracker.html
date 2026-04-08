@@ -960,80 +960,74 @@
     }
 
     /* --- LAYOUT DIGITAL RELEASE (DESKTOP: GRIGLIA NETFLIX-STYLE) --- */
+    /* --- NUOVO LAYOUT DIGITAL RELEASE --- */
     #digitalModal .modal-content {
-      max-width: 1200px !important;
+      max-width: 1200px !important; /* Molto largo su desktop */
       width: 95%;
     }
 
     #digitalList {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 1rem;
+      gap: 1.2rem;
       align-items: stretch;
     }
 
     .digital-item {
       display: flex;
       gap: 1rem;
-      background: var(--section-tint);
+      background: var(--glass-bg);
       border-radius: 12px;
-      padding: 0.75rem;
-      border: 1px solid var(--border-color);
+      padding: 0.8rem;
+      border: 1px solid var(--glass-border);
       align-items: center;
-      transition: transform 0.2s;
       height: 100%;
       box-sizing: border-box;
     }
 
-    .digital-item:active {
-      transform: scale(0.98);
-    }
-
     .digital-still-wrapper {
-      width: 120px;
-      min-width: 120px;
-      aspect-ratio: 16/9;
-      border-radius: 8px;
+      width: 90px;
+      min-width: 90px;
+      aspect-ratio: 2/3;
+      border-radius: 6px;
       overflow: hidden;
       background: #2b2b2b;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
 
-    .digital-still {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .digital-still { width: 100%; height: 100%; object-fit: cover; }
+    .digital-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .digital-title { font-weight: 700; font-size: 1rem; color: #fff; line-height: 1.2; }
+    .digital-release-date { font-size: 0.85rem; color: var(--primary); font-weight: 600; }
+
+    /* Responsive Mobile */
+    @media (max-width: 768px) {
+      #digitalModal .modal-content { width: 100% !important; border-radius: 20px 20px 0 0 !important; }
+      #digitalList { display: flex !important; flex-direction: column !important; }
+      .digital-item { height: auto !important; }
     }
 
-    .digital-info {
-      flex: 1;
-      min-width: 0;
+    /* --- VOTI PROFESSIONALI DIGITAL LIST --- */
+    #digitalList .media-ratings {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
     }
 
-    .digital-title {
-      font-weight: 700;
-      font-size: 1rem;
-      display: block;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    #digitalList .rating-badge {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
-    .digital-release-date {
-      font-size: 0.85rem;
-      color: var(--primary);
-      font-weight: 600;
-      margin-top: 4px;
-      display: block;
-    }
-
-    .digital-status {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-top: 6px;
-      display: inline-block;
+    #digitalList .digital-title small {
+        margin-left: 5px;
+        color: var(--text-secondary);
     }
 
     .empty-state {
@@ -7838,91 +7832,122 @@
       const listContainer = document.getElementById('digitalList');
       if (!listContainer) return;
 
-      listContainer.innerHTML = `<div style="text-align:center; padding: 3rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i><p style="margin-top:10px; opacity:0.6;">Caricamento intero mese in corso...</p></div>`;
+      listContainer.innerHTML = `
+        <div style="text-align:center; padding: 3rem; grid-column: 1/-1;">
+          <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+          <p style="margin-top:10px; opacity:0.6;">Sincronizzazione calendario e pulizia voti...</p>
+        </div>`;
 
       try {
-        const response = await fetch(`${MDBLIST_PROXY_URL}?mode=digital`);
-        if (!response.ok) throw new Error("Errore del server");
-
+        const response = await fetch(`${MDBLIST_PROXY_URL}/?mode=whenondigital`);
+        if (!response.ok) throw new Error("Dati non disponibili nel database.");
+        
         let movies = await response.json();
 
-        if (!movies || movies.length === 0) {
-          listContainer.innerHTML = "<p style='text-align:center; padding:2rem;'>Nessun dato trovato per questo periodo.</p>";
-          return;
-        }
+        // 1. NORMALIZZAZIONE E FILTRO DATE
+        movies.forEach(movie => {
+          movie.cleanTitle = movie.name || movie.title || "Titolo sconosciuto";
+          movie.cleanDate = movie.releaseDate || movie.date || "";
+          const d = new Date(movie.cleanDate);
+          movie.parsedTime = isNaN(d.getTime()) ? 0 : d.getTime();
+          
+          movie.displayDate = movie.parsedTime > 0 
+            ? d.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })
+            : movie.cleanDate;
+        });
 
-        // Ordina tutti i film per data crescente
-        movies.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        // 2. ORDINAMENTO CORRETTO: Dal passato/presente verso il futuro lontano
+        // (Così vedi subito cosa è uscito OGGI o cosa esce DOMANI)
+        movies.sort((a, b) => a.parsedTime - b.parsedTime);
 
-        // --- Ricerca Simultanea su TMDb per tutto il mese ---
+        // 3. ARRICCHIMENTO CON PULIZIA VOTI
         await Promise.all(movies.map(async (movie) => {
-          // Formattazione Data in Italiano
-          if (movie.timestamp) {
-            const d = new Date(movie.timestamp);
-            const opzioniData = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-            const dataItaliana = d.toLocaleDateString('it-IT', opzioniData);
-            movie.displayDate = dataItaliana.charAt(0).toUpperCase() + dataItaliana.slice(1);
-          } else {
-            movie.displayDate = movie.date || 'N/A';
-          }
-
-          movie.hqPoster = movie.still || '';
-          movie.rating = movie.rating || null;
+          movie.theatricalYear = "";
+          movie.ratingsHTML = "";
+          movie.finalPoster = movie.still || movie.wallpaperUrl || DEFAULT_POSTER;
 
           try {
-            // Cerca il film su TMDb tramite titolo per avere poster + voto aggiornati
-            const tmdbSearch = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(movie.title)}&language=it-IT`);
-            const searchData = await tmdbSearch.json();
+            let tmdbRes = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(movie.cleanTitle)}&language=it-IT`);
+            let tmdbData = await tmdbRes.json();
+            
+            if (!tmdbData.results || tmdbData.results.length === 0) {
+                tmdbRes = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(movie.cleanTitle)}&language=en-US`);
+                tmdbData = await tmdbRes.json();
+            }
 
-            if (searchData.results && searchData.results.length > 0) {
-              const tmdbMovie = searchData.results[0];
-              // Sovrascrive tmdbId con quello trovato su TMDb (più affidabile)
-              movie.tmdbId = tmdbMovie.id;
-              if (tmdbMovie.poster_path) {
-                movie.hqPoster = `https://image.tmdb.org/t/p/w342${tmdbMovie.poster_path}`;
+            if (tmdbData.results && tmdbData.results.length > 0) {
+              const match = tmdbData.results[0];
+              movie.tmdbId = match.id;
+              movie.theatricalYear = match.release_date ? match.release_date.split('-')[0] : "";
+              
+              if (match.poster_path) {
+                movie.finalPoster = `https://image.tmdb.org/t/p/w342${match.poster_path}`;
               }
-              if (tmdbMovie.vote_average && tmdbMovie.vote_average > 0) {
-                movie.rating = tmdbMovie.vote_average.toFixed(1);
+
+              const detailRes = await fetch(`https://api.themoviedb.org/3/movie/${match.id}?api_key=${TMDB_KEY}&append_to_response=external_ids`);
+              const detailData = await detailRes.json();
+              const imdbID = detailData.external_ids?.imdb_id;
+
+              if (imdbID) {
+                const ratingsRes = await fetch(`${MDBLIST_PROXY_URL}/?i=${imdbID}`);
+                const ratingsData = await ratingsRes.json();
+                
+                if (ratingsData && ratingsData.ratings) {
+                  let rHTML = "";
+                  const r = ratingsData.ratings;
+                  
+                  // Funzione helper per validare i voti (scarta null, 0, 0.0 o N/A)
+                  const isValid = (val) => val && val !== "0" && val !== "0.0" && val !== "N/A" && val !== "null";
+
+                  const imdbV = r.find(x => x.source === 'imdb');
+                  if (imdbV && isValid(imdbV.value)) {
+                    rHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon"> ${imdbV.value}</span>`;
+                  }
+                  
+                  const letterV = r.find(x => x.source === 'letterboxd');
+                  if (letterV && isValid(letterV.value)) {
+                    rHTML += `<span class="rating-badge"><img src="${LETTERBOXD_ICON}" class="rating-icon"> ${letterV.value}</span>`;
+                  }
+                  
+                  const metaV = r.find(x => x.source === 'metacritic');
+                  if (metaV && isValid(metaV.value)) {
+                    rHTML += `<span class="rating-badge"><img src="${METACRITIC_ICON}" class="rating-icon"> ${metaV.value}</span>`;
+                  }
+                  
+                  movie.ratingsHTML = rHTML;
+                }
               }
             }
-          } catch (e) {
-            console.warn('TMDb fetch fallito per:', movie.title);
-          }
+          } catch(e) { console.error("Errore per:", movie.cleanTitle); }
         }));
 
-        // Disegniamo la lista completa
+        // 4. RENDERING GRIGLIA
         listContainer.innerHTML = movies.map(movie => {
-          const ratingBadge = movie.rating ? `
-        <span style="background:rgba(245,197,24,0.1);color:#f5c518;padding:2px 6px;border-radius:4px;font-size:0.75rem;font-weight:bold;border:1px solid #f5c518;margin-top:5px;display:inline-block;">
-          <i class="fas fa-star"></i> ${movie.rating}
-        </span>` : '';
-
-          const safeTmdbId = (movie.tmdbId || '').toString();
-          const hasId = !!safeTmdbId;
-
           return `
-        <div class="digital-item">
-          <div class="digital-still-wrapper" style="aspect-ratio:2/3;">
-            <img src="${movie.hqPoster}" class="digital-still" onerror="this.src='${DEFAULT_POSTER}'" style="object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
-          </div>
-          <div class="digital-info">
-            <span class="digital-title">${movie.title || 'Titolo sconosciuto'}</span>
-            <span class="digital-release-date" style="text-transform:capitalize;">
-              <i class="fas fa-calendar-alt"></i> ${movie.displayDate}
-            </span>
-            <div>${ratingBadge}</div>
-          </div>
-          <button onclick="${hasId ? `closeModal(document.getElementById('digitalModal')); addNewMedia('${safeTmdbId}');` : `showNotification('ID film non trovato', 'warning');`}"
-                  class="btn btn-primary"
-                  style="width:38px;height:38px;padding:0;flex-shrink:0;border-radius:50%;opacity:${hasId ? '1' : '0.4'};"
-                  title="${hasId ? 'Aggiungi alla Watchlist' : 'Film non trovato su TMDb'}">
-            <i class="fas fa-plus"></i>
-          </button>
-        </div>`;
+            <div class="digital-item">
+                <div class="digital-still-wrapper">
+                    <img src="${movie.finalPoster}" class="digital-still" onerror="this.src='${DEFAULT_POSTER}'">
+                </div>
+                <div class="digital-info">
+                    <span class="digital-title">
+                        ${movie.cleanTitle} 
+                        ${movie.theatricalYear ? `<small style="opacity:0.4; font-weight:400;">(${movie.theatricalYear})</small>` : ''}
+                    </span>
+                    <span class="digital-release-date" style="text-transform: capitalize;">
+                        <i class="fas fa-calendar-alt"></i> ${movie.displayDate}
+                    </span>
+                    <div class="media-ratings" style="margin-top:8px; gap:6px;">${movie.ratingsHTML}</div>
+                </div>
+                <button onclick="if('${movie.tmdbId}') { closeModal(document.getElementById('digitalModal')); addNewMedia('${movie.tmdbId}'); } else { showNotification('ID non trovato', 'error'); }" 
+                        class="btn btn-primary" 
+                        style="width: 38px; height: 38px; padding: 0; flex-shrink: 0; border-radius: 50%; opacity: ${movie.tmdbId ? '1' : '0.5'};">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>`;
         }).join('');
 
       } catch (error) {
-        listContainer.innerHTML = `<p style='text-align:center;color:var(--danger);padding:2rem;'>Errore: ${error.message}</p>`;
+        listContainer.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--danger);"><i class="fas fa-exclamation-triangle fa-2x"></i><p>${error.message}</p></div>`;
       }
     }
   </script>
