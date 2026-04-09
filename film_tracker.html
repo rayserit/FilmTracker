@@ -7874,7 +7874,11 @@
       const onlyWithRatings = document.getElementById('filterRatingsToggle').checked;
 
       const filteredMovies = onlyWithRatings 
-        ? allDigitalMovies.filter(m => m.ratings && (m.ratings.imdb !== "N/A" || m.ratings.letterboxd !== "N/A")) 
+        ? allDigitalMovies.filter(m => {
+            if (!m.ratings) return false;
+            const isValid = (v) => v && v !== "N/A" && v !== "0" && v !== "0.0";
+            return isValid(m.ratings.imdb) || isValid(m.ratings.letterboxd) || isValid(m.ratings.metacritic);
+          }) 
         : allDigitalMovies;
 
       listContainer.innerHTML = filteredMovies.map(movie => {
