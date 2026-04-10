@@ -264,21 +264,6 @@
       padding: 1rem;
       border-radius: 12px;
       margin-bottom: 2rem;
-      opacity: 1;
-      transform: translateY(0);
-      max-height: 240px;
-      overflow: hidden;
-      transition: opacity 0.28s ease, transform 0.28s ease, max-height 0.28s ease, margin-bottom 0.28s ease, padding 0.28s ease;
-    }
-
-    .stats-panel.is-hidden {
-      opacity: 0;
-      transform: translateY(-10px);
-      max-height: 0;
-      margin-bottom: 0;
-      padding-top: 0;
-      padding-bottom: 0;
-      pointer-events: none;
     }
 
     .stats-container {
@@ -323,119 +308,6 @@
       font-weight: 700;
       color: var(--text-color);
       line-height: 1;
-    }
-
-    .stats-overview-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 1rem;
-      margin-top: 1.25rem;
-    }
-
-    .stats-overview-grid .stat-item {
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      gap: 5px;
-      padding: 1rem 0.85rem;
-      margin: 0;
-    }
-
-    .stats-overview-grid .stat-icon {
-      width: 40px;
-      height: 40px;
-      min-width: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.55rem;
-      margin: 0;
-      line-height: 1;
-    }
-
-    .stats-overview-grid .stat-name {
-      margin: 0;
-      padding: 0;
-      font-size: 0.8rem;
-      font-weight: 500;
-      line-height: 1.2;
-      min-height: 2.4em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .stats-overview-grid .stat-value {
-      margin: 0;
-      padding: 0;
-      font-size: 1.5rem;
-      font-weight: 700;
-      line-height: 1;
-      min-height: 1.5em;
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-    }
-
-    .stats-overview-grid .stat-item:nth-child(1) .stat-icon { color: var(--primary); }
-    .stats-overview-grid .stat-item:nth-child(2) .stat-icon { color: var(--warning); }
-    .stats-overview-grid .stat-item:nth-child(3) .stat-icon { color: var(--tv-accent); }
-    .stats-overview-grid .stat-item:nth-child(4) .stat-icon { color: #ff7b72; }
-    .stats-overview-grid .stat-item:nth-child(5) .stat-icon { color: var(--secondary); }
-
-    .stats-section-divider {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin: 1.5rem 0 1rem;
-      color: var(--text-secondary);
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .stats-section-divider::before,
-    .stats-section-divider::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
-    }
-
-    .settings-toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-top: 1rem;
-      padding: 1rem 1.1rem;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border-color);
-    }
-
-    .settings-toggle-copy {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-    }
-
-    .settings-toggle-title {
-      font-weight: 700;
-      color: var(--text-color);
-    }
-
-    .settings-toggle-desc {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
     }
 
     /* Mobile: Hide text labels, keep icons */
@@ -1314,73 +1186,16 @@
     }
 
     .notification-list {
-      flex: 1 1 auto;
-      flex-grow: 1;
+      flex: 1;
       max-height: 300px;
       overflow-y: auto;
     }
 
     .notification-footer {
-      height: auto;
-      padding: 10px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      padding: 0.5rem;
+      text-align: center;
       border-top: 1px solid var(--border-color);
       flex-shrink: 0;
-    }
-
-    .notification-footer .btn {
-      width: fit-content !important;
-      max-width: 220px;
-      margin: 0 auto !important;
-      padding: 4px 12px !important;
-      border-radius: 999px;
-      font-size: 0.75rem !important;
-      font-weight: 700;
-      white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.45rem;
-      height: 30px !important;
-      box-shadow: 0 6px 18px rgba(58, 134, 255, 0.18);
-    }
-
-    #backToTopBtn {
-      position: fixed;
-      right: 30px;
-      bottom: 30px;
-      width: 50px;
-      height: 50px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 50%;
-      background: rgba(10, 10, 15, 0.82);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      cursor: pointer;
-      z-index: 2000;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(12px);
-      transition: opacity 0.3s ease, transform 0.22s ease, background 0.22s ease;
-    }
-
-    #backToTopBtn.visible {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
-    #backToTopBtn:hover {
-      background: var(--primary);
-      transform: translateY(-2px);
     }
 
     .notification-item {
@@ -4030,377 +3845,10 @@
     .read-more-btn:hover {
       background: rgba(255, 255, 255, 0.15);
     }
-
-    @media (min-width: 769px) {
-      body {
-        padding-left: 60px !important;
-        padding-top: 15px !important;
-      }
-
-      .top-bar { display: none !important; }
-
-      .sidebar-mini {
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 60px;
-        background: rgba(10, 10, 15, 0.6);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-right: 1px solid var(--glass-border);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        padding: 14px 0 12px;
-        z-index: 1100;
-      }
-
-      .side-brand {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        width: 100%;
-        flex-shrink: 0;
-      }
-
-      .side-switcher-box {
-        width: 48px;
-        padding: 4px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid var(--glass-border);
-        border-radius: 18px;
-        box-sizing: border-box;
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-      }
-
-      .side-logo {
-        width: 100%;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 11px;
-        font-size: 0.95rem;
-        color: var(--text-secondary);
-        text-decoration: none;
-        opacity: 0.6;
-        transition: all 0.22s ease;
-      }
-
-      .side-logo:hover {
-        color: var(--text-color);
-        opacity: 1;
-        background: rgba(255, 255, 255, 0.08);
-      }
-
-      .side-logo.active {
-        color: var(--primary);
-        opacity: 1;
-        background: rgba(58, 134, 255, 0.15);
-      }
-
-      .side-nav-center {
-        margin-top: auto;
-        margin-bottom: auto;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        width: 100%;
-        padding: 0;
-      }
-
-      .side-group {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        width: 100%;
-      }
-
-      .side-divider {
-        width: 34px;
-        height: 1px;
-        background: rgba(255, 255, 255, 0.1);
-        margin: 8px 0;
-        align-self: center;
-      }
-
-      .side-item {
-        width: 48px;
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 14px;
-        color: var(--text-secondary);
-        font-size: 1.2rem;
-        cursor: pointer;
-        align-self: center;
-        transition: transform 0.18s ease, background 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .side-item:hover {
-        background: rgba(255, 255, 255, 0.08);
-        color: white;
-        transform: scale(1.1);
-      }
-
-      .side-item.active {
-        background: rgba(58, 134, 255, 0.15);
-        color: var(--primary);
-      }
-
-      .side-item.notification-host {
-        position: relative;
-      }
-
-      .sidebar-mini .notification-bell-container {
-        position: relative;
-        width: 48px;
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .sidebar-mini .notification-bell-container .btn {
-        width: 48px;
-        height: 48px;
-        padding: 0;
-        border-radius: 14px;
-        background: transparent;
-        color: var(--text-secondary);
-        font-size: 1.2rem;
-        transition: transform 0.18s ease, background 0.2s ease, color 0.2s ease;
-      }
-
-      .sidebar-mini .notification-bell-container .btn:hover,
-      .sidebar-mini .notification-bell-container.active .btn {
-        background: rgba(255, 255, 255, 0.08);
-        color: white;
-        transform: scale(1.1);
-      }
-
-      .sidebar-mini .notification-bell-container.active .btn {
-        color: var(--primary);
-      }
-
-      .sidebar-mini .notification-bell-container .fa-bell {
-        font-size: 1.2rem;
-      }
-
-      .sidebar-mini .notification-bell-container .notification-badge {
-        top: 4px;
-        right: 4px;
-        border-color: rgba(10, 10, 15, 0.95);
-      }
-
-      .sidebar-mini .notification-dropdown {
-        top: 0;
-        left: 60px;
-        right: auto;
-      }
-
-      .side-filter-slot {
-        position: relative;
-        width: 48px;
-        height: 48px;
-        align-self: center;
-      }
-
-      .side-filter-slot .custom-select-wrapper {
-        position: relative;
-        min-width: unset;
-        width: 48px;
-        height: 48px;
-      }
-
-      .side-filter-slot .custom-select {
-        width: 48px;
-        height: 48px;
-        padding: 0;
-        justify-content: center;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        border-radius: 14px;
-      }
-
-      .side-filter-slot .custom-select:hover,
-      .side-filter-slot .custom-select-wrapper.open .custom-select {
-        background: rgba(255, 255, 255, 0.08) !important;
-        transform: scale(1.1);
-      }
-
-      .side-filter-slot .selected-option {
-        justify-content: center;
-        gap: 0;
-        font-size: 0;
-      }
-
-      .side-filter-slot .selected-option i {
-        font-size: 1.2rem;
-        color: var(--text-secondary);
-        margin: 0;
-      }
-
-      .side-filter-slot .selected-option span,
-      .side-filter-slot .select-arrow {
-        display: none !important;
-      }
-
-      .side-filter-slot .custom-select-wrapper.open .custom-options {
-        top: 0;
-        left: 60px;
-        width: max-content;
-        min-width: 220px;
-        border-top: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 12px;
-      }
-
-      .side-footer {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        padding-top: 10px;
-        border-top: 1px solid var(--glass-border);
-        width: 100%;
-        flex-shrink: 0;
-      }
-
-      .search-overlay {
-        position: fixed;
-        left: 60px;
-        top: 20px;
-        background: var(--card-bg);
-        border: 1px solid var(--glass-border);
-        padding: 10px 20px;
-        border-radius: 15px;
-        display: none;
-        align-items: center;
-        gap: 15px;
-        z-index: 1200;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-        animation: fadeInRight 0.3s ease;
-      }
-
-      .search-overlay input {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        width: 300px;
-        color: var(--text-color) !important;
-        margin: 0 !important;
-        outline: none;
-        padding: 0 !important;
-      }
-
-      .search-overlay i {
-        cursor: pointer;
-        color: var(--text-secondary);
-      }
-    }
-
-    @keyframes fadeInRight {
-      from {
-        opacity: 0;
-        transform: translateX(-20px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    @media (max-width: 768px) {
-      .sidebar-mini { display: none; }
-
-      #sideSearchOverlay {
-        display: none !important;
-      }
-
-      #backToTopBtn {
-        right: 20px !important;
-        bottom: 100px !important;
-        width: 40px !important;
-        height: 40px !important;
-        font-size: 0.95rem;
-      }
-    }
   </style>
 </head>
 
 <body class="dark user-select-none">
-  <aside class="sidebar-mini">
-    <div class="side-brand">
-      <div class="side-switcher-box">
-        <a href="film_tracker.html" class="side-logo active" title="Passa a Film"><i class="fas fa-film"></i></a>
-        <a href="serietv_tracker.html" class="side-logo" title="Passa a Serie TV"><i class="fas fa-tv"></i></a>
-      </div>
-    </div>
-
-    <div class="side-nav-center">
-      <div class="side-group">
-        <div class="side-item" id="sideManagementBtn" title="Aggiungi Film" style="color: var(--primary)">
-          <i class="fas fa-plus-circle"></i>
-        </div>
-        <div class="side-item" id="sideSearchTrigger" title="Cerca">
-          <i class="fas fa-search"></i>
-        </div>
-        <div class="side-filter-slot" id="categoryFilterSlot" title="Filtra Categorie"></div>
-        <div class="side-filter-slot" id="sortFilterSlot" title="Ordina"></div>
-      </div>
-
-      <div class="side-divider"></div>
-
-      <div class="side-group">
-        <div class="notification-bell-container" id="notificationBellContainer" style="display: none;">
-          <button id="bellIcon" class="btn btn-secondary" title="Notifiche"><i class="fas fa-bell"></i></button>
-          <div id="notificationBadge" class="notification-badge">0</div>
-          <div id="notificationDropdown" class="notification-dropdown"></div>
-        </div>
-        <div class="side-item" id="sideDigitalBtn" title="Uscite Digitali">
-          <i class="fas fa-cloud"></i>
-        </div>
-        <div class="side-item" id="sideStatsBtn" title="Statistiche">
-          <i class="fas fa-chart-bar"></i>
-        </div>
-      </div>
-    </div>
-
-    <div class="side-footer">
-      <div class="side-item" id="sideShareBtn" title="Condividi">
-        <i class="fas fa-share-alt"></i>
-      </div>
-      <div class="side-item" id="sideSettingsBtn" title="Impostazioni">
-        <i class="fas fa-cog"></i>
-      </div>
-      <div class="side-item profile-icon" id="sideAuthBtn" title="Account">
-        <i class="fas fa-user-circle"></i>
-      </div>
-    </div>
-  </aside>
-
-  <button id="backToTopBtn" title="Torna in cima" aria-label="Torna in cima">
-    <i class="fas fa-chevron-up"></i>
-  </button>
-
-  <div id="sideSearchOverlay" class="search-overlay">
-    <input type="text" id="searchInputSide" placeholder="Cerca titolo o saga...">
-    <i class="fas fa-times" onclick="toggleSideSearch()"></i>
-  </div>
 
   <!-- AGGIUNGI QUESTO BLOCCO SUBITO SOTTO IL BODY -->
   <div class="bg-glows">
@@ -4473,6 +3921,11 @@
       <button id="settingsBtn" class="btn btn-secondary" title="Impostazioni Dati">
         <i class="fas fa-cog"></i>
       </button>
+      <div class="notification-bell-container" id="notificationBellContainer" style="display: none;">
+        <button id="bellIcon" class="btn btn-secondary" title="Notifiche"><i class="fas fa-bell"></i></button>
+        <div id="notificationBadge" class="notification-badge">0</div>
+        <div id="notificationDropdown" class="notification-dropdown"></div>
+      </div>
       <button id="shareBtn" class="btn btn-secondary" title="Condividi Libreria"><i
           class="fas fa-share-alt"></i></button>
       <div id="userInfo" style="display:none;"><button id="logoutBtn" class="btn btn-danger" title="Logout"><i
@@ -4665,36 +4118,6 @@
     <div class="modal-content" style="max-width: 800px; padding: 1.5rem;">
       <h2 style="text-align: center; margin-top: 0; color: var(--primary);">Statistiche Avanzate</h2>
 
-      <div class="stats-overview-grid">
-        <div class="stat-item" title="Totale">
-          <i class="fas fa-film stat-icon"></i>
-          <span class="stat-name">Totale</span>
-          <div class="stat-value" id="advancedStatTotal">0</div>
-        </div>
-        <div class="stat-item" title="Da Vedere">
-          <i class="fas fa-bookmark stat-icon"></i>
-          <span class="stat-name">Da Vedere</span>
-          <div class="stat-value" id="advancedStatWatchlist">0</div>
-        </div>
-        <div class="stat-item" title="Visti">
-          <i class="fas fa-check-circle stat-icon"></i>
-          <span class="stat-name">Visti</span>
-          <div class="stat-value" id="advancedStatWatched">0</div>
-        </div>
-        <div class="stat-item" title="Rivisti">
-          <i class="fas fa-redo stat-icon"></i>
-          <span class="stat-name">Rivisti</span>
-          <div class="stat-value" id="advancedStatRewatched">0</div>
-        </div>
-        <div class="stat-item" title="Tempo Totale">
-          <i class="fas fa-clock stat-icon"></i>
-          <span class="stat-name">Tempo Totale</span>
-          <div class="stat-value" id="advancedStatHours">0h 0m</div>
-        </div>
-      </div>
-
-      <div class="stats-section-divider">Overview</div>
-
       <!-- Statistiche Mese Corrente -->
       <div class="stats-container-month" style="margin-top: 1rem;">
         <h3 style="text-align: center; font-size: 1rem; color: var(--text-secondary); margin-bottom: 1rem;">
@@ -4713,8 +4136,6 @@
           </div>
         </div>
       </div>
-
-      <div class="stats-section-divider">Analisi</div>
 
       <div class="charts-container">
         <!-- Grafico a Torta: Generi -->
@@ -4975,17 +4396,6 @@
         </div>
       </div>
 
-      <div class="settings-toggle-row">
-        <div class="settings-toggle-copy">
-          <span class="settings-toggle-title">Mostra statistiche in Home</span>
-          <span class="settings-toggle-desc">Attiva o nascondi la barra riepilogativa sopra la libreria.</span>
-        </div>
-        <label class="switch" aria-label="Mostra statistiche in Home">
-          <input type="checkbox" id="showHomeStatsToggle">
-          <span class="slider"></span>
-        </label>
-      </div>
-
       <div class="modal-footer" style="border-top: none;">
         <button onclick="closeModal(document.getElementById('settingsModal'))" class="btn btn-secondary"
           style="width: 100%;">Chiudi</button>
@@ -5000,7 +4410,6 @@
     const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
     const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzJiMmIyYiIvPgogIDxnIGZpbGw9IiM0NDQiPgogICAgPGNpcmNsZSBjeD0iNTAiIGN5PSIzOCIgcj0iMTgiLz4KICAgIDxwYXRoIGQ9Ik0yMCw5NSBDMjAsNjUgMzAsNTggNTAsNTggQzcwLDU4IDgwLDY1IDgwLDk1IEw4MCwxMDAgTDIwLDEwMCBaIi8+CiAgPC9nPgo8L3N2Zz4=";
     const DEFAULT_CATEGORIES = ["watchlist", "watched"];
-    const HOME_STATS_PREF_KEY = 'prefs_showHomeStats';
     const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
     const POPCORN_ICONS = { positive: "https://upload.wikimedia.org/wikipedia/commons/d/da/Rotten_Tomatoes_positive_audience.svg", negative: "https://upload.wikimedia.org/wikipedia/commons/6/63/Rotten_Tomatoes_negative_audience.svg" };
     const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
@@ -5031,17 +4440,9 @@
       importFile: document.getElementById("importFile"),
       themeToggle: document.getElementById("themeToggle"),
       searchInput: document.getElementById("searchInput"), categoryFilter: document.getElementById("categoryFilter"),
-      statsPanel: document.querySelector(".stats-panel"),
-      backToTopBtn: document.getElementById("backToTopBtn"),
-      showHomeStatsToggle: document.getElementById("showHomeStatsToggle"),
       sortFilter: document.getElementById("sortFilter"), statTotal: document.getElementById("statTotal"),
       statWatchlist: document.getElementById("statWatchlist"), statWatched: document.getElementById("statWatched"),
       statRewatched: document.getElementById("statRewatched"), statHours: document.getElementById("statHours"),
-      advancedStatTotal: document.getElementById("advancedStatTotal"),
-      advancedStatWatchlist: document.getElementById("advancedStatWatchlist"),
-      advancedStatWatched: document.getElementById("advancedStatWatched"),
-      advancedStatRewatched: document.getElementById("advancedStatRewatched"),
-      advancedStatHours: document.getElementById("advancedStatHours"),
       mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), mediaManagementModal: document.getElementById("mediaManagementModal"),
       mediaTitle: document.getElementById("mediaTitle"), searchTMDbBtn: document.getElementById("searchTMDbBtn"),
       tmdbResults: document.getElementById("tmdbResults"), saveMediaBtn: document.getElementById("saveMediaBtn"),
@@ -5143,8 +4544,6 @@
     function init() {
       setupEventListeners();
       setupManagementModal();
-      applySavedHomeStatsPreference();
-      setupBackToTopButton();
 
       loadSortOrder();
       updateSwitcherLinksInViewMode();
@@ -5176,67 +4575,6 @@
           }
         }, { passive: true });
       }
-    }
-
-    function toggleHomeStats(isVisible, immediate = false) {
-      const panel = elements.statsPanel;
-      if (!panel) return;
-
-      if (isVisible) {
-        document.body.classList.remove('home-stats-hidden');
-        panel.style.display = '';
-
-        if (immediate) {
-          panel.classList.remove('is-hidden');
-          return;
-        }
-
-        requestAnimationFrame(() => {
-          panel.classList.remove('is-hidden');
-        });
-        return;
-      }
-
-      document.body.classList.add('home-stats-hidden');
-
-      if (immediate) {
-        panel.classList.add('is-hidden');
-        panel.style.display = 'none';
-        return;
-      }
-
-      panel.classList.add('is-hidden');
-      window.setTimeout(() => {
-        if (panel.classList.contains('is-hidden')) {
-          panel.style.display = 'none';
-        }
-      }, 280);
-    }
-
-    function applySavedHomeStatsPreference() {
-      const savedPreference = localStorage.getItem(HOME_STATS_PREF_KEY);
-      const shouldShow = savedPreference !== 'false';
-
-      if (elements.showHomeStatsToggle) {
-        elements.showHomeStatsToggle.checked = shouldShow;
-      }
-
-      toggleHomeStats(shouldShow, true);
-    }
-
-    function setupBackToTopButton() {
-      const btn = elements.backToTopBtn;
-      if (!btn) return;
-
-      const updateVisibility = () => {
-        btn.classList.toggle('visible', window.scrollY > 300);
-      };
-
-      window.addEventListener('scroll', updateVisibility, { passive: true });
-      btn.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-      updateVisibility();
     }
 
     function updateSwitcherLinksInViewMode() {
@@ -5756,18 +5094,13 @@
 
       const hours = Math.floor(stats.minutes / 60);
       stats.minutes %= 60;
-      const formattedHours = `${hours}h ${stats.minutes}m`;
 
       elements.statTotal.textContent = statContributorIds.size;
+
       elements.statWatchlist.textContent = stats.watchlist;
       elements.statWatched.textContent = stats.watched;
       elements.statRewatched.textContent = stats.rewatched;
-      elements.statHours.textContent = formattedHours;
-      if (elements.advancedStatTotal) elements.advancedStatTotal.textContent = statContributorIds.size;
-      if (elements.advancedStatWatchlist) elements.advancedStatWatchlist.textContent = stats.watchlist;
-      if (elements.advancedStatWatched) elements.advancedStatWatched.textContent = stats.watched;
-      if (elements.advancedStatRewatched) elements.advancedStatRewatched.textContent = stats.rewatched;
-      if (elements.advancedStatHours) elements.advancedStatHours.textContent = formattedHours;
+      elements.statHours.textContent = `${hours}h ${stats.minutes}m`;
     }
 
     function updateCounts() {
@@ -7553,14 +6886,6 @@
         });
       }
 
-      if (elements.showHomeStatsToggle) {
-        elements.showHomeStatsToggle.addEventListener('change', (e) => {
-          const isVisible = e.target.checked;
-          localStorage.setItem(HOME_STATS_PREF_KEY, String(isVisible));
-          toggleHomeStats(isVisible);
-        });
-      }
-
       // Azioni dentro il modale (Export, Import, Reset)
       const exportAction = document.getElementById('exportAction');
       if (exportAction) exportAction.addEventListener('click', exportData);
@@ -7785,10 +7110,7 @@
       elements.bellIcon.addEventListener('click', (e) => {
         e.stopPropagation();
         elements.notificationDropdown.classList.toggle('visible');
-        elements.notificationBellContainer.classList.toggle('active', elements.notificationDropdown.classList.contains('visible'));
       });
-
-      // Sidebar desktop compatta inizializzata su window load
     }
 
     async function showPosterModal(id) {
@@ -8274,8 +7596,8 @@
       openModal(document.getElementById('chartDetailsModal'));
     }
 
-    // Add event listeners for the home stats panel items
-    document.querySelectorAll('.stats-panel .stat-item').forEach(item => {
+    // Add event listeners for the stats panel items
+    document.querySelectorAll('.stat-item').forEach(item => {
       item.addEventListener('click', () => {
         openModal(elements.advancedStatsModal);
         renderAdvancedStats();
@@ -8592,117 +7914,6 @@
     window.toggleDigitalFilter = function() {
         renderDigitalUI();
     };
-
-    function toggleSideSearch(forceState) {
-      const overlay = document.getElementById('sideSearchOverlay');
-      if (!overlay || window.innerWidth <= 768) return;
-
-      const shouldShow = typeof forceState === 'boolean'
-        ? forceState
-        : overlay.style.display !== 'flex';
-
-      overlay.style.display = shouldShow ? 'flex' : 'none';
-
-      if (shouldShow) {
-        const input = document.getElementById('searchInputSide');
-        if (input) input.focus();
-      }
-    }
-
-    function setupSidebarCompact() {
-      if (window.innerWidth <= 768) return;
-
-      const sidebarActiveIds = ['sideSearchTrigger', 'sideDigitalBtn', 'sideStatsBtn', 'sideManagementBtn'];
-      const setSidebarActive = (activeId = null) => {
-        sidebarActiveIds.forEach((id) => {
-          document.getElementById(id)?.classList.toggle('active', id === activeId);
-        });
-        elements.notificationBellContainer?.classList.remove('active');
-      };
-
-      const categoryFilterSlot = document.getElementById('categoryFilterSlot');
-      const sortFilterSlot = document.getElementById('sortFilterSlot');
-      const categoryFilterWrapper = document.getElementById('categoryFilter')?.parentElement;
-      const sortFilterWrapper = document.getElementById('sortFilter')?.parentElement;
-
-      if (categoryFilterSlot && categoryFilterWrapper) {
-        categoryFilterSlot.appendChild(categoryFilterWrapper);
-      }
-
-      if (sortFilterSlot && sortFilterWrapper) {
-        sortFilterSlot.appendChild(sortFilterWrapper);
-      }
-
-      const trigger = document.getElementById('sideSearchTrigger');
-      const overlay = document.getElementById('sideSearchOverlay');
-      const inputSide = document.getElementById('searchInputSide');
-      const inputMain = document.getElementById('searchInput');
-
-      if (trigger && overlay && inputSide && inputMain) {
-        trigger.onclick = (e) => {
-          e.stopPropagation();
-          toggleSideSearch();
-          if (overlay.style.display === 'flex') setSidebarActive('sideSearchTrigger');
-          else setSidebarActive(null);
-        };
-
-        overlay.addEventListener('click', (e) => e.stopPropagation());
-
-        inputSide.oninput = (e) => {
-          inputMain.value = e.target.value;
-          inputMain.dispatchEvent(new Event('input'));
-        };
-
-        inputMain.addEventListener('input', () => {
-          if (document.activeElement !== inputSide) {
-            inputSide.value = inputMain.value;
-          }
-        });
-      }
-
-      document.getElementById('sideDigitalBtn').onclick = () => {
-        setSidebarActive('sideDigitalBtn');
-        elements.digitalBtn.click();
-      };
-      document.getElementById('sideSettingsBtn').onclick = () => elements.settingsBtn.click();
-      document.getElementById('sideShareBtn').onclick = () => elements.shareBtn.click();
-      document.getElementById('sideManagementBtn').onclick = () => {
-        setSidebarActive('sideManagementBtn');
-        elements.mediaManagementBtn.click();
-      };
-      document.getElementById('sideStatsBtn').onclick = () => {
-        setSidebarActive('sideStatsBtn');
-        openModal(elements.advancedStatsModal);
-        renderAdvancedStats();
-      };
-      elements.notificationBellContainer.onclick = (e) => {
-        e.stopPropagation();
-        elements.bellIcon.click();
-      };
-      document.getElementById('sideAuthBtn').onclick = () => {
-        if (currentUser) elements.logoutBtn.click();
-        else elements.authToggle.click();
-      };
-
-      document.addEventListener('click', () => {
-        toggleSideSearch(false);
-        if (!elements.notificationDropdown.classList.contains('visible')) {
-          setSidebarActive(null);
-        }
-      });
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          toggleSideSearch(false);
-          elements.notificationDropdown.classList.remove('visible');
-          elements.notificationBellContainer.classList.remove('active');
-          setSidebarActive(null);
-        }
-      });
-    }
-
-    window.toggleSideSearch = toggleSideSearch;
-    window.addEventListener('load', setupSidebarCompact);
-
   </script>
   <div class="modal" id="updateSummaryModal" style="z-index: 1200;">
     <div class="modal-content" style="max-width: 500px;">
