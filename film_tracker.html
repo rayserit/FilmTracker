@@ -4559,6 +4559,24 @@
       background: rgba(255, 255, 255, 0.15);
     }
 
+    @media (hover: none), (pointer: coarse) {
+      .media-card:hover,
+      .settings-card:hover,
+      .stat-item:hover,
+      .digital-item:hover,
+      .notification-item:hover,
+      .tmdb-result-card:hover {
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      .media-card:hover .card-actions,
+      .media-card:hover .favorite-btn,
+      .tmdb-result-card:hover .tmdb-result-add-btn {
+        transform: none !important;
+      }
+    }
+
     @media (min-width: 769px) {
       body {
         padding-left: 0 !important;
