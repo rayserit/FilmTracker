@@ -1898,7 +1898,7 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       cursor: pointer;
-      z-index: 2000;
+      z-index: 850;
       opacity: 0;
       pointer-events: none;
       transform: translateY(12px);
@@ -5005,7 +5005,7 @@
         box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
-        z-index: 1200 !important;
+        z-index: 900 !important;
       }
 
       .top-bar.hidden {
@@ -5089,7 +5089,7 @@
         box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
-        z-index: 1200 !important;
+        z-index: 900 !important;
         display: grid !important;
         grid-template-columns: repeat(5, 1fr) !important;
         justify-items: center !important;
@@ -5131,6 +5131,11 @@
 
       .bottom-nav-btn.add-btn i {
         color: white !important;
+      }
+
+      body.modal-open .top-bar,
+      body.modal-open .bottom-nav {
+        pointer-events: none !important;
       }
 
       #mediaManagementModal .modal-search-toolbar {
@@ -5239,6 +5244,7 @@
         width: 40px !important;
         height: 40px !important;
         font-size: 0.95rem;
+        z-index: 850 !important;
       }
 
       body.modal-open #backToTopBtn {
