@@ -1044,6 +1044,42 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
+    .native-category-select-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .add-media-native-select {
+      width: 100%;
+      height: 100%;
+      padding: 0 38px 0 14px;
+      border-radius: 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-color);
+      font-size: 0.92rem;
+      box-shadow: none;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+
+    .add-media-native-select:focus {
+      box-shadow: none;
+      border: none;
+      outline: none;
+    }
+
+    .native-category-select-wrap .select-arrow {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      margin: 0;
+      pointer-events: none;
+    }
+
     .manage-categories-link {
       width: 40px;
       height: 40px;
@@ -5234,28 +5270,22 @@
         height: 100% !important;
       }
 
-      #mediaManagementModal .mini-category-pill .custom-select {
+      #mediaManagementModal .native-category-select-wrap {
         width: 100% !important;
-        height: 44px !important;
-        padding: 0 38px 0 14px !important;
-        position: relative !important;
-        border-radius: 16px !important;
-        display: flex !important;
-        align-items: center !important;
+        height: 100% !important;
       }
 
-      #mediaManagementModal .mini-category-pill .selected-option {
-        display: block !important;
+      #mediaManagementModal .add-media-native-select {
         width: 100% !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        white-space: nowrap !important;
+        height: 44px !important;
+        padding: 0 40px 0 14px !important;
+        border-radius: 16px !important;
         font-size: 0.92rem !important;
       }
 
       #mediaManagementModal .mini-category-pill .select-arrow {
         position: absolute !important;
-        right: 14px !important;
+        right: 8px !important;
         top: 50% !important;
         transform: translateY(-50%) !important;
         margin: 0 !important;
@@ -5505,16 +5535,13 @@
           </div>
           <div class="search-dashboard-toolbar">
             <div id="categorySelectorContainer" class="mini-category-pill">
-              <div class="custom-select-wrapper" style="min-width: 150px;">
-                <div class="custom-select" id="addMediaCategoryCustom" data-value="watchlist">
-                  <span class="selected-option"><i class="fas fa-folder"></i> Seleziona...</span>
-                  <i class="fas fa-chevron-down select-arrow"></i>
-                </div>
-                <div class="custom-options" id="addMediaCategoryOptions">
-                </div>
+              <div class="native-category-select-wrap">
+                <select id="addMediaCategorySelect" class="add-media-native-select" aria-label="Categoria film">
+                </select>
+                <i class="fas fa-chevron-down select-arrow"></i>
               </div>
             </div>
-            <button id="toggleCategoryManagementBtn" class="manage-categories-link" type="button" title="Gestisci categorie">
+          <button id="toggleCategoryManagementBtn" class="manage-categories-link" type="button" title="Gestisci categorie">
               <i class="fas fa-cog"></i>
             </button>
           </div>
@@ -5522,7 +5549,7 @@
         <div class="category-management-panel panel-hidden" id="manageCategoriesPanel">
           <div class="management-form">
             <input type="text" id="newCategoryName" placeholder="Nuova categoria">
-            <button id="addCategoryBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Aggiungi</button>
+            <button id="addCategoryBtn" class="btn btn-primary" aria-label="Aggiungi categoria"><i class="fas fa-plus"></i></button>
           </div>
           <div class="management-list" id="categoriesList"></div>
         </div>
@@ -7092,23 +7119,18 @@
 
 
     function populateAddMediaCategorySelect() {
-      const optionsContainer = document.getElementById('addMediaCategoryOptions');
-      const select = document.getElementById('addMediaCategoryCustom');
+      const select = document.getElementById('addMediaCategorySelect');
+      if (!select) return;
 
-      // Genera le opzioni dinamiche
-      optionsContainer.innerHTML = categories.map(cat => {
+      select.innerHTML = categories.map(cat => {
         const catName = typeof cat === 'string' ? cat : cat.name;
         const display = getCategoryName(catName);
-        return `<div class="option" data-value="${catName}"><i class="fas fa-folder"></i> ${display}</div>`;
+        return `<option value="${catName}">${display}</option>`;
       }).join("");
 
-      // Imposta valore iniziale (es. "Da Vedere" o l'ultimo usato)
       const lastUsed = localStorage.getItem("lastUsedCategory") || categories[0];
       const defaultCatName = typeof lastUsed === 'string' ? lastUsed : lastUsed.name;
-      select.dataset.value = defaultCatName;
-      select.querySelector('.selected-option').innerHTML = `<i class="fas fa-folder"></i> ${getCategoryName(defaultCatName)}`;
-
-
+      select.value = categories.includes(defaultCatName) ? defaultCatName : categories[0];
     }
 
     function getCategoryName(cat) {
@@ -7500,7 +7522,7 @@
           return showNotification("Dettagli non trovati o IMDb ID mancante.", "error");
         }
 
-        const category = document.getElementById('addMediaCategoryCustom').dataset.value;
+        const category = document.getElementById('addMediaCategorySelect').value;
         localStorage.setItem("lastUsedCategory", category);
 
         if (mediaList.some(m => m.imdbID === enDetails.imdb_id && m.category === category)) {
