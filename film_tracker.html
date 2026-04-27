@@ -294,6 +294,71 @@
       gap: 1rem;
     }
 
+    #advancedStatsModal .monthly-activity-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+      width: 100%;
+    }
+
+    #advancedStatsModal .monthly-activity-card {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+      min-width: 0;
+      min-height: 56px;
+      padding: 0.7rem 0.75rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-color);
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.5rem;
+      text-align: left;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    #advancedStatsModal .monthly-activity-card:hover {
+      transform: scale(1.02);
+      border-color: var(--primary);
+      background: rgba(58, 134, 255, 0.1);
+    }
+
+    body.dark #advancedStatsModal .monthly-activity-card {
+      background: #1c1c21;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    #advancedStatsModal .monthly-activity-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      color: var(--primary);
+      font-size: 0.95rem;
+    }
+
+    #advancedStatsModal .monthly-activity-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    #advancedStatsModal .monthly-activity-value {
+      color: var(--primary);
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
     .stat-item {
       background: var(--card-bg);
       padding: 1rem;
@@ -610,6 +675,10 @@
     }
 
     body.hide-ratings-ui #mediaSectionsContainer .media-ratings {
+      display: none !important;
+    }
+
+    body.hide-ratings-ui #mediaSectionsContainer .imdb-mobile-only {
       display: none !important;
     }
 
@@ -6131,17 +6200,17 @@
         <h3 style="text-align: center; font-size: 1rem; color: var(--text-secondary); margin-bottom: 1rem;">
           Attività di <span id="currentMonthName">...</span>
         </h3>
-        <div class="stats-container">
-          <div class="stat-item" id="btnMonthAdded" style="border: 1px solid var(--primary); cursor: pointer;">
-            <i class="fas fa-plus-circle stat-icon" style="color: var(--primary);"></i>
-            <span class="stat-name">Aggiunti</span>
-            <div class="stat-value" id="monthAdded">0</div>
-          </div>
-          <div class="stat-item" id="btnMonthWatched" style="border: 1px solid var(--tv-accent); cursor: pointer;">
-            <i class="fas fa-eye stat-icon" style="color: var(--tv-accent);"></i>
-            <span class="stat-name">Visti</span>
-            <div class="stat-value" id="monthWatched">0</div>
-          </div>
+        <div class="monthly-activity-grid" style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0.65rem; width:100%;">
+          <button type="button" class="monthly-activity-card" id="btnMonthAdded">
+            <span class="monthly-activity-icon"><i class="fas fa-plus-circle"></i></span>
+            <span class="monthly-activity-label">Aggiunti</span>
+            <strong class="monthly-activity-value" id="monthAdded">0</strong>
+          </button>
+          <button type="button" class="monthly-activity-card" id="btnMonthWatched">
+            <span class="monthly-activity-icon" style="color: var(--text-color);"><i class="fas fa-eye"></i></span>
+            <span class="monthly-activity-label">Visti</span>
+            <strong class="monthly-activity-value" id="monthWatched">0</strong>
+          </button>
         </div>
       </div>
 
