@@ -400,6 +400,71 @@
             gap: 1rem;
         }
 
+        #advancedStatsModal .monthly-activity-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.65rem;
+            width: 100%;
+        }
+
+        #advancedStatsModal .monthly-activity-card {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            min-width: 0;
+            min-height: 56px;
+            padding: 0.7rem 0.75rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 0.5rem;
+            text-align: left;
+            transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+        }
+
+        #advancedStatsModal .monthly-activity-card:hover {
+            transform: scale(1.02);
+            border-color: var(--primary);
+            background: rgba(42, 157, 143, 0.1);
+        }
+
+        body.dark #advancedStatsModal .monthly-activity-card {
+            background: #1c1c21;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        #advancedStatsModal .monthly-activity-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            color: var(--primary);
+            font-size: 0.95rem;
+        }
+
+        #advancedStatsModal .monthly-activity-label {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        #advancedStatsModal .monthly-activity-value {
+            color: var(--primary);
+            font-size: 1.25rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
         .stat-item {
             background: var(--card-bg);
             padding: 1rem;
@@ -723,8 +788,32 @@
             color: var(--text-secondary);
             margin-top: 0.25rem;
             display: flex;
+            align-items: center;
             gap: 0.5rem;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            min-width: 0;
+        }
+
+        .media-meta-year {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .episode-count-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-weight: 600;
+            color: var(--text-color);
+            white-space: nowrap;
+            flex: 0 0 auto;
+        }
+
+        .episode-count-meta i {
+            color: var(--primary);
+            font-size: 0.72rem;
         }
 
         .media-ratings {
@@ -735,6 +824,10 @@
         }
 
         body.hide-ratings-ui #mediaSectionsContainer .media-ratings {
+            display: none !important;
+        }
+
+        body.hide-ratings-ui #mediaSectionsContainer .mobile-imdb-rating {
             display: none !important;
         }
 
@@ -784,13 +877,28 @@
             padding-top: 0.75rem;
         }
 
+        .media-progress-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
         .progress-bar-container {
             width: 100%;
             background-color: var(--progress-bg);
             border-radius: 4px;
             height: 6px;
             overflow: hidden;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .media-progress-row .episode-count-meta {
+            min-width: 3.45em;
+            justify-content: flex-end;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
         }
 
         .progress-bar {
@@ -809,6 +917,7 @@
         }
 
         .progress-text {
+            display: none;
             font-size: 0.75rem;
             color: var(--text-secondary);
             font-weight: 500;
@@ -4343,8 +4452,13 @@
                 box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             }
 
+            .media-info {
+                padding: 0.55rem 0.65rem 0.65rem;
+            }
+
             .media-title {
                 font-size: 0.8rem;
+                line-height: 1.15;
             }
 
             .media-meta,
@@ -4352,23 +4466,61 @@
                 display: none;
             }
 
+            .media-card .media-progress-row {
+                gap: 0.35rem;
+            }
+
+            .media-card .media-progress-row .episode-count-meta {
+                gap: 0.22rem;
+                font-size: 0.68rem;
+                flex: 0 0 auto;
+                min-width: 3.1em;
+            }
+
+            .media-card .media-progress-row .episode-count-meta i {
+                font-size: 0.62rem;
+            }
+
+            .media-card .media-progress-row .episode-count-meta {
+                display: none;
+            }
+
+            .media-progress {
+                padding-top: 0.45rem;
+            }
+
             .progress-text {
                 display: flex;
                 justify-content: space-between;
+                align-items: center;
+                gap: 0.65rem;
                 font-size: 0.7rem;
                 color: var(--text-secondary);
-                margin-top: 2px;
+                margin-top: 4px;
+            }
+
+            .progress-text .episode-count-meta {
+                gap: 0.22rem;
+                font-size: 0.68rem;
+                color: var(--text-secondary);
+                min-width: 0;
+                margin-right: auto;
+            }
+
+            .progress-text .episode-count-meta i {
+                font-size: 0.62rem;
             }
 
             .progress-text .mobile-imdb-rating {
                 display: inline-flex;
                 align-items: center;
                 gap: 4px;
+                margin-left: auto;
             }
 
             .progress-bar-container {
                 height: 3px;
-                margin-top: 4px;
+                margin-top: 0;
             }
 
             /* --- MODALE DETTAGLI SERIE (CENTRATO MOBILE) --- */
@@ -5571,6 +5723,37 @@
                 scroll-snap-align: start;
             }
 
+            .stats-container-month .stats-container {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 0.65rem !important;
+                overflow: visible !important;
+                padding-bottom: 0 !important;
+                scroll-snap-type: none !important;
+            }
+
+            .stats-container-month .stat-item {
+                width: auto !important;
+                min-height: 46px !important;
+                padding: 0.5rem 0.65rem !important;
+                flex: initial !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+                gap: 0.45rem !important;
+            }
+
+            .stats-container-month .stat-name {
+                margin: 0 !important;
+                text-align: left !important;
+                flex: 1 1 auto !important;
+            }
+
+            .stats-container-month .stat-value {
+                margin-left: auto !important;
+                flex: 0 0 auto !important;
+            }
+
             #actorModal #detailsModalPoster {
                 width: 140px !important;
                 height: 140px !important;
@@ -6339,6 +6522,19 @@
                 text-align: center !important;
             }
 
+            #advancedStatsModal .monthly-activity-card {
+                min-height: 46px;
+                padding: 0.5rem 0.65rem;
+            }
+
+            #advancedStatsModal .monthly-activity-label {
+                font-size: 0.68rem;
+            }
+
+            #advancedStatsModal .monthly-activity-value {
+                font-size: 1.2rem;
+            }
+
             #backToTopBtn {
                 right: 20px !important;
                 bottom: 85px !important;
@@ -6681,19 +6877,17 @@
                 <h3 style="text-align: center; font-size: 1rem; color: var(--text-secondary); margin-bottom: 1rem;">
                     Attività di <span id="currentMonthName">...</span>
                 </h3>
-                <div class="stats-container">
-                    <div class="stat-item" id="btnMonthAdded"
-                        style="border: 1px solid var(--primary); cursor: pointer;">
-                        <i class="fas fa-plus-circle stat-icon" style="color: var(--primary);"></i>
-                        <span class="stat-name">Aggiunte</span>
-                        <div class="stat-value" id="monthAdded">0</div>
-                    </div>
-                    <div class="stat-item" id="btnMonthWatched"
-                        style="border: 1px solid var(--tv-accent); cursor: pointer;">
-                        <i class="fas fa-eye stat-icon" style="color: var(--tv-accent);"></i>
-                        <span class="stat-name">Viste/Attive</span>
-                        <div class="stat-value" id="monthWatched">0</div>
-                    </div>
+                <div class="monthly-activity-grid" style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0.65rem; width:100%;">
+                    <button type="button" class="monthly-activity-card" id="btnMonthAdded">
+                        <span class="monthly-activity-icon"><i class="fas fa-plus-circle"></i></span>
+                        <span class="monthly-activity-label">Aggiunte</span>
+                        <strong class="monthly-activity-value" id="monthAdded">0</strong>
+                    </button>
+                    <button type="button" class="monthly-activity-card" id="btnMonthWatched">
+                        <span class="monthly-activity-icon" style="color: var(--text-color);"><i class="fas fa-eye"></i></span>
+                        <span class="monthly-activity-label">Viste/Attive</span>
+                        <strong class="monthly-activity-value" id="monthWatched">0</strong>
+                    </button>
                 </div>
             </div>
 
@@ -8222,14 +8416,21 @@
         </div>`;
 
             const categoryObject = categories.find(c => c.name === show.category);
+            const episodeMetaHTML = totalEpisodes > 0 ? `
+            <span class="episode-count-meta"><i class="fas fa-list-check"></i>${watchedEpisodes}/${totalEpisodes}</span>` : '';
+            const mobileRatingHTML = (episodeMetaHTML || (show.imdbRating && show.imdbRating !== "N/A"))
+                ? `<div class="progress-text">
+                    ${episodeMetaHTML}
+                    ${(show.imdbRating && show.imdbRating !== "N/A") ? `<span class="mobile-imdb-rating"><img src="${IMDB_STAR_ICON}" class="rating-icon" alt=""> ${show.imdbRating}</span>` : ''}
+                  </div>`
+                : '';
             const progressHTML = (categoryObject && categoryObject.hideProgress) ? '' : `
         <div class="media-progress">
-          <div class="progress-bar-container"><div class="${progressBarClass}" style="width: ${percentage}%;"></div></div>
-          <div class="progress-text">
-            <span>${watchedEpisodes}/${totalEpisodes}</span>
-            <span class="media-year-compact">${show.year}</span>
-            ${(show.imdbRating && show.imdbRating !== "N/A") ? `<span class="mobile-imdb-rating"><img src="${IMDB_STAR_ICON}" class="rating-icon" alt=""> ${show.imdbRating}</span>` : ''}
+          <div class="media-progress-row">
+            <div class="progress-bar-container"><div class="${progressBarClass}" style="width: ${percentage}%;"></div></div>
+            ${episodeMetaHTML}
           </div>
+          ${mobileRatingHTML}
         </div>`;
 
             const optimizedPoster = (show.poster && show.poster.includes('w500'))
@@ -8244,7 +8445,7 @@
         <div class="media-info">
           <h3 class="media-title" title="${show.title}">${show.title}</h3>
           <div class="media-meta">
-            <span>${show.year}</span>
+            <span class="media-meta-year" title="${show.year || ''}">${show.year}</span>
           </div>
           <div class="media-ratings">${ratingsHTML}</div>
           ${progressHTML}
