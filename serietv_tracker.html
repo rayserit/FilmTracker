@@ -7629,7 +7629,9 @@
                 });
                 categories = (data.categories || DEFAULT_CATEGORIES.map(name => ({ name, hideProgress: false }))).map(cat => (typeof cat === 'string') ? { name: cat, hideProgress: false } : cat);
                 if (data.lastBackgroundUpdate) {
-                    localStorage.setItem('lastBackgroundUpdate', data.lastBackgroundUpdate);
+                    const localLastUpdate = parseInt(localStorage.getItem('lastBackgroundUpdate') || '0');
+                    const cloudLastUpdate = parseInt(data.lastBackgroundUpdate || '0');
+                    localStorage.setItem('lastBackgroundUpdate', Math.max(localLastUpdate, cloudLastUpdate));
                 }
 
                 if (isUpdateInProgress) return;
@@ -8074,7 +8076,7 @@
         async function saveData() {
             if (isViewMode) return;
             if (currentUser) {
-                return db.ref(`users/${currentUser.uid}/tvShowTracker`).set({ mediaList, categories });
+                return db.ref(`users/${currentUser.uid}/tvShowTracker`).update({ mediaList, categories });
             } else {
                 try {
                     localStorage.setItem("tvShowList", JSON.stringify(mediaList));
@@ -10198,9 +10200,10 @@
                 const now = new Date().getTime();
 
                 // LOGICA DI CONTROLLO COORDINATA
-                // 1. Priorità al timestamp da Firebase, altrimenti usa il locale
-                const lastUpdateSource = cloudTimestamp || localStorage.getItem('lastBackgroundUpdate');
-                const lastUpdate = lastUpdateSource ? parseInt(lastUpdateSource) : 0;
+                // Usa il timestamp più recente tra Firebase e storage locale.
+                const cloudLastUpdate = cloudTimestamp ? parseInt(cloudTimestamp) : 0;
+                const localLastUpdate = parseInt(localStorage.getItem('lastBackgroundUpdate') || '0');
+                const lastUpdate = Math.max(cloudLastUpdate || 0, localLastUpdate || 0);
 
                 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
