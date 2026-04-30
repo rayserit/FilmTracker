@@ -7924,20 +7924,6 @@
       header.querySelector('.context-menu-title').textContent = media.title;
       menu.appendChild(header);
 
-      // 4. AGGIUNTA TASTO PREFERITO (Per rimpiazzare l'assenza dell'hover su mobile)
-      const libraryLabel = document.createElement("div");
-      libraryLabel.className = "context-menu-section-label";
-      libraryLabel.textContent = "Libreria";
-      menu.appendChild(libraryLabel);
-
-      const favItem = document.createElement("div");
-      favItem.className = "context-menu-item";
-      favItem.innerHTML = media.isFavorite ? '<i class="fas fa-heart-broken fa-fw" style="color:var(--danger)"></i> Rimuovi Preferito' : '<i class="fas fa-heart fa-fw" style="color:var(--danger)"></i> Aggiungi a Preferiti';
-      favItem.addEventListener("click", () => { toggleFavorite(media.id); hide(); });
-      menu.appendChild(favItem);
-
-      menu.appendChild(document.createElement("div")).className = "context-menu-divider";
-
       const moveHeader = document.createElement("div");
       moveHeader.className = "context-menu-section-label";
       moveHeader.textContent = "Sposta in";
@@ -9886,20 +9872,49 @@
     let genresChartInstance = null;
     let activityChartInstance = null;
 
+    function getMonthKeyFromDate(value) {
+      if (!value) return '';
+
+      const isoMonth = String(value).match(/^(\d{4})-(\d{2})/);
+      if (isoMonth) return `${isoMonth[1]}-${isoMonth[2]}`;
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function getLastMonthKeys(totalMonths, referenceDate = new Date()) {
+      const currentMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+      const keys = [];
+
+      for (let i = totalMonths - 1; i >= 0; i--) {
+        const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - i, 1);
+        keys.push(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
+      }
+
+      return keys;
+    }
+
+    function formatMonthLabel(monthKey, options = { month: 'short' }) {
+      const [year, month] = monthKey.split('-').map(Number);
+      return new Date(year, month - 1, 1).toLocaleDateString('it-IT', options);
+    }
+
     function renderAdvancedStats() {
       // --- LOGICA MESE CORRENTE ---
       const now = new Date();
-      const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const currentMonthKey = getMonthKeyFromDate(now);
       document.getElementById('currentMonthName').textContent = now.toLocaleDateString('it-IT', { month: 'long' });
 
       let addedCount = 0;
       let watchedCount = 0;
 
       mediaList.forEach(m => {
-        if (m.addedAt && m.addedAt.startsWith(currentMonthKey)) {
+        if (getMonthKeyFromDate(m.addedAt) === currentMonthKey) {
           addedCount++;
         }
-        if (m.lastActivityAt && m.lastActivityAt.startsWith(currentMonthKey)) {
+        if (getMonthKeyFromDate(m.lastActivityAt) === currentMonthKey) {
           if (m.category === 'watched' || m.isCountedAsWatched) {
             watchedCount++;
           }
@@ -9926,20 +9941,12 @@
       const genreData = sortedGenres.map(g => g[1]);
 
       const monthCounts = {};
-      const last6Months = [];
-
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        monthCounts[key] = 0;
-        last6Months.push(key);
-      }
+      const last6Months = getLastMonthKeys(6, now);
+      last6Months.forEach(key => { monthCounts[key] = 0; });
 
       mediaList.forEach(media => {
         if (media.lastActivityAt) {
-          const d = new Date(media.lastActivityAt);
-          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const key = getMonthKeyFromDate(media.lastActivityAt);
           if (monthCounts[key] !== undefined) {
             monthCounts[key]++;
           }
@@ -9947,11 +9954,8 @@
       });
 
       const activityData = last6Months.map(m => monthCounts[m]);
-      const activityLabels = last6Months.map(m => {
-        const [y, mo] = m.split('-');
-        const date = new Date(y, mo - 1);
-        return date.toLocaleDateString('it-IT', { month: 'short' }).toUpperCase();
-      });
+      const activityLabels = last6Months.map(m => formatMonthLabel(m, { month: 'short', year: '2-digit' }).toUpperCase());
+      const activityDetailLabels = last6Months.map(m => formatMonthLabel(m, { month: 'long', year: 'numeric' }));
 
       const isDark = document.body.classList.contains('dark');
       const textColor = isDark ? '#aaaaaa' : '#666666';
@@ -9960,7 +9964,8 @@
       const modernColors = ['#FF3366', '#20A4F3', '#FFD166', '#06D6A0', '#118AB2', '#073B4C'];
 
       const ctxGenres = document.getElementById('genresChart').getContext('2d');
-      if (genresChartInstance) genresChartInstance.destroy();
+      Chart.getChart(ctxGenres.canvas)?.destroy();
+      genresChartInstance = null;
 
       genresChartInstance = new Chart(ctxGenres, {
         type: 'doughnut',
@@ -9995,7 +10000,8 @@
       });
 
       const ctxActivity = document.getElementById('activityChart').getContext('2d');
-      if (activityChartInstance) activityChartInstance.destroy();
+      Chart.getChart(ctxActivity.canvas)?.destroy();
+      activityChartInstance = null;
 
       let gradient = ctxActivity.createLinearGradient(0, 0, 0, 300);
       gradient.addColorStop(0, 'rgba(58, 134, 255, 0.6)');
@@ -10028,7 +10034,7 @@
           },
           onClick: (event, elements) => {
             if (elements.length > 0) {
-              showChartDetails('activity', last6Months[elements[0].index], activityLabels[elements[0].index]);
+              showChartDetails('activity', last6Months[elements[0].index], activityDetailLabels[elements[0].index]);
             }
           },
           plugins: {
@@ -10046,7 +10052,7 @@
 
     function setupMonthStatsListeners() {
       const now = new Date();
-      const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const currentMonthKey = getMonthKeyFromDate(now);
 
       document.getElementById('btnMonthAdded').onclick = () => {
         showChartDetails('monthAdded', currentMonthKey, now.toLocaleDateString('it-IT', { month: 'long' }));
@@ -10068,15 +10074,14 @@
         title = `Attività di ${displayLabel}`;
         filteredShows = mediaList.filter(m => {
           if (!m.lastActivityAt) return false;
-          const d = new Date(m.lastActivityAt);
-          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === key;
+          return getMonthKeyFromDate(m.lastActivityAt) === key;
         });
       } else if (type === 'monthAdded') {
         title = `Aggiunti a ${displayLabel}`;
-        filteredShows = mediaList.filter(m => m.addedAt && m.addedAt.startsWith(key));
+        filteredShows = mediaList.filter(m => getMonthKeyFromDate(m.addedAt) === key);
       } else if (type === 'monthWatched') {
         title = `Visti a ${displayLabel}`;
-        filteredShows = mediaList.filter(m => m.lastActivityAt && m.lastActivityAt.startsWith(key) && (m.category === 'watched' || m.isCountedAsWatched));
+        filteredShows = mediaList.filter(m => getMonthKeyFromDate(m.lastActivityAt) === key && (m.category === 'watched' || m.isCountedAsWatched));
       }
 
       // 1. Raggruppamento rigoroso
