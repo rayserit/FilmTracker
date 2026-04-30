@@ -7291,6 +7291,7 @@
 
         const getDefaultShowProps = () => ({
             category: 'Da Vedere', addedAt: new Date().toISOString(), lastActivityAt: null, poster: "",
+            lastTmdbCheckAt: null,
             year: "", imdbID: null, tmdbID: null, imdbRating: "N/A", rottenTomatoes: "N/A", popcornRating: "N/A", metacriticRating: "N/A", letterboxdRating: "N/A", status: "Unknown",
             seasons: {}, progress: {}, rewatches: {}, isFavorite: false, italianTitle: null,
             includeSpecialsInProgress: false // Nuova proprietà per la logica degli speciali
@@ -7775,20 +7776,49 @@
         let genresChartInstance = null;
         let activityChartInstance = null;
 
+        function getMonthKeyFromDate(value) {
+            if (!value) return '';
+
+            const isoMonth = String(value).match(/^(\d{4})-(\d{2})/);
+            if (isoMonth) return `${isoMonth[1]}-${isoMonth[2]}`;
+
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '';
+
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function getLastMonthKeys(totalMonths, referenceDate = new Date()) {
+            const currentMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+            const keys = [];
+
+            for (let i = totalMonths - 1; i >= 0; i--) {
+                const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - i, 1);
+                keys.push(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
+            }
+
+            return keys;
+        }
+
+        function formatMonthLabel(monthKey, options = { month: 'short' }) {
+            const [year, month] = monthKey.split('-').map(Number);
+            return new Date(year, month - 1, 1).toLocaleDateString('it-IT', options);
+        }
+
         function renderAdvancedStats() {
             // --- LOGICA MESE CORRENTE ---
             const now = new Date();
-            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const currentMonthKey = getMonthKeyFromDate(now);
             document.getElementById('currentMonthName').textContent = now.toLocaleDateString('it-IT', { month: 'long' });
 
             let addedCount = 0;
             let watchedCount = 0;
 
             mediaList.forEach(m => {
-                if (m.addedAt && m.addedAt.startsWith(currentMonthKey)) {
+                if (getMonthKeyFromDate(m.addedAt) === currentMonthKey) {
                     addedCount++;
                 }
-                if (m.lastActivityAt && m.lastActivityAt.startsWith(currentMonthKey)) {
+                if (getMonthKeyFromDate(m.lastActivityAt) === currentMonthKey) {
                     if (!m.isDropped && m.category !== 'Da Vedere') {
                         watchedCount++;
                     }
@@ -7815,20 +7845,12 @@
 
             // --- 2. PREPARAZIONE DATI ATTIVITÀ MENSILE ---
             const monthCounts = {};
-            const last6Months = [];
-
-            for (let i = 5; i >= 0; i--) {
-                const d = new Date();
-                d.setMonth(d.getMonth() - i);
-                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                monthCounts[key] = 0;
-                last6Months.push(key);
-            }
+            const last6Months = getLastMonthKeys(6, now);
+            last6Months.forEach(key => { monthCounts[key] = 0; });
 
             mediaList.forEach(show => {
                 if (show.lastActivityAt && !show.isDropped) {
-                    const d = new Date(show.lastActivityAt);
-                    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    const key = getMonthKeyFromDate(show.lastActivityAt);
                     if (monthCounts[key] !== undefined) {
                         monthCounts[key]++;
                     }
@@ -7836,11 +7858,8 @@
             });
 
             const activityData = last6Months.map(m => monthCounts[m]);
-            const activityLabels = last6Months.map(m => {
-                const [y, mo] = m.split('-');
-                const date = new Date(y, mo - 1);
-                return date.toLocaleDateString('it-IT', { month: 'short' }).toUpperCase();
-            });
+            const activityLabels = last6Months.map(m => formatMonthLabel(m, { month: 'short', year: '2-digit' }).toUpperCase());
+            const activityDetailLabels = last6Months.map(m => formatMonthLabel(m, { month: 'long', year: 'numeric' }));
 
             // --- VARIABILI DI TEMA ---
             const isDark = document.body.classList.contains('dark');
@@ -7853,7 +7872,8 @@
 
             // --- 3. GRAFICO A CIAMBELLA "POP" (GENERI) ---
             const ctxGenres = document.getElementById('genresChart').getContext('2d');
-            if (genresChartInstance) genresChartInstance.destroy();
+            Chart.getChart(ctxGenres.canvas)?.destroy();
+            genresChartInstance = null;
 
             genresChartInstance = new Chart(ctxGenres, {
                 type: 'doughnut',
@@ -7901,7 +7921,8 @@
 
             // --- 4. GRAFICO FLUIDO AD AREA (ATTIVITÀ) ---
             const ctxActivity = document.getElementById('activityChart').getContext('2d');
-            if (activityChartInstance) activityChartInstance.destroy();
+            Chart.getChart(ctxActivity.canvas)?.destroy();
+            activityChartInstance = null;
 
             // Creazione del Gradiente per il riempimento della curva
             let gradient = ctxActivity.createLinearGradient(0, 0, 0, 300);
@@ -7937,7 +7958,7 @@
                         if (elements.length > 0) {
                             const index = elements[0].index;
                             const selectedMonthKey = last6Months[index]; // Es: "2026-02"
-                            const displayMonth = activityLabels[index]; // Es: "FEB"
+                            const displayMonth = activityDetailLabels[index]; // Es: "febbraio 2026"
                             showChartDetails('activity', selectedMonthKey, displayMonth);
                         }
                     },
@@ -7976,7 +7997,7 @@
 
         function setupMonthStatsListeners() {
             const now = new Date();
-            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const currentMonthKey = getMonthKeyFromDate(now);
 
             document.getElementById('btnMonthAdded').onclick = () => {
                 showChartDetails('monthAdded', currentMonthKey, now.toLocaleDateString('it-IT', { month: 'long' }));
@@ -8003,18 +8024,16 @@
                 title = `Attività di ${displayLabel}`;
                 filteredShows = mediaList.filter(show => {
                     if (show.isDropped || !show.lastActivityAt) return false;
-                    const d = new Date(show.lastActivityAt);
-                    const showKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    const showKey = getMonthKeyFromDate(show.lastActivityAt);
                     return showKey === key;
                 });
             } else if (type === 'monthAdded') {
                 title = `Aggiunte a ${displayLabel}`;
-                filteredShows = mediaList.filter(show => show.addedAt && show.addedAt.startsWith(key));
+                filteredShows = mediaList.filter(show => getMonthKeyFromDate(show.addedAt) === key);
             } else if (type === 'monthWatched') {
                 title = `Viste/Attive a ${displayLabel}`;
                 filteredShows = mediaList.filter(show =>
-                    show.lastActivityAt &&
-                    show.lastActivityAt.startsWith(key) &&
+                    getMonthKeyFromDate(show.lastActivityAt) === key &&
                     !show.isDropped &&
                     show.category !== 'Da Vedere'
                 );
@@ -9273,6 +9292,41 @@
         </div>`;
         }
 
+        function updateSeasonSpoilerState(show, seasonNumber) {
+            const episodes = show.seasons?.[seasonNumber]?.episodes || [];
+            let firstUnwatchedFound = false;
+
+            episodes.forEach(ep => {
+                const key = `${seasonNumber}-${ep.episode_number}`;
+                const isWatched = !!show.progress?.[key];
+                const item = document.getElementById(`item-${show.id}-${seasonNumber}-${ep.episode_number}`);
+                if (!item) return;
+
+                item.classList.toggle('watched', isWatched);
+
+                const title = item.querySelector('.episode-title');
+                if (!title) return;
+
+                let shouldHideTitle = false;
+                if (!isWatched) {
+                    if (!firstUnwatchedFound) firstUnwatchedFound = true;
+                    else shouldHideTitle = true;
+                }
+
+                title.classList.toggle('spoiler', shouldHideTitle);
+            });
+        }
+
+        function getLinkedShowInstances(show) {
+            if (!show) return [];
+
+            return mediaList.filter(item =>
+                item.id === show.id ||
+                (show.imdbID && item.imdbID === show.imdbID) ||
+                (show.tmdbID && item.tmdbID === show.tmdbID)
+            );
+        }
+
         function setupSeasonEventListeners(seasonNumber) {
             const seasonBlock = document.getElementById(`season-block-${seasonNumber}`);
             if (!seasonBlock) return;
@@ -9314,7 +9368,7 @@
             if (!show) return;
 
             const episodes = show.seasons[seasonNumber]?.episodes || [];
-            const duplicates = mediaList.filter(d => (d.imdbID && d.imdbID === show.imdbID) || (d.tmdbID && d.tmdbID === show.tmdbID));
+            const duplicates = getLinkedShowInstances(show);
 
             duplicates.forEach(dup => {
                 if (dup.progress) {
@@ -9397,7 +9451,7 @@
             }
 
             // Update Logic for all duplicates
-            const duplicates = mediaList.filter(d => (d.imdbID && d.imdbID === show.imdbID) || (d.tmdbID && d.tmdbID === show.tmdbID));
+            const duplicates = getLinkedShowInstances(show);
 
             duplicates.forEach(dup => {
                 if (isWatched) dup.progress[key] = true;
@@ -9419,6 +9473,8 @@
             // Update Season Header Progress Text
             const seasonBlock = document.getElementById(`season-block-${season}`);
             if (seasonBlock) {
+                updateSeasonSpoilerState(show, season);
+
                 const watchedInSeason = Object.keys(show.progress).filter(k => k.startsWith(`${season}-`)).length;
                 const episodeCount = (show.seasons[season]?.episodes || []).length;
                 seasonBlock.querySelector('.season-progress-text').textContent = `${watchedInSeason} / ${episodeCount}`;
@@ -9535,20 +9591,6 @@
             `;
             header.querySelector('.context-menu-title').textContent = show.title;
             menu.appendChild(header);
-
-            // 4. AGGIUNTA TASTO PREFERITO (Per rimpiazzare l'assenza dell'hover su mobile)
-            const libraryLabel = document.createElement("div");
-            libraryLabel.className = "context-menu-section-label";
-            libraryLabel.textContent = "Libreria";
-            menu.appendChild(libraryLabel);
-
-            const favItem = document.createElement("div");
-            favItem.className = "context-menu-item";
-            favItem.innerHTML = show.isFavorite ? '<i class="fas fa-heart-broken fa-fw" style="color:var(--danger)"></i> Rimuovi Preferito' : '<i class="fas fa-heart fa-fw" style="color:var(--danger)"></i> Aggiungi a Preferiti';
-            favItem.addEventListener("click", () => { toggleFavorite(show.id); hide(); });
-            menu.appendChild(favItem);
-
-            menu.appendChild(document.createElement("div")).className = "context-menu-divider";
 
             const moveHeader = document.createElement("div");
             moveHeader.className = "context-menu-section-label";
@@ -9792,7 +9834,7 @@
         function changePoster(id, url) {
             const show = mediaList.find(m => m.id === id);
             if (show) {
-                const duplicates = mediaList.filter(s => (s.imdbID && s.imdbID === show.imdbID) || (s.tmdbID && s.tmdbID === show.tmdbID));
+                const duplicates = getLinkedShowInstances(show);
                 duplicates.forEach(dup => {
                     dup.poster = url;
                 });
@@ -10184,6 +10226,41 @@
             });
         }
 
+        function getTimestamp(value) {
+            const time = new Date(value || 0).getTime();
+            return Number.isNaN(time) ? 0 : time;
+        }
+
+        function hasEpisodesNearDate(show, startDate, endDate) {
+            return Object.values(show.seasons || {}).some(season =>
+                (season.episodes || []).some(ep => {
+                    if (!ep.air_date) return false;
+                    const airDate = new Date(ep.air_date + 'T00:00:00Z');
+                    return airDate >= startDate && airDate <= endDate;
+                })
+            );
+        }
+
+        function isOngoingTmdbStatus(status) {
+            return ['Returning Series', 'In Production', 'Planned'].includes(status);
+        }
+
+        function shouldUpdateShowInBackground(show, now, sevenDaysAgo, sevenDaysFromNow) {
+            if (!show.tmdbID) return false;
+
+            const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
+            const lastTmdbCheck = getTimestamp(show.lastTmdbCheckAt);
+
+            const hasNearbyEpisodes = hasEpisodesNearDate(show, sevenDaysAgo, sevenDaysFromNow);
+            const needsSafetyCheck = isOngoingTmdbStatus(show.status) && (now - lastTmdbCheck > FIFTEEN_DAYS);
+
+            return hasNearbyEpisodes || needsSafetyCheck;
+        }
+
+        function shouldUpdateShowManually(show) {
+            return !!show.tmdbID && !show.isDropped && show.category !== 'Da Vedere';
+        }
+
         // Aggiunto secondo parametro cloudTimestamp per sincronizzazione PWA/APK
         async function updateAllShowsInBackground(force = false, cloudTimestamp = null) {
             if (isUpdateInProgress) {
@@ -10219,34 +10296,14 @@
                 const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
                 const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-                const showsToUpdate = mediaList.filter(show => {
-                    if (!show.tmdbID) return false;
-
-                    const ora = new Date().getTime();
-                    const ultimaAttivita = new Date(show.lastActivityAt || 0).getTime();
-                    const QUINDICI_GIORNI = 15 * 24 * 60 * 60 * 1000;
-
-                    // 1. Controllo episodi vicini (±7 giorni)
-                    const haEpisodiVicini = Object.values(show.seasons).some(season =>
-                        (season.episodes || []).some(ep => {
-                            if (!ep.air_date) return false;
-                            const airDate = new Date(ep.air_date + 'T00:00:00Z');
-                            return airDate >= sevenDaysAgo && airDate <= sevenDaysFromNow;
-                        })
-                    );
-
-                    // 2. Controllo "Serie in Corso" ferma da troppo tempo
-                    // Se la serie non è conclusa, la controlliamo comunque ogni 15 giorni 
-                    // per vedere se TMDb ha aggiunto una nuova stagione o nuove date.
-                    const vaControllataPerSicurezza =
-                        (show.status === 'Returning Series' || show.status === 'In Production') &&
-                        (ora - ultimaAttivita > QUINDICI_GIORNI);
-
-                    return haEpisodiVicini || vaControllataPerSicurezza;
-                });
+                const showsToUpdate = mediaList.filter(show =>
+                    force
+                        ? shouldUpdateShowManually(show)
+                        : shouldUpdateShowInBackground(show, now, sevenDaysAgo, sevenDaysFromNow)
+                );
 
                 if (showsToUpdate.length === 0) {
-                    if (force) showNotification("Nessuna serie con attività recente da aggiornare.", "warning");
+                    if (force) showNotification("Nessuna serie attiva da aggiornare.", "warning");
                     localStorage.setItem('lastBackgroundUpdate', now);
                     if (currentUser) {
                         db.ref(`users/${currentUser.uid}/tvShowTracker/lastBackgroundUpdate`).set(now);
@@ -10269,6 +10326,7 @@
 
                     try {
                         const showChanges = await showDetailsModal(show.id, true, true);
+                        show.lastTmdbCheckAt = new Date().toISOString();
                         if (showChanges.length > 0) {
                             allChanges = allChanges.concat(showChanges);
                         }
@@ -10926,7 +10984,7 @@
             const show = mediaList.find(s => s.id === showId);
             if (!show) return;
 
-            const duplicates = mediaList.filter(d => (d.imdbID && d.imdbID === show.imdbID) || (d.tmdbID && d.tmdbID === show.tmdbID));
+            const duplicates = getLinkedShowInstances(show);
 
             duplicates.forEach(dup => {
                 if (!dup.rewatches) dup.rewatches = {};
@@ -10957,6 +11015,7 @@
                 updateShowCategoryAndTimestamps(dup);
             });
 
+            updateSeasonSpoilerState(show, seasonNumber);
             updateSeasonHeaderUI(showId, seasonNumber);
             refreshEpisodesToolbar(show);
             closeModal(elements.rewatchModal);
@@ -11284,17 +11343,20 @@
                 return [];
             }
 
+            const previousLastTmdbCheckAt = show.lastTmdbCheckAt;
+            show.lastTmdbCheckAt = new Date().toISOString();
+
             const metadataResult = applyShowMetadataFromDetails(show, tmdbDetails, { collectSummary: true });
             const seasonResult = await syncShowSeasonsFromDetails(show, tmdbDetails);
             const updateSummary = metadataResult.updateSummary.concat(seasonResult.updateSummary);
             const hasChanges = metadataResult.hasChanges || seasonResult.hasUpdates;
 
-            if (hasChanges) {
+            if (hasChanges || (!silent && show.lastTmdbCheckAt !== previousLastTmdbCheckAt)) {
                 await saveData();
                 if (!silent) {
                     renderMedia();
                     updateStats();
-                    showNotification(`Dati aggiornati per ${show.title}!`, "success");
+                    showNotification(hasChanges ? `Dati aggiornati per ${show.title}!` : `Controllo completato per ${show.title}.`, "success");
                 }
             }
 
