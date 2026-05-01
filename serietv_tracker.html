@@ -1172,6 +1172,10 @@
             z-index: 1200 !important;
         }
 
+        #friendsModal {
+            z-index: 1300 !important;
+        }
+
         /* Livello 4: Conferme e Allerta (Sopra a TUTTO) */
         #confirmModal {
             z-index: 1500 !important;
@@ -7643,7 +7647,7 @@
             if (hadMobileNotifications) {
                 closeModal(elements.mobileNotificationsModal);
             }
-            return hadMobileNotifications ? 300 : 0;
+            return hadMobileNotifications ? 340 : 0;
         }
 
         function handleShare() {
@@ -7665,11 +7669,7 @@
             document.querySelectorAll('.hub-friends-btn').forEach(btn => {
                 btn.onclick = (e) => {
                     e.stopPropagation();
-                    hideNotificationDropdown();
-                    closeModal(document.getElementById('mobileNotificationsModal'));
-
-                    openModal(document.getElementById('friendsModal'));
-                    if(typeof renderFriendsList === 'function') renderFriendsList();
+                    openFriendsHub();
                 };
             });
 
