@@ -1255,6 +1255,37 @@
             transform: scale(0.98);
         }
 
+        .settings-update-panel {
+            grid-column: 1 / -1;
+            padding: 1rem;
+            border-radius: 14px;
+            background: rgba(42, 157, 143, 0.08);
+            border: 1px solid rgba(42, 157, 143, 0.18);
+        }
+
+        .settings-update-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0 0.85rem;
+            color: var(--primary);
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .settings-update-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .settings-update-actions .settings-card {
+            margin: 0;
+            min-height: 86px;
+        }
+
         .settings-icon {
             width: 44px;
             height: 44px;
@@ -1345,6 +1376,25 @@
             background: var(--section-tint);
             border-radius: 8px;
             margin-bottom: 0.5rem;
+        }
+
+        #lastBackupBadge,
+        #updateSectionDesktop {
+            grid-column: span 1;
+            min-height: 42px;
+            margin: 0;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            box-sizing: border-box;
+        }
+
+        #updateSectionDesktop.update-section {
+            margin-top: 0;
+            padding-top: 0.75rem;
+            border-top: none;
         }
 
         input:checked+.slider {
@@ -4153,6 +4203,23 @@
             margin-top: 0.5rem;
         }
 
+        .update-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .update-actions .btn {
+            width: 100%;
+            margin-top: 0;
+            min-width: 0;
+            padding-inline: 0.45rem;
+            font-size: 0.78rem;
+            white-space: normal;
+            line-height: 1.15;
+        }
+
         #mobileNotificationsModal {
             align-items: flex-end;
             /* Position modal at the bottom */
@@ -6548,6 +6615,27 @@
                 opacity: 0 !important;
                 pointer-events: none !important;
             }
+
+            .settings-update-panel {
+                padding: 0.85rem !important;
+                border-radius: 18px !important;
+            }
+
+            .settings-update-actions {
+                grid-template-columns: 1fr !important;
+                gap: 10px !important;
+            }
+
+            .settings-update-actions .settings-card {
+                min-height: 72px !important;
+            }
+
+            #lastBackupBadge,
+            #updateSectionDesktop {
+                grid-column: 1 / -1 !important;
+                min-height: 38px !important;
+                padding: 0.65rem 0.85rem !important;
+            }
         }
     </style>
     <!-- END: Mobile-Friendly CSS Rules -->
@@ -6774,12 +6862,6 @@
                 <div id="tmdbResults" class="tmdb-results-container search-results-grid">
                     <div class="tmdb-empty-state"><i class="fas fa-film"></i><span>Scrivi il titolo di un film per iniziare...</span></div>
                 </div>
-            </div>
-            <div class="update-section" id="updateSectionDesktop">
-                <p id="lastUpdateTimestampDesktop"></p>
-                <button id="forceUpdateBtnDesktop" class="btn btn-secondary">
-                    <i class="fas fa-sync-alt"></i> Forza Aggiornamento
-                </button>
             </div>
         </div>
     </div>
@@ -7009,12 +7091,6 @@
                     <i class="fas fa-chart-bar"></i> <span>Statistiche Avanzate</span>
                 </button>
             </div>
-            <div class="update-section">
-                <p id="lastUpdateTimestampMobile"></p>
-                <button id="forceUpdateBtnMobile" class="btn btn-secondary" style="width: 100%;">
-                    <i class="fas fa-sync-alt"></i> Forza Aggiornamento
-                </button>
-            </div>
             <div class="modal-footer" style="border: none; padding-bottom: 0;">
                 <button id="mobileMenuCloseBtn" class="btn btn-danger">Chiudi</button>
             </div>
@@ -7155,6 +7231,29 @@
             <h2 style="text-align: center; margin-top: 0;">Centro Manutenzione</h2>
 
             <div class="settings-grid">
+                <div class="settings-update-panel" id="settingsUpdatePanel">
+                    <h3 class="settings-update-title"><i class="fas fa-sync-alt"></i> Aggiornamenti Serie</h3>
+                    <div class="settings-update-actions">
+                        <div class="settings-card" id="completeUpdateBtnDesktop"
+                            style="background: rgba(42, 157, 143, 0.1); border-color: rgba(42, 157, 143, 0.2);">
+                            <div class="settings-icon" style="background: var(--primary); color: white;"><i class="fas fa-sync-alt"></i></div>
+                            <div class="settings-info">
+                                <span class="settings-title" style="color: var(--primary);">Aggiornamento Completo</span>
+                                <span class="settings-desc">Controlla tutte le serie attive</span>
+                            </div>
+                        </div>
+
+                        <div class="settings-card" id="dailyUpdateBtnDesktop"
+                            style="background: rgba(78, 205, 196, 0.1); border-color: rgba(78, 205, 196, 0.2);">
+                            <div class="settings-icon" style="background: var(--secondary); color: white;"><i class="fas fa-calendar-day"></i></div>
+                            <div class="settings-info">
+                                <span class="settings-title" style="color: var(--secondary);">Aggiornamento Giornaliero</span>
+                                <span class="settings-desc">Esegue il controllo intelligente</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- EXPORT -->
                 <div class="settings-card export-card" id="exportAction">
                     <div class="settings-icon"><i class="fas fa-download"></i></div>
@@ -7220,6 +7319,9 @@
                 <!-- Badge ultimo backup dentro la griglia -->
                 <div id="lastBackupBadge" class="last-backup-info">
                     <i class="fas fa-history"></i> Ultimo backup: <span>Mai eseguito</span>
+                </div>
+                <div class="last-backup-info update-section" id="updateSectionDesktop">
+                    <i class="fas fa-sync-alt"></i> <span id="lastUpdateTimestampDesktop">Ultimo aggiornamento: Mai eseguito</span>
                 </div>
             </div>
 
@@ -7384,10 +7486,9 @@
             mobileSortFilter: document.getElementById('mobileSortFilter'),
             applyFiltersBtn: document.getElementById('applyFiltersBtn'),
             // Update Section
-            forceUpdateBtnDesktop: document.getElementById('forceUpdateBtnDesktop'),
-            forceUpdateBtnMobile: document.getElementById('forceUpdateBtnMobile'),
+            completeUpdateBtnDesktop: document.getElementById('completeUpdateBtnDesktop'),
+            dailyUpdateBtnDesktop: document.getElementById('dailyUpdateBtnDesktop'),
             lastUpdateTimestampDesktop: document.getElementById('lastUpdateTimestampDesktop'),
-            lastUpdateTimestampMobile: document.getElementById('lastUpdateTimestampMobile'),
             updateSectionDesktop: document.getElementById('updateSectionDesktop'),
             // Category Navigation Modal
             categoryNavModal: document.getElementById('categoryNavModal'),
@@ -10258,13 +10359,13 @@
         }
 
         function shouldUpdateShowManually(show) {
-            return !!show.tmdbID && !show.isDropped && show.category !== 'Da Vedere';
+            return !!show.tmdbID;
         }
 
         // Aggiunto secondo parametro cloudTimestamp per sincronizzazione PWA/APK
-        async function updateAllShowsInBackground(force = false, cloudTimestamp = null) {
+        async function updateAllShowsInBackground(force = false, cloudTimestamp = null, options = {}) {
             if (isUpdateInProgress) {
-                if (force) {
+                if (force || options.manual) {
                     showNotification("Aggiornamento già in corso.", "warning");
                 }
                 console.log("Tentativo di avvio aggiornamento bloccato: un altro è già in corso.");
@@ -10283,8 +10384,10 @@
                 const lastUpdate = Math.max(cloudLastUpdate || 0, localLastUpdate || 0);
 
                 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+                const skipRecentUpdateCheck = force || options.skipRecentUpdateCheck;
+                const isManualRun = force || options.manual;
 
-                if (!force && lastUpdate && (now - lastUpdate) < TWENTY_FOUR_HOURS) {
+                if (!skipRecentUpdateCheck && lastUpdate && (now - lastUpdate) < TWENTY_FOUR_HOURS) {
                     console.log("Aggiornamento saltato: dati già recenti (Cloud/Locale sync).");
                     displayLastUpdateTime();
                     isUpdateInProgress = false;
@@ -10303,7 +10406,9 @@
                 );
 
                 if (showsToUpdate.length === 0) {
-                    if (force) showNotification("Nessuna serie attiva da aggiornare.", "warning");
+                    if (isManualRun) {
+                        showNotification(force ? "Nessuna serie attiva da aggiornare." : "Nessuna serie selezionata dall'aggiornamento giornaliero.", "warning");
+                    }
                     localStorage.setItem('lastBackgroundUpdate', now);
                     if (currentUser) {
                         db.ref(`users/${currentUser.uid}/tvShowTracker/lastBackgroundUpdate`).set(now);
@@ -10315,7 +10420,7 @@
 
                 console.log(`Avvio aggiornamento per ${showsToUpdate.length} serie...`);
                 openModal(elements.updateProgressModal);
-                elements.updateProgressTitle.textContent = force ? "Aggiornamento Manuale" : "Aggiornamento Giornaliero";
+                elements.updateProgressTitle.textContent = force ? "Aggiornamento Completo" : "Aggiornamento Giornaliero";
                 let allChanges = [];
 
                 for (let i = 0; i < showsToUpdate.length; i++) {
@@ -11075,8 +11180,9 @@
             if (lastUpdate) {
                 timestampText = new Date(parseInt(lastUpdate)).toLocaleString('it-IT');
             }
-            elements.lastUpdateTimestampDesktop.textContent = `Ultimo aggiornamento: ${timestampText}`;
-            elements.lastUpdateTimestampMobile.textContent = `Ultimo aggiornamento: ${timestampText}`;
+            if (elements.lastUpdateTimestampDesktop) {
+                elements.lastUpdateTimestampDesktop.textContent = `Ultimo aggiornamento: ${timestampText}`;
+            }
         }
 
         function toggleSideSearch(forceState) {
@@ -11642,6 +11748,7 @@
             // Settings Modal
             elements.settingsBtn.addEventListener('click', () => {
                 updateBackupBadge();
+                displayLastUpdateTime();
                 openModal(document.getElementById('settingsModal'));
             });
 
@@ -11775,6 +11882,7 @@
                 closeModal(elements.mobileMenuModal);
                 setTimeout(() => {
                     updateBackupBadge();
+                    displayLastUpdateTime();
                     openModal(document.getElementById('settingsModal'));
                 }, 300);
             });
@@ -11841,13 +11949,23 @@
             elements.closeCategoryNavBtn.addEventListener('click', () => closeModal(elements.categoryNavModal));
 
 
-            // --- Force Update Listeners ---
-            const forceUpdate = () => { updateAllShowsInBackground(true); };
-            if (elements.forceUpdateBtnDesktop) {
-                elements.forceUpdateBtnDesktop.addEventListener('click', forceUpdate);
+            // --- Update Listeners ---
+            const runCompleteUpdate = () => {
+                updateAllShowsInBackground(true, null, { manual: true });
+            };
+            const runDailyUpdate = () => {
+                updateAllShowsInBackground(false, null, { manual: true, skipRecentUpdateCheck: true });
+            };
+            const runUpdateFromSettings = (runner) => {
+                closeModal(document.getElementById('settingsModal'));
+                setTimeout(runner, 300);
+            };
+
+            if (elements.completeUpdateBtnDesktop) {
+                elements.completeUpdateBtnDesktop.addEventListener('click', () => runUpdateFromSettings(runCompleteUpdate));
             }
-            if (elements.forceUpdateBtnMobile) {
-                elements.forceUpdateBtnMobile.addEventListener('click', () => { forceUpdate(); closeModal(elements.mobileMenuModal); });
+            if (elements.dailyUpdateBtnDesktop) {
+                elements.dailyUpdateBtnDesktop.addEventListener('click', () => runUpdateFromSettings(runDailyUpdate));
             }
 
             // --- BACK GESTURE IMPLEMENTATION FOR MOBILE MODALS ---
