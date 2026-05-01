@@ -3460,6 +3460,30 @@
             color: var(--text-secondary);
         }
 
+        .friend-profile-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.5rem;
+            align-items: center;
+            width: 100%;
+            margin-top: 0.75rem;
+        }
+
+        .friend-profile-row:first-of-type {
+            margin-top: 0;
+        }
+
+        .friend-profile-row input {
+            width: 100%;
+            min-width: 0;
+            text-align: center;
+        }
+
+        .friend-profile-row .btn {
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
         .category-dot {
             width: 12px;
             height: 12px;
@@ -6113,11 +6137,15 @@
             }
 
             .sidebar-mini .notification-dropdown {
-                top: 55px;
-                left: auto;
-                right: 0;
-                max-width: calc(100vw - 20px);
-                transform: translateX(0);
+                position: fixed !important;
+                top: 68px !important;
+                left: auto !important;
+                right: 20px !important;
+                width: min(350px, calc(100vw - 40px)) !important;
+                max-width: calc(100vw - 40px) !important;
+                max-height: min(420px, calc(100vh - 92px)) !important;
+                transform: none !important;
+                z-index: 2500 !important;
             }
 
             .sidebar-mini .notification-bell-container {
@@ -6127,6 +6155,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                overflow: visible !important;
             }
 
             .sidebar-mini .notification-bell-container .btn {
@@ -6635,6 +6664,14 @@
                 grid-column: 1 / -1 !important;
                 min-height: 38px !important;
                 padding: 0.65rem 0.85rem !important;
+            }
+
+            .friend-profile-row {
+                grid-template-columns: 1fr !important;
+            }
+
+            .friend-profile-row .btn {
+                width: 100%;
             }
         }
     </style>
@@ -7336,10 +7373,15 @@
                 <h4>Il tuo ID univoco</h4>
                 <p style="font-size: 0.9rem; color: var(--text-secondary);">Condividi questo ID con i tuoi amici
                     per permettergli di seguirti.</p>
-                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                <div class="friend-profile-row">
                     <input type="text" id="myIdInput" readonly
-                        style="text-align: center; background-color: var(--bg-color);">
+                        style="background-color: var(--bg-color);">
                     <button id="copyMyIdBtn" class="btn btn-primary"><i class="fas fa-copy"></i> Copia</button>
+                </div>
+                <div class="friend-profile-row">
+                    <input type="text" id="myUsernameInput" maxlength="32" placeholder="Username notifiche"
+                        autocomplete="nickname">
+                    <button id="saveUsernameBtn" class="btn btn-secondary"><i class="fas fa-save"></i> Salva</button>
                 </div>
             </div>
             <div class="management-section">
@@ -7380,7 +7422,7 @@
         let mediaList = [], categories = [], currentTMDbSelection = null, debounceTimeout, lazyLoadObserver, currentShowCache = null;
         let calendarOnlyInCorso = true;
         let updateHistory = JSON.parse(localStorage.getItem('tvUpdateHistory') || "[]");
-        let currentUser = null, isViewMode = false, followedFriends = [], friendListeners = {};
+        let currentUser = null, currentUsername = "", isViewMode = false, followedFriends = [], friendListeners = {};
         let isAuthActionInProgress = false;
         let lastCheckedTimestamps = {};
         let statContributorIds = new Set();
@@ -7446,6 +7488,7 @@
             viewModeBanner: document.getElementById('viewModeBanner'), viewModeUserEmail: document.getElementById('viewModeUserEmail'), closeViewBtn: document.getElementById('closeViewBtn'),
             addFriendBtn: document.getElementById('addFriendBtn'), friendsList: document.getElementById('friendsList'), friendIdInput: document.getElementById('friendIdInput'),
             myIdInput: document.getElementById('myIdInput'), copyMyIdBtn: document.getElementById('copyMyIdBtn'),
+            myUsernameInput: document.getElementById('myUsernameInput'), saveUsernameBtn: document.getElementById('saveUsernameBtn'),
             notificationBellContainer: document.getElementById('notificationBellContainer'), bellIcon: document.getElementById('bellIcon'),
             notificationDropdown: document.getElementById('notificationDropdown'),
             notificationBadge: document.getElementById('notificationBadge'),
@@ -7596,8 +7639,7 @@
 
         function closeSocialHubSurfaces() {
             const hadMobileNotifications = !!elements.mobileNotificationsModal?.classList.contains('visible');
-            elements.notificationDropdown?.classList.remove('visible');
-            elements.notificationBellContainer?.classList.remove('active');
+            hideNotificationDropdown();
             if (hadMobileNotifications) {
                 closeModal(elements.mobileNotificationsModal);
             }
@@ -7623,8 +7665,7 @@
             document.querySelectorAll('.hub-friends-btn').forEach(btn => {
                 btn.onclick = (e) => {
                     e.stopPropagation();
-                    document.getElementById('notificationDropdown').classList.remove('visible');
-                    elements.notificationBellContainer?.classList.remove('active');
+                    hideNotificationDropdown();
                     closeModal(document.getElementById('mobileNotificationsModal'));
 
                     openModal(document.getElementById('friendsModal'));
@@ -7635,8 +7676,7 @@
             document.querySelectorAll('.hub-share-btn').forEach(btn => {
                 btn.onclick = (e) => {
                     e.stopPropagation();
-                    document.getElementById('notificationDropdown').classList.remove('visible');
-                    elements.notificationBellContainer?.classList.remove('active');
+                    hideNotificationDropdown();
                     closeModal(document.getElementById('mobileNotificationsModal'));
 
                     if (!currentUser) {
@@ -7720,6 +7760,7 @@
         function loadData() {
             if (!currentUser) return;
             const path = `users/${currentUser.uid}`;
+            loadOwnUsername();
             db.ref(`${path}/tvShowTracker`).on("value", snapshot => {
                 const data = snapshot.val() || {};
                 mediaList = (data.mediaList || []).map(item => {
@@ -7746,10 +7787,13 @@
                 }
             });
 
-            db.ref(`${path}/social`).once("value", snapshot => {
+            db.ref(`${path}/social`).once("value", async snapshot => {
                 const data = snapshot.val() || {};
                 followedFriends = data.followedFriends || [];
                 lastCheckedTimestamps = data.lastCheckedTimestamps || {};
+                currentUsername = data.username || "";
+                if (elements.myUsernameInput) elements.myUsernameInput.value = currentUsername;
+                await syncFollowedFriendProfiles();
                 if (!isViewMode) {
                     setupFriendListeners();
                     renderFriendsList();
@@ -8210,7 +8254,7 @@
 
         function saveSocialData() {
             if (isViewMode || !currentUser) return;
-            return db.ref(`users/${currentUser.uid}/social`).set({ followedFriends, lastCheckedTimestamps });
+            return db.ref(`users/${currentUser.uid}/social`).set({ followedFriends, lastCheckedTimestamps, username: currentUsername || null });
         }
 
         function renderFullUI() {
@@ -10666,7 +10710,13 @@
                 }
                 setAuthActionPending(true, 'login');
                 firebase.auth().signInWithEmailAndPassword(email, password)
-                    .then(() => {
+                    .then(cred => {
+                        if (cred.user) {
+                            const userEmailRef = db.ref(`users/${cred.user.uid}/email`);
+                            userEmailRef.once('value', snapshot => {
+                                if (!snapshot.exists()) userEmailRef.set(cred.user.email || email);
+                            });
+                        }
                         showNotification("Login effettuato", "success");
                         closeModal(elements.authModal);
                     })
@@ -10765,6 +10815,7 @@
                     elements.mobileMenuUserActionBtn.querySelector('i').style.color = 'var(--danger)';
                 }
             } else {
+                currentUsername = "";
                 elements.userInfo.style.display = "none";
                 elements.authToggle.style.display = "inline-flex";
                 elements.notificationBellContainer.style.display = 'none';
@@ -10807,6 +10858,7 @@
                 type,
                 title,
                 details,
+                actorName: currentUsername || null,
                 timestamp: new Date().toISOString(),
                 link: `${window.location.origin}${window.location.pathname.replace('index.html', 'serietv_tracker.html')}?view=${currentUser.uid}`
             };
@@ -10816,6 +10868,64 @@
                 log.unshift(activity);
                 return log.slice(0, MAX_LOG_SIZE);
             });
+        }
+
+        function escapeHTML(value = "") {
+            return String(value).replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function getFriendDisplayName(friend = {}) {
+            return friend.username || friend.email || 'Utente';
+        }
+
+        async function loadOwnUsername() {
+            if (!currentUser || !elements.myUsernameInput) return;
+            try {
+                const snapshot = await db.ref(`users/${currentUser.uid}/social/username`).once('value');
+                currentUsername = snapshot.val() || '';
+                elements.myUsernameInput.value = currentUsername;
+            } catch (error) {
+                currentUsername = '';
+                elements.myUsernameInput.value = '';
+                console.warn("Impossibile leggere lo username personale:", error);
+            }
+        }
+
+        async function saveOwnUsername() {
+            if (!currentUser || !elements.myUsernameInput) return;
+            const username = elements.myUsernameInput.value.trim().replace(/\s+/g, ' ');
+            if (username.length > 32) {
+                showNotification("Username troppo lungo.", "warning");
+                return;
+            }
+            try {
+                await db.ref(`users/${currentUser.uid}/social/username`).set(username || null);
+                currentUsername = username;
+                elements.myUsernameInput.value = username;
+                showNotification(username ? "Username salvato." : "Username rimosso.", "success");
+            } catch (error) {
+                console.error("Impossibile salvare lo username:", error);
+                showNotification("Non posso salvare lo username: permessi Firebase mancanti.", "error");
+            }
+        }
+
+        async function syncFollowedFriendProfiles() {
+            if (!followedFriends.length) return;
+            followedFriends = await Promise.all(followedFriends.map(async friend => {
+                try {
+                    const emailSnapshot = await db.ref(`users/${friend.id}/email`).once('value');
+                    return { ...friend, email: emailSnapshot.val() || friend.email };
+                } catch (error) {
+                    console.warn("Impossibile aggiornare il profilo amico:", friend.id, error);
+                    return friend;
+                }
+            }));
         }
 
         function detachAllFriendListeners() {
@@ -10846,7 +10956,11 @@
                 renderNotifications(allNewNotifications.slice(0, MAX_NOTIFICATIONS));
             };
 
+            renderNotifications([]);
+            if (followedFriends.length === 0) return;
+
             followedFriends.forEach(friend => {
+                const friendDisplayName = getFriendDisplayName(friend);
                 const ref = db.ref(`users/${friend.id}/activityLog`);
                 const listener = snapshot => {
                     const activities = snapshot.val() || [];
@@ -10855,7 +10969,7 @@
                     const activityArray = Array.isArray(activities) ? activities : [];
                     const newActivities = activityArray
                         .filter(act => act && new Date(act.timestamp) > new Date(lastChecked))
-                        .map(activity => ({ friendId: friend.id, friendEmail: friend.email, activity }));
+                        .map(activity => ({ friendId: friend.id, friendEmail: activity.actorName || friendDisplayName, activity }));
 
                     friendActivityMap.set(friend.id, newActivities);
                     processAndRenderNotifications();
@@ -10938,6 +11052,69 @@
             populateNotificationList(elements.notificationListMobile, notifications);
         }
 
+        function ensureNotificationDropdownOverlay() {
+            if (!elements.notificationDropdown) return;
+            if (elements.notificationDropdown.parentElement !== document.body) {
+                document.body.appendChild(elements.notificationDropdown);
+            }
+            if (!elements.notificationDropdown.dataset.overlayReady) {
+                elements.notificationDropdown.addEventListener('click', e => e.stopPropagation());
+                elements.notificationDropdown.dataset.overlayReady = 'true';
+            }
+        }
+
+        function positionNotificationDropdown() {
+            if (!elements.notificationDropdown || !elements.notificationBellContainer) return;
+            const bellRect = elements.notificationBellContainer.getBoundingClientRect();
+            const panelWidth = Math.min(350, window.innerWidth - 32);
+            const right = Math.max(12, window.innerWidth - bellRect.right);
+            const top = Math.min(bellRect.bottom + 10, Math.max(12, window.innerHeight - 120));
+
+            elements.notificationDropdown.style.position = 'fixed';
+            elements.notificationDropdown.style.top = `${top}px`;
+            elements.notificationDropdown.style.right = `${right}px`;
+            elements.notificationDropdown.style.left = 'auto';
+            elements.notificationDropdown.style.width = `${panelWidth}px`;
+            elements.notificationDropdown.style.maxWidth = 'calc(100vw - 24px)';
+            elements.notificationDropdown.style.maxHeight = `min(420px, calc(100vh - ${top + 16}px))`;
+            elements.notificationDropdown.style.zIndex = '5000';
+            elements.notificationDropdown.style.transform = 'none';
+        }
+
+        function showNotificationDropdown() {
+            ensureNotificationDropdownOverlay();
+            if (!elements.notificationDropdown.querySelector('.notification-list')) {
+                renderNotifications([]);
+            }
+            positionNotificationDropdown();
+            elements.notificationDropdown.style.display = 'flex';
+            elements.notificationDropdown.style.visibility = 'visible';
+            elements.notificationDropdown.style.opacity = '1';
+            elements.notificationDropdown.style.pointerEvents = 'auto';
+            elements.notificationDropdown.classList.add('visible');
+            elements.notificationBellContainer.classList.add('active');
+        }
+
+        function hideNotificationDropdown() {
+            if (elements.notificationDropdown) {
+                elements.notificationDropdown.classList.remove('visible');
+                elements.notificationDropdown.style.display = 'none';
+                elements.notificationDropdown.style.visibility = '';
+                elements.notificationDropdown.style.opacity = '';
+                elements.notificationDropdown.style.pointerEvents = '';
+            }
+            elements.notificationBellContainer?.classList.remove('active');
+        }
+
+        function toggleNotificationDropdown(e) {
+            e?.stopPropagation();
+            if (elements.notificationDropdown.classList.contains('visible')) {
+                hideNotificationDropdown();
+            } else {
+                showNotificationDropdown();
+            }
+        }
+
 
         function markAllNotificationsAsRead() {
             if (!currentUser) return;
@@ -10961,8 +11138,8 @@
         }
 
         function getActivityText(friendEmail, activity) {
-            const email = `<strong>${friendEmail || 'Utente'}</strong>`;
-            const title = `<strong>${activity.title}</strong>`;
+            const email = `<strong>${escapeHTML(friendEmail || 'Utente')}</strong>`;
+            const title = `<strong>${escapeHTML(activity.title)}</strong>`;
             switch (activity.type) {
                 case 'add_show': return `${email} ha aggiunto la serie ${title} ${activity.details}`;
                 case 'move_show': return `${email} ha spostato la serie ${title} ${activity.details}`;
@@ -10983,10 +11160,16 @@
             if (!friendId || !currentUser) return;
             if (friendId === currentUser.uid) { showNotification("Non puoi aggiungere te stesso.", "warning"); return; }
             if (followedFriends.some(f => f.id === friendId)) { showNotification("Amico già presente in lista.", "warning"); return; }
-            const friendEmailRef = db.ref(`users/${friendId}/email`);
-            const snapshot = await friendEmailRef.once('value');
-            if (snapshot.exists()) {
-                followedFriends.push({ id: friendId, email: snapshot.val() });
+            let emailSnapshot;
+            try {
+                emailSnapshot = await db.ref(`users/${friendId}/email`).once('value');
+            } catch (error) {
+                console.error("Impossibile leggere il profilo amico:", error);
+                showNotification("Non posso verificare questo ID: permessi Firebase mancanti.", "error");
+                return;
+            }
+            if (emailSnapshot.exists()) {
+                followedFriends.push({ id: friendId, email: emailSnapshot.val() });
                 lastCheckedTimestamps[friendId] = new Date().toISOString();
                 await saveSocialData();
                 renderFriendsList();
@@ -11009,15 +11192,18 @@
             if (!currentUser) { elements.friendsList.innerHTML = "<p>Devi essere loggato per usare questa funzione.</p>"; document.getElementById('myIdContainer').style.display = 'none'; return; }
             document.getElementById('myIdContainer').style.display = 'block';
             elements.myIdInput.value = currentUser.uid;
+            loadOwnUsername();
             elements.friendsList.innerHTML = "";
             if (followedFriends.length === 0) { elements.friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`; return; }
+            const trackerBasePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+            const buildFriendTrackerUrl = (fileName, friendId) => `${window.location.origin}${trackerBasePath}${fileName}?view=${friendId}`;
             followedFriends.forEach(friend => {
                 const card = document.createElement("div"); card.className = "management-card";
                 card.innerHTML = `
                 <div>
                     <div>
-                        <div class="friend-email">${friend.email}</div>
-                        <div class="friend-id">${friend.id}</div>
+                        <div class="friend-email">${escapeHTML(getFriendDisplayName(friend))}</div>
+                        <div class="friend-id">${escapeHTML(friend.email || friend.id)}</div>
                     </div>
                 </div>
                 <div class="management-card-actions">
@@ -11027,11 +11213,11 @@
                 </div>`;
                 card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
                 card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
-                    const url = `${window.location.origin}${window.location.pathname.replace('serietv_tracker.html', 'film_tracker.html')}?view=${e.currentTarget.dataset.id}`;
+                    const url = buildFriendTrackerUrl('film_tracker.html', e.currentTarget.dataset.id);
                     window.open(url, '_blank');
                 });
                 card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
-                    const url = `${window.location.origin}${window.location.pathname}?view=${e.currentTarget.dataset.id}`;
+                    const url = buildFriendTrackerUrl('serietv_tracker.html', e.currentTarget.dataset.id);
                     window.open(url, '_blank');
                 });
                 elements.friendsList.appendChild(card);
@@ -11514,14 +11700,17 @@
             document.getElementById('sideStatsBtn')?.addEventListener('click', () => { openModal(document.getElementById('advancedStatsModal')); renderAdvancedStats(); });
             document.getElementById('sideSettingsBtn')?.addEventListener('click', () => elements.settingsBtn.click());
             document.getElementById('sideAuthBtn')?.addEventListener('click', () => { currentUser ? requestLogout() : elements.authToggle.click(); });
-            elements.notificationBellContainer.onclick = (e) => { e.stopPropagation(); elements.bellIcon.click(); };
+            elements.notificationBellContainer.onclick = (e) => {
+                if (e.target.closest('#notificationDropdown')) return;
+                if (e.target.closest('#bellIcon')) return;
+                toggleNotificationDropdown(e);
+            };
 
             document.addEventListener('click', () => toggleSideSearch(false));
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     toggleSideSearch(false);
-                    elements.notificationDropdown.classList.remove('visible');
-                    elements.notificationBellContainer.classList.remove('active');
+                    hideNotificationDropdown();
                 }
             });
         }
@@ -11736,8 +11925,8 @@
                 }
 
                 // --- 3. Gestione Dropdown Notifiche ---
-                if (!e.target.closest('.notification-bell-container')) {
-                    elements.notificationDropdown.classList.remove('visible');
+                if (!e.target.closest('.notification-bell-container') && !e.target.closest('#notificationDropdown')) {
+                    hideNotificationDropdown();
                 }
             });
 
@@ -11844,8 +12033,15 @@
             // Social e Varie
             elements.closeViewBtn.addEventListener('click', () => { window.location.href = window.location.pathname; });
             elements.addFriendBtn.addEventListener('click', addFriend);
+            elements.saveUsernameBtn?.addEventListener('click', saveOwnUsername);
+            elements.myUsernameInput?.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveOwnUsername();
+                }
+            });
             elements.copyMyIdBtn.addEventListener('click', () => { navigator.clipboard.writeText(elements.myIdInput.value); showNotification("ID copiato!", "success"); });
-            elements.bellIcon.addEventListener('click', (e) => { e.stopPropagation(); elements.notificationDropdown.classList.toggle('visible'); elements.notificationBellContainer.classList.toggle('active', elements.notificationDropdown.classList.contains('visible')); });
+            elements.bellIcon.addEventListener('click', toggleNotificationDropdown);
 
             // Rewatch Modal
             elements.confirmRewatchBtn.addEventListener('click', () => { const newCount = parseInt(elements.rewatchCountInput.value); if (!isNaN(newCount) && newCount >= 0) { setRewatchCount(newCount); } else { showNotification("Inserisci un numero valido (0 o superiore).", "warning"); } });
