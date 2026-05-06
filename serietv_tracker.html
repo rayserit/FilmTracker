@@ -11563,6 +11563,32 @@
             return { hasChanges, updateSummary };
         }
 
+        function buildEpisodeSnapshot(ep) {
+            return {
+                name: ep.name || "",
+                overview: ep.overview || "",
+                episode_number: ep.episode_number,
+                runtime: ep.runtime || 0,
+                still_path: ep.still_path || null,
+                air_date: ep.air_date || ""
+            };
+        }
+
+        function mergeEpisodeDetails(localEpisode, tmdbEpisode) {
+            const nextEpisode = buildEpisodeSnapshot(tmdbEpisode);
+            let changed = false;
+
+            Object.entries(nextEpisode).forEach(([key, value]) => {
+                const currentValue = localEpisode[key] ?? (key === 'runtime' ? 0 : key === 'still_path' ? null : "");
+                if (currentValue !== value) {
+                    localEpisode[key] = value;
+                    changed = true;
+                }
+            });
+
+            return changed;
+        }
+
         async function syncShowSeasonsFromDetails(show, tmdbDetails) {
             let hasUpdates = false;
             let updateSummary = [];
@@ -11608,16 +11634,30 @@
                 if (!localSeason || oldEpisodeCount !== newEpisodeCount) {
                     show.seasons[seasonNumber] = {
                         name: seasonDetails.name,
-                        episodes: (seasonDetails.episodes || []).map(ep => ({
-                            name: ep.name,
-                            overview: ep.overview,
-                            episode_number: ep.episode_number,
-                            runtime: ep.runtime || 0,
-                            still_path: ep.still_path,
-                            air_date: ep.air_date
-                        }))
+                        episodes: (seasonDetails.episodes || []).map(buildEpisodeSnapshot)
                     };
                     hasUpdates = true;
+                    return;
+                }
+
+                if (localSeason.name !== seasonDetails.name) {
+                    localSeason.name = seasonDetails.name;
+                    hasUpdates = true;
+                }
+
+                const localEpisodesByNumber = new Map((localSeason.episodes || []).map(ep => [ep.episode_number, ep]));
+                let updatedEpisodeDetails = 0;
+
+                (seasonDetails.episodes || []).forEach(tmdbEpisode => {
+                    const localEpisode = localEpisodesByNumber.get(tmdbEpisode.episode_number);
+                    if (localEpisode && mergeEpisodeDetails(localEpisode, tmdbEpisode)) {
+                        updatedEpisodeDetails++;
+                    }
+                });
+
+                if (updatedEpisodeDetails > 0) {
+                    hasUpdates = true;
+                    updateSummary.push(`<strong>${show.title}</strong>: Aggiornati dettagli di ${updatedEpisodeDetails} episodi nella Stagione ${seasonNumber}`);
                 }
             });
 
