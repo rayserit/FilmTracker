@@ -2504,13 +2504,33 @@
       outline: none;
     }
 
+    #friendsList .management-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    #friendsList .management-card > div:first-child {
+      min-width: 0;
+      overflow: hidden;
+    }
+
     .friend-email {
       font-weight: 600;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .friend-id {
       font-size: 0.8rem;
       color: var(--text-secondary);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .friend-profile-row {
@@ -2541,6 +2561,7 @@
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       color: var(--text-color);
+      flex: 0 0 32px;
     }
 
     #friendsList .management-card-actions .btn.visit-friend-films-btn:hover {
@@ -5732,6 +5753,56 @@
         color: white !important;
       }
 
+      body.view-mode-active {
+        overflow-x: hidden !important;
+        padding-bottom: 0 !important;
+      }
+
+      body.view-mode-active .bottom-nav {
+        display: none !important;
+      }
+
+      body.view-mode-active .view-mode-banner {
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.7rem;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        margin: 0 0 1rem 0;
+        padding: 0.75rem 0.85rem;
+        border-radius: 16px;
+        overflow: hidden;
+      }
+
+      body.view-mode-active .view-mode-banner i {
+        margin: 0;
+      }
+
+      #viewModeUserEmail {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: block;
+      }
+
+      #closeViewBtn {
+        width: 44px !important;
+        min-width: 44px !important;
+        height: 44px !important;
+        margin-left: 0 !important;
+        padding: 0 !important;
+        font-size: 0 !important;
+        justify-content: center !important;
+      }
+
+      #closeViewBtn i {
+        margin: 0 !important;
+        font-size: 1rem !important;
+      }
+
       body.modal-open .top-bar,
       body.modal-open .bottom-nav {
         pointer-events: none !important;
@@ -5913,6 +5984,34 @@
 
       .friend-profile-row .btn {
         width: 100%;
+      }
+
+      #addFriendBtn {
+        width: 52px !important;
+        min-width: 52px !important;
+        padding-inline: 0 !important;
+        font-size: 0 !important;
+        justify-content: center !important;
+      }
+
+      #addFriendBtn i {
+        margin: 0 !important;
+        font-size: 1rem !important;
+      }
+
+      #friendsList .management-card {
+        gap: 0.55rem;
+      }
+
+      #friendsList .management-card-actions {
+        flex: 0 0 auto;
+        gap: 0.4rem;
+      }
+
+      #friendsList .management-card-actions .btn {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
       }
     }
   </style>
@@ -7325,6 +7424,7 @@
       const viewId = new URLSearchParams(window.location.search).get("view");
       if (!viewId) return false;
       isViewMode = true;
+      document.body.classList.add('view-mode-active');
       document.body.style.paddingBottom = '0';
       document.getElementById('bottomNav').style.display = 'none';
       document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, #authToggle, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
@@ -8278,7 +8378,7 @@
       });
     }
 
-    async function addNewMedia(tmdbId) {
+    async function addNewMedia(tmdbId, options = {}) {
       if (isViewMode) return;
       showNotification("Recupero dettagli del film...", "warning");
 
@@ -8292,10 +8392,12 @@
           return showNotification("Dettagli non trovati o IMDb ID mancante.", "error");
         }
 
-        const category = window.innerWidth <= 768
+        const category = options.categoryOverride || (window.innerWidth <= 768
           ? document.getElementById('addMediaCategorySelect').value
-          : document.getElementById('addMediaCategoryCustom').dataset.value;
-        localStorage.setItem("lastUsedCategory", category);
+          : document.getElementById('addMediaCategoryCustom').dataset.value);
+        if (options.rememberCategory !== false) {
+          localStorage.setItem("lastUsedCategory", category);
+        }
 
         if (mediaList.some(m => m.imdbID === enDetails.imdb_id && m.category === category)) {
           return showNotification(`Questo film è già in "${getCategoryName(category)}"`, "warning");
@@ -8652,7 +8754,7 @@
               const url = isTV
                 ? `${window.location.origin}${path}serietv_tracker.html?view=${friendId}`
                 : `${window.location.origin}${path}film_tracker.html?view=${friendId}`;
-              window.open(url, '_blank');
+              window.location.href = url;
             }
           });
           list.appendChild(item);
@@ -8699,7 +8801,7 @@
               const url = isTV
                 ? `${window.location.origin}${path}serietv_tracker.html?view=${friendId}`
                 : `${window.location.origin}${path}film_tracker.html?view=${friendId}`;
-              window.open(url, '_blank');
+              window.location.href = url;
             }
           });
           elements.notificationListMobile.appendChild(item);
@@ -9519,11 +9621,11 @@
         card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
         card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
           const url = buildFriendTrackerUrl('film_tracker.html', e.currentTarget.dataset.id);
-          window.open(url, '_blank');
+          window.location.href = url;
         });
         card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
           const url = buildFriendTrackerUrl('serietv_tracker.html', e.currentTarget.dataset.id);
-          window.open(url, '_blank');
+          window.location.href = url;
         });
         friendsList.appendChild(card);
       });
@@ -10662,14 +10764,6 @@
       return label ? label.charAt(0).toUpperCase() + label.slice(1) : "";
     }
 
-    function getCurrentDigitalAddCategory() {
-      const nativeSelect = document.getElementById('addMediaCategorySelect');
-      const customSelect = document.getElementById('addMediaCategoryCustom');
-      if (window.innerWidth <= 768 && nativeSelect && nativeSelect.value) return nativeSelect.value;
-      if (customSelect && customSelect.dataset.value) return customSelect.dataset.value;
-      return localStorage.getItem("lastUsedCategory") || categories[0] || "watchlist";
-    }
-
     function addDigitalLibraryIndexEntry(map, key, media) {
       if (!key) return;
       if (!map.has(key)) map.set(key, []);
@@ -10794,7 +10888,7 @@
             </button>`;
         } else {
           actionButtonHTML = `
-            <button onclick="event.stopPropagation(); closeModal(document.getElementById('digitalModal')); addNewMedia('${tmdbId}')"
+            <button onclick="event.stopPropagation(); closeModal(document.getElementById('digitalModal')); addNewMedia('${tmdbId}', { categoryOverride: 'watchlist', rememberCategory: false })"
                     class="btn btn-primary digital-add-btn">
               <i class="fas fa-plus"></i>
             </button>`;
@@ -10886,7 +10980,7 @@
       const sortToggle = document.getElementById('sortRatingsToggle');
       const onlyWithRatings = !!filterToggle?.checked;
       const sortByRating = !!sortToggle?.checked;
-      const currentAddCategory = getCurrentDigitalAddCategory();
+      const currentAddCategory = "watchlist";
       const libraryIndex = buildDigitalLibraryIndex();
 
       const getImdbScore = (movie) => {
