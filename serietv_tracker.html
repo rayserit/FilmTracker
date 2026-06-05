@@ -32,6 +32,61 @@
     <!-- Chart.js per Statistiche Avanzate -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <script>
+        (function installUnexpectedAudioGuard() {
+            const logUnexpectedAudio = (source) => {
+                console.warn(`[AudioGuard] Sorgente audio inattesa bloccata: ${source}`, new Error().stack);
+            };
+
+            const muteMediaElement = (element, source) => {
+                if (!element || element.dataset?.audioGuardAllowed === "true") return;
+                element.muted = true;
+                element.volume = 0;
+                if (typeof element.pause === "function") element.pause();
+                logUnexpectedAudio(source);
+            };
+
+            const NativeAudio = window.Audio;
+            if (typeof NativeAudio === "function") {
+                window.Audio = function (...args) {
+                    const audio = new NativeAudio(...args);
+                    muteMediaElement(audio, "Audio()");
+                    return audio;
+                };
+                window.Audio.prototype = NativeAudio.prototype;
+            }
+
+            if (window.HTMLMediaElement?.prototype?.play) {
+                const nativePlay = window.HTMLMediaElement.prototype.play;
+                window.HTMLMediaElement.prototype.play = function (...args) {
+                    if (this.dataset?.audioGuardAllowed !== "true") {
+                        muteMediaElement(this, `${this.tagName}.play()`);
+                        return Promise.resolve();
+                    }
+                    return nativePlay.apply(this, args);
+                };
+            }
+
+            ["AudioContext", "webkitAudioContext"].forEach(name => {
+                const NativeContext = window[name];
+                if (typeof NativeContext !== "function") return;
+
+                const GuardedAudioContext = function (...args) {
+                    const context = new NativeContext(...args);
+                    if (typeof context.suspend === "function") {
+                        context.suspend().catch(() => { });
+                    }
+                    logUnexpectedAudio(`${name}()`);
+                    return context;
+                };
+
+                GuardedAudioContext.prototype = NativeContext.prototype;
+                if (Object.setPrototypeOf) Object.setPrototypeOf(GuardedAudioContext, NativeContext);
+                window[name] = GuardedAudioContext;
+            });
+        })();
+    </script>
+
     <style>
         :root {
             --primary: #2a9d8f;
@@ -3454,14 +3509,37 @@
             opacity: 0.85;
         }
 
+        #friendsList .management-card {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        #friendsList .management-card>div:first-child {
+            min-width: 0;
+            overflow: hidden;
+        }
+
         .category-name,
         .friend-email {
             font-weight: 600;
         }
 
+        .friend-email {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         .friend-id {
             font-size: 0.8rem;
             color: var(--text-secondary);
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .friend-profile-row {
@@ -3524,6 +3602,7 @@
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             color: var(--text-color);
+            flex: 0 0 32px;
         }
 
         #friendsList .management-card-actions .btn.visit-friend-films-btn:hover {
@@ -6424,6 +6503,56 @@
                 color: white !important;
             }
 
+            body.view-mode-active {
+                overflow-x: hidden !important;
+                padding-bottom: 0 !important;
+            }
+
+            body.view-mode-active .bottom-nav {
+                display: none !important;
+            }
+
+            body.view-mode-active .view-mode-banner {
+                display: grid !important;
+                grid-template-columns: auto minmax(0, 1fr) auto;
+                align-items: center;
+                gap: 0.7rem;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+                margin: 0 0 1rem 0;
+                padding: 0.75rem 0.85rem;
+                border-radius: 16px;
+                overflow: hidden;
+            }
+
+            body.view-mode-active .view-mode-banner i {
+                margin: 0;
+            }
+
+            #viewModeUserEmail {
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                display: block;
+            }
+
+            #closeViewBtn {
+                width: 44px !important;
+                min-width: 44px !important;
+                height: 44px !important;
+                margin-left: 0 !important;
+                padding: 0 !important;
+                font-size: 0 !important;
+                justify-content: center !important;
+            }
+
+            #closeViewBtn i {
+                margin: 0 !important;
+                font-size: 1rem !important;
+            }
+
             body.modal-open .top-bar,
             body.modal-open .bottom-nav {
                 pointer-events: none !important;
@@ -6676,6 +6805,34 @@
 
             .friend-profile-row .btn {
                 width: 100%;
+            }
+
+            #addFriendBtn {
+                width: 52px !important;
+                min-width: 52px !important;
+                padding-inline: 0 !important;
+                font-size: 0 !important;
+                justify-content: center !important;
+            }
+
+            #addFriendBtn i {
+                margin: 0 !important;
+                font-size: 1rem !important;
+            }
+
+            #friendsList .management-card {
+                gap: 0.55rem;
+            }
+
+            #friendsList .management-card-actions {
+                flex: 0 0 auto;
+                gap: 0.4rem;
+            }
+
+            #friendsList .management-card-actions .btn {
+                width: 36px;
+                height: 36px;
+                flex-basis: 36px;
             }
         }
     </style>
@@ -10832,6 +10989,7 @@
             const viewId = new URLSearchParams(window.location.search).get("view");
             if (!viewId) { hideLoader(); return false; }
             isViewMode = true;
+            document.body.classList.add('view-mode-active');
             document.body.style.paddingBottom = '0';
             document.getElementById('bottomNav').style.display = 'none';
             document.querySelectorAll("#mediaManagementBtn, #shareBtn, #exportBtn, #importBtn, #resetBtn, #authToggle, #userInfo, .notification-bell-container").forEach(el => el.style.display = "none");
@@ -11004,7 +11162,7 @@
                                 ? `${window.location.origin}${path}serietv_tracker.html?view=${friendId}`
                                 : `${window.location.origin}${path}film_tracker.html?view=${friendId}`;
 
-                            window.open(url, '_blank');
+                            window.location.href = url;
                         }
                     });
                     listElement.appendChild(item);
@@ -11214,11 +11372,11 @@
                 card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
                 card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
                     const url = buildFriendTrackerUrl('film_tracker.html', e.currentTarget.dataset.id);
-                    window.open(url, '_blank');
+                    window.location.href = url;
                 });
                 card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
                     const url = buildFriendTrackerUrl('serietv_tracker.html', e.currentTarget.dataset.id);
-                    window.open(url, '_blank');
+                    window.location.href = url;
                 });
                 elements.friendsList.appendChild(card);
             });
@@ -12358,7 +12516,8 @@
     </script>
     <script>
         // Registrazione Service Worker per PWA
-        if ('serviceWorker' in navigator) {
+        if ('serviceWorker' in navigator && !window.__trackerServiceWorkerRegistered) {
+            window.__trackerServiceWorkerRegistered = true;
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
                     .then(reg => console.log('PWA Service Worker registrato!', reg))
@@ -12717,16 +12876,6 @@
                     </div>
                 </div>
             `;
-        }
-    </script>
-    <script>
-        // Registrazione Service Worker per PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('PWA Service Worker registrato!', reg))
-                    .catch(err => console.log('Errore PWA:', err));
-            });
         }
     </script>
 </body>
