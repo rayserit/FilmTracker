@@ -1,0 +1,4517 @@
+const OMDb_API_KEY = "2526ef70";
+    const TMDB_KEY = atob("MmNkOGJiNDgzYWIxMjE0ZDY2MDIwZTcwYjBhMzZmYTQ=");
+    const MDBLIST_PROXY_URL = "https://serietvtracker.rayser.workers.dev";
+    const DEFAULT_POSTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iNDUwIiB2aWV3Qm94PSIwIDAgMzAwIDQ1MCI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0NTAiIGZpbGw9IiNkZGQiLz48dGV4dCB4PSIxNTAiIHk9IjIyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjY2Ij5OZXNzYSBpbWFnaW5lPC90ZXh0Pjwvc3ZnPg==";
+    const DEFAULT_ACTOR_PHOTO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzJiMmIyYiIvPgogIDxnIGZpbGw9IiM0NDQiPgogICAgPGNpcmNsZSBjeD0iNTAiIGN5PSIzOCIgcj0iMTgiLz4KICAgIDxwYXRoIGQ9Ik0yMCw5NSBDMjAsNjUgMzAsNTggNTAsNTggQzcwLDU4IDgwLDY1IDgwLDk1IEw4MCwxMDAgTDIwLDEwMCBaIi8+CiAgPC9nPgo8L3N2Zz4=";
+    const DEFAULT_CATEGORIES = ["watchlist", "watched"];
+    const HOME_STATS_PREF_KEY = 'showHomeStats';
+    const CARD_RATINGS_PREF_KEY = 'showCardRatings';
+    const DIGITAL_ONLY_RATED_PREF_KEY = 'movieDigitalOnlyRated';
+    const DIGITAL_SORT_BY_RATING_PREF_KEY = 'movieDigitalSortByRating';
+    const MOVIE_DETAILS_CACHE_KEY = 'movieDetailsModalCacheV1';
+    const MOVIE_DETAILS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+    const MOVIE_DETAILS_CACHE_MAX_AGE = 45 * 24 * 60 * 60 * 1000;
+    const MOVIE_DETAILS_CACHE_MAX_ENTRIES = 40;
+    const ROTTEN_TOMATOES_ICONS = { certified: "https://upload.wikimedia.org/wikipedia/uk/b/b2/Certified_Fresh_2018.svg", fresh: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg", rotten: "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg" };
+    const POPCORN_ICONS = { positive: "https://upload.wikimedia.org/wikipedia/commons/d/da/Rotten_Tomatoes_positive_audience.svg", negative: "https://upload.wikimedia.org/wikipedia/commons/6/63/Rotten_Tomatoes_negative_audience.svg" };
+    const IMDB_STAR_ICON = "https://upload.wikimedia.org/wikipedia/commons/2/29/Gold_Star.svg";
+    const LETTERBOXD_ICON = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTH45TgrphrMnMTlMx9wpG_Jj7JoBzrI9zAfg&s";
+    const METACRITIC_ICON = "https://upload.wikimedia.org/wikipedia/commons/f/f2/Metacritic_M.png";
+    const MAX_NOTIFICATIONS = 50;
+    const MAX_LOG_SIZE = 15;
+
+    let isUpdateInProgress = false;
+    let isAuthActionInProgress = false;
+    let mediaList = [], categories = [...DEFAULT_CATEGORIES], currentTMDbSelection = null, currentUser = null, currentUsername = "", isViewMode = false, debounceTimeout, lazyLoadObserver, currentRewatchMediaId = null;
+    let updateHistory = JSON.parse(localStorage.getItem('movieUpdateHistory') || "[]");
+    let followedFriends = [], lastCheckedTimestamps = {}, friendListeners = {};
+    let statContributorIds = new Set();
+    let ignoredDuplicateIds = new Set();
+    let movieDetailsCache = new Map();
+    let movieDetailsRequests = new Map();
+    let activeMovieDetailsRequestToken = 0;
+    const firebaseConfig = { apiKey: "AIzaSyDm946nISfZs8ugkuYPraNTzFhvgQmnMUk", authDomain: "gametrackerdb.firebaseapp.com", databaseURL: "https://gametrackerdb-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gametrackerdb" };
+
+    const elements = {
+      appLoader: document.getElementById("appLoader"),
+      authModal: document.getElementById("authModal"), authToggle: document.getElementById("authToggle"),
+      userInfo: document.getElementById("userInfo"), loginBtn: document.getElementById("loginBtn"),
+      loginEmail: document.getElementById("loginEmail"), loginPassword: document.getElementById("loginPassword"),
+      registerBtn: document.getElementById("registerBtn"), registerEmail: document.getElementById("registerEmail"),
+      registerPassword: document.getElementById("registerPassword"), registerConfirmPassword: document.getElementById("registerConfirmPassword"),
+      logoutBtn: document.getElementById("logoutBtn"), loginForm: document.getElementById("loginForm"),
+      registerForm: document.getElementById("registerForm"), mediaManagementBtn: document.getElementById("mediaManagementBtn"),
+      shareBtn: document.getElementById("shareBtn"),
+      settingsBtn: document.getElementById("settingsBtn"),
+      importFile: document.getElementById("importFile"),
+      themeToggle: document.getElementById("themeToggle"),
+      searchInput: document.getElementById("searchInput"), categoryFilter: document.getElementById("categoryFilter"),
+      statsPanel: document.querySelector(".stats-panel"),
+      backToTopBtn: document.getElementById("backToTopBtn"),
+      toggleHomeStatsBtn: document.getElementById("toggleHomeStats"),
+      toggleCardRatingsBtn: document.getElementById("toggleCardRatings"),
+      sortFilter: document.getElementById("sortFilter"), statTotal: document.getElementById("statTotal"),
+      statWatchlist: document.getElementById("statWatchlist"), statWatched: document.getElementById("statWatched"),
+      statRewatched: document.getElementById("statRewatched"), statHours: document.getElementById("statHours"),
+      advancedStatTotal: document.getElementById("advancedStatTotal"),
+      advancedStatWatchlist: document.getElementById("advancedStatWatchlist"),
+      advancedStatWatched: document.getElementById("advancedStatWatched"),
+      advancedStatRewatched: document.getElementById("advancedStatRewatched"),
+      advancedStatHours: document.getElementById("advancedStatHours"),
+      mediaSectionsContainer: document.getElementById("mediaSectionsContainer"), mediaManagementModal: document.getElementById("mediaManagementModal"),
+      mediaTitle: document.getElementById("mediaTitle"), searchTMDbBtn: document.getElementById("searchTMDbBtn"),
+      tmdbResults: document.getElementById("tmdbResults"),
+      newCategoryName: document.getElementById("newCategoryName"),
+      addCategoryBtn: document.getElementById("addCategoryBtn"), categoriesList: document.getElementById("categoriesList"),
+      toggleCategoryManagementBtn: document.getElementById("toggleCategoryManagementBtn"),
+      manageCategoriesPanel: document.getElementById("manageCategoriesPanel"),
+      closeManagementModal: document.getElementById("closeManagementModal"),
+      notification: document.getElementById("notification"), notificationText: document.getElementById("notificationText"),
+      shareModal: document.getElementById("shareModal"), shareLinkInput: document.getElementById("shareLinkInput"),
+      copyShareLinkBtn: document.getElementById("copyShareLinkBtn"), closeShareModalBtn: document.getElementById("closeShareModalBtn"),
+      friendsModal: document.getElementById('friendsModal'),
+      viewModeBanner: document.getElementById("viewModeBanner"), viewModeUserEmail: document.getElementById("viewModeUserEmail"),
+      closeViewBtn: document.getElementById("closeViewBtn"), posterModal: document.getElementById("posterModal"),
+      posterGrid: document.getElementById("posterGrid"),
+      confirmModal: document.getElementById("confirmModal"), confirmModalTitle: document.getElementById("confirmModalTitle"),
+      confirmModalBody: document.getElementById("confirmModalBody"), confirmModalConfirm: document.getElementById("confirmModalConfirm"),
+      confirmModalCancel: document.getElementById("confirmModalCancel"),
+      rewatchModal: document.getElementById("rewatchModal"), rewatchModalTitle: document.getElementById("rewatchModalTitle"),
+      rewatchCountInput: document.getElementById("rewatchCountInput"), confirmRewatchBtn: document.getElementById("confirmRewatchBtn"),
+      cancelRewatchBtn: document.getElementById("cancelRewatchBtn"),
+      addFriendBtn: document.getElementById('addFriendBtn'),
+      friendIdInput: document.getElementById('friendIdInput'),
+      friendsList: document.getElementById('friendsList'),
+      myIdInput: document.getElementById('myIdInput'),
+      copyMyIdBtn: document.getElementById('copyMyIdBtn'),
+      myUsernameInput: document.getElementById('myUsernameInput'),
+      saveUsernameBtn: document.getElementById('saveUsernameBtn'),
+      notificationBellContainer: document.getElementById('notificationBellContainer'),
+      bellIcon: document.getElementById('bellIcon'),
+      notificationBadge: document.getElementById('notificationBadge'),
+      notificationDropdown: document.getElementById('notificationDropdown'),
+      savePosterChange: document.getElementById('savePosterChange'),
+      cancelPosterChange: document.getElementById('cancelPosterChange'),
+      detailsModal: document.getElementById('detailsModal'),
+      detailsModalContent: document.getElementById('detailsModalContent'),
+      detailsModalClose: document.getElementById('detailsModalClose'),
+      actorModal: document.getElementById('actorModal'),
+      actorModalContent: document.getElementById('actorModalContent'),
+      actorModalClose: document.getElementById('actorModalClose'),
+      updateProgressModal: document.getElementById('updateProgressModal'),
+      updateProgressBarFill: document.getElementById('updateProgressBarFill'),
+      updateProgressText: document.getElementById('updateProgressText'),
+      updateProgressTitle: document.getElementById('updateProgressTitle'),
+      // Bottom Nav Bar Elements
+      bottomNavAdd: document.getElementById('bottomNavAdd'),
+      bottomNavManage: document.getElementById('bottomNavManage'),
+
+      bottomNavNotifications: document.getElementById('bottomNavNotifications'),
+      bottomNavHome: document.getElementById('bottomNavHome'),
+      notificationBadgeMobile: document.getElementById('notificationBadgeMobile'),
+      // Mobile Modals and Buttons
+      mobileMenuModal: document.getElementById('mobileMenuModal'),
+      mobileMenuCloseBtn: document.getElementById('mobileMenuCloseBtn'),
+      mobileMenuUserActionBtn: document.getElementById('mobileMenuUserActionBtn'),
+      mobileMenuExportBtn: document.getElementById('mobileMenuExportBtn'),
+      mobileMenuImportBtn: document.getElementById('mobileMenuImportBtn'),
+      mobileMenuThemeBtn: document.getElementById('mobileMenuThemeBtn'),
+      mobileMenuResetBtn: document.getElementById('mobileMenuResetBtn'),
+      mobileNotificationsModal: document.getElementById('mobileNotificationsModal'),
+      mobileNotificationsCloseBtn: document.getElementById('mobileNotificationsCloseBtn'),
+      notificationListMobile: document.getElementById('notificationListMobile'),
+      markAllReadMobileBtn: document.querySelector('#mobileNotificationsModal #markReadAll'),
+      // Filter Modal
+      filterSortModal: document.getElementById('filterSortModal'),
+      mobileFilterBtn: document.getElementById('mobileFilterBtn'),
+      mobileCategoryFilter: document.getElementById('mobileCategoryFilter'),
+      mobileSortFilter: document.getElementById('mobileSortFilter'),
+      applyFiltersBtn: document.getElementById('applyFiltersBtn'),
+      // Category Navigation Modal
+      categoryNavModal: document.getElementById('categoryNavModal'),
+      categoryNavList: document.getElementById('categoryNavList'),
+      closeCategoryNavBtn: document.getElementById('closeCategoryNavBtn'),
+      // Advanced Stats Modals
+      advancedStatsModal: document.getElementById('advancedStatsModal'),
+      genresChart: document.getElementById('genresChart'),
+      activityChart: document.getElementById('activityChart'),
+      chartDetailsModal: document.getElementById('chartDetailsModal'),
+      chartDetailsTitle: document.getElementById('chartDetailsTitle'),
+      chartDetailsList: document.getElementById('chartDetailsList'),
+      // Digital Release button
+      digitalBtn: document.getElementById('digitalBtn'),
+    };
+
+    const defaultMediaProps = {
+      isCountedAsWatched: false,
+      isCountedAsWatchlist: false,
+      rewatchCount: 0,
+      lastActivityAt: null,
+      isFavorite: false,
+      rottenTomatoes: "N/A",
+      popcornRating: "N/A",
+      metacriticRating: "N/A",
+      letterboxdRating: "N/A",
+      tmdbID: null,
+      italianTitle: null,
+      genres: []
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    window.addEventListener("load", init);
+
+    function init() {
+      loadPersistedMovieDetailsCache();
+      setupEventListeners();
+      setupManagementModal();
+      applySavedHomeStatsPreference();
+      applySavedCardRatingsPreference();
+      applySavedDigitalFiltersPreference();
+      setupBackToTopButton();
+      window.addEventListener('resize', syncDesktopModalChrome);
+
+      loadSortOrder();
+      updateSwitcherLinksInViewMode();
+      handleViewMode() || setupAuthListeners();
+
+      // Hide/show top bar on scroll (mobile only)
+      if (window.innerWidth <= 768) {
+        let lastScrollY = 0;
+        let ticking = false;
+
+        window.addEventListener('scroll', () => {
+          if (!ticking) {
+            requestAnimationFrame(() => {
+              const currentScrollY = window.scrollY;
+              const topBar = document.querySelector('.top-bar');
+
+              if (currentScrollY > lastScrollY && currentScrollY > 60) {
+                // Scroll verso il basso: nascondi
+                topBar.classList.add('hidden');
+              } else {
+                // Scroll verso l'alto: mostra
+                topBar.classList.remove('hidden');
+              }
+
+              lastScrollY = currentScrollY;
+              ticking = false;
+            });
+            ticking = true;
+          }
+        }, { passive: true });
+      }
+    }
+
+    function syncDesktopModalChrome() {
+      const topBar = document.querySelector('.top-bar');
+      const sidebarMini = document.querySelector('.sidebar-mini');
+      const sideSearchOverlay = document.getElementById('sideSearchOverlay');
+      if (!topBar && !sidebarMini && !sideSearchOverlay) return;
+
+      const hasOpenModal = Array.from(document.querySelectorAll('.modal')).some(modal =>
+        modal.classList.contains('visible') || modal.style.display === 'flex'
+      );
+
+      if (window.innerWidth > 768 && hasOpenModal) {
+        topBar?.style.setProperty('pointer-events', 'none', 'important');
+        sidebarMini?.style.setProperty('pointer-events', 'none', 'important');
+        sideSearchOverlay?.style.setProperty('pointer-events', 'none', 'important');
+        return;
+      }
+
+      topBar?.style.removeProperty('pointer-events');
+      sidebarMini?.style.removeProperty('pointer-events');
+      sideSearchOverlay?.style.removeProperty('pointer-events');
+    }
+
+    function isModalVisible(modal) {
+      return !!modal && (modal.classList.contains('visible') || modal.style.display === 'flex');
+    }
+
+    function getMovieDetailsCacheKey(media) {
+      if (!media) return null;
+      if (media.imdbID) return `imdb:${media.imdbID}`;
+      if (media.tmdbID) return `tmdb:${media.tmdbID}`;
+      return null;
+    }
+
+    function compactMovieDetailsForCache(details) {
+      if (!details) return null;
+
+      return {
+        id: details.id || null,
+        imdb_id: details.imdb_id || null,
+        backdrop_path: details.backdrop_path || null,
+        tagline: details.tagline || "",
+        overview: details.overview || "",
+        genres: (details.genres || []).map(genre => ({ id: genre.id || null, name: genre.name || "" })),
+        cast: (details.cast || []).slice(0, 12).map(actor => ({
+          id: actor.id || null,
+          name: actor.name || "",
+          character: actor.character || "",
+          profile_path: actor.profile_path || null
+        })),
+        crew: (details.crew || []).filter(person => person.job === 'Director').map(person => ({
+          id: person.id || null,
+          name: person.name || "",
+          job: person.job || ""
+        }))
+      };
+    }
+
+    function persistMovieDetailsCache() {
+      try {
+        const now = Date.now();
+        const entries = Array.from(movieDetailsCache.entries())
+          .filter(([, entry]) => entry && entry.timestamp && (now - entry.timestamp) <= MOVIE_DETAILS_CACHE_MAX_AGE)
+          .sort((a, b) => b[1].timestamp - a[1].timestamp)
+          .slice(0, MOVIE_DETAILS_CACHE_MAX_ENTRIES);
+
+        movieDetailsCache = new Map(entries);
+        localStorage.setItem(MOVIE_DETAILS_CACHE_KEY, JSON.stringify(Object.fromEntries(entries)));
+      } catch (error) {
+        console.error("Error persisting movie details cache:", error);
+      }
+    }
+
+    function loadPersistedMovieDetailsCache() {
+      try {
+        const rawCache = JSON.parse(localStorage.getItem(MOVIE_DETAILS_CACHE_KEY) || "{}");
+        const now = Date.now();
+        const validEntries = Object.entries(rawCache).filter(([, entry]) => {
+          return entry && entry.timestamp && entry.data && (now - entry.timestamp) <= MOVIE_DETAILS_CACHE_MAX_AGE;
+        });
+
+        movieDetailsCache = new Map(validEntries);
+        if (validEntries.length !== Object.keys(rawCache).length) {
+          persistMovieDetailsCache();
+        }
+      } catch (error) {
+        movieDetailsCache = new Map();
+        console.error("Error loading movie details cache:", error);
+      }
+    }
+
+    function getCachedMovieDetails(media) {
+      const cacheKey = getMovieDetailsCacheKey(media);
+      return cacheKey ? movieDetailsCache.get(cacheKey) || null : null;
+    }
+
+    function isMovieDetailsCacheFresh(entry) {
+      return !!entry && !!entry.timestamp && (Date.now() - entry.timestamp) < MOVIE_DETAILS_CACHE_TTL;
+    }
+
+    function setCachedMovieDetails(media, details) {
+      const cacheKey = getMovieDetailsCacheKey(media);
+      const compactDetails = compactMovieDetailsForCache(details);
+      if (!cacheKey || !compactDetails) return null;
+
+      const entry = {
+        timestamp: Date.now(),
+        data: compactDetails
+      };
+
+      movieDetailsCache.set(cacheKey, entry);
+      persistMovieDetailsCache();
+      return compactDetails;
+    }
+
+    async function fetchMovieDetailsForModal(media, { forceRefresh = false } = {}) {
+      const cacheKey = getMovieDetailsCacheKey(media);
+      if (!cacheKey || !media?.imdbID) return null;
+
+      if (movieDetailsRequests.has(cacheKey)) {
+        return movieDetailsRequests.get(cacheKey);
+      }
+
+      const request = (async () => {
+        const details = await fetchTMDbDetails(media.imdbID, 'it-IT');
+        if (!details) return null;
+        setCachedMovieDetails(media, details);
+        return details;
+      })();
+
+      movieDetailsRequests.set(cacheKey, request);
+
+      try {
+        return await request;
+      } finally {
+        movieDetailsRequests.delete(cacheKey);
+      }
+    }
+
+    function toggleHomeStats(isVisible, immediate = false) {
+      const panel = elements.statsPanel;
+      if (!panel) return;
+
+      if (isVisible) {
+        document.body.classList.remove('home-stats-hidden');
+        panel.style.display = 'block';
+
+        if (immediate) {
+          panel.classList.remove('is-hidden');
+          return;
+        }
+        requestAnimationFrame(() => panel.classList.remove('is-hidden'));
+      } else {
+        document.body.classList.add('home-stats-hidden');
+
+        if (immediate) {
+          panel.classList.add('is-hidden');
+          panel.style.display = 'none';
+          return;
+        }
+
+        panel.classList.add('is-hidden');
+        window.setTimeout(() => {
+          if (panel.classList.contains('is-hidden')) {
+            panel.style.display = 'none';
+          }
+        }, 280);
+      }
+    }
+
+    function applySavedHomeStatsPreference() {
+      const savedPreference = localStorage.getItem(HOME_STATS_PREF_KEY);
+      const shouldShow = savedPreference === 'true';
+
+      if (elements.toggleHomeStatsBtn) {
+        elements.toggleHomeStatsBtn.checked = shouldShow;
+      }
+
+      toggleHomeStats(shouldShow, true);
+    }
+
+    function applySavedCardRatingsPreference() {
+      const savedPreference = localStorage.getItem(CARD_RATINGS_PREF_KEY);
+      const shouldShow = savedPreference === null ? true : savedPreference === 'true';
+      document.body.classList.toggle('hide-ratings-ui', !shouldShow);
+      if (elements.toggleCardRatingsBtn) {
+        elements.toggleCardRatingsBtn.checked = shouldShow;
+      }
+    }
+
+    function setupBackToTopButton() {
+      const btn = elements.backToTopBtn;
+      if (!btn) return;
+
+      const updateVisibility = () => {
+        btn.classList.toggle('visible', window.scrollY > 300);
+      };
+
+      window.addEventListener('scroll', updateVisibility, { passive: true });
+      btn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      updateVisibility();
+    }
+
+    function closeSocialHubSurfaces() {
+      const hadMobileNotifications = !!elements.mobileNotificationsModal?.classList.contains('visible');
+      hideNotificationDropdown();
+      if (hadMobileNotifications) {
+        closeModal(elements.mobileNotificationsModal);
+      }
+      return hadMobileNotifications ? 340 : 0;
+    }
+
+    function handleShare() {
+      if (!currentUser) return showNotification("Devi essere loggato.", "warning");
+      const link = window.location.href.split('?')[0] + '?view=' + currentUser.uid;
+      document.getElementById('shareLinkInput').value = link;
+      openModal(document.getElementById('shareModal'));
+    }
+
+    function openFriendsHub() {
+      const delay = closeSocialHubSurfaces();
+      window.setTimeout(() => {
+        renderFriendsList();
+        openModal(document.getElementById('friendsModal'));
+      }, delay);
+    }
+
+    function bindSocialHubButtons() {
+      document.querySelectorAll('.hub-friends-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          openFriendsHub();
+        };
+      });
+
+      document.querySelectorAll('.hub-share-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          hideNotificationDropdown();
+          closeModal(document.getElementById('mobileNotificationsModal'));
+
+          if (!currentUser) {
+            showNotification("Devi essere loggato per condividere.", "warning");
+            return;
+          }
+          setTimeout(() => {
+            const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+            const isTV = window.location.pathname.includes('serietv');
+            const link = `${window.location.origin}${path}${isTV ? 'serietv_tracker.html' : 'film_tracker.html'}?view=${currentUser.uid}`;
+
+            const shareInput = document.getElementById('shareLinkInput');
+            if (shareInput) shareInput.value = link;
+            openModal(document.getElementById('shareModal'));
+          }, 300);
+        };
+      });
+
+      document.querySelectorAll('#markReadAll').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          markAllNotificationsAsRead();
+        };
+      });
+    }
+
+    function updateSwitcherLinksInViewMode() {
+      const params = new URLSearchParams(window.location.search);
+      const viewId = params.get('view');
+      if (viewId) {
+        const filmTrackerLink = document.querySelector('.tracker-switch-btn[href="film_tracker.html"], .side-switcher-link[href="film_tracker.html"]');
+        const tvTrackerLink = document.querySelector('.tracker-switch-btn[href="serietv_tracker.html"], .side-switcher-link[href="serietv_tracker.html"]');
+        if (filmTrackerLink) filmTrackerLink.href = `film_tracker.html?view=${viewId}`;
+        if (tvTrackerLink) tvTrackerLink.href = `serietv_tracker.html?view=${viewId}`;
+      }
+    }
+
+    function hideLoader() {
+      elements.appLoader.style.opacity = '0';
+      setTimeout(() => elements.appLoader.style.display = 'none', 300);
+    }
+
+    function setupManagementModal() {
+      elements.toggleCategoryManagementBtn?.addEventListener('click', () => {
+        const isVisible = elements.manageCategoriesPanel?.classList.toggle('visible');
+        elements.manageCategoriesPanel?.classList.toggle('panel-hidden', !isVisible);
+        elements.tmdbResults?.classList.toggle('results-hidden', !!isVisible);
+        elements.toggleCategoryManagementBtn.classList.toggle('active', !!isVisible);
+      });
+    }
+
+    function openMediaManagementModal() {
+      if (isViewMode) return;
+      elements.mediaTitle.value = "";
+      renderSearchDashboardEmptyState();
+      currentTMDbSelection = null;
+      elements.manageCategoriesPanel?.classList.remove('visible');
+      elements.manageCategoriesPanel?.classList.add('panel-hidden');
+      elements.tmdbResults?.classList.remove('results-hidden');
+      elements.toggleCategoryManagementBtn?.classList.remove('active');
+
+      populateAddMediaCategorySelect();
+      renderCategoriesList();
+      renderFriendsList();
+
+      const myIdContainer = document.getElementById('myIdContainer');
+      const myIdInput = document.getElementById('myIdInput');
+      const copyMyIdBtn = document.getElementById('copyMyIdBtn');
+
+      if (currentUser && myIdContainer && myIdInput && copyMyIdBtn) {
+        myIdContainer.style.display = 'block';
+        myIdInput.value = currentUser.uid;
+        copyMyIdBtn.onclick = () => {
+          navigator.clipboard.writeText(currentUser.uid);
+          showNotification("Il tuo ID è stato copiato!", "success");
+        };
+      } else if (myIdContainer) {
+        myIdContainer.style.display = 'none';
+      }
+
+      openModal(elements.mediaManagementModal);
+    }
+
+    function getRottenTomatoesState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 75 ? "certified" : value >= 60 ? "fresh" : "rotten"; }
+    function getPopcornState(score) { if (!score || score === "N/A") return null; const value = parseInt(String(score).replace('%', '')); return isNaN(value) ? null : value >= 60 ? "positive" : "negative"; }
+    function getMetacriticState(score) { if (!score || score === "N/A") return null; const value = parseInt(score); return isNaN(value) ? null : value >= 61 ? "favorable" : value >= 40 ? "mixed" : "unfavorable"; }
+
+    function setupAuthListeners() {
+      elements.authToggle.addEventListener("click", () => openModal(elements.authModal));
+
+      document.querySelectorAll(".auth-tab").forEach(tab => {
+        tab.addEventListener("click", () => {
+          document.querySelectorAll(".auth-tab").forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          document.querySelectorAll(".auth-form-container").forEach(c => c.classList.remove("active"));
+          document.getElementById(`${tab.dataset.tab}Form`).classList.add("active");
+        });
+      });
+      elements.loginBtn.addEventListener("click", () => {
+        if (isAuthActionInProgress) return;
+        const email = elements.loginEmail.value.trim();
+        const password = elements.loginPassword.value;
+        if (email && password) {
+          setAuthActionPending(true, 'login');
+          firebase.auth().signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+              if (userCredential.user) {
+                const userRef = db.ref(`users/${userCredential.user.uid}/email`);
+                userRef.once('value', snapshot => {
+                  if (!snapshot.exists()) {
+                    userRef.set(email);
+                  }
+                });
+              }
+              showNotification("Login effettuato", "success");
+              closeModal(elements.authModal);
+            })
+            .catch(err => showNotification(getAuthErrorMessage(err), "error"))
+            .finally(() => setAuthActionPending(false));
+        } else {
+          showNotification("Inserisci email e password", "warning");
+        }
+      });
+      elements.registerBtn.addEventListener("click", () => {
+        if (isAuthActionInProgress) return;
+        const email = elements.registerEmail.value.trim();
+        const password = elements.registerPassword.value;
+        const confirmPassword = elements.registerConfirmPassword.value;
+        if (email && password && confirmPassword) {
+          if (password !== confirmPassword) {
+            showNotification("Le password non corrispondono", "warning");
+          } else if (password.length < 6) {
+            showNotification("La password deve avere almeno 6 caratteri", "warning");
+          } else {
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+              .then((userCredential) => {
+                db.ref(`users/${userCredential.user.uid}/email`).set(email);
+                showNotification("Registrazione completata!", "success");
+                closeModal(elements.authModal);
+              })
+              .catch(err => showNotification(getAuthErrorMessage(err), "error"))
+              .finally(() => setAuthActionPending(false, 'register'));
+            setAuthActionPending(true, 'register');
+          }
+        } else {
+          showNotification("Compila tutti i campi", "warning");
+        }
+      });
+      elements.logoutBtn.addEventListener("click", requestLogout);
+
+      firebase.auth().onAuthStateChanged(user => {
+        if (isViewMode) return;
+        currentUser = user;
+        updateAuthUI();
+        if (user) {
+          loadData();
+        } else {
+          loadLocalData();
+          hideLoader();
+        }
+      });
+    }
+
+    function setAuthActionPending(isPending, action = 'login') {
+      isAuthActionInProgress = isPending;
+      const targetBtn = action === 'register' ? elements.registerBtn : elements.loginBtn;
+      [elements.loginBtn, elements.registerBtn].forEach(btn => {
+        if (btn) btn.disabled = isPending;
+      });
+      if (!targetBtn) return;
+      if (!targetBtn.dataset.defaultHtml) targetBtn.dataset.defaultHtml = targetBtn.innerHTML;
+      targetBtn.innerHTML = isPending ? '<i class="fas fa-spinner fa-spin"></i> Attendi...' : targetBtn.dataset.defaultHtml;
+    }
+
+    function requestLogout() {
+      if (!currentUser || elements.confirmModal.classList.contains('visible')) return;
+      showConfirmModal("Conferma logout", "Vuoi uscire dal tuo account?", () => {
+        detachAllFriendListeners();
+        firebase.auth().signOut()
+          .then(() => showNotification("Logout effettuato", "success"))
+          .catch(err => showNotification(getAuthErrorMessage(err), "error"));
+      });
+    }
+
+    function getAuthErrorMessage(err) {
+      switch (err.code) {
+        case "auth/email-already-in-use": return "Email già registrata";
+        case "auth/invalid-email": return "Email non valida";
+        case "auth/weak-password": return "Password troppo debole";
+        case "auth/user-not-found": return "Utente non trovato";
+        case "auth/wrong-password": return "Password errata";
+        default: return "Errore: " + err.message;
+      }
+    }
+
+    function updateAuthUI() {
+      const userActionBtn = document.getElementById('mobileMenuUserActionBtn');
+      const userActionBtnIcon = userActionBtn ? userActionBtn.querySelector('i') : null;
+      const userActionBtnLabel = userActionBtn ? userActionBtn.querySelector('span') : null;
+      if (currentUser) {
+        elements.userInfo.style.display = "flex";
+        elements.authToggle.style.display = "none";
+        elements.notificationBellContainer.style.display = 'block';
+        document.querySelectorAll(".btn").forEach(btn => btn.disabled = false);
+        if (userActionBtn) {
+          if (userActionBtnLabel) {
+            userActionBtnLabel.textContent = 'Logout';
+          } else {
+            userActionBtn.textContent = 'Logout';
+          }
+          userActionBtn.style.color = 'var(--danger)';
+          if (userActionBtnIcon) {
+            userActionBtnIcon.style.color = 'var(--danger)';
+          }
+        }
+      } else {
+        currentUsername = "";
+        elements.userInfo.style.display = "none";
+        elements.authToggle.style.display = "inline-flex";
+        elements.notificationBellContainer.style.display = 'none';
+        document.querySelectorAll("#mediaManagementBtn, #shareBtn").forEach(btn => btn.disabled = true);
+        document.querySelectorAll("#exportBtn, #importBtn, #resetBtn").forEach(btn => btn.disabled = false);
+        if (userActionBtn) {
+          if (userActionBtnLabel) {
+            userActionBtnLabel.textContent = 'Login / Registrati';
+          } else {
+            userActionBtn.textContent = 'Login / Registrati';
+          }
+          userActionBtn.style.color = '';
+          if (userActionBtnIcon) {
+            userActionBtnIcon.style.color = '';
+          }
+        }
+      }
+    }
+
+    function loadData() {
+      if (!currentUser) return;
+      const path = `users/${currentUser.uid}`;
+      loadOwnUsername();
+
+      // 1. Carica i Film
+      db.ref(`${path}/mediaTracker`).on("value", snap => {
+        const data = snap.val() || {};
+        mediaList = (data.mediaList || []).map(item => ({ ...defaultMediaProps, ...item }));
+        categories = data.categories || [...DEFAULT_CATEGORIES];
+        renderFullUI();
+      });
+
+      // 2. Carica gli Amici
+      db.ref(`${path}/social`).once("value", async snapshot => {
+        const data = snapshot.val() || {};
+        followedFriends = data.followedFriends || [];
+        lastCheckedTimestamps = data.lastCheckedTimestamps || {};
+        currentUsername = data.username || "";
+        if (elements.myUsernameInput) elements.myUsernameInput.value = currentUsername;
+        await syncFollowedFriendProfiles();
+        if (!isViewMode) {
+          setupFriendListeners();
+          renderFriendsList();
+        }
+      });
+
+      // 3. Sincronizza lo Storico Aggiornamenti dal Cloud
+      db.ref(`${path}/movieUpdateHistory`).on("value", snapshot => {
+        if (snapshot.exists()) {
+          updateHistory = snapshot.val();
+          // Aggiorniamo anche la memoria locale per il futuro
+          localStorage.setItem('movieUpdateHistory', JSON.stringify(updateHistory));
+        }
+      });
+
+      // 4. Sincronizza l'ultimo Export (Badge)
+      db.ref(`${path}/lastExport`).once("value", snapshot => {
+        if (snapshot.exists()) {
+          localStorage.setItem('lastFilmExport', snapshot.val());
+          if (typeof updateBackupBadge === 'function') updateBackupBadge(snapshot.val());
+        }
+      });
+
+      hideLoader();
+    }
+
+    function loadLocalData() {
+      try {
+        let storedMedia = JSON.parse(localStorage.getItem("mediaList")) || [];
+        mediaList = storedMedia.map(item => ({ ...defaultMediaProps, ...item }));
+        categories = JSON.parse(localStorage.getItem("categories")) || [...DEFAULT_CATEGORIES];
+        renderFullUI();
+      } catch (err) {
+        console.error("Error loading local data:", err);
+      }
+    }
+
+    function saveData() {
+      if (isViewMode) return;
+      if (currentUser) {
+        const now = new Date().toISOString();
+        db.ref(`users/${currentUser.uid}/mediaTracker`).update({
+          mediaList: mediaList,
+          categories: categories,
+          lastModified: now
+        }).catch(err => {
+          console.error("Error updating media data to Firebase:", err);
+        });
+      } else {
+        saveToLocal();
+      }
+    }
+
+    function saveSocialData() {
+      if (isViewMode || !currentUser) return;
+      db.ref(`users/${currentUser.uid}/social`).set({ followedFriends, lastCheckedTimestamps, username: currentUsername || null }).catch(err => {
+        console.error("Error saving social data to Firebase:", err);
+      });
+    }
+
+    function saveToLocal() {
+      try {
+        localStorage.setItem("mediaList", JSON.stringify(mediaList));
+        localStorage.setItem("categories", JSON.stringify(categories));
+      } catch (err) {
+        console.error("Error saving locally:", err);
+      }
+    }
+
+    function handleViewMode() {
+      const viewId = new URLSearchParams(window.location.search).get("view");
+      if (!viewId) return false;
+      isViewMode = true;
+      document.body.classList.add('view-mode-active');
+      document.body.style.paddingBottom = '0';
+      document.getElementById('bottomNav').style.display = 'none';
+      document.querySelectorAll("#shareBtn, #exportBtn, #importBtn, #resetBtn, #authToggle, #userInfo, .notification-bell-container, #settingsBtn, #sideSettingsBtn, #mobileSettingsBtn").forEach(el => { if(el) el.style.display = "none"; });
+      document.querySelectorAll("#mediaManagementBtn, #sideManagementBtn").forEach(el => { if(el) { el.style.opacity = "0.5"; el.style.pointerEvents = "none"; } });
+      elements.viewModeBanner.style.display = "flex";
+      db.ref(`users/${viewId}/mediaTracker`).on("value", snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          let storedMedia = data.mediaList || [];
+          mediaList = storedMedia.map(item => ({ ...defaultMediaProps, ...item }));
+          categories = data.categories || [...DEFAULT_CATEGORIES];
+          renderFullUI();
+          db.ref(`users/${viewId}/email`).once("value", snapshot => {
+            const email = snapshot.val();
+            elements.viewModeUserEmail.textContent = `Stai visualizzando la libreria di ${email || "un utente"}`;
+          });
+        } else {
+          showNotification("Libreria condivisa non trovata o non accessibile.", "error");
+        }
+        hideLoader();
+      });
+      return true;
+    }
+
+    function renderFullUI() {
+      renderCategorySections();
+      updateCategoryFilter();
+      populateAddMediaCategorySelect();
+      renderCategoriesList();
+      updateStats();
+      renderMedia();
+
+      const digitalModal = document.getElementById('digitalModal');
+      if (allDigitalMovies.length > 0 && digitalModal && (digitalModal.classList.contains('visible') || digitalModal.style.display === 'flex')) {
+        renderDigitalUI();
+      }
+    }
+
+    function populateCategoryNavModal() {
+      const container = elements.categoryNavList;
+      container.innerHTML = '';
+
+      // Add all categories (including default ones like watchlist and watched)
+      categories.forEach((cat) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+
+        // Determine icon and display name based on category
+        let icon = 'fa-folder';
+        let displayName = cat;
+
+        if (cat === 'watchlist') {
+          icon = 'fa-bookmark';
+          displayName = 'Da Vedere';
+        } else if (cat === 'watched') {
+          icon = 'fa-check-circle';
+          displayName = 'Visti';
+        }
+
+        btn.innerHTML = `<i class="fas ${icon}"></i> ${displayName}`;
+        btn.addEventListener('click', () => {
+          closeModal(elements.categoryNavModal);
+          setTimeout(() => {
+            const section = document.getElementById(`${cat}Section`);
+            if (section) {
+              const headerOffset = 80; // Adjust for sticky header or top bar if needed
+              const elementPosition = section.getBoundingClientRect().top;
+              const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+              window.scrollTo({
+                top: offsetPosition,
+                behavior: "smooth"
+              });
+            }
+          }, 300);
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function renderMedia() {
+      const selectedCategory = document.getElementById('categoryFilter').dataset.value || 'all';
+      const searchTerm = elements.searchInput.value.toLowerCase();
+      const sortBy = document.getElementById('sortFilter').dataset.value || 'saga-alpha';
+
+      document.querySelectorAll(".media-section").forEach(section => {
+        section.style.display = 'block';
+        section.querySelector('.media-grid').innerHTML = '';
+      });
+
+      let filteredMedia = [...mediaList];
+      if (searchTerm) {
+        filteredMedia = filteredMedia.filter(m =>
+          m.title.toLowerCase().includes(searchTerm) ||
+          (m.italianTitle && m.italianTitle.toLowerCase().includes(searchTerm))
+        );
+      }
+      if (selectedCategory === "favorites") {
+        filteredMedia = filteredMedia.filter(m => m.isFavorite);
+      } else if (selectedCategory !== "all") {
+        filteredMedia = filteredMedia.filter(m => m.category === selectedCategory);
+      }
+
+      filteredMedia.sort((a, b) => {
+        switch (sortBy) {
+          case "saga-alpha":
+            const aSagaCount = a.sagaName ? filteredMedia.filter(m => m.sagaName === a.sagaName).length : 0;
+            const bSagaCount = b.sagaName ? filteredMedia.filter(m => m.sagaName === b.sagaName).length : 0;
+            const isASaga = a.sagaName && aSagaCount > 1;
+            const isBSaga = b.sagaName && bSagaCount > 1;
+
+            const sortKeyA = isASaga ? a.sagaName : a.title;
+            const sortKeyB = isBSaga ? b.sagaName : b.title;
+
+            if (sortKeyA !== sortKeyB) {
+              return sortKeyA.localeCompare(sortKeyB);
+            }
+
+            const dateA = a.releaseDate || '0';
+            const dateB = b.releaseDate || '0';
+            return new Date(dateA) - new Date(dateB);
+          case "alpha":
+            return a.title.localeCompare(b.title);
+          case "rating":
+            return (parseFloat(b.imdbRating) || 0) - (parseFloat(a.imdbRating) || 0);
+          case "year":
+            return (parseInt(b.year) || 0) - (parseInt(a.year) || 0);
+          case "activity":
+            // NUOVO: Ordina per "Ultima Attività" (inclusi rewatch, spostamenti, ecc.)
+            const activityTimeA = a.lastActivityAt || a.addedAt;
+            const activityTimeB = b.lastActivityAt || b.addedAt;
+            return new Date(activityTimeB) - new Date(activityTimeA);
+          case "added":
+          default:
+            // MODIFICATO: Ora "Ultimi aggiunti" è PURAMENTE la data di creazione iniziale
+            const addedTimeA = a.addedAt || 0;
+            const addedTimeB = b.addedAt || 0;
+            return new Date(addedTimeB) - new Date(addedTimeA);
+        }
+      });
+
+      // --- INIZIO OTTIMIZZAZIONE RENDERING ---
+      const fragments = {};
+      categories.forEach(cat => {
+        fragments[cat] = document.createDocumentFragment();
+      });
+
+      filteredMedia.forEach(media => {
+        if (fragments[media.category]) {
+          fragments[media.category].appendChild(createMediaCard(media));
+        }
+      });
+
+      categories.forEach(cat => {
+        const grid = document.getElementById(`${cat}Grid`);
+        if (grid && fragments[cat].childNodes.length > 0) {
+          grid.appendChild(fragments[cat]);
+        }
+      });
+      // --- FINE OTTIMIZZAZIONE RENDERING ---
+
+      let hasContent = false;
+      categories.forEach(cat => {
+        const section = document.getElementById(`${cat}Section`);
+        const grid = document.getElementById(`${cat}Grid`);
+        if (section && grid) {
+          if (grid.children.length === 0) {
+            // Nascondi la sezione se la griglia è vuota
+            section.style.display = 'none';
+          } else {
+            section.style.display = 'block';
+            hasContent = true;
+          }
+        }
+      });
+
+      // Show global empty state if NO categories have content
+      const noResultsMsg = document.getElementById('noResultsGlobal');
+      if (noResultsMsg) {
+        noResultsMsg.style.display = hasContent ? 'none' : 'block';
+      }
+
+      if (selectedCategory === 'favorites' && !filteredMedia.length) {
+        renderCategorySections();
+        elements.mediaSectionsContainer.innerHTML = `<div class="media-section"><div class="empty-state"><i class="fas fa-heart-crack"></i><p>Nessun preferito aggiunto.</p></div></div>`;
+      } else if (selectedCategory === 'favorites' && filteredMedia.length > 0) {
+        document.querySelectorAll('.media-section').forEach(s => {
+          if (s.querySelector('.media-grid').children.length === 0) s.style.display = 'none';
+        })
+      }
+
+
+      setupLazyLoading();
+      updateCounts();
+    }
+
+    function updateStats() {
+      statContributorIds.clear();
+      ignoredDuplicateIds.clear();
+      const processed = new Set();
+      mediaList.forEach(media => {
+        const uniqueId = media.imdbID || media.title.toLowerCase().trim();
+        if (!uniqueId || processed.has(uniqueId)) return;
+        processed.add(uniqueId);
+        const instances = mediaList.filter(m => (m.imdbID && m.imdbID === uniqueId) || (!m.imdbID && m.title.toLowerCase() === uniqueId));
+        let contributor = instances.find(m => m.category === "watched") ||
+          instances.find(m => m.isCountedAsWatched) ||
+          instances.find(m => m.category === "watchlist") ||
+          instances.find(m => m.isCountedAsWatchlist) ||
+          instances[0];
+        if (contributor) {
+          statContributorIds.add(contributor.id);
+          instances.forEach(inst => {
+            if (inst.id !== contributor.id) ignoredDuplicateIds.add(inst.id);
+          });
+        }
+      });
+
+      const stats = { watchlist: 0, watched: 0, rewatched: 0, minutes: 0 };
+      statContributorIds.forEach(id => {
+        const media = mediaList.find(m => m.id === id);
+        if (!media) return;
+        const isWatched = media.category === "watched" || media.isCountedAsWatched;
+        if (isWatched) {
+          stats.watched++;
+          if (media.rewatchCount > 0) stats.rewatched += media.rewatchCount;
+          const runtime = parseInt(media.runtime?.replace(/\D/g, "")) || 0;
+          if (runtime > 0) stats.minutes += runtime * ((media.rewatchCount || 0) + 1);
+        } else if (media.category === "watchlist" || media.isCountedAsWatchlist) {
+          stats.watchlist++;
+        }
+      });
+
+      const hours = Math.floor(stats.minutes / 60);
+      stats.minutes %= 60;
+      const formattedHours = `${hours}h ${stats.minutes}m`;
+
+      elements.statTotal.textContent = statContributorIds.size;
+      elements.statWatchlist.textContent = stats.watchlist;
+      elements.statWatched.textContent = stats.watched;
+      elements.statRewatched.textContent = stats.rewatched;
+      elements.statHours.textContent = formattedHours;
+      if (elements.advancedStatTotal) elements.advancedStatTotal.textContent = statContributorIds.size;
+      if (elements.advancedStatWatchlist) elements.advancedStatWatchlist.textContent = stats.watchlist;
+      if (elements.advancedStatWatched) elements.advancedStatWatched.textContent = stats.watched;
+      if (elements.advancedStatRewatched) elements.advancedStatRewatched.textContent = stats.rewatched;
+      if (elements.advancedStatHours) elements.advancedStatHours.textContent = formattedHours;
+    }
+
+    function updateCounts() {
+      categories.forEach(cat => {
+        const countEl = document.getElementById(`${cat}Count`);
+        if (countEl) countEl.textContent = mediaList.filter(m => m.category === cat).length;
+      });
+    }
+
+    function createMediaCard(media) {
+      const card = document.createElement("div");
+      card.className = "media-card";
+      card.dataset.id = media.id;
+      if (statContributorIds.has(media.id)) card.classList.add("is-stat-contributor");
+      if (ignoredDuplicateIds.has(media.id)) card.classList.add("is-duplicate");
+
+      // --- LOGICA LONG PRESS ---
+      let pressTimer;
+      let isLongPress = false;
+
+      const startPress = (e) => {
+        isLongPress = false;
+        pressTimer = setTimeout(() => {
+          isLongPress = true;
+          // Feedback aptico (vibrazione) se supportato
+          if (navigator.vibrate) navigator.vibrate(50);
+
+          // Prende le coordinate del tocco (se mobile) o del mouse
+          const touch = e.touches ? e.touches[0] : e;
+          showContextMenu(media, { x: touch.clientX, y: touch.clientY });
+        }, 500); // 500 millisecondi = Long Tap
+      };
+
+      const cancelPress = () => {
+        clearTimeout(pressTimer);
+      };
+
+      // Eventi Touch (Mobile)
+      card.addEventListener('touchstart', startPress, { passive: true });
+      card.addEventListener('touchend', cancelPress);
+      card.addEventListener('touchmove', cancelPress); // Annulla se scorri la pagina
+
+      // Eventi Mouse (Desktop: click sinistro trattenuto)
+      card.addEventListener('mousedown', (e) => { if (e.button === 0) startPress(e); });
+      card.addEventListener('mouseup', cancelPress);
+      card.addEventListener('mouseleave', cancelPress);
+
+      // Click normale
+      card.addEventListener('click', (e) => {
+        // Se abbiamo appena fatto un long press, blocchiamo l'apertura del modale dettagli
+        if (isLongPress) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        if (e.target.closest('.card-actions') || e.target.closest('.favorite-btn')) return;
+        showDetailsModal(media.id);
+      });
+
+      // Click Destro (Desktop) apre direttamente il menu
+      card.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        showContextMenu(media, { x: e.clientX, y: e.clientY });
+      });
+      // -------------------------
+
+      let ratingsHTML = "";
+
+      // 1. IMDb
+      if (media.imdbRating && media.imdbRating !== "N/A") {
+        ratingsHTML += `<span class="rating-badge" title="IMDb"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`;
+      }
+
+      // 2. Letterboxd
+      if (media.letterboxdRating && media.letterboxdRating !== "N/A") {
+        ratingsHTML += `<span class="rating-badge" title="Letterboxd"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`;
+      }
+
+      // 3. Metacritic
+      if (media.metacriticRating && media.metacriticRating !== "N/A") {
+        ratingsHTML += `<span class="rating-badge" title="Metacritic"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`;
+      }
+
+      const ratingsSection = ratingsHTML ? `<div class="media-ratings">${ratingsHTML}</div>` : "";
+
+      const actionsHTML = isViewMode ? '' : `
+        <div class="card-actions">
+            <button class="card-btn" data-action="menu" title="Azioni"><i class="fas fa-ellipsis-h"></i></button>
+        </div>`;
+
+      const optimizedPoster = (media.poster && media.poster.includes('w500'))
+        ? media.poster.replace('w500', 'w342')
+        : (fixPosterUrl(media.poster) || DEFAULT_POSTER);
+
+      card.innerHTML = `
+        <div class="poster-container">
+          <img data-src="${optimizedPoster}" class="media-poster lazy" onerror="this.src='${DEFAULT_POSTER}'">
+          <button class="favorite-btn ${media.isFavorite ? 'is-favorite' : ''}" title="Aggiungi ai preferiti"><i class="fas fa-heart"></i></button>
+          ${actionsHTML}
+        </div>
+        <div class="media-info">
+          <h3 class="media-title" title="${media.title}">${media.title}</h3>
+          <div class="media-meta">
+            <span class="year-label">${media.year || 'N/D'}</span>
+            <span>${media.runtime ? formatRuntime(media.runtime) : ''}</span>
+            ${(media.imdbRating && media.imdbRating !== 'N/A') ? `<span class="imdb-mobile-only"><img src="${IMDB_STAR_ICON}" class="rating-icon" alt=""> ${media.imdbRating}</span>` : ''}
+          </div>
+          ${ratingsSection}
+        </div>
+      `;
+      if (!isViewMode) {
+        card.querySelector('[data-action="menu"]').addEventListener("click", e => {
+          e.stopPropagation();
+          showContextMenu(media, { x: e.clientX, y: e.clientY });
+        });
+        card.querySelector('.favorite-btn').addEventListener("click", e => {
+          e.stopPropagation();
+          toggleFavorite(media.id);
+        })
+      }
+      return card;
+    }
+
+    function fixPosterUrl(url) {
+      if (!url || url === "N/A") return null;
+      return url.startsWith("http://") || url.startsWith("https://") ? url : url.startsWith("//") ? `https:${url}` : `https://${url}`;
+    }
+
+    function renderCategorySections() {
+      elements.mediaSectionsContainer.innerHTML = categories.map(cat => `
+        <div class="media-section" id="${cat}Section" data-category="${cat}">
+          <div class="section-header">
+            <h2 class="section-title user-select-none">${getCategoryName(cat)}</h2>
+            <span id="${cat}Count" class="category-count">0</span>
+          </div>
+          <div class="media-grid" id="${cat}Grid"></div>
+        </div>
+      `).join("");
+    }
+
+    function renderCategoriesList() {
+      const list = elements.categoriesList;
+      list.innerHTML = "";
+      categories.forEach((cat, index) => {
+        const count = mediaList.filter(m => m.category === cat).length;
+        const dotClass = `category-dot-${index % 6}`;
+        const card = document.createElement("div");
+        card.className = "management-card";
+        const isDefault = DEFAULT_CATEGORIES.includes(cat);
+        card.innerHTML = `
+          <div>
+            <span class="category-dot ${dotClass}"></span>
+            <div>
+              <div class="category-name">${getCategoryName(cat)}</div>
+            </div>
+          </div>
+          <div class="management-card-actions">
+            <button class="btn move-up-btn" data-category="${cat}" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button>
+            <button class="btn move-down-btn" data-category="${cat}" ${index === categories.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button>
+            ${!isDefault ? `
+              <button class="btn rename-category-btn" data-category="${cat}"><i class="fas fa-pencil-alt"></i></button>
+              <button class="btn btn-danger delete-category-btn" data-category="${cat}"><i class="fas fa-trash"></i></button>
+            ` : ""}
+          </div>
+        `;
+        list.appendChild(card);
+      });
+      list.querySelectorAll(".rename-category-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          const cat = btn.dataset.category;
+          const nameEl = btn.closest(".management-card").querySelector(".category-name");
+          renameCategory(cat, nameEl);
+        });
+      });
+      list.querySelectorAll(".delete-category-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          deleteCategory(btn.dataset.category);
+        });
+      });
+      list.querySelectorAll(".move-up-btn").forEach(btn => btn.addEventListener("click", () => moveCategory(btn.dataset.category, -1)));
+      list.querySelectorAll(".move-down-btn").forEach(btn => btn.addEventListener("click", () => moveCategory(btn.dataset.category, 1)));
+    }
+
+    function renameCategory(cat, nameEl) {
+      if (DEFAULT_CATEGORIES.includes(cat)) return;
+
+      const oldName = cat;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = oldName;
+      input.className = "category-name-input";
+      input.style.width = "100%";
+
+      nameEl.innerHTML = "";
+      nameEl.appendChild(input);
+      input.focus();
+
+      const save = () => {
+        const newName = input.value.trim();
+        if (newName && newName !== oldName) {
+          if (categories.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+            showNotification("Questa categoria esiste già", "warning");
+            renderCategoriesList();
+            return;
+          }
+          const catIndex = categories.indexOf(oldName);
+          if (catIndex !== -1) {
+            categories[catIndex] = newName;
+          }
+          mediaList.forEach(m => {
+            if (m.category === oldName) {
+              m.category = newName;
+            }
+          });
+          saveData();
+          renderFullUI();
+          showNotification(`Categoria "${newName}" creata`, "success");
+        } else {
+          renderCategoriesList();
+        }
+      };
+
+      input.addEventListener("blur", save);
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          input.blur();
+        }
+        if (e.key === "Escape") {
+          e.preventDefault();
+          renderCategoriesList();
+        }
+      });
+    }
+
+    function moveCategory(cat, direction) {
+      const index = categories.indexOf(cat);
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= categories.length) return;
+      [categories[index], categories[newIndex]] = [categories[newIndex], categories[index]];
+      saveData();
+      renderFullUI();
+    }
+
+    function updateCategoryFilter() {
+      const optionsContainer = document.getElementById('categoryOptions');
+      const select = document.getElementById('categoryFilter');
+
+      // Voci fisse
+      let html = `
+          <div class="option" data-value="all"><i class="fas fa-folder"></i> Tutte le categorie</div>
+          <div class="option" data-value="favorites"><i class="fas fa-heart"></i> Solo Preferiti</div>
+      `;
+
+      categories.forEach(cat => {
+        const catName = typeof cat === 'string' ? cat : cat.name;
+        const display = (typeof getCategoryName === 'function') ? getCategoryName(catName) : catName;
+
+        let icon = "fa-tag";
+        if (display === "Da Vedere" || catName === "watchlist") icon = "fa-bookmark";
+        if (display === "Visti" || catName === "watched" || display === "Completate") icon = "fa-check-circle";
+        if (display === "In Corso") icon = "fa-play-circle";
+
+        html += `<div class="option" data-value="${catName}"><i class="fas ${icon}"></i> ${display}</div>`;
+      });
+
+      if (optionsContainer) optionsContainer.innerHTML = html;
+
+      // Seleziona "Tutte" di default solo se non c'è già un valore
+      if (!select.dataset.value) select.dataset.value = "all";
+
+      // Aggiorna il testo visualizzato per i custom select
+      const updateSelectedText = (targetSelect, targetOptionsContainer) => {
+        const selectedValue = targetSelect.dataset.value;
+        const selectedOptionElement = targetOptionsContainer.querySelector(`.option[data-value="${selectedValue}"]`);
+        if (selectedOptionElement) {
+          targetSelect.querySelector('.selected-option').innerHTML = selectedOptionElement.innerHTML;
+        } else {
+          // Fallback if the selected value is no longer valid (e.g., category deleted)
+          targetSelect.dataset.value = 'all';
+          targetSelect.querySelector('.selected-option').innerHTML = `<i class="fas fa-folder"></i> Tutte le categorie`;
+        }
+      };
+
+      if (select && optionsContainer) updateSelectedText(select, optionsContainer);
+    }
+
+
+    function populateAddMediaCategorySelect() {
+      const nativeSelect = document.getElementById('addMediaCategorySelect');
+      const optionsContainer = document.getElementById('addMediaCategoryOptions');
+      const customSelect = document.getElementById('addMediaCategoryCustom');
+
+      const optionMarkup = categories.map(cat => {
+        const catName = typeof cat === 'string' ? cat : cat.name;
+        const display = getCategoryName(catName);
+        return {
+          value: catName,
+          display,
+          html: `<div class="option" data-value="${catName}"><i class="fas fa-folder"></i> ${display}</div>`,
+          option: `<option value="${catName}">${display}</option>`
+        };
+      });
+
+      if (nativeSelect) nativeSelect.innerHTML = optionMarkup.map(item => item.option).join("");
+      if (optionsContainer) optionsContainer.innerHTML = optionMarkup.map(item => item.html).join("");
+
+      const lastUsed = localStorage.getItem("lastUsedCategory") || categories[0];
+      const defaultCatName = typeof lastUsed === 'string' ? lastUsed : lastUsed.name;
+      const resolvedCategory = categories.includes(defaultCatName) ? defaultCatName : categories[0];
+
+      if (nativeSelect) nativeSelect.value = resolvedCategory;
+
+      if (customSelect) {
+        customSelect.dataset.value = resolvedCategory;
+        customSelect.querySelector('.selected-option').innerHTML = `<i class="fas fa-folder"></i> ${getCategoryName(resolvedCategory)}`;
+      }
+    }
+
+    function getCategoryName(cat) {
+      const names = { watchlist: "Da Vedere", watched: "Visti" };
+      return names[cat] || cat;
+    }
+
+    function addCategory(name) {
+      if (!name) return showNotification("Inserisci un nome per la categoria", "warning"), false;
+      const trimmed = name.trim();
+      if (categories.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+        showNotification("Questa categoria esiste già", "warning");
+        return false;
+      }
+      categories.push(trimmed);
+      saveData();
+      renderFullUI();
+      showNotification(`Categoria "${trimmed}" creata`, "success");
+      elements.newCategoryName.value = "";
+      return true;
+    }
+
+    function showConfirmModal(title, body, onConfirm) {
+      elements.confirmModalTitle.textContent = title;
+      elements.confirmModalBody.textContent = body;
+      openModal(elements.confirmModal);
+      const confirmHandler = () => { onConfirm(); closeModal(elements.confirmModal); cleanup(); };
+      const cancelHandler = () => { closeModal(elements.confirmModal); cleanup(); };
+      const cleanup = () => {
+        elements.confirmModalConfirm.removeEventListener("click", confirmHandler);
+        elements.confirmModalCancel.removeEventListener("click", cancelHandler);
+      };
+      elements.confirmModalConfirm.addEventListener("click", confirmHandler);
+      elements.confirmModalCancel.addEventListener("click", cancelHandler);
+    }
+
+    function deleteCategory(cat) {
+      if (DEFAULT_CATEGORIES.includes(cat)) {
+        showNotification("Non puoi eliminare questa categoria predefinita", "warning");
+        return;
+      }
+      showConfirmModal("Elimina Categoria", `Sei sicuro di voler eliminare la categoria "${cat}"? Tutti i film al suo interno saranno spostati in "Da Vedere".`, () => {
+        mediaList.forEach(m => { if (m.category === cat) m.category = "watchlist"; });
+        categories = categories.filter(c => c !== cat);
+        saveData();
+        renderFullUI();
+        showNotification(`Categoria "${cat}" eliminata`, "success");
+      });
+    }
+
+    function closeAllMenus() {
+      document.querySelectorAll(".context-menu").forEach(menu => menu.remove());
+    }
+
+    function showContextMenu(media, pos) {
+      if (isViewMode) return;
+
+      // Chiude menu aperti in precedenza
+      document.querySelectorAll(".context-menu, .context-menu-backdrop").forEach(m => m.remove());
+
+      // 1. Crea il fondale scuro (Backdrop)
+      const backdrop = document.createElement("div");
+      backdrop.className = "context-menu-backdrop";
+      document.body.appendChild(backdrop);
+
+      // 2. Crea il Menu
+      const menu = document.createElement("div");
+      menu.className = "context-menu";
+
+      // Funzione di chiusura universale
+      const hide = () => {
+        menu.classList.remove("visible");
+        backdrop.style.opacity = "0";
+        setTimeout(() => { menu.remove(); backdrop.remove(); }, 200);
+      };
+
+      backdrop.addEventListener("click", hide);
+
+      // 3. Intestazione Menu
+      const header = document.createElement("div");
+      header.className = "context-menu-header";
+      header.innerHTML = `
+        <div class="context-menu-eyebrow">Film</div>
+        <div class="context-menu-title"></div>
+        <div class="context-menu-meta">Categoria attuale: ${getCategoryName(media.category)}</div>
+      `;
+      header.querySelector('.context-menu-title').textContent = media.title;
+      menu.appendChild(header);
+
+      const moveHeader = document.createElement("div");
+      moveHeader.className = "context-menu-section-label";
+      moveHeader.textContent = "Sposta in";
+      menu.appendChild(moveHeader);
+
+      categories.filter(cat => cat !== media.category).forEach(cat => {
+        const item = document.createElement("div");
+        item.className = "context-menu-item";
+        const index = categories.indexOf(cat);
+        const dotClass = `category-dot-${index % 6}`;
+        item.innerHTML = `<span class="category-dot ${dotClass}"></span> ${getCategoryName(cat)}`;
+        item.addEventListener("click", () => { moveMediaToCategory(media.id, cat); hide(); });
+        menu.appendChild(item);
+      });
+      menu.appendChild(document.createElement("div")).className = "context-menu-divider";
+
+      const statusLabel = document.createElement("div");
+      statusLabel.className = "context-menu-section-label";
+      statusLabel.textContent = "Stato";
+      menu.appendChild(statusLabel);
+
+      const isCustomCategory = !DEFAULT_CATEGORIES.includes(media.category);
+      let hasStatusActions = false;
+      if (media.category === 'watched' || isCustomCategory) {
+        const rewatchItem = document.createElement("div");
+        rewatchItem.className = "context-menu-item";
+        rewatchItem.innerHTML = '<i class="fas fa-sync-alt fa-fw"></i> Modifica Rewatch';
+        rewatchItem.addEventListener("click", () => { openRewatchModal(media.id); hide(); });
+        menu.appendChild(rewatchItem);
+        hasStatusActions = true;
+      }
+
+      if (isCustomCategory) {
+        const watchedItem = document.createElement("div");
+        watchedItem.className = "context-menu-item";
+        if (media.isCountedAsWatched) {
+          watchedItem.innerHTML = '<i class="fas fa-times fa-fw"></i> Rimuovi stato "visto"';
+          watchedItem.style.color = "var(--danger)";
+        } else {
+          watchedItem.innerHTML = '<i class="fas fa-check-double fa-fw"></i> Segna come visto qui';
+        }
+        watchedItem.addEventListener("click", () => { toggleCountedAsWatched(media.id); hide(); });
+        menu.appendChild(watchedItem);
+
+        const watchlistItem = document.createElement("div");
+        watchlistItem.className = "context-menu-item";
+        if (media.isCountedAsWatchlist) {
+          watchlistItem.innerHTML = '<i class="fas fa-times fa-fw"></i> Rimuovi stato "da vedere"';
+          watchlistItem.style.color = "var(--danger)";
+        } else {
+          watchlistItem.innerHTML = '<i class="fas fa-list-alt fa-fw"></i> Segna come da vedere qui';
+        }
+        watchlistItem.addEventListener("click", () => { toggleCountedAsWatchlist(media.id); hide(); });
+        menu.appendChild(watchlistItem);
+        hasStatusActions = true;
+      }
+
+      if (!hasStatusActions) {
+        const noStatusItem = document.createElement("div");
+        noStatusItem.className = "context-menu-item is-current";
+        noStatusItem.innerHTML = '<i class="fas fa-info-circle fa-fw"></i> Nessuna azione disponibile';
+        menu.appendChild(noStatusItem);
+      }
+
+      menu.appendChild(document.createElement("div")).className = "context-menu-divider";
+
+      const manageLabel = document.createElement("div");
+      manageLabel.className = "context-menu-section-label";
+      manageLabel.textContent = "Gestione";
+      menu.appendChild(manageLabel);
+
+      const changePosterItem = document.createElement("div");
+      changePosterItem.className = "context-menu-item";
+      changePosterItem.innerHTML = '<i class="fas fa-image fa-fw"></i> Cambia Copertina';
+      changePosterItem.addEventListener("click", () => { showPosterModal(media.id); hide(); });
+      menu.appendChild(changePosterItem);
+
+      const deleteItem = document.createElement("div");
+      deleteItem.className = "context-menu-item danger";
+      deleteItem.innerHTML = '<i class="fas fa-trash fa-fw"></i> Elimina';
+      deleteItem.addEventListener("click", () => { deleteMedia(media.id); hide(); });
+      menu.appendChild(deleteItem);
+
+      document.body.appendChild(menu);
+
+      // 5. Posizionamento Intelligente
+      if (window.innerWidth > 768) {
+        // Su Desktop si posiziona vicino al mouse
+        const rect = menu.getBoundingClientRect();
+        let x = pos.x, y = pos.y;
+        if (x + rect.width > window.innerWidth) x = window.innerWidth - rect.width - 10;
+        if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 10;
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+      }
+      // Su Mobile il CSS si occupa di fissarlo in basso
+
+      // Mostriamo con animazione
+      requestAnimationFrame(() => {
+        backdrop.style.opacity = "1";
+        menu.classList.add('visible');
+      });
+    }
+
+    function moveMediaToCategory(id, newCategory) {
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+
+      const oldCategory = media.category;
+      media.category = newCategory;
+      media.lastActivityAt = new Date().toISOString();
+
+      if (newCategory === 'watched') {
+        media.isCountedAsWatched = true;
+        media.isCountedAsWatchlist = false;
+      } else if (newCategory === 'watchlist') {
+        media.isCountedAsWatchlist = true;
+        media.isCountedAsWatched = false;
+        media.rewatchCount = 0;
+      }
+
+      if (!DEFAULT_CATEGORIES.includes(oldCategory) && DEFAULT_CATEGORIES.includes(newCategory)) {
+        if (newCategory === 'watched' && !media.isCountedAsWatched) {
+          media.rewatchCount = 0;
+        }
+        media.isCountedAsWatched = newCategory === 'watched';
+        media.isCountedAsWatchlist = newCategory === 'watchlist';
+      }
+
+      logActivity('move', media.title, `da '${getCategoryName(oldCategory)}' a '${getCategoryName(newCategory)}'`);
+      saveData();
+      renderMedia();
+      updateStats();
+      showNotification(`Film spostato in "${getCategoryName(newCategory)}"`, "success");
+    }
+
+    function toggleCountedAsWatched(id) {
+      if (isViewMode) return;
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+      media.isCountedAsWatched = !media.isCountedAsWatched;
+      if (media.isCountedAsWatched) {
+        media.isCountedAsWatchlist = false;
+        if (media.rewatchCount < 0) media.rewatchCount = 0;
+        logActivity('watched_status', media.title, `segnato come visto in '${getCategoryName(media.category)}'`);
+      } else {
+        logActivity('watched_status', media.title, `rimosso lo stato "visto" in '${getCategoryName(media.category)}'`);
+      }
+      saveData();
+      refreshSingleMedia(id);
+      updateStats();
+      showNotification(`Stato "visto" aggiornato per ${media.title}`, "success");
+    }
+
+    function toggleCountedAsWatchlist(id) {
+      if (isViewMode) return;
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+      media.isCountedAsWatchlist = !media.isCountedAsWatchlist;
+      if (media.isCountedAsWatchlist) {
+        media.isCountedAsWatched = false;
+        logActivity('watchlist_status', media.title, `segnato come da vedere in '${getCategoryName(media.category)}'`);
+      } else {
+        logActivity('watchlist_status', media.title, `rimosso lo stato "da vedere" in '${getCategoryName(media.category)}'`);
+      }
+      saveData();
+      refreshSingleMedia(id);
+      updateStats();
+      showNotification(`Stato "da vedere" aggiornato per ${media.title}`, "success");
+    }
+
+    function openRewatchModal(id) {
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+
+      currentRewatchMediaId = id;
+      elements.rewatchModalTitle.textContent = `Modifica Rewatch: ${media.title}`;
+
+      const currentCount = media.rewatchCount || 0;
+      elements.rewatchCountInput.value = currentCount;
+
+      updateRewatchModalButtons(currentCount);
+
+      openModal(elements.rewatchModal);
+    }
+
+    function updateRewatchModalButtons(count) {
+      document.querySelectorAll('.quick-rewatch-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.count) === count);
+      });
+    }
+
+    function markRewatch(id, count) {
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+      media.rewatchCount = count;
+      media.lastActivityAt = new Date().toISOString();
+      if (count >= 0 && !media.isCountedAsWatched) {
+        media.isCountedAsWatched = true;
+        media.isCountedAsWatchlist = false;
+      }
+      logActivity('rewatch', media.title, `impostato a ${count} rewatch`);
+      saveData();
+      refreshSingleMedia(id);
+      updateStats();
+      showNotification(`Rewatch di "${media.title}" aggiornati`, "success");
+    }
+
+    function refreshSingleMedia(id) {
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+      const oldCard = document.querySelector(`.media-card[data-id="${id}"]`);
+
+      const grid = oldCard ? oldCard.parentElement : null;
+      if (grid && grid.id === `${media.category}Grid`) {
+        const newCard = createMediaCard(media);
+        grid.replaceChild(newCard, oldCard);
+        if (lazyLoadObserver) lazyLoadObserver.observe(newCard.querySelector(".lazy"));
+      } else {
+        renderMedia();
+      }
+      updateCounts();
+    }
+
+    function deleteMedia(id) {
+      if (isViewMode) return;
+      const media = mediaList.find(m => m.id === id);
+      if (!media) return;
+      showConfirmModal("Elimina Film", `Sei sicuro di voler eliminare "${media.title}"?`, () => {
+        logActivity('delete', media.title, `dalla categoria '${getCategoryName(media.category)}'`);
+        mediaList = mediaList.filter(m => m.id !== id);
+        saveData();
+        renderMedia();
+        showNotification("Film eliminato", "success");
+      });
+    }
+
+    function closeModal(modal) {
+      if (modal && modal.classList.contains('visible')) {
+        history.back();
+      } else if (modal) {
+        // Fallback for modals opened without history (e.g. startup)
+        modal.classList.remove('visible');
+        setTimeout(() => {
+          modal.style.display = 'none';
+          if (!document.querySelector('.modal.visible')) {
+            document.body.classList.remove('modal-open');
+          }
+        }, 300);
+      }
+    }
+
+    async function searchTMDb() {
+      const title = elements.mediaTitle.value.trim();
+      if (!title) return showNotification("Inserisci un titolo", "warning");
+      elements.tmdbResults.innerHTML = '<div class="tmdb-empty-state"><i class="fas fa-spinner fa-2x loading-spinner"></i></div>';
+      try {
+        const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(title)}&language=it-IT&include_adult=false`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          displayTMDbResults(data.results);
+        } else {
+          elements.tmdbResults.innerHTML = '<div class="tmdb-empty-state">Nessun risultato trovato</div>';
+        }
+      } catch (err) {
+        showNotification("Errore nella ricerca", "error");
+        console.error("TMDb error:", err);
+        elements.tmdbResults.innerHTML = '<div class="tmdb-empty-state">Errore durante la ricerca</div>';
+      }
+    }
+
+    function renderSearchDashboardEmptyState(message = 'Scrivi il titolo di un film per iniziare...') {
+      elements.tmdbResults.innerHTML = `<div class="tmdb-empty-state"><i class="fas fa-film"></i><span>${message}</span></div>`;
+    }
+
+    function displayTMDbResults(results) {
+      elements.tmdbResults.innerHTML = results.map(result => `
+        <div class="tmdb-result-card tmdb-result-item" data-tmdb-id="${result.id}" data-title="${result.title}">
+          <div class="tmdb-result-poster">
+            <img src="${result.poster_path ? `https://image.tmdb.org/t/p/w300${result.poster_path}` : DEFAULT_POSTER}" onerror="this.src='${DEFAULT_POSTER}'">
+            <button class="tmdb-result-add-btn" type="button" title="Aggiungi ${result.title}">
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+          <div class="tmdb-result-meta">
+            <div class="tmdb-result-title" title="${result.title}">${result.title}</div>
+            <div class="tmdb-result-year">${result.release_date ? result.release_date.split('-')[0] : 'N/D'}</div>
+            <div class="tmdb-result-original">${result.original_title || ''}</div>
+          </div>
+        </div>
+      `).join("");
+      document.querySelectorAll(".tmdb-result-card").forEach(item => {
+        item.querySelector(".tmdb-result-add-btn")?.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          currentTMDbSelection = { tmdbId: item.dataset.tmdbId, title: item.dataset.title };
+          await addNewMedia(item.dataset.tmdbId);
+        });
+      });
+    }
+
+    async function addNewMedia(tmdbId, options = {}) {
+      if (isViewMode) return;
+      showNotification("Recupero dettagli del film...", "warning");
+
+      try {
+        const [enDetails, itDetails] = await Promise.all([
+          fetchFullTMDbDetails(tmdbId, 'en-US'),
+          fetchFullTMDbDetails(tmdbId, 'it-IT')
+        ]);
+
+        if (!enDetails || !enDetails.imdb_id) {
+          return showNotification("Dettagli non trovati o IMDb ID mancante.", "error");
+        }
+
+        const category = options.categoryOverride || (window.innerWidth <= 768
+          ? document.getElementById('addMediaCategorySelect').value
+          : document.getElementById('addMediaCategoryCustom').dataset.value);
+        if (options.rememberCategory !== false) {
+          localStorage.setItem("lastUsedCategory", category);
+        }
+
+        if (mediaList.some(m => m.imdbID === enDetails.imdb_id && m.category === category)) {
+          return showNotification(`Questo film è già in "${getCategoryName(category)}"`, "warning");
+        }
+
+        let media = {
+          ...defaultMediaProps,
+          id: Date.now().toString(),
+          title: enDetails.title,
+          italianTitle: itDetails ? itDetails.title : enDetails.title,
+          genres: enDetails.genres ? enDetails.genres.map(g => g.name) : [],
+          year: enDetails.release_date ? enDetails.release_date.split('-')[0] : "",
+          poster: enDetails.poster_path ? `https://image.tmdb.org/t/p/w500${enDetails.poster_path}` : DEFAULT_POSTER,
+          imdbID: enDetails.imdb_id,
+          tmdbID: tmdbId,
+          runtime: enDetails.runtime ? `${enDetails.runtime} min` : "",
+          category,
+          addedAt: new Date().toISOString(),
+          lastActivityAt: new Date().toISOString(),
+          sagaName: enDetails.belongs_to_collection ? enDetails.belongs_to_collection.name : null,
+          releaseDate: enDetails.release_date || null,
+          isCountedAsWatched: category === 'watched',
+          isCountedAsWatchlist: category === 'watchlist'
+        };
+
+        const ratings = await fetchMDBListRatings(media.imdbID);
+        if (ratings) {
+          const rtRating = ratings.find(r => r.source === 'tomatoes');
+          const popcornRating = ratings.find(r => r.source === 'tomatoesaudience');
+          const letterboxdRating = ratings.find(r => r.source === 'letterboxd');
+          const metacriticRating = ratings.find(r => r.source === 'metacritic');
+          const imdbRating = ratings.find(r => r.source === 'imdb');
+
+          if (rtRating) media.rottenTomatoes = rtRating.value;
+          if (popcornRating) media.popcornRating = popcornRating.value;
+          if (letterboxdRating) media.letterboxdRating = letterboxdRating.value;
+          if (metacriticRating) media.metacriticRating = metacriticRating.value;
+          if (imdbRating) media.imdbRating = imdbRating.value;
+        } else {
+          media.imdbRating = enDetails.vote_average ? enDetails.vote_average.toFixed(1) : "N/A";
+        }
+
+        mediaList.push(media);
+        logActivity('add', media.title, `in '${getCategoryName(media.category)}'`);
+        saveData();
+        elements.mediaTitle.value = "";
+        elements.tmdbResults.innerHTML = "";
+        currentTMDbSelection = null;
+        closeModal(elements.mediaManagementModal);
+        renderFullUI();
+        showNotification(`Film "${media.title}" aggiunto!`, "success");
+
+      } catch (error) {
+        console.error("Error adding new media:", error);
+        showNotification("Errore durante l'aggiunta del film.", "error");
+      }
+    }
+
+    function exportData() {
+      if (isViewMode) return;
+      const data = { mediaList, categories, exportedAt: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `filmtracker_export_${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+
+      // SALVA IL TIMESTAMP
+      const now = new Date().toISOString();
+      localStorage.setItem('lastFilmExport', now);
+      if (currentUser) db.ref(`users/${currentUser.uid}/lastExport`).set(now);
+
+      updateBackupBadge(now);
+      showNotification("Backup scaricato con successo!", "success");
+    }
+
+    function updateBackupBadge(timestamp) {
+      const badge = document.querySelector('#lastBackupBadge span');
+      const stored = timestamp || localStorage.getItem('lastFilmExport');
+      if (stored) {
+        badge.textContent = new Date(stored).toLocaleString('it-IT', {
+          day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+      }
+    }
+
+    function importData(file) {
+      if (isViewMode || !file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!Array.isArray(data.mediaList)) throw new Error("Formato file non valido");
+
+          // Chiudiamo il modale impostazioni così la conferma è pulita sullo sfondo
+          if (document.getElementById('settingsModal')) {
+            closeModal(document.getElementById('settingsModal'));
+          }
+
+          // Aspettiamo che il modale inizi a chiudersi prima di chiedere conferma
+          setTimeout(() => {
+            showConfirmModal("Importa Dati", `Stai per importare ${data.mediaList.length} film. I dati attuali verranno sovrascritti. Continuare?`, () => {
+              mediaList = data.mediaList;
+              categories = data.categories || [...DEFAULT_CATEGORIES];
+              saveData();
+              renderFullUI();
+              showNotification("Dati importati con successo", "success");
+            });
+          }, 350);
+        } catch (err) {
+          showNotification("Errore nell'importazione: " + err.message, "error");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetApp() {
+      if (isViewMode) return;
+      showConfirmModal("Resetta Applicazione", "Sei sicuro di voler resettare l'applicazione? Tutti i dati andranno persi.", () => {
+        mediaList = [];
+        categories = [...DEFAULT_CATEGORIES];
+        saveData();
+        elements.searchInput.value = "";
+        // Reset custom dropdown selections
+        const catFilter = document.getElementById('categoryFilter');
+        if (catFilter) { catFilter.dataset.value = 'all'; const st = catFilter.querySelector('.selected-option'); if (st) st.innerHTML = '<i class="fas fa-folder"></i> Tutte le categorie'; }
+        const sortFilter = document.getElementById('sortFilter');
+        if (sortFilter) { sortFilter.dataset.value = 'saga-alpha'; const st2 = sortFilter.querySelector('.selected-option'); if (st2) st2.innerHTML = '<i class="fas fa-sort-alpha-down"></i> Saga / Alfabetico'; }
+        renderFullUI();
+        showNotification("Applicazione resettata", "success");
+      });
+    }
+
+    function loadTheme() {
+      const theme = localStorage.getItem("theme") || "dark";
+      document.body.classList.toggle("dark", theme === "dark");
+      elements.themeToggle.innerHTML = `<i class="fas fa-${theme === "dark" ? "sun" : "moon"}"></i>`;
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      const isDark = document.body.classList.contains("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+      elements.themeToggle.innerHTML = `<i class="fas fa-${isDark ? "sun" : "moon"}"></i>`;
+    }
+
+    function loadSortOrder() {
+      // 1. Legge la memoria. Se è vuota, imposta 'saga-alpha' come default iniziale.
+      let savedSort = localStorage.getItem("mediaTrackerSortOrder");
+      if (!savedSort) {
+        savedSort = "saga-alpha";
+        localStorage.setItem("mediaTrackerSortOrder", savedSort);
+      }
+
+      // 2. Aggiorna il menu Desktop (Custom Select)
+      const sortSelectDesktop = document.getElementById('sortFilter');
+      if (sortSelectDesktop) {
+        sortSelectDesktop.dataset.value = savedSort;
+        const optionEl = document.querySelector(`#sortOptions .option[data-value="${savedSort}"]`);
+        if (optionEl) {
+          sortSelectDesktop.querySelector('.selected-option').innerHTML = optionEl.innerHTML;
+        }
+      }
+
+      // 3. Aggiorna il menu Mobile
+      const mobileSort = document.getElementById('mobileSortFilter');
+      if (mobileSort) {
+        mobileSort.value = savedSort;
+      }
+    }
+
+    function showNotification(text, type = "success") {
+      elements.notificationText.textContent = text;
+      elements.notification.className = `notification ${type}`;
+      elements.notification.style.display = "block";
+      setTimeout(() => elements.notification.style.display = "none", 3000);
+    }
+
+    function setupLazyLoading() {
+      if (lazyLoadObserver) lazyLoadObserver.disconnect();
+      lazyLoadObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src;
+            img.classList.remove("lazy");
+            lazyLoadObserver.unobserve(img);
+          }
+        });
+      });
+      document.querySelectorAll(".lazy").forEach(img => lazyLoadObserver.observe(img));
+    }
+
+    function formatRuntime(runtime) {
+      if (!runtime) return "";
+      const minutes = parseInt(runtime);
+      if (isNaN(minutes) || minutes <= 0) return "";
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return hours > 0 ? `${hours}h ${mins > 0 ? `${mins}m` : ""}` : `${mins}m`;
+    }
+
+    function logActivity(type, title, details) {
+      if (!currentUser) return;
+      const logRef = db.ref(`users/${currentUser.uid}/activityLog`);
+      const newActivity = { type, title, details, timestamp: new Date().toISOString(), actorName: currentUsername || null };
+
+      return logRef.transaction(currentLog => {
+        let log = Array.isArray(currentLog) ? currentLog : [];
+        log.unshift(newActivity);
+        return log.slice(0, MAX_LOG_SIZE);
+      });
+    }
+
+    function escapeHTML(value = "") {
+      return String(value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[char]));
+    }
+
+    function getFriendDisplayName(friend = {}) {
+      return friend.username || friend.email || 'Utente';
+    }
+
+    async function loadOwnUsername() {
+      if (!currentUser || !elements.myUsernameInput) return;
+      try {
+        const snapshot = await db.ref(`users/${currentUser.uid}/social/username`).once('value');
+        currentUsername = snapshot.val() || '';
+        elements.myUsernameInput.value = currentUsername;
+      } catch (error) {
+        currentUsername = '';
+        elements.myUsernameInput.value = '';
+        console.warn("Impossibile leggere lo username personale:", error);
+      }
+    }
+
+    async function saveOwnUsername() {
+      if (!currentUser || !elements.myUsernameInput) return;
+      const username = elements.myUsernameInput.value.trim().replace(/\s+/g, ' ');
+      if (username.length > 32) {
+        showNotification("Username troppo lungo.", "warning");
+        return;
+      }
+      try {
+        await db.ref(`users/${currentUser.uid}/social/username`).set(username || null);
+        currentUsername = username;
+        elements.myUsernameInput.value = username;
+        showNotification(username ? "Username salvato." : "Username rimosso.", "success");
+      } catch (error) {
+        console.error("Impossibile salvare lo username:", error);
+        showNotification("Non posso salvare lo username: permessi Firebase mancanti.", "error");
+      }
+    }
+
+    async function syncFollowedFriendProfiles() {
+      if (!followedFriends.length) return;
+      followedFriends = await Promise.all(followedFriends.map(async friend => {
+        try {
+          const emailSnapshot = await db.ref(`users/${friend.id}/email`).once('value');
+          return { ...friend, email: emailSnapshot.val() || friend.email };
+        } catch (error) {
+          console.warn("Impossibile aggiornare il profilo amico:", friend.id, error);
+          return friend;
+        }
+      }));
+    }
+
+    function detachAllFriendListeners() {
+      Object.values(friendListeners).forEach(({ ref, listener }) => ref.off('value', listener));
+      friendListeners = {};
+    }
+
+    function setupFriendListeners() {
+      if (!currentUser) return;
+      detachAllFriendListeners();
+
+      const friendActivityMap = new Map();
+
+      const processAndRenderNotifications = () => {
+        let allNewNotifications = Array.from(friendActivityMap.values()).flat();
+        allNewNotifications.sort((a, b) => new Date(b.activity.timestamp) - new Date(a.activity.timestamp));
+        renderNotifications(allNewNotifications.slice(0, MAX_NOTIFICATIONS));
+      };
+
+      renderNotifications([]);
+      if (followedFriends.length === 0) return;
+
+      followedFriends.forEach(friend => {
+        const friendDisplayName = getFriendDisplayName(friend);
+        const ref = db.ref(`users/${friend.id}/activityLog`);
+        const listener = snapshot => {
+          const activities = snapshot.val() || [];
+          const lastChecked = lastCheckedTimestamps[friend.id] || new Date(0).toISOString();
+
+          const activityArray = Array.isArray(activities) ? activities : [];
+          const newActivities = activityArray
+            .filter(act => act && new Date(act.timestamp) > new Date(lastChecked))
+            .map(activity => ({ friendId: friend.id, friendEmail: activity.actorName || friendDisplayName, activity }));
+
+          friendActivityMap.set(friend.id, newActivities);
+          processAndRenderNotifications();
+        };
+        ref.on('value', listener);
+        friendListeners[friend.id] = { ref, listener };
+      });
+    }
+
+    function renderNotifications(notifications) {
+      const count = notifications.length;
+      elements.notificationBadge.textContent = count;
+      elements.notificationBadge.classList.toggle('visible', count > 0);
+      elements.notificationBadge.classList.toggle('multi', count > 9);
+      elements.notificationBadgeMobile.textContent = count;
+      elements.notificationBadgeMobile.classList.toggle('visible', count > 0);
+      elements.notificationBadgeMobile.classList.toggle('multi', count > 9);
+
+      elements.notificationDropdown.innerHTML = '';
+
+      const header = document.createElement('div');
+      header.className = 'social-hub-header';
+      header.innerHTML = `
+        <div class="hub-pill-container">
+          <button class="hub-btn hub-friends-btn" title="Amici">
+            <i class="fas fa-user-friends"></i> <span>Amici</span>
+          </button>
+          <button class="hub-btn hub-share-btn" title="Condividi">
+            <i class="fas fa-share-alt"></i> <span>Condividi</span>
+          </button>
+        </div>`;
+      const list = document.createElement('div'); list.className = 'notification-list';
+
+      if (count > 0) {
+        notifications.forEach(n => {
+          if (!n.activity) return;
+          const item = document.createElement('div');
+          item.className = 'notification-item';
+          item.dataset.friendId = n.friendId;
+          const isTV = n.activity.type.includes('show') || n.activity.type.includes('season');
+          item.innerHTML = `
+                    <i class="fas ${getActivityIcon(n.activity.type)} ${isTV ? 'tv-notification' : 'film-notification'}"></i>
+                    <span class="notification-item-text">${getActivityText(n.friendEmail, n.activity)}</span>`;
+
+          item.addEventListener('click', () => {
+            const friendId = item.dataset.friendId;
+            if (friendId) {
+              // Costruiamo il percorso base fisso
+              const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+              const url = isTV
+                ? `${window.location.origin}${path}serietv_tracker.html?view=${friendId}`
+                : `${window.location.origin}${path}film_tracker.html?view=${friendId}`;
+              window.location.href = url;
+            }
+          });
+          list.appendChild(item);
+        });
+
+        const footer = document.createElement('div'); footer.className = 'notification-footer';
+        const markAllBtn = document.createElement('button');
+        markAllBtn.className = 'mark-read-pill';
+        markAllBtn.id = 'markReadAll';
+        markAllBtn.innerHTML = '<i class="fas fa-check-double"></i> Segna come lette';
+        footer.appendChild(markAllBtn);
+
+        elements.notificationDropdown.appendChild(header);
+        elements.notificationDropdown.appendChild(list);
+        elements.notificationDropdown.appendChild(footer);
+        bindSocialHubButtons();
+
+      } else {
+        const emptyState = document.createElement('div'); emptyState.className = 'no-notifications'; emptyState.textContent = 'Nessuna nuova notifica';
+        list.appendChild(emptyState);
+        elements.notificationDropdown.appendChild(header);
+        elements.notificationDropdown.appendChild(list);
+        bindSocialHubButtons();
+      }
+
+      // Update mobile notification list as well
+      elements.notificationListMobile.innerHTML = '';
+      if (count > 0) {
+        notifications.forEach(n => {
+          if (!n.activity) return;
+          const item = document.createElement('div');
+          item.className = 'notification-item';
+          item.dataset.friendId = n.friendId;
+          const isTV = n.activity.type.includes('show') || n.activity.type.includes('season');
+          item.innerHTML = `
+                    <i class="fas ${getActivityIcon(n.activity.type)} ${isTV ? 'tv-notification' : 'film-notification'}"></i>
+                    <span class="notification-item-text">${getActivityText(n.friendEmail, n.activity)}</span>`;
+
+          item.addEventListener('click', () => {
+            const friendId = item.dataset.friendId;
+            if (friendId) {
+              // Costruiamo il percorso base fisso
+              const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+              const url = isTV
+                ? `${window.location.origin}${path}serietv_tracker.html?view=${friendId}`
+                : `${window.location.origin}${path}film_tracker.html?view=${friendId}`;
+              window.location.href = url;
+            }
+          });
+          elements.notificationListMobile.appendChild(item);
+        });
+      } else {
+        const emptyState = document.createElement('div'); emptyState.className = 'no-notifications'; emptyState.textContent = 'Nessuna nuova notifica';
+        elements.notificationListMobile.appendChild(emptyState);
+      }
+    }
+
+    function ensureNotificationDropdownOverlay() {
+      if (!elements.notificationDropdown) return;
+      if (elements.notificationDropdown.parentElement !== document.body) {
+        document.body.appendChild(elements.notificationDropdown);
+      }
+      if (!elements.notificationDropdown.dataset.overlayReady) {
+        elements.notificationDropdown.addEventListener('click', e => e.stopPropagation());
+        elements.notificationDropdown.dataset.overlayReady = 'true';
+      }
+    }
+
+    function positionNotificationDropdown() {
+      if (!elements.notificationDropdown || !elements.notificationBellContainer) return;
+      const bellRect = elements.notificationBellContainer.getBoundingClientRect();
+      const panelWidth = Math.min(350, window.innerWidth - 32);
+      const right = Math.max(12, window.innerWidth - bellRect.right);
+      const top = Math.min(bellRect.bottom + 10, Math.max(12, window.innerHeight - 120));
+
+      elements.notificationDropdown.style.position = 'fixed';
+      elements.notificationDropdown.style.top = `${top}px`;
+      elements.notificationDropdown.style.right = `${right}px`;
+      elements.notificationDropdown.style.left = 'auto';
+      elements.notificationDropdown.style.width = `${panelWidth}px`;
+      elements.notificationDropdown.style.maxWidth = 'calc(100vw - 24px)';
+      elements.notificationDropdown.style.maxHeight = `min(420px, calc(100vh - ${top + 16}px))`;
+      elements.notificationDropdown.style.zIndex = '5000';
+      elements.notificationDropdown.style.transform = 'none';
+    }
+
+    function showNotificationDropdown() {
+      ensureNotificationDropdownOverlay();
+      if (!elements.notificationDropdown.querySelector('.notification-list')) {
+        renderNotifications([]);
+      }
+      positionNotificationDropdown();
+      elements.notificationDropdown.style.display = 'flex';
+      elements.notificationDropdown.style.visibility = 'visible';
+      elements.notificationDropdown.style.opacity = '1';
+      elements.notificationDropdown.style.pointerEvents = 'auto';
+      elements.notificationDropdown.classList.add('visible');
+      elements.notificationBellContainer.classList.add('active');
+    }
+
+    function hideNotificationDropdown() {
+      if (elements.notificationDropdown) {
+        elements.notificationDropdown.classList.remove('visible');
+        elements.notificationDropdown.style.display = 'none';
+        elements.notificationDropdown.style.visibility = '';
+        elements.notificationDropdown.style.opacity = '';
+        elements.notificationDropdown.style.pointerEvents = '';
+      }
+      elements.notificationBellContainer?.classList.remove('active');
+    }
+
+    function toggleNotificationDropdown(e) {
+      e?.stopPropagation();
+      if (elements.notificationDropdown.classList.contains('visible')) {
+        hideNotificationDropdown();
+      } else {
+        showNotificationDropdown();
+      }
+    }
+
+    function markAllNotificationsAsRead() {
+      if (!currentUser) return;
+      followedFriends.forEach(f => lastCheckedTimestamps[f.id] = new Date().toISOString());
+      saveSocialData();
+      renderNotifications([]);
+    }
+
+    function getActivityIcon(type) {
+      if (type === 'add') return 'fa-film';
+      if (type === 'move') return 'fa-folder-open';
+      if (type === 'delete') return 'fa-trash-alt';
+      if (type === 'rewatch') return 'fa-sync-alt';
+      if (type.startsWith('add_show')) return 'fa-plus-circle';
+      if (type.startsWith('complete_show')) return 'fa-tv';
+      if (type.startsWith('complete_season')) return 'fa-check-circle';
+      return 'fa-info-circle';
+    }
+
+    function getActivityText(friendEmail, activity) {
+      const email = `<strong>${escapeHTML(friendEmail || 'Utente')}</strong>`;
+      const title = `<strong>${escapeHTML(activity.title)}</strong>`;
+      switch (activity.type) {
+        case 'add': return `${email} ha aggiunto il film ${title} ${activity.details}`;
+        case 'move': return `${email} ha spostato il film ${title} ${activity.details}`;
+        case 'delete': return `${email} ha eliminato il film ${title} ${activity.details}`;
+        case 'rewatch': return `${email} ha aggiornato ${title} (${activity.details})`;
+        case 'add_show': return `${email} ha aggiunto la serie ${title} ${activity.details}`;
+        case 'move_show': return `${email} ha spostato la serie ${title} ${activity.details}`;
+        case 'delete_show': return `${email} ha eliminato la serie ${title} ${activity.details}`;
+        case 'complete_show': return `${email} ha completato la serie ${title}! 🎉`;
+        case 'complete_season': return `${email} ha completato ${activity.details} di ${title}`;
+        default: return `${email} ha aggiornato ${title}`;
+      }
+    }
+
+    async function showDetailsModal(mediaId) {
+      const media = mediaList.find(m => m.id === mediaId);
+      if (!media || !media.imdbID) {
+        showNotification("Dettagli non disponibili (manca IMDb ID)", "warning");
+        return;
+      }
+
+      const requestToken = ++activeMovieDetailsRequestToken;
+      const cachedEntry = getCachedMovieDetails(media);
+      const hasFreshCache = isMovieDetailsCacheFresh(cachedEntry);
+
+      openModal(elements.detailsModal);
+      renderDetailsShell(media);
+
+      if (cachedEntry?.data) {
+        populateDetailsModal(cachedEntry.data, media);
+        if (hasFreshCache) return;
+      }
+
+      try {
+        const details = await fetchMovieDetailsForModal(media, { forceRefresh: !hasFreshCache });
+        if (details) {
+          if (details.genres) {
+            const newGenres = details.genres.map(g => g.name);
+            if (JSON.stringify(media.genres) !== JSON.stringify(newGenres)) {
+              media.genres = newGenres;
+              saveData();
+            }
+          }
+          if (requestToken !== activeMovieDetailsRequestToken || !isModalVisible(elements.detailsModal)) {
+            return;
+          }
+          populateDetailsModal(details, media);
+        } else if (!cachedEntry?.data) {
+          elements.detailsModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli non trovati.</p>';
+          elements.detailsModalContent.classList.remove('is-loading');
+          elements.detailsModalContent.classList.add('is-ready');
+          elements.detailsModalContent.setAttribute('aria-busy', 'false');
+        }
+      } catch (err) {
+        console.error("Errore caricamento dettagli:", err);
+        if (!cachedEntry?.data) {
+          elements.detailsModalContent.classList.remove('is-loading');
+          elements.detailsModalContent.classList.add('is-ready');
+          elements.detailsModalContent.setAttribute('aria-busy', 'false');
+        }
+      }
+    }
+
+    function buildDetailsShellPillRow(widths = []) {
+      return `<div class="details-shell-pill-row">${widths.map(width => `<span class="details-shell-pill skeleton" style="width:${width};"></span>`).join('')}</div>`;
+    }
+
+    function buildDetailsShellParagraph(widths = []) {
+      return `<div class="details-shell-paragraph">${widths.map(width => `<span class="details-shell-line skeleton" style="width:${width};"></span>`).join('')}</div>`;
+    }
+
+    function buildDetailsCastSkeleton(count = 6) {
+      return Array.from({ length: count }, () => `
+        <div class="details-shell-cast-card">
+          <div class="details-shell-cast-photo skeleton"></div>
+          <span class="details-shell-line skeleton" style="width:76%; margin:0 auto 8px;"></span>
+          <span class="details-shell-line skeleton" style="width:58%; margin:0 auto;"></span>
+        </div>
+      `).join('');
+    }
+
+    function renderDetailsShell(media) {
+      const posterUrl = media.poster || DEFAULT_POSTER;
+      const metaSkeleton = buildDetailsShellPillRow(['112px']);
+      const ratingsSkeleton = buildDetailsShellPillRow(['84px', '96px', '90px']);
+      const infoSkeleton = `
+        <div class="details-shell-stack">
+          ${buildDetailsShellPillRow(['64px', '88px'])}
+          ${buildDetailsShellPillRow(['74px', '92px', '68px'])}
+        </div>
+      `;
+      const directorSkeleton = `<div class="details-shell-slot">${buildDetailsShellParagraph(['48%'])}</div>`;
+      const taglineSkeleton = `<span class="details-shell-line skeleton" style="width:54%;"></span>`;
+      const overviewSkeleton = buildDetailsShellParagraph(['100%', '94%', '88%', '76%']);
+      elements.detailsModalContent.classList.add('is-loading');
+      elements.detailsModalContent.classList.remove('is-ready');
+      elements.detailsModalContent.setAttribute('aria-busy', 'true');
+      elements.detailsModalContent.innerHTML = `
+        <div class="details-hero">
+            <div class="details-backdrop"></div>
+            <div class="details-hero-content">
+                <img id="detailsModalPoster" src="${posterUrl}" onerror="this.src='${DEFAULT_POSTER}'">
+                <div class="details-title-area" style="flex-grow: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px; margin-bottom: 5px;">
+                        <h2 id="detailsModalTitle" style="margin: 0;">${media.title}</h2>
+                        <div id="shell-extra-btn"></div>
+                    </div>
+                    <div id="detailsModalMeta" class="meta-badges">${metaSkeleton}</div>
+                    <div id="shell-ratings" class="details-ratings-container">${ratingsSkeleton}</div>
+                    <div id="detailsModalTagline">${taglineSkeleton}</div>
+                    <!-- CHEVRON -->
+                    <button id="detailsChevronBtn" class="details-chevron-btn">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- PANNELLO ESPANDIBILE -->
+        <div id="detailsExpandPanel" class="details-expand-panel">
+            <div class="details-main-grid">
+                <div class="details-left-col">
+                    <h4 class="section-label" style="margin-bottom:0.5rem;">TRAMA</h4>
+                    <div id="detailsModalOverviewContainer">
+                        ${overviewSkeleton}
+                    </div>
+                </div>
+                <div class="details-right-col">
+                    <div id="shell-year-runtime">${infoSkeleton}</div>
+                    <h4 class="section-label" style="margin-bottom:0.5rem;">REGIA</h4>
+                    <div id="shell-director" style="font-weight:600; color:white; margin-bottom:0;">${directorSkeleton}</div>
+                </div>
+                <div class="details-cast-row">
+                    <h4 class="section-label" style="margin-top:0.5rem; margin-bottom:0.5rem;">CAST PRINCIPALE</h4>
+                    <div class="cast-scroller details-shell-cast" id="detailsModalCast">${buildDetailsCastSkeleton()}</div>
+                </div>
+            </div>
+        </div>`;
+
+      // Nasconde il pannello su mobile all'apertura
+      if (window.innerWidth <= 768) {
+        document.getElementById('detailsExpandPanel').style.display = 'none';
+      }
+
+      // --- GESTIONE PANNELLO ESPANDIBILE (SWIPE & CLICK) ---
+      const chevronBtn = document.getElementById('detailsChevronBtn');
+      const hero = elements.detailsModalContent.querySelector('.details-hero');
+      const panel = document.getElementById('detailsExpandPanel');
+
+      if (chevronBtn && panel) {
+        // 1. Rende la freccetta cliccabile col dito!
+        chevronBtn.style.pointerEvents = 'auto';
+        chevronBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (panel.style.display === 'none' || panel.style.display === '') {
+            panel.style.display = 'block';
+            chevronBtn.classList.add('expanded');
+            panel.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            panel.style.display = 'none';
+            chevronBtn.classList.remove('expanded');
+          }
+        };
+
+        // 2. Mantiene il supporto allo Swipe per chi preferisce trascinare
+        let swipeStartY = 0;
+        hero.addEventListener('touchstart', (e) => {
+          swipeStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        hero.addEventListener('touchend', (e) => {
+          const swipeEndY = e.changedTouches[0].clientY;
+          const deltaY = swipeEndY - swipeStartY;
+
+          if (deltaY < -40) { // Swipe SU
+            panel.style.display = 'block';
+            chevronBtn.classList.add('expanded');
+            panel.scrollIntoView({ behavior: 'smooth' });
+          } else if (deltaY > 40) { // Swipe GIÙ
+            panel.style.display = 'none';
+            chevronBtn.classList.remove('expanded');
+          }
+        }, { passive: true });
+      }
+    }
+
+    function populateDetailsModal(details, media) {
+      // 1. Sfondo
+      const backdrop = elements.detailsModalContent.querySelector('.details-backdrop');
+      if (details.backdrop_path) backdrop.style.backgroundImage = `url(https://image.tmdb.org/t/p/w1280${details.backdrop_path})`;
+
+      // 2. Metadata (Sottili - Solo Preferiti in Hero)
+      let metaHTML = '';
+      if (!isViewMode && media.id) {
+        metaHTML += `<button id="modalFavBtn" class="meta-pill" style="color:${media.isFavorite ? '#ff4444' : 'rgba(255,255,255,0.7)'}; transition: color 0.2s;"><i class="fas fa-heart"></i> ${media.isFavorite ? 'Preferito' : 'Aggiungi'}</button>`;
+      }
+      if ((media.rewatchCount || 0) > 0) {
+        metaHTML += `<span class="meta-pill" title="Rewatch"><i class="fas fa-sync-alt"></i> Rewatch ${media.rewatchCount}</span>`;
+      }
+      document.getElementById('detailsModalMeta').innerHTML = metaHTML;
+
+      // 2.1 Info e Generi Unificati (Destra)
+      let rightMetaHTML = `
+        <h4 class="section-label" style="margin-bottom:0.4rem;">INFO</h4>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1rem;">
+          <span class="genre-pill" style="background:var(--primary); color:white; border:none; cursor:default;">${media.year || 'N/D'}</span>
+          <span class="genre-pill" style="background:rgba(255,255,255,0.1); border:none; cursor:default;">${media.runtime ? formatRuntime(media.runtime) : 'N/D'}</span>
+        </div>
+        <h4 class="section-label" style="margin-bottom:0.5rem;">GENERI</h4>
+        <div class="genre-badges" style="margin-bottom:1rem;">
+          ${details.genres ? details.genres.map(g => `<span class="genre-pill">${g.name}</span>`).join('') : ''}
+        </div>
+      `;
+      document.getElementById('shell-year-runtime').innerHTML = rightMetaHTML;
+
+      // 3. Voti
+      const rt = getRottenTomatoesState(media.rottenTomatoes);
+      const pop = getPopcornState(media.popcornRating);
+      let rHTML = '';
+      if (media.imdbRating && media.imdbRating !== "N/A") rHTML += `<span class="rating-badge" title="IMDb"><img src="${IMDB_STAR_ICON}" class="rating-icon">&nbsp;${media.imdbRating}</span>`;
+      if (rt) rHTML += `<span class="rating-badge" title="Rotten Tomatoes"><img src="${ROTTEN_TOMATOES_ICONS[rt]}" class="rating-icon">&nbsp;${media.rottenTomatoes}</span>`;
+      if (pop) rHTML += `<span class="rating-badge" title="Audience Score"><img src="${POPCORN_ICONS[pop]}" class="rating-icon">&nbsp;${media.popcornRating}</span>`;
+
+      // Aggiunta Letterboxd e Metacritic
+      if (media.letterboxdRating && media.letterboxdRating !== "N/A") {
+        rHTML += `<span class="rating-badge" title="Letterboxd"><img src="${LETTERBOXD_ICON}" class="rating-icon">&nbsp;${media.letterboxdRating}</span>`;
+      }
+      if (media.metacriticRating && media.metacriticRating !== "N/A") {
+        rHTML += `<span class="rating-badge" title="Metacritic"><img src="${METACRITIC_ICON}" class="rating-icon">&nbsp;${media.metacriticRating}</span>`;
+      }
+
+      document.getElementById('shell-ratings').innerHTML = rHTML;
+
+      // 4. Testi
+      document.getElementById('detailsModalTagline').textContent = details.tagline ? `"${details.tagline}"` : '';
+      document.getElementById('detailsModalOverviewContainer').innerHTML = `
+        <div class="plot-container">
+            <div class="expandable-text" id="detailsModalOverview">${details.overview || 'Trama non disponibile.'}</div>
+            <button class="read-more-btn" onclick="togglePlot(this)">Leggi Tutto</button>
+        </div>
+      `;
+
+      // --- REGIA CLICCABILE ---
+      const director = details.crew.find(c => c.job === 'Director');
+      const directorEl = document.getElementById('shell-director');
+      if (director) {
+        directorEl.innerHTML = `<span style="cursor:pointer; color:var(--primary); font-weight:700;" onclick="showActorModal('${director.id}')">${director.name}</span>`;
+      } else {
+        directorEl.textContent = 'N/D';
+      }
+
+      // 6. Cast
+      document.getElementById('detailsModalCast').innerHTML = details.cast.slice(0, 12).map(a => `
+            <div class="actor-card" onclick="showActorModal('${a.id}')">
+                <img src="${a.profile_path ? 'https://image.tmdb.org/t/p/w200' + a.profile_path : DEFAULT_ACTOR_PHOTO}" class="actor-photo">
+                <div class="actor-name">${a.name}</div>
+                <div class="actor-character">${a.character}</div>
+            </div>`).join('');
+
+      const favBtn = document.getElementById('modalFavBtn');
+      if (favBtn) favBtn.onclick = () => { toggleFavorite(media.id); populateDetailsModal(details, mediaList.find(m => m.id === media.id)); };
+      elements.detailsModalContent.classList.remove('is-loading');
+      requestAnimationFrame(() => {
+        elements.detailsModalContent.classList.add('is-ready');
+        elements.detailsModalContent.setAttribute('aria-busy', 'false');
+      });
+      if (window.applyTextTruncation) window.applyTextTruncation('detailsModalOverview');
+    }
+
+    async function openDigitalMovieDetails(tmdbId, libraryMediaId = "") {
+      if (libraryMediaId) {
+        showDetailsModal(libraryMediaId);
+        return;
+      }
+
+      const movie = allDigitalMovies.find(item => String(item.tmdb_id || "") === String(tmdbId || ""));
+      if (!movie || !tmdbId) {
+        showNotification("Dettagli non disponibili per questa uscita.", "warning");
+        return;
+      }
+
+      const media = {
+        id: null,
+        title: movie.name || movie.title || "Titolo non disponibile",
+        year: movie.year || "",
+        runtime: movie.runtime || "",
+        poster: movie.poster || DEFAULT_POSTER,
+        imdbID: movie.imdb_id || movie.imdbID || "",
+        tmdbID: tmdbId,
+        imdbRating: movie.ratings?.imdb || "N/A",
+        letterboxdRating: movie.ratings?.letterboxd || "N/A",
+        metacriticRating: movie.ratings?.metacritic || "N/A",
+        rottenTomatoes: movie.ratings?.tomatoes || movie.ratings?.rottenTomatoes || "N/A",
+        popcornRating: movie.ratings?.popcorn || "N/A",
+        rewatchCount: 0,
+        isFavorite: false
+      };
+
+      const requestToken = ++activeMovieDetailsRequestToken;
+      const cachedEntry = getCachedMovieDetails(media);
+      const hasFreshCache = isMovieDetailsCacheFresh(cachedEntry);
+
+      openModal(elements.detailsModal);
+      renderDetailsShell(media);
+
+      if (cachedEntry?.data) {
+        populateDetailsModal(cachedEntry.data, media);
+        if (hasFreshCache) return;
+      }
+
+      try {
+        const details = await fetchFullTMDbDetails(tmdbId, 'it-IT');
+        if (requestToken !== activeMovieDetailsRequestToken || !isModalVisible(elements.detailsModal)) return;
+
+        if (details) {
+          setCachedMovieDetails(media, details);
+          populateDetailsModal(details, media);
+        } else if (!cachedEntry?.data) {
+          elements.detailsModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Dettagli non trovati.</p>';
+          elements.detailsModalContent.classList.remove('is-loading');
+          elements.detailsModalContent.classList.add('is-ready');
+          elements.detailsModalContent.setAttribute('aria-busy', 'false');
+        }
+      } catch (err) {
+        console.error("Errore caricamento dettagli digital:", err);
+        if (!cachedEntry?.data) {
+          elements.detailsModalContent.innerHTML = '<p style="text-align: center; padding: 2rem;">Errore nel caricamento dei dettagli.</p>';
+          elements.detailsModalContent.classList.remove('is-loading');
+          elements.detailsModalContent.classList.add('is-ready');
+          elements.detailsModalContent.setAttribute('aria-busy', 'false');
+        }
+      }
+    }
+
+    async function fetchTMDbDetails(imdbId, lang = 'it-IT') {
+      try {
+        const findRes = await fetch(`https://api.themoviedb.org/3/find/${imdbId}?api_key=${TMDB_KEY}&external_source=imdb_id`);
+        if (!findRes.ok) return null;
+        const findData = await findRes.json();
+        const tmdbMovie = findData.movie_results[0];
+        if (!tmdbMovie) return null;
+
+        return await fetchFullTMDbDetails(tmdbMovie.id, lang);
+      } catch (err) {
+        console.error("Error finding TMDb movie by IMDb ID:", err);
+        return null;
+      }
+    }
+
+    async function fetchFullTMDbDetails(tmdbId, lang = 'en-US') {
+      try {
+        const [detailsRes, creditsRes] = await Promise.all([
+          fetch(`https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_KEY}&language=${lang}&append_to_response=external_ids`),
+          fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/credits?api_key=${TMDB_KEY}&language=${lang}`)
+        ]);
+
+        if (!detailsRes.ok || !creditsRes.ok) return null;
+
+        let details = await detailsRes.json();
+        const credits = await creditsRes.json();
+
+        if (!details.overview && lang === 'it-IT') {
+          const enDetailsRes = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_KEY}&language=en-US`);
+          if (enDetailsRes.ok) {
+            const enDetails = await enDetailsRes.json();
+            details.overview = enDetails.overview;
+          }
+        }
+
+        return { ...details, cast: credits.cast, crew: credits.crew, imdb_id: details.external_ids.imdb_id };
+      } catch (err) {
+        console.error("Error fetching full TMDb details:", err);
+        return null;
+      }
+    }
+
+    // --- AGGIORNAMENTO VOTI INTELLIGENTE (CON CACHE 7GG) ---
+    async function updateAllRatings() {
+      if (isUpdateInProgress) return showNotification("Aggiornamento già in corso.", "warning");
+      isUpdateInProgress = true;
+
+      const now = Date.now();
+      const SETTE_GIORNI = 7 * 24 * 60 * 60 * 1000;
+      let itemsToUpdate = mediaList.filter(m => {
+        const last = m.lastRatingUpdate ? new Date(m.lastRatingUpdate).getTime() : 0;
+        return m.imdbID && (now - last > SETTE_GIORNI);
+      });
+
+      if (itemsToUpdate.length === 0) {
+        isUpdateInProgress = false;
+        return showNotification("Tutti i voti sono aggiornati (Cache 7gg attiva).", "success");
+      }
+
+      elements.updateProgressBarFill.style.width = '0%';
+      elements.updateProgressTitle.textContent = "Aggiornamento in corso...";
+      elements.updateProgressText.textContent = "Inizializzazione...";
+      openModal(elements.updateProgressModal);
+      let allChangesHTML = [];
+      let consecutiveErrors = 0;
+      const getIconHtml = (src) => `<img src="${src}" style="width:14px; height:14px; object-fit:contain; vertical-align:middle; margin-right:4px;">`;
+
+      for (let i = 0; i < itemsToUpdate.length; i++) {
+        if (consecutiveErrors >= 3) break;
+        const media = itemsToUpdate[i];
+        elements.updateProgressBarFill.style.width = `${((i + 1) / itemsToUpdate.length) * 100}%`;
+        elements.updateProgressText.textContent = `Sincronizzazione: ${media.title}...`;
+
+        try {
+          const ratings = await fetchMDBListRatings(media.imdbID);
+          if (!ratings) { consecutiveErrors++; continue; }
+          consecutiveErrors = 0;
+
+          let changes = [];
+          const rtRating = ratings.find(r => r.source === 'tomatoes');
+          const popcornRating = ratings.find(r => r.source === 'tomatoesaudience');
+          const letterboxdRating = ratings.find(r => r.source === 'letterboxd');
+          const metacriticRating = ratings.find(r => r.source === 'metacritic');
+          const imdbRating = ratings.find(r => r.source === 'imdb');
+
+          const checkAndUpdate = (newObj, oldVal, iconSrc) => {
+            let oldString = String(oldVal).trim();
+            if (["undefined", "null", "N/A", "N/D", ""].includes(oldString)) oldString = "N/A";
+            if (!newObj || newObj.value == null) return oldVal;
+            let newString = String(newObj.value).trim();
+            if (["undefined", "null", "N/A", "N/D", ""].includes(newString)) newString = "N/A";
+            if (oldString === newString || (oldString === "N/A" && newString === "N/A")) return oldVal;
+            const oldNum = parseFloat(oldString);
+            const newNum = parseFloat(newString);
+            let isDifferent = oldString !== newString;
+            if (!isNaN(oldNum) && !isNaN(newNum)) isDifferent = oldNum !== newNum;
+            if (isDifferent) {
+              const iconHtml = getIconHtml(iconSrc);
+              changes.push(`<span style="display:inline-flex; align-items:center;">${iconHtml} ${oldString} <i class="fas fa-arrow-right" style="font-size:0.7em; color:var(--text-secondary); margin:0 6px;"></i> <span style="color:var(--primary); font-weight:bold;">${newString}</span></span>`);
+              return newString === "N/A" ? "N/A" : newString;
+            }
+            return oldVal;
+          };
+
+          media.imdbRating = checkAndUpdate(imdbRating, media.imdbRating, IMDB_STAR_ICON);
+          media.letterboxdRating = checkAndUpdate(letterboxdRating, media.letterboxdRating, LETTERBOXD_ICON);
+          media.metacriticRating = checkAndUpdate(metacriticRating, media.metacriticRating, METACRITIC_ICON);
+          media.rottenTomatoes = checkAndUpdate(rtRating, media.rottenTomatoes, ROTTEN_TOMATOES_ICONS.fresh);
+          media.popcornRating = checkAndUpdate(popcornRating, media.popcornRating, POPCORN_ICONS.positive);
+
+          if (changes.length > 0) {
+            const posterUrl = media.poster || DEFAULT_POSTER;
+            allChangesHTML.push(`
+                        <div style="display:flex; gap:12px; align-items:center; padding: 10px; background: var(--section-tint); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color);">
+                            <img src="${posterUrl}" style="width:45px; height:65px; border-radius:6px; object-fit:cover; flex-shrink:0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                            <div style="display:flex; flex-direction:column; justify-content:center; gap: 4px;">
+                                <strong style="color:var(--text-color); font-size:0.95rem; line-height:1.2;">${media.title}</strong>
+                                <div style="display:flex; flex-wrap:wrap; gap: 10px; font-size:0.85rem; color:var(--text-secondary);">
+                                    ${changes.join('')}
+                                </div>
+                            </div>
+                        </div>`);
+          }
+          media.lastRatingUpdate = new Date().toISOString();
+        } catch (e) { consecutiveErrors++; }
+        await new Promise(r => setTimeout(r, 400));
+      }
+
+      closeModal(elements.updateProgressModal);
+      await new Promise(r => setTimeout(r, 350));
+
+      if (allChangesHTML.length > 0) {
+        const logHeader = `<div style="margin-bottom: 0.8rem; color: var(--warning); font-weight: bold; font-size: 1.1rem;"><i class="fas fa-star"></i> Voti Aggiornati (${allChangesHTML.length})</div>`;
+        const finalLogEntry = logHeader + allChangesHTML.join('');
+        document.getElementById('updateSummaryList').innerHTML = `<li style="padding:0; border:none;">${finalLogEntry}</li>`;
+        openModal(document.getElementById('updateSummaryModal'));
+        addToUpdateHistory([finalLogEntry]);
+      }
+
+      saveData();
+      renderMedia();
+      isUpdateInProgress = false;
+      showNotification("Sincronizzazione completata.", "success");
+    }
+
+    // Funzione per SALVARE nello storico
+    function addToUpdateHistory(changes) {
+      if (!changes || changes.length === 0) return;
+
+      const newEntry = {
+        timestamp: new Date().toISOString(),
+        items: changes // Array di stringhe/HTML
+      };
+
+      updateHistory.unshift(newEntry); // Aggiunge in cima
+      updateHistory = updateHistory.slice(0, 50); // Mantiene solo gli ultimi 50
+
+      localStorage.setItem('movieUpdateHistory', JSON.stringify(updateHistory));
+
+      // Salva anche su Firebase se loggato
+      if (currentUser) {
+        db.ref(`users/${currentUser.uid}/movieUpdateHistory`).set(updateHistory);
+      }
+    }
+
+    // Funzione per VISUALIZZARE lo storico
+    function renderUpdateHistory() {
+      const container = document.getElementById('historyList');
+      if (!container) return;
+
+      if (updateHistory.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color:var(--text-secondary); padding: 2rem;">Nessun aggiornamento registrato.</p>`;
+        return;
+      }
+
+      container.innerHTML = updateHistory.map(entry => `
+        <div style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+            <div style="font-size: 0.8rem; color: var(--primary); font-weight: bold; margin-bottom: 0.5rem;">
+                <i class="fas fa-clock"></i> ${new Date(entry.timestamp).toLocaleString()}
+            </div>
+            <div style="font-size: 0.9rem; line-height: 1.4;">
+                ${entry.items.join('')}
+            </div>
+        </div>
+    `).join('');
+    }
+
+    // Event Listeners per i nuovi modali
+    document.addEventListener('DOMContentLoaded', () => {
+      const closeSummaryBtn = document.getElementById('closeSummaryBtn');
+      if (closeSummaryBtn) {
+        closeSummaryBtn.addEventListener('click', () => {
+          closeModal(document.getElementById('updateSummaryModal'));
+        });
+      }
+
+      const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+      if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', () => {
+          if (confirm("Vuoi davvero cancellare tutto lo storico FILM?")) {
+            updateHistory = [];
+            localStorage.setItem('movieUpdateHistory', JSON.stringify(updateHistory));
+            if (currentUser) db.ref(`users/${currentUser.uid}/movieUpdateHistory`).set([]);
+            renderUpdateHistory();
+          }
+        });
+      }
+    });
+
+    async function fetchMDBListRatings(imdbId) {
+      if (!imdbId || !MDBLIST_PROXY_URL || MDBLIST_PROXY_URL === "INCOLLA_L_URL_DEL_TUO_WORKER_QUI") return null;
+      try {
+        const res = await fetch(`${MDBLIST_PROXY_URL}?i=${imdbId}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.ratings || null;
+      } catch (error) {
+        console.error("Errore nel recupero dati da MDBList:", error);
+        return null;
+      }
+    }
+
+
+    async function showActorModal(personId) {
+      openModal(elements.actorModal);
+      elements.actorModalContent.innerHTML = `
+            <div style="height: 400px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px;">
+                <i class="fas fa-spinner fa-3x loading-spinner" style="color: var(--primary);"></i>
+                <span style="opacity: 0.6; letter-spacing: 1px;">CARICAMENTO PROFILO...</span>
+            </div>`;
+
+      try {
+        const [detailsRes, movieRes] = await Promise.all([
+          fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${TMDB_KEY}&language=it-IT`),
+          fetch(`https://api.themoviedb.org/3/person/${personId}/combined_credits?api_key=${TMDB_KEY}&language=it-IT`)
+        ]);
+
+        let details = await detailsRes.json();
+        const credits = await movieRes.json();
+
+        if (!details.biography) {
+          const enRes = await fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${TMDB_KEY}&language=en-US`);
+          const enDetails = await enRes.json();
+          details.biography = enDetails.biography;
+        }
+
+        populateActorModal({ ...details, combined_credits: credits });
+      } catch (err) {
+        elements.actorModalContent.innerHTML = '<p style="text-align:center; padding: 5rem;">Impossibile caricare i dettagli.</p>';
+      }
+    }
+
+    function populateActorModal(details) {
+      const photoUrl = details.profile_path ? `https://image.tmdb.org/t/p/w500${details.profile_path}` : DEFAULT_ACTOR_PHOTO;
+      const backdropUrl = details.profile_path ? `https://image.tmdb.org/t/p/w1280${details.profile_path}` : '';
+
+      // Filtro Popolarità (come concordato)
+      let rawList = [];
+      if (details.known_for_department === 'Directing') {
+        rawList = (details.combined_credits?.crew || []).filter(c => c.job === 'Director');
+      } else {
+        rawList = (details.combined_credits?.cast || []).filter(c =>
+          c.character && !/self|himself|herself/i.test(c.character)
+        );
+      }
+
+      const seen = new Set();
+      const credits = rawList
+        .filter(c => {
+          if (!c.poster_path || seen.has(c.id)) return false;
+          seen.add(c.id);
+          return true;
+        })
+        .sort((a, b) => b.popularity - a.popularity)
+        .slice(0, 30);
+
+      const filmographyHTML = credits.map(c => `
+            <div class="film-card-small" onclick="window.open('https://www.themoviedb.org/${c.media_type}/${c.id}', '_blank')">
+                <img src="https://image.tmdb.org/t/p/w342${c.poster_path}" onerror="this.src='${DEFAULT_POSTER}'">
+                <div class="film-card-small-title" style="margin-top:8px; font-weight:600; font-size:0.75rem; color:#fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height:1.2;">${c.title || c.name}</div>
+                <div style="font-size:0.7rem; opacity:0.5; margin-top:2px;">${(c.release_date || c.first_air_date || '').split('-')[0]}</div>
+            </div>
+        `).join('');
+
+      // Costruzione HTML (La X non c'è più qui, viene usata quella fissa del contenitore)
+      elements.actorModalContent.innerHTML = `
+            <div class="details-hero" style="min-height: auto; padding-top: 40px;">
+                <div class="details-backdrop" style="background-image: url('${backdropUrl}'); opacity: 0.15; filter: grayscale(100%) blur(20px);"></div>
+                <div class="details-hero-content" style="padding-bottom: 2rem;">
+                    <img id="detailsModalPoster" src="${photoUrl}" onerror="this.src='${DEFAULT_ACTOR_PHOTO}'" 
+                         style="border-radius: 50%; width: 140px; height: 140px; object-fit: cover; border: 4px solid var(--primary); box-shadow: 0 0 20px rgba(0,0,0,0.5); flex-shrink:0;">
+                    <div class="details-title-area" style="flex-grow: 1;">
+                        <h2 id="detailsModalTitle" style="font-size: 2.2rem; margin: 0;">${details.name}</h2>
+                        <div class="meta-badges" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+                            <span class="meta-pill" style="background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;"><i class="fas fa-user-tag"></i> ${details.known_for_department}</span>
+                            ${details.birthday ? `<span class="meta-pill" style="background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;"><i class="fas fa-birthday-cake"></i> ${new Date(details.birthday).toLocaleDateString('it-IT')}</span>` : ''}
+                            <span class="meta-pill" style="background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;"><i class="fas fa-fire"></i> Pop: ${details.popularity?.toFixed(0)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="details-main-grid" style="padding: 0 3rem 2rem 3rem; display: grid; grid-template-columns: 2fr 1fr; gap: 3rem;">
+                <div class="details-left-col">
+                    <h4 class="section-label" style="color: var(--primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 10px;">Biografia</h4>
+                    <div class="plot-container">
+                        <div class="expandable-text" id="actorBioText">${details.biography || 'Nessuna biografia disponibile.'}</div>
+                        <button class="read-more-btn" onclick="togglePlot(this)">Leggi Tutto</button>
+                    </div>
+                </div>
+                
+                <div class="details-right-col">
+                    <h4 class="section-label" style="color: var(--primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 10px;">Dati Personali</h4>
+                    <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem;">
+                        <p style="margin: 0 0 10px 0;"><span style="opacity:0.5; font-size:0.65rem; display:block; text-transform:uppercase;">Luogo di Nascita</span> <strong>${details.place_of_birth || 'N/D'}</strong></p>
+                        ${details.deathday ? `<p style="margin: 0 0 10px 0;"><span style="opacity:0.5; font-size:0.65rem; display:block; text-transform:uppercase;">Decesso</span> <strong>${new Date(details.deathday).toLocaleDateString('it-IT')}</strong></p>` : ''}
+                        <div style="margin-top: 15px;">
+                            ${details.imdb_id ? `<a href="https://www.imdb.com/name/${details.imdb_id}/" target="_blank" class="btn btn-small" style="background:#f5c518; color:#000; border:none; width:100%; display:flex; justify-content:center; align-items:center; height:32px; font-weight:700;"><i class="fab fa-imdb" style="margin-right:8px;"></i> Profilo IMDb</a>` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actor-filmography-fullwidth" style="grid-column: 1 / -1; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
+                    <h4 class="section-label" style="color: var(--primary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 15px;">Lavori Conosciuti</h4>
+                    <div class="actor-filmography-grid" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px;">
+                        ${filmographyHTML}
+                    </div>
+                </div>
+            </div>
+        `;
+      if (window.applyTextTruncation) window.applyTextTruncation('actorBioText');
+    }
+
+    async function addFriend() {
+      const friendId = friendIdInput.value.trim();
+      if (!friendId || !currentUser) return;
+      if (friendId === currentUser.uid) { showNotification("Non puoi aggiungere te stesso.", "warning"); return; }
+      if (followedFriends.some(f => f.id === friendId)) { showNotification("Amico già presente in lista.", "warning"); return; }
+      let emailSnapshot;
+      try {
+        emailSnapshot = await db.ref(`users/${friendId}/email`).once('value');
+      } catch (error) {
+        console.error("Impossibile leggere il profilo amico:", error);
+        showNotification("Non posso verificare questo ID: permessi Firebase mancanti.", "error");
+        return;
+      }
+      if (emailSnapshot.exists()) {
+        followedFriends.push({ id: friendId, email: emailSnapshot.val() });
+        lastCheckedTimestamps[friendId] = new Date().toISOString();
+        await saveSocialData();
+        renderFriendsList();
+        setupFriendListeners();
+        showNotification("Amico aggiunto!", "success");
+      } else {
+        showNotification("ID Utente non trovato.", "error");
+      }
+    }
+
+    async function removeFriend(friendId) {
+      followedFriends = followedFriends.filter(f => f.id !== friendId);
+      delete lastCheckedTimestamps[friendId];
+      await saveSocialData();
+      renderFriendsList();
+      setupFriendListeners();
+    }
+
+    function renderFriendsList() {
+      if (!currentUser) { friendsList.innerHTML = "<p>Devi essere loggato per usare questa funzione.</p>"; document.getElementById('myIdContainer').style.display = 'none'; return; }
+      document.getElementById('myIdContainer').style.display = 'block';
+      elements.myIdInput.value = currentUser.uid;
+      loadOwnUsername();
+      friendsList.innerHTML = "";
+      if (followedFriends.length === 0) { friendsList.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Non stai seguendo nessun amico.</p>`; return; }
+      const trackerBasePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+      const buildFriendTrackerUrl = (fileName, friendId) => `${window.location.origin}${trackerBasePath}${fileName}?view=${friendId}`;
+      followedFriends.forEach(friend => {
+        const card = document.createElement("div"); card.className = "management-card";
+        card.innerHTML = `
+                <div>
+                    <div>
+                        <div class="friend-email">${escapeHTML(getFriendDisplayName(friend))}</div>
+                        <div class="friend-id">${escapeHTML(friend.email || friend.id)}</div>
+                    </div>
+                </div>
+                <div class="management-card-actions">
+                    <button class="btn visit-friend-films-btn" data-id="${friend.id}" title="Visita Libreria Film"><i class="fas fa-film"></i></button>
+                    <button class="btn visit-friend-tv-btn" data-id="${friend.id}" title="Visita Libreria Serie TV"><i class="fas fa-tv"></i></button>
+                    <button class="btn btn-danger remove-friend-btn" data-id="${friend.id}" title="Rimuovi Amico"><i class="fas fa-trash"></i></button>
+                </div>`;
+        card.querySelector('.remove-friend-btn').addEventListener('click', () => removeFriend(friend.id));
+        card.querySelector('.visit-friend-films-btn').addEventListener('click', (e) => {
+          const url = buildFriendTrackerUrl('film_tracker.html', e.currentTarget.dataset.id);
+          window.location.href = url;
+        });
+        card.querySelector('.visit-friend-tv-btn').addEventListener('click', (e) => {
+          const url = buildFriendTrackerUrl('serietv_tracker.html', e.currentTarget.dataset.id);
+          window.location.href = url;
+        });
+        friendsList.appendChild(card);
+      });
+    }
+
+    function setupEventListeners() {
+      elements.mediaManagementBtn.addEventListener("click", openMediaManagementModal);
+      elements.addCategoryBtn.addEventListener("click", () => addCategory(elements.newCategoryName.value));
+      elements.mediaTitle.addEventListener("input", () => {
+        clearTimeout(debounceTimeout);
+        const title = elements.mediaTitle.value.trim();
+        if (title.length >= 3) {
+          debounceTimeout = setTimeout(searchTMDb, 500);
+        } else {
+          renderSearchDashboardEmptyState();
+        }
+      });
+      elements.mediaTitle.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          clearTimeout(debounceTimeout);
+          searchTMDb();
+        }
+      });
+      document.addEventListener("click", e => {
+        // --- 1. Gestione universale Custom Select (Delegazione globale) ---
+        // Cerca se il click è avvenuto su una "custom-select"
+        const customSelect = e.target.closest('.custom-select');
+
+        // Se ho cliccato su una select, gestisco l'apertura
+        if (customSelect) {
+          e.stopPropagation(); // Fondamentale: impedisce al listener globale di chiuderlo
+          const wrapper = customSelect.parentElement;
+
+          // Chiudi tutti gli altri menu aperti
+          document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+            if (w !== wrapper) w.classList.remove('open');
+          });
+
+          // Toggle del menu corrente
+          wrapper.classList.toggle('open');
+          return; // Esce dalla funzione
+        }
+
+        // Se il click NON è su una select, chiudi tutti i menu aperti
+        const isOption = e.target.closest('.custom-options .option');
+        if (!isOption) {
+          document.querySelectorAll('.custom-select-wrapper').forEach(w => w.classList.remove('open'));
+        }
+
+        // Gestione selezione opzione
+        if (isOption) {
+          const wrapper = isOption.closest('.custom-select-wrapper');
+          const select = wrapper.querySelector('.custom-select');
+
+          select.dataset.value = isOption.dataset.value;
+          select.querySelector('.selected-option').innerHTML = isOption.innerHTML;
+          wrapper.classList.remove('open');
+
+          // --- FIX: SALVA LA SCELTA NEL LOCAL STORAGE ---
+          if (select.id === 'sortFilter') {
+            const storageKey = window.location.pathname.includes('serietv') ? 'tvShowSortOrder' : 'mediaTrackerSortOrder';
+            localStorage.setItem(storageKey, isOption.dataset.value);
+          }
+
+          // --- GESTIONE CAMBIO CATEGORIA DAL MODALE DETTAGLI ---
+          if (select.id === 'modalCategorySelect') {
+            // Il dataset media-id lo iniettiamo nel div del custom-select
+            moveMediaToCategory(select.dataset.mediaId, isOption.dataset.value);
+            // moveMediaToCategory esegue già saveData() e renderMedia()
+            return;
+          }
+
+          // Se è un filtro principale per il rendering, aggiorna la vista
+          if (wrapper.id !== 'addMediaCategoryCustom' && typeof renderMedia === 'function') {
+            renderMedia();
+          }
+        }
+
+        // --- 2. Gestione Modali (Click-to-close) ---
+        // Verifica se il click è avvenuto su un elemento con classe 'modal'
+        if (e.target.classList.contains('modal')) {
+          closeModal(e.target);
+        }
+        // Fix: se clicchi nello spazio vuoto tra il contenuto del modale e i bordi
+        else if (e.target.closest('.modal') && !e.target.closest('.modal-content')) {
+          const modal = e.target.closest('.modal');
+          closeModal(modal);
+        }
+
+        // --- 3. Gestione Dropdown Notifiche ---
+        if (!e.target.closest('.notification-bell-container') && !e.target.closest('#notificationDropdown')) {
+          hideNotificationDropdown();
+        }
+      });
+      elements.savePosterChange.addEventListener('click', () => {
+        const selected = document.querySelector(".poster-option.selected");
+        if (selected) {
+          changePoster(elements.posterModal.dataset.mediaId, selected.dataset.url);
+        }
+        closeModal(elements.posterModal);
+      });
+      elements.cancelPosterChange.addEventListener('click', () => closeModal(elements.posterModal));
+      // Apri modale Impostazioni (Desktop)
+      if (elements.settingsBtn) {
+        elements.settingsBtn.addEventListener('click', () => {
+          updateBackupBadge();
+          openModal(document.getElementById('settingsModal'));
+        });
+      }
+
+      // Apri modale Impostazioni (Mobile)
+      const mobileSettingsBtn = document.getElementById('mobileSettingsBtn');
+      if (mobileSettingsBtn) {
+        mobileSettingsBtn.addEventListener('click', () => {
+          closeModal(elements.mobileMenuModal);
+          setTimeout(() => {
+            updateBackupBadge();
+            openModal(document.getElementById('settingsModal'));
+          }, 300);
+        });
+      }
+
+      const mobileMenuStatsBtn = document.getElementById('mobileMenuStatsBtn');
+      if (mobileMenuStatsBtn) {
+        mobileMenuStatsBtn.addEventListener('click', () => {
+          closeModal(elements.mobileMenuModal);
+          setTimeout(() => {
+            openModal(elements.advancedStatsModal);
+            if (typeof renderAdvancedStats === 'function') renderAdvancedStats();
+          }, 300);
+        });
+      }
+
+      if (elements.toggleHomeStatsBtn && elements.statsPanel) {
+        elements.toggleHomeStatsBtn.addEventListener('change', (e) => {
+          const isVisible = e.target.checked;
+          localStorage.setItem(HOME_STATS_PREF_KEY, String(isVisible));
+          toggleHomeStats(isVisible);
+        });
+      }
+
+      if (elements.toggleCardRatingsBtn) {
+        elements.toggleCardRatingsBtn.addEventListener('change', (e) => {
+          const isVisible = e.target.checked;
+          document.body.classList.toggle('hide-ratings-ui', !isVisible);
+          localStorage.setItem(CARD_RATINGS_PREF_KEY, String(isVisible));
+        });
+      }
+
+      // Azioni dentro il modale (Export, Import, Reset)
+      const exportAction = document.getElementById('exportAction');
+      if (exportAction) exportAction.addEventListener('click', exportData);
+
+      const exportHTMLAction = document.getElementById('exportHTMLAction');
+      if (exportHTMLAction) {
+        exportHTMLAction.addEventListener('click', () => {
+          closeModal(document.getElementById('settingsModal'));
+          setTimeout(exportToHTML, 300); // Chiude il modale prima di elaborare
+        });
+      }
+
+      const importAction = document.getElementById('importAction');
+      if (importAction) {
+        importAction.addEventListener('click', () => {
+          if (elements.importFile) elements.importFile.click();
+        });
+      }
+
+      const resetAction = document.getElementById('resetAction');
+      if (resetAction) {
+        resetAction.addEventListener('click', () => {
+          // Chiudiamo il modale impostazioni PRIMA
+          closeModal(document.getElementById('settingsModal'));
+
+          // Aspettiamo che finisca l'animazione e poi chiediamo conferma
+          setTimeout(() => {
+            resetApp();
+          }, 350);
+        });
+      }
+
+      const updateRatingsAction = document.getElementById('updateRatingsAction');
+      if (updateRatingsAction) {
+        updateRatingsAction.addEventListener('click', () => {
+          const settingsModal = document.getElementById('settingsModal');
+          if (settingsModal && settingsModal.classList.contains('visible')) {
+            closeModal(settingsModal);
+            setTimeout(() => {
+              updateAllRatings();
+            }, 350);
+            return;
+          }
+          updateAllRatings();
+        });
+      }
+
+      const viewHistoryAction = document.getElementById('viewHistoryAction');
+      if (viewHistoryAction) {
+        viewHistoryAction.addEventListener('click', () => {
+          closeModal(document.getElementById('settingsModal'));
+          setTimeout(() => {
+            renderUpdateHistory();
+            openModal(document.getElementById('historyModal'));
+          }, 300);
+        });
+      }
+
+      if (elements.importFile) {
+        elements.importFile.addEventListener("change", e => importData(e.target.files[0]));
+      }
+      elements.searchInput.addEventListener("input", () => {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(renderMedia, 300);
+      });
+      // NOTA: i filtri custom (div) usano click/dataset. I 'change' listener qui sotto sono rimossi.
+      elements.shareBtn.addEventListener("click", handleShare);
+      elements.copyShareLinkBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(elements.shareLinkInput.value);
+        showNotification("Link copiato!", "success");
+      });
+      elements.closeViewBtn.addEventListener("click", () => { window.location.href = window.location.pathname; });
+
+      document.querySelectorAll('.quick-rewatch-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const count = parseInt(btn.dataset.count);
+          elements.rewatchCountInput.value = count;
+          updateRewatchModalButtons(count);
+        });
+      });
+
+      // --- TASTO DIGITAL RELEASE (MODALE IN-APP) ---
+      const handleDigitalClick = () => {
+        applySavedDigitalFiltersPreference();
+        openModal(document.getElementById('digitalModal'));
+        loadDigitalCalendar();
+      };
+
+      if (elements.digitalBtn) {
+        elements.digitalBtn.addEventListener('click', handleDigitalClick);
+      }
+      const mobileDigitalBtn = document.getElementById('mobileDigitalBtn');
+      if (mobileDigitalBtn) {
+        mobileDigitalBtn.addEventListener('click', handleDigitalClick);
+      }
+      // ------------------------------------------
+
+      elements.rewatchCountInput.addEventListener('input', () => {
+        const count = parseInt(elements.rewatchCountInput.value);
+        updateRewatchModalButtons(count);
+      });
+
+      // --- Bottom Nav Bar Listeners ---
+      elements.bottomNavHome.addEventListener('click', () => {
+        populateCategoryNavModal();
+        openModal(elements.categoryNavModal);
+        requestAnimationFrame(() => elements.categoryNavModal.classList.add('visible'));
+      });
+
+      elements.bottomNavAdd.addEventListener('click', () => { elements.mediaManagementBtn.click(); });
+      elements.bottomNavManage.addEventListener('click', () => { openModal(elements.mobileMenuModal); requestAnimationFrame(() => elements.mobileMenuModal.classList.add('visible')); });
+      elements.bottomNavNotifications.addEventListener('click', () => { openModal(elements.mobileNotificationsModal); requestAnimationFrame(() => elements.mobileNotificationsModal.classList.add('visible')); });
+
+      // --- Mobile Modals Listeners ---
+      elements.mobileMenuCloseBtn.addEventListener('click', () => closeModal(elements.mobileMenuModal));
+      elements.mobileMenuUserActionBtn.addEventListener('click', () => {
+        const shouldLogout = !!currentUser;
+        closeModal(elements.mobileMenuModal);
+        setTimeout(() => shouldLogout ? requestLogout() : openModal(elements.authModal), 320);
+      });
+
+      bindSocialHubButtons();
+
+      // --- FILTRI MOBILI ---
+      if (elements.mobileFilterBtn) {
+        elements.mobileFilterBtn.addEventListener('click', () => {
+          const catSelectDesktop = document.getElementById('categoryFilter');
+          const sortSelectDesktop = document.getElementById('sortFilter');
+
+          // Popola i select mobili con le opzioni dei custom dropdown desktop
+          elements.mobileCategoryFilter.innerHTML = document.getElementById('categoryOptions').innerHTML
+            .replace(/<div class="option"/g, '<option')
+            .replace(/<\/div>/g, '</option>')
+            .replace(/data-value=/g, 'value=')
+            .replace(/<i class="[^"]*"><\/i> /g, '');
+          elements.mobileSortFilter.innerHTML = document.getElementById('sortOptions').innerHTML
+            .replace(/<div class="option"/g, '<option')
+            .replace(/<\/div>/g, '</option>')
+            .replace(/data-value=/g, 'value=')
+            .replace(/<i class="[^"]*"><\/i> /g, '');
+
+          // Sincronizza i valori attuali
+          elements.mobileCategoryFilter.value = catSelectDesktop.dataset.value || 'all';
+          elements.mobileSortFilter.value = sortSelectDesktop.dataset.value || 'saga-alpha';
+
+          openModal(elements.filterSortModal);
+        });
+      }
+
+      if (elements.applyFiltersBtn) {
+        elements.applyFiltersBtn.addEventListener('click', () => {
+          const catSelect = document.getElementById('categoryFilter');
+          const sortSelect = document.getElementById('sortFilter');
+
+          // Aggiorna i filtri custom desktop con i valori scelti nel modale mobile
+          catSelect.dataset.value = elements.mobileCategoryFilter.value;
+          const catOptionEl = document.querySelector(`#categoryOptions .option[data-value="${catSelect.dataset.value}"]`);
+          if (catOptionEl) catSelect.querySelector('.selected-option').innerHTML = catOptionEl.innerHTML;
+
+          sortSelect.dataset.value = elements.mobileSortFilter.value;
+          const sortOptionEl = document.querySelector(`#sortOptions .option[data-value="${sortSelect.dataset.value}"]`);
+          if (sortOptionEl) sortSelect.querySelector('.selected-option').innerHTML = sortOptionEl.innerHTML;
+
+          // --- FIX: SALVATAGGIO IN MEMORIA ---
+          const storageKey = window.location.pathname.includes('serietv') ? 'tvShowSortOrder' : 'mediaTrackerSortOrder';
+          localStorage.setItem(storageKey, elements.mobileSortFilter.value);
+
+          renderMedia();
+          closeModal(elements.filterSortModal);
+        });
+      }
+
+
+      // --- Category Navigation Modal Listeners ---
+      elements.closeCategoryNavBtn.addEventListener('click', () => closeModal(elements.categoryNavModal));
+
+      document.querySelectorAll(".num-spinner-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+          const target = document.getElementById(e.currentTarget.dataset.target);
+          if (target) {
+            let value = parseInt(target.value) || 0;
+            value += e.currentTarget.classList.contains("up") ? 1 : -1;
+            const min = parseInt(target.min);
+            if (!isNaN(min) && value < min) value = min;
+            target.value = value;
+            if (target.id === 'rewatchCountInput') {
+              updateRewatchModalButtons(value);
+            }
+          }
+        });
+      });
+      elements.confirmRewatchBtn.addEventListener('click', () => {
+        const newCount = parseInt(elements.rewatchCountInput.value);
+        if (!isNaN(newCount) && newCount >= 0) {
+          markRewatch(currentRewatchMediaId, newCount);
+          closeModal(elements.rewatchModal);
+        } else {
+          showNotification("Per favore, inserisci un numero valido (0 o superiore).", "warning");
+        }
+      });
+      elements.cancelRewatchBtn.addEventListener('click', () => closeModal(elements.rewatchModal));
+
+      elements.addFriendBtn.addEventListener('click', addFriend);
+      elements.saveUsernameBtn?.addEventListener('click', saveOwnUsername);
+      elements.myUsernameInput?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveOwnUsername();
+        }
+      });
+      elements.bellIcon.addEventListener('click', toggleNotificationDropdown);
+
+      // Sidebar desktop compatta inizializzata su window load
+    }
+
+    async function showPosterModal(id) {
+      const media = mediaList.find(m => m.id === id);
+      if (!media || !media.imdbID) return showNotification("Nessun IMDb ID trovato per questo film.", "warning");
+      elements.posterModal.dataset.mediaId = id;
+      elements.posterGrid.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><i class="fas fa-spinner fa-2x loading-spinner"></i></div>';
+      openModal(elements.posterModal);
+
+      const currentPosterUrl = media.poster;
+
+      fetchPosters(media.imdbID).then(posters => {
+        if (posters.length === 0) {
+          elements.posterGrid.innerHTML = "<p>Nessuna copertina alternativa trovata</p>";
+          return;
+        }
+        elements.posterGrid.innerHTML = "";
+        posters.forEach(poster => {
+          const option = document.createElement("div");
+          option.className = "poster-option";
+          option.dataset.url = poster.url;
+
+          if (poster.url === currentPosterUrl) {
+            option.innerHTML += `<div class="poster-current-indicator"><i class="fas fa-check"></i> Attuale</div>`;
+          }
+
+          const img = document.createElement("img");
+          img.src = poster.url;
+          img.onerror = () => img.src = DEFAULT_POSTER;
+          option.appendChild(img);
+
+          const lang = poster.iso_639_1 || 'N/A';
+          option.innerHTML += `<div class="poster-language-badge">${lang}</div>`;
+
+          option.addEventListener("click", () => {
+            document.querySelectorAll(".poster-option").forEach(o => o.classList.remove("selected"));
+            option.classList.add("selected");
+          });
+          elements.posterGrid.appendChild(option);
+        });
+      });
+    }
+
+    async function fetchPosters(imdbID) {
+      try {
+        const response = await fetch(`https://api.themoviedb.org/3/find/${imdbID}?api_key=${TMDB_KEY}&external_source=imdb_id`);
+        const data = await response.json();
+        const tmdbId = data.movie_results[0]?.id;
+        if (!tmdbId) return [];
+        const imagesResponse = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/images?api_key=${TMDB_KEY}`);
+        const imagesData = await imagesResponse.json();
+
+        const langScore = (lang) => {
+          if (lang === 'it') return 3;
+          if (lang === 'en') return 2;
+          if (lang === null) return 1;
+          return 0;
+        };
+
+        return imagesData.posters
+          .filter(p => ['it', 'en', null].includes(p.iso_639_1))
+          .sort((a, b) => langScore(b.iso_639_1) - langScore(a.iso_639_1))
+          .slice(0, 33)
+          .map(p => ({ url: `https://image.tmdb.org/t/p/w500${p.file_path}`, iso_639_1: p.iso_639_1 }));
+      } catch (err) {
+        console.error("Error fetching posters:", err);
+        return [];
+      }
+    }
+
+    function changePoster(id, url) {
+      const media = mediaList.find(m => m.id === id);
+      if (media) {
+        media.poster = url;
+        saveData();
+        refreshSingleMedia(id);
+      }
+    }
+
+    async function toggleFavorite(mediaId) {
+      if (isViewMode) return;
+      const media = mediaList.find(m => m.id === mediaId);
+      if (media) {
+        media.isFavorite = !media.isFavorite;
+        await saveData();
+
+        const cardBtn = document.querySelector(`.media-card[data-id="${mediaId}"] .favorite-btn`);
+        if (cardBtn) cardBtn.classList.toggle('is-favorite', media.isFavorite);
+
+        if (document.getElementById('categoryFilter').dataset.value === 'favorites') {
+          renderMedia();
+        }
+      }
+    }
+
+    /* --- GESTIONE MODALI E BACK GESTURE (HISTORY API) --- */
+
+    // --- GESTIONE MODALI AVANZATA (HISTORY API) ---
+    function openModal(modal) {
+      if (!modal) return;
+      if (modal.classList.contains('visible')) return;
+
+      const alreadyOpen = document.querySelector('.modal.visible');
+      if (alreadyOpen && alreadyOpen !== modal) {
+        alreadyOpen.style.filter = "blur(4px) brightness(0.7)";
+      }
+
+      modal.style.display = 'flex';
+      document.body.classList.add('modal-open');
+      syncDesktopModalChrome();
+      setTimeout(() => modal.classList.add('visible'), 10);
+
+      if (!history.state || history.state.modalId !== modal.id) {
+        history.pushState({ modalId: modal.id }, '', window.location.href);
+      }
+    }
+
+    // 2. Nuova funzione unificata per chiudere i modali
+    function closeModal(modal) {
+      if (modal && modal.classList.contains('visible')) {
+        history.back();
+      }
+    }
+
+    window.addEventListener('popstate', (event) => {
+      const visibleModals = Array.from(document.querySelectorAll('.modal.visible'));
+      if (visibleModals.length > 0) {
+        visibleModals.sort((a, b) => (parseInt(window.getComputedStyle(b).zIndex) || 0) - (parseInt(window.getComputedStyle(a).zIndex) || 0));
+        const topModal = visibleModals[0];
+        topModal.classList.remove('visible');
+        setTimeout(() => {
+          topModal.style.display = 'none';
+          topModal.style.filter = "";
+          const nextModal = document.querySelector('.modal.visible');
+          if (nextModal) nextModal.style.filter = "";
+          if (!document.querySelector('.modal.visible')) document.body.classList.remove('modal-open');
+          syncDesktopModalChrome();
+        }, 300);
+      }
+    });
+
+    // --- BACK GESTURE IMPLEMENTATION FOR MOBILE MODALS ---
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isSwipingBack = false;
+
+    function handleTouchStart(e) {
+      // Registriamo la posizione iniziale del tocco
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      isSwipingBack = false;
+    }
+
+    function handleTouchMove(e) {
+      if (touchStartX === 0) return;
+
+      let touchCurrentX = e.touches[0].clientX;
+      let touchCurrentY = e.touches[0].clientY;
+
+      const deltaX = touchCurrentX - touchStartX;
+      const deltaY = touchCurrentY - touchStartY;
+
+      // --- LOGICA DI PROTEZIONE ---
+      // 1. Il gesto deve iniziare negli ultimi 40 pixel a sinistra (Edge Swipe come iOS/Android)
+      // 2. Oppure: se il tocco NON è iniziato sul bordo, verifichiamo che l'utente non stia 
+      //    toccando una zona a scorrimento orizzontale (come la lista attori)
+      const isEdgeSwipe = touchStartX < 40;
+      const isHorizontalScroller = e.target.closest('.actor-filmography-grid, .cast-scroller, .filmography-scroller, .stats-container');
+
+      // Se stiamo scorrendo una lista orizzontale e NON è un Edge Swipe, annulliamo la chiusura
+      if (isHorizontalScroller && !isEdgeSwipe) {
+        return;
+      }
+
+      // Se il movimento è prevalentemente orizzontale verso destra e abbastanza lungo
+      if (deltaX > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Solo se è un Edge Swipe (inizia dal bordo) permettiamo la chiusura fluida
+        if (isEdgeSwipe) {
+          isSwipingBack = true;
+          // Preveniamo lo scroll della pagina mentre chiudiamo
+          if (e.cancelable) e.preventDefault();
+        }
+      }
+    }
+
+    function handleTouchEnd(e) {
+      if (isSwipingBack) {
+        const modal = e.currentTarget;
+        if (modal && modal.classList.contains('modal')) {
+          closeModal(modal);
+        }
+      }
+      // Reset variabili
+      touchStartX = 0;
+      touchStartY = 0;
+      isSwipingBack = false;
+    }
+
+    // Add back gesture support to all modals
+    function setupBackGestureSupport() {
+      const modals = document.querySelectorAll('.modal');
+      modals.forEach(modal => {
+        if (modal.id === 'confirmModal') return; // Non chiudere i modali di conferma per errore
+        modal.addEventListener('touchstart', handleTouchStart, { passive: true });
+        modal.addEventListener('touchmove', handleTouchMove, { passive: false }); // false per poter usare preventDefault
+        modal.addEventListener('touchend', handleTouchEnd, { passive: true });
+      });
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Chiudi modale con ESC
+      if (e.key === "Escape") {
+        const visibleModal = document.querySelector('.modal[style*="flex"]');
+        if (visibleModal) closeModal(visibleModal);
+      }
+
+      // Focus sulla ricerca con il tasto "/"
+      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+        e.preventDefault();
+        elements.searchInput.focus();
+      }
+
+      // ALT+N per aggiungere nuovo film
+      if (e.altKey && e.key === 'n') {
+        elements.mediaManagementBtn.click();
+      }
+    });
+
+
+
+
+
+    if (document.readyState === 'complete') {
+      setupBackGestureSupport();
+    } else {
+      window.addEventListener('load', setupBackGestureSupport);
+    }
+
+    let genresChartInstance = null;
+    let activityChartInstance = null;
+
+    function getMonthKeyFromDate(value) {
+      if (!value) return '';
+
+      const isoMonth = String(value).match(/^(\d{4})-(\d{2})/);
+      if (isoMonth) return `${isoMonth[1]}-${isoMonth[2]}`;
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function getLastMonthKeys(totalMonths, referenceDate = new Date()) {
+      const currentMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+      const keys = [];
+
+      for (let i = totalMonths - 1; i >= 0; i--) {
+        const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - i, 1);
+        keys.push(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
+      }
+
+      return keys;
+    }
+
+    function formatMonthLabel(monthKey, options = { month: 'short' }) {
+      const [year, month] = monthKey.split('-').map(Number);
+      return new Date(year, month - 1, 1).toLocaleDateString('it-IT', options);
+    }
+
+    function renderAdvancedStats() {
+      // --- LOGICA MESE CORRENTE ---
+      const now = new Date();
+      const currentMonthKey = getMonthKeyFromDate(now);
+      document.getElementById('currentMonthName').textContent = now.toLocaleDateString('it-IT', { month: 'long' });
+
+      let addedCount = 0;
+      let watchedCount = 0;
+
+      mediaList.forEach(m => {
+        if (getMonthKeyFromDate(m.addedAt) === currentMonthKey) {
+          addedCount++;
+        }
+        if (getMonthKeyFromDate(m.lastActivityAt) === currentMonthKey) {
+          if (m.category === 'watched' || m.isCountedAsWatched) {
+            watchedCount++;
+          }
+        }
+      });
+
+      document.getElementById('monthAdded').textContent = addedCount;
+      document.getElementById('monthWatched').textContent = watchedCount;
+
+      // --- LOGICA GRAFICI ---
+      const genreCounts = {};
+      mediaList.forEach(media => {
+        if (media.category === 'watched' || media.isCountedAsWatched) {
+          if (media.genres && Array.isArray(media.genres)) {
+            media.genres.forEach(g => {
+              genreCounts[g] = (genreCounts[g] || 0) + 1;
+            });
+          }
+        }
+      });
+
+      const sortedGenres = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const genreLabels = sortedGenres.map(g => g[0]);
+      const genreData = sortedGenres.map(g => g[1]);
+
+      const monthCounts = {};
+      const last6Months = getLastMonthKeys(6, now);
+      last6Months.forEach(key => { monthCounts[key] = 0; });
+
+      mediaList.forEach(media => {
+        if (media.lastActivityAt) {
+          const key = getMonthKeyFromDate(media.lastActivityAt);
+          if (monthCounts[key] !== undefined) {
+            monthCounts[key]++;
+          }
+        }
+      });
+
+      const activityData = last6Months.map(m => monthCounts[m]);
+      const activityLabels = last6Months.map(m => formatMonthLabel(m, { month: 'short', year: '2-digit' }).toUpperCase());
+      const activityDetailLabels = last6Months.map(m => formatMonthLabel(m, { month: 'long', year: 'numeric' }));
+
+      const isDark = document.body.classList.contains('dark');
+      const textColor = isDark ? '#aaaaaa' : '#666666';
+      const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+      const bgColor = isDark ? '#1e1e1e' : '#ffffff';
+      const modernColors = ['#FF3366', '#20A4F3', '#FFD166', '#06D6A0', '#118AB2', '#073B4C'];
+
+      const ctxGenres = document.getElementById('genresChart').getContext('2d');
+      Chart.getChart(ctxGenres.canvas)?.destroy();
+      genresChartInstance = null;
+
+      genresChartInstance = new Chart(ctxGenres, {
+        type: 'doughnut',
+        data: {
+          labels: genreLabels.length ? genreLabels : ['Dati in elaborazione...'],
+          datasets: [{
+            data: genreData.length ? genreData : [1],
+            backgroundColor: genreData.length ? modernColors : ['#444'],
+            borderWidth: 3,
+            borderColor: bgColor,
+            hoverOffset: 15,
+            borderRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: 15 },
+          onHover: (event, chartElement) => {
+            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+          },
+          onClick: (event, elements) => {
+            if (elements.length > 0) {
+              showChartDetails('genre', genreLabels[elements[0].index]);
+            }
+          },
+          plugins: {
+            legend: { position: 'right', labels: { color: textColor, font: { family: 'Inter', size: 12 }, usePointStyle: true, boxWidth: 8 } },
+            tooltip: { backgroundColor: isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)', titleColor: isDark ? '#000' : '#fff', bodyColor: isDark ? '#000' : '#fff', padding: 12, cornerRadius: 8, displayColors: false }
+          }
+        }
+      });
+
+      const ctxActivity = document.getElementById('activityChart').getContext('2d');
+      Chart.getChart(ctxActivity.canvas)?.destroy();
+      activityChartInstance = null;
+
+      let gradient = ctxActivity.createLinearGradient(0, 0, 0, 300);
+      gradient.addColorStop(0, 'rgba(58, 134, 255, 0.6)');
+      gradient.addColorStop(1, 'rgba(58, 134, 255, 0.0)');
+
+      activityChartInstance = new Chart(ctxActivity, {
+        type: 'line',
+        data: {
+          labels: activityLabels,
+          datasets: [{
+            label: 'Film Attivi',
+            data: activityData,
+            backgroundColor: gradient,
+            borderColor: '#3A86FF',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#3A86FF',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onHover: (event, chartElement) => {
+            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+          },
+          onClick: (event, elements) => {
+            if (elements.length > 0) {
+              showChartDetails('activity', last6Months[elements[0].index], activityDetailLabels[elements[0].index]);
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { backgroundColor: '#3A86FF', titleFont: { size: 13 }, bodyFont: { size: 14, weight: 'bold' }, padding: 12, cornerRadius: 8, displayColors: false, callbacks: { label: function (c) { return c.raw + ' Film modificati'; } } }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { color: textColor, precision: 0, stepSize: 1 }, grid: { color: gridColor, drawBorder: false } },
+            x: { ticks: { color: textColor, font: { family: 'Inter', weight: '600' } }, grid: { display: false, drawBorder: false } }
+          }
+        }
+      });
+      setupMonthStatsListeners();
+    }
+
+    function setupMonthStatsListeners() {
+      const now = new Date();
+      const currentMonthKey = getMonthKeyFromDate(now);
+
+      document.getElementById('btnMonthAdded').onclick = () => {
+        showChartDetails('monthAdded', currentMonthKey, now.toLocaleDateString('it-IT', { month: 'long' }));
+      };
+
+      document.getElementById('btnMonthWatched').onclick = () => {
+        showChartDetails('monthWatched', currentMonthKey, now.toLocaleDateString('it-IT', { month: 'long' }));
+      };
+    }
+
+    function showChartDetails(type, key, displayLabel = '') {
+      let filteredShows = [];
+      let title = '';
+
+      if (type === 'genre') {
+        title = `Genere: ${key}`;
+        filteredShows = mediaList.filter(m => (m.category === 'watched' || m.isCountedAsWatched) && m.genres && m.genres.includes(key));
+      } else if (type === 'activity') {
+        title = `Attività di ${displayLabel}`;
+        filteredShows = mediaList.filter(m => {
+          if (!m.lastActivityAt) return false;
+          return getMonthKeyFromDate(m.lastActivityAt) === key;
+        });
+      } else if (type === 'monthAdded') {
+        title = `Aggiunti a ${displayLabel}`;
+        filteredShows = mediaList.filter(m => getMonthKeyFromDate(m.addedAt) === key);
+      } else if (type === 'monthWatched') {
+        title = `Visti a ${displayLabel}`;
+        filteredShows = mediaList.filter(m => getMonthKeyFromDate(m.lastActivityAt) === key && (m.category === 'watched' || m.isCountedAsWatched));
+      }
+
+      // 1. Raggruppamento rigoroso
+      const grouped = filteredShows.reduce((acc, show) => {
+        const cat = show.category || 'Senza Categoria';
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(show);
+        return acc;
+      }, {});
+
+      document.getElementById('chartDetailsTitle').textContent = title;
+      const listContainer = document.getElementById('chartDetailsList');
+      listContainer.innerHTML = '';
+
+      if (filteredShows.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; padding:2rem; opacity:0.5;">Nessun dato corrispondente.</p>';
+      } else {
+        // 2. Ciclo sulle categorie per creare i DIV separati
+        Object.keys(grouped).sort().forEach(cat => {
+          const groupDiv = document.createElement('div');
+          groupDiv.className = 'stats-category-group';
+
+          const displayCatName = typeof getCategoryName === 'function' ? getCategoryName(cat) : cat;
+
+          groupDiv.innerHTML = `
+                    <div class="stats-category-title">
+                        ${displayCatName}
+                        <span class="stats-category-count">${grouped[cat].length}</span>
+                    </div>
+                    <div class="category-items-list"></div>
+                `;
+
+          const itemsList = groupDiv.querySelector('.category-items-list');
+
+          grouped[cat].sort((a, b) => a.title.localeCompare(b.title)).forEach(show => {
+            const item = document.createElement('div');
+            item.className = 'chart-detail-item';
+            item.style.marginBottom = '8px';
+            item.innerHTML = `
+                        <img src="${show.poster || DEFAULT_POSTER}" class="chart-detail-poster" onerror="this.src='${DEFAULT_POSTER}'">
+                        <div class="chart-detail-info">
+                            <span style="font-weight: 700; font-size: 0.95rem;">${show.title}</span>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">${show.year || 'N/D'}</span>
+                        </div>
+                    `;
+            itemsList.appendChild(item);
+          });
+          listContainer.appendChild(groupDiv);
+        });
+      }
+      openModal(document.getElementById('chartDetailsModal'));
+    }
+
+    // Add event listeners for the home stats panel items
+    document.querySelectorAll('.stats-panel .stat-item').forEach(item => {
+      item.addEventListener('click', () => {
+        openModal(elements.advancedStatsModal);
+        renderAdvancedStats();
+      });
+    });
+    // --- CAPSULA DEL TEMPO (HTML EXPORT UNIFICATO V3 - ORDINATA) ---
+    async function exportToHTML() {
+      if (!currentUser) return showNotification("Devi essere loggato per il backup completo.", "warning");
+
+      showNotification("Generazione backup ordinato in corso...", "warning");
+
+      try {
+        const [filmsSnap, tvSnap] = await Promise.all([
+          db.ref(`users/${currentUser.uid}/mediaTracker`).once('value'),
+          db.ref(`users/${currentUser.uid}/tvShowTracker`).once('value')
+        ]);
+
+        const filmsData = filmsSnap.val() ? (filmsSnap.val().mediaList || []) : [];
+        const tvData = tvSnap.val() ? (tvSnap.val().mediaList || []) : [];
+
+        // --- FUNZIONE HELPER PER GENERARE HTML RAGGRUPPATO ---
+        const generateSectionHtml = (list, type) => {
+          if (list.length === 0) return '<p style="text-align:center; color:#666">Nessun elemento.</p>';
+
+          // 1. Troviamo tutte le categorie uniche presenti nei dati
+          const uniqueCats = [...new Set(list.map(item => item.category))];
+
+          // Ordiniamo le categorie (opzionale: metti "In Corso" o "Watchlist" per prime)
+          uniqueCats.sort();
+
+          let finalHtml = '';
+
+          uniqueCats.forEach(cat => {
+            // Filtra elementi di questa categoria
+            const itemsInCat = list.filter(item => item.category === cat);
+            if (itemsInCat.length === 0) return;
+
+            // Ordina per data (più recenti in alto)
+            itemsInCat.sort((a, b) => new Date(b.lastActivityAt || b.addedAt) - new Date(a.lastActivityAt || a.addedAt));
+
+            // Nome leggibile della categoria
+            let displayCat = cat;
+            if (type === 'film') {
+              if (cat === 'watched') displayCat = 'Visti';
+              if (cat === 'watchlist') displayCat = 'Da Vedere';
+            }
+
+            // Header della categoria
+            finalHtml += `<div class="cat-group"><div class="cat-header">${displayCat} (${itemsInCat.length})</div>`;
+
+            // Lista elementi
+            itemsInCat.forEach(m => {
+              const poster = m.poster && m.poster !== "N/A" ? m.poster : "";
+              const imdbBadge = (m.imdbRating && m.imdbRating !== 'N/A') ? `<span class="tag tag-imdb">★ ${m.imdbRating}</span>` : '';
+
+              let extraMeta = '';
+              let rewatchBadge = '';
+
+              if (type === 'film') {
+                // Logica FILM
+                extraMeta = `${m.year} • ${m.director || 'N/D'}`;
+                if (m.rewatchCount > 0) rewatchBadge = `<span class="tag tag-rewatch">↺ ${m.rewatchCount}</span>`;
+              } else {
+                // Logica SERIE TV
+                extraMeta = `${m.year} • ${m.status || ''}`;
+
+                let totalRewatches = 0;
+                if (m.rewatches) totalRewatches = Object.values(m.rewatches).reduce((a, b) => a + b, 0);
+                if (totalRewatches > 0) rewatchBadge = `<span class="tag tag-rewatch">↺ ${totalRewatches} Ep.</span>`;
+
+                // Mini tabella stagioni
+                if (m.seasons) {
+                  const sNums = Object.keys(m.seasons).sort((a, b) => Number(a) - Number(b));
+                  if (sNums.length > 0) {
+                    extraMeta += `<div class="season-mini-table">`;
+                    sNums.forEach(sn => {
+                      const season = m.seasons[sn];
+                      const totalEps = season.episodes ? season.episodes.length : 0;
+                      const watchedEps = season.episodes ? season.episodes.filter(ep => m.progress && m.progress[`${sn}-${ep.episode_number}`]).length : 0;
+                      const isDone = watchedEps >= totalEps && totalEps > 0;
+                      extraMeta += `<div class="season-row ${isDone ? 'done' : ''}">S${sn}: ${watchedEps}/${totalEps}</div>`;
+                    });
+                    extraMeta += `</div>`;
+                  }
+                }
+              }
+
+              finalHtml += `
+                    <div class="list-item">
+                        <img src="${poster}" class="item-poster">
+                        <div class="item-info">
+                            <div class="item-title">${m.title} ${m.isFavorite ? '<i class="fas fa-heart fav-icon"></i>' : ''}</div>
+                            <div class="item-meta">${extraMeta}</div>
+                            <div class="badges-row">
+                                ${imdbBadge}
+                                ${rewatchBadge}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            finalHtml += `</div>`; // Chiude cat-group
+          });
+          return finalHtml;
+        };
+
+        const filmsHtml = generateSectionHtml(filmsData, 'film');
+        const seriesHtml = generateSectionHtml(tvData, 'tv');
+
+        const finalHtml = generateHTMLTemplate("Backup Unificato V3", filmsHtml, seriesHtml);
+        downloadFile(finalHtml, "Capsula_V3_Ordinata");
+
+      } catch (e) {
+        console.error(e);
+        showNotification("Errore durante la generazione.", "error");
+      }
+    }
+
+    function generateHTMLTemplate(title, filmsHtml, seriesHtml) {
+      const now = new Date().toLocaleString('it-IT');
+      return `<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup V3 - ${now}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        
+        /* Layout Colonne */
+        .split-container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .column { flex: 1; min-width: 350px; background: #1a1a1a; border-radius: 12px; padding: 15px; border: 1px solid #333; }
+        .column-header { 
+            text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; 
+            font-size: 1.5rem; color: #fff; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .col-film .column-header { color: #3A86FF; border-color: #3A86FF; }
+        .col-tv .column-header { color: #2a9d8f; border-color: #2a9d8f; }
+
+        /* Gruppi Categorie */
+        .cat-group { margin-bottom: 20px; }
+        .cat-header { 
+            background: #333; color: #fff; padding: 5px 10px; border-radius: 4px; 
+            margin-bottom: 10px; font-size: 0.9rem; font-weight: bold; text-transform: uppercase;
+            border-left: 4px solid #777;
+        }
+        .col-film .cat-header { border-left-color: #3A86FF; }
+        .col-tv .cat-header { border-left-color: #2a9d8f; }
+
+        /* Card Elemento */
+        .list-item { 
+            display: flex; gap: 15px; background: #252525; padding: 10px; margin-bottom: 10px; 
+            border-radius: 8px; border: 1px solid #333; break-inside: avoid;
+        }
+        .item-poster { width: 60px; height: 90px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background: #000; }
+        .item-info { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+        .item-title { font-weight: bold; font-size: 1rem; color: #fff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-meta { font-size: 0.8rem; color: #aaa; margin-bottom: 4px; }
+        
+        .badges-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+        .tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; color: #000; font-weight: bold; }
+        .tag-imdb { background: #f5c518; }
+        .tag-rewatch { background: #ffbe0b; }
+        .fav-icon { color: #e74c3c; margin-left: 5px; }
+
+        .season-mini-table { margin-top: 5px; font-size: 0.75rem; background: #111; padding: 5px; border-radius: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        .season-row.done { color: #2a9d8f; }
+    </style>
+</head>
+<body>
+    <div style="text-align:center; margin-bottom:30px;">
+        <h1>Capsula del Tempo (Ordinata)</h1>
+        <p style="color:#777">Generata il ${now}</p>
+    </div>
+    <div class="split-container">
+        <div class="column col-film"><div class="column-header"><i class="fas fa-film"></i> Film</div>${filmsHtml}</div>
+        <div class="column col-tv"><div class="column-header"><i class="fas fa-tv"></i> Serie TV</div>${seriesHtml}</div>
+    </div>
+</body>
+</html>`;
+    }
+
+    function downloadFile(content, filename) {
+      const blob = new Blob([content], { type: "text/html;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${filename}_${new Date().toISOString().slice(0, 10)}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Aggiorna data ultimo backup
+      const now = new Date().toISOString();
+      const storageKey = window.location.pathname.includes('serietv') ? 'lastSeriesExport' : 'lastFilmExport';
+      localStorage.setItem(storageKey, now);
+      if (currentUser) db.ref(`users/${currentUser.uid}/lastExport`).set(now);
+      if (typeof updateBackupBadge === 'function') updateBackupBadge(now);
+
+      showNotification("Capsula del Tempo generata con successo!", "success");
+    }
+
+    // Funzione per espandere/contrarre
+    window.applyTextTruncation = function (containerId) {
+      const textEl = document.getElementById(containerId);
+      if (!textEl) return;
+      const btn = textEl.nextElementSibling;
+      if (!btn || !btn.classList.contains('read-more-btn')) return;
+
+      // Osservatore che si attiva automaticamente ogni volta che il pannello viene aperto
+      const observer = new ResizeObserver(() => {
+        // Se il testo è visibile e NON è già espanso
+        if (textEl.clientHeight > 0 && !textEl.classList.contains('expanded')) {
+          // Controlla se l'altezza reale (scrollHeight) è maggiore di quella visibile (clientHeight)
+          if (textEl.scrollHeight > textEl.clientHeight + 2) {
+            btn.style.display = 'inline-block';
+          } else {
+            btn.style.display = 'none';
+          }
+        }
+      });
+
+      observer.observe(textEl);
+    };
+
+    window.togglePlot = function (btn) {
+      const textEl = btn.previousElementSibling;
+      if (textEl.classList.contains('expanded')) {
+        textEl.classList.remove('expanded');
+        btn.textContent = "Leggi Tutto";
+        textEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        textEl.classList.add('expanded');
+        btn.textContent = "Mostra Meno";
+      }
+    };
+
+    let allDigitalMovies = []; // Cache globale per i film del calendario
+
+    function applySavedDigitalFiltersPreference() {
+      const filterToggle = document.getElementById('filterRatingsToggle');
+      const sortToggle = document.getElementById('sortRatingsToggle');
+      if (filterToggle) filterToggle.checked = localStorage.getItem(DIGITAL_ONLY_RATED_PREF_KEY) === 'true';
+      if (sortToggle) sortToggle.checked = localStorage.getItem(DIGITAL_SORT_BY_RATING_PREF_KEY) === 'true';
+    }
+
+    function persistDigitalFiltersPreference() {
+      const filterToggle = document.getElementById('filterRatingsToggle');
+      const sortToggle = document.getElementById('sortRatingsToggle');
+      if (filterToggle) localStorage.setItem(DIGITAL_ONLY_RATED_PREF_KEY, String(filterToggle.checked));
+      if (sortToggle) localStorage.setItem(DIGITAL_SORT_BY_RATING_PREF_KEY, String(sortToggle.checked));
+    }
+
+    function normalizeDigitalTitle(title = "") {
+      return title
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\w\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function capitalizeDigitalLabel(label = "") {
+      return label ? label.charAt(0).toUpperCase() + label.slice(1) : "";
+    }
+
+    function addDigitalLibraryIndexEntry(map, key, media) {
+      if (!key) return;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(media);
+    }
+
+    function buildDigitalLibraryIndex() {
+      const byTmdb = new Map();
+      const byImdb = new Map();
+      const byTitleYear = new Map();
+
+      mediaList.forEach(media => {
+        addDigitalLibraryIndexEntry(byTmdb, media.tmdbID ? String(media.tmdbID) : "", media);
+        addDigitalLibraryIndexEntry(byImdb, media.imdbID || "", media);
+
+        const normalizedTitle = normalizeDigitalTitle(media.title || media.italianTitle || "");
+        const normalizedYear = String(media.year || "").trim();
+        if (normalizedTitle && normalizedYear) {
+          addDigitalLibraryIndexEntry(byTitleYear, `${normalizedTitle}::${normalizedYear}`, media);
+        }
+      });
+
+      return { byTmdb, byImdb, byTitleYear };
+    }
+
+    function summarizeDigitalCategories(categoryLabels) {
+      if (categoryLabels.length <= 2) return categoryLabels.join(', ');
+      return `${categoryLabels.slice(0, 2).join(', ')} +${categoryLabels.length - 2}`;
+    }
+
+    function getDigitalLibraryMeta(movie, libraryIndex, currentAddCategory) {
+      const matches = [];
+      const seenIds = new Set();
+
+      const collectMatches = (items = []) => {
+        items.forEach(media => {
+          if (!media || seenIds.has(media.id)) return;
+          seenIds.add(media.id);
+          matches.push(media);
+        });
+      };
+
+      const tmdbKey = movie.tmdb_id ? String(movie.tmdb_id) : "";
+      const imdbKey = movie.imdb_id || movie.imdbID || "";
+      const normalizedTitle = normalizeDigitalTitle(movie.cleanTitle || movie.name || movie.title || "");
+      const normalizedYear = String(movie.year || "").trim();
+      const fallbackKey = normalizedTitle && normalizedYear ? `${normalizedTitle}::${normalizedYear}` : "";
+
+      if (tmdbKey) collectMatches(libraryIndex.byTmdb.get(tmdbKey));
+      if (imdbKey) collectMatches(libraryIndex.byImdb.get(imdbKey));
+      if (matches.length === 0 && fallbackKey) collectMatches(libraryIndex.byTitleYear.get(fallbackKey));
+
+      const categoryLabels = [...new Set(matches.map(media => getCategoryName(media.category)))];
+
+      return {
+        isInLibrary: matches.length > 0,
+        isInCurrentCategory: matches.some(media => media.category === currentAddCategory),
+        matchedMediaId: matches[0]?.id || null,
+        categoryLabels,
+        categorySummary: summarizeDigitalCategories(categoryLabels)
+      };
+    }
+
+    function getDigitalDateGroup(movie) {
+      if (!movie.parsedTime) {
+        return { key: 'unknown-date', label: 'Data da confermare' };
+      }
+
+      const releaseDate = new Date(movie.parsedTime);
+      const normalizedDate = new Date(releaseDate);
+      normalizedDate.setHours(0, 0, 0, 0);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const diffDays = Math.round((normalizedDate.getTime() - today.getTime()) / 86400000);
+      const fullLabel = capitalizeDigitalLabel(
+        releaseDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      );
+
+      if (diffDays === 0) return { key: normalizedDate.toISOString().slice(0, 10), label: `Oggi · ${fullLabel}` };
+      if (diffDays === 1) return { key: normalizedDate.toISOString().slice(0, 10), label: `Domani · ${fullLabel}` };
+      return { key: normalizedDate.toISOString().slice(0, 10), label: fullLabel };
+    }
+
+    function renderDigitalRatings(movie) {
+      let ratingsHTML = "";
+      if (!movie.ratings) return ratingsHTML;
+
+      if (movie.ratings.imdb && movie.ratings.imdb !== "N/A") {
+        ratingsHTML += `<span class="rating-badge"><img src="${IMDB_STAR_ICON}" class="rating-icon"> ${movie.ratings.imdb}</span>`;
+      }
+      if (movie.ratings.letterboxd && movie.ratings.letterboxd !== "N/A") {
+        ratingsHTML += `<span class="rating-badge"><img src="${LETTERBOXD_ICON}" class="rating-icon"> ${movie.ratings.letterboxd}</span>`;
+      }
+      if (movie.ratings.metacritic && movie.ratings.metacritic !== "N/A") {
+        ratingsHTML += `<span class="rating-badge"><img src="${METACRITIC_ICON}" class="rating-icon"> ${movie.ratings.metacritic}</span>`;
+      }
+
+      return ratingsHTML;
+    }
+
+    function renderDigitalMovieCard(movie, libraryMeta) {
+      const title = movie.name || movie.title || "Titolo non disponibile";
+      const yearMarkup = movie.year ? ` <small style="opacity:0.5">(${movie.year})</small>` : "";
+      const ratingsHTML = renderDigitalRatings(movie);
+      const tmdbId = movie.tmdb_id ? String(movie.tmdb_id) : "";
+      const libraryMediaId = libraryMeta.matchedMediaId ? String(libraryMeta.matchedMediaId) : "";
+      const openDetailsAction = tmdbId || libraryMediaId
+        ? `onclick="openDigitalMovieDetails('${tmdbId}', '${libraryMediaId}')"`
+        : "";
+      const libraryBadgeHTML = libraryMeta.isInLibrary
+        ? `<span class="digital-library-pill"><i class="fas fa-check-circle"></i> Già in archivio${libraryMeta.categorySummary ? ` · ${libraryMeta.categorySummary}` : ''}</span>`
+        : "";
+
+      let actionButtonHTML = "";
+      if (tmdbId) {
+        if (libraryMeta.isInCurrentCategory) {
+          actionButtonHTML = `
+            <button class="btn btn-secondary digital-add-btn is-disabled" disabled onclick="event.stopPropagation()">
+              <i class="fas fa-check"></i>
+            </button>`;
+        } else {
+          actionButtonHTML = `
+            <button onclick="event.stopPropagation(); closeModal(document.getElementById('digitalModal')); addNewMedia('${tmdbId}', { categoryOverride: 'watchlist', rememberCategory: false })"
+                    class="btn btn-primary digital-add-btn">
+              <i class="fas fa-plus"></i>
+            </button>`;
+        }
+      }
+
+      return `
+        <div class="digital-item${libraryMeta.isInLibrary ? ' is-in-library' : ''}" ${openDetailsAction} onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }" role="button" tabindex="0">
+            <div class="digital-still-wrapper">
+                <img src="${movie.poster || DEFAULT_POSTER}" class="digital-still" onerror="this.src='${DEFAULT_POSTER}'">
+            </div>
+            <div class="digital-info">
+                <span class="digital-title">${title}${yearMarkup}</span>
+                <span class="digital-release-date"><i class="fas fa-calendar-alt"></i> ${movie.displayDate}</span>
+                <div class="media-ratings" style="margin-top:8px; display:flex; gap:6px;">${ratingsHTML}</div>
+                ${libraryBadgeHTML}
+            </div>
+            ${actionButtonHTML}
+        </div>`;
+    }
+
+    function renderDigitalEmptyState(listContainer, onlyWithRatings, sortByRating) {
+      if (allDigitalMovies.length === 0) {
+        listContainer.innerHTML = `
+          <div class="empty-state digital-empty-state">
+            <i class="fas fa-cloud"></i>
+            <h3 style="margin: 0.6rem 0 0;">Nessuna uscita disponibile</h3>
+            <p>Non ci sono release digitali da mostrare in questo momento.</p>
+          </div>`;
+        return;
+      }
+
+      if (onlyWithRatings) {
+        listContainer.innerHTML = `
+          <div class="empty-state digital-empty-state">
+            <i class="fas fa-filter"></i>
+            <h3 style="margin: 0.6rem 0 0;">Nessuna uscita con voti</h3>
+            <p>Disattiva "Solo con voti" per vedere anche i titoli senza rating.</p>
+            <button class="btn btn-secondary" style="margin-top: 1rem;" onclick="window.resetDigitalOnlyWithRatings()">
+              <i class="fas fa-rotate-left"></i> Mostra tutte le uscite
+            </button>
+          </div>`;
+        return;
+      }
+
+      listContainer.innerHTML = `
+        <div class="empty-state digital-empty-state">
+          <i class="fas fa-film"></i>
+          <h3 style="margin: 0.6rem 0 0;">Nessun risultato da mostrare</h3>
+          <p>${sortByRating ? 'Non ci sono titoli ordinabili per voto al momento.' : 'La lista delle uscite digitali e vuota.'}</p>
+        </div>`;
+    }
+
+    async function loadDigitalCalendar() {
+      const listContainer = document.getElementById('digitalList');
+      if (!listContainer) return;
+
+      listContainer.innerHTML = `<div style="text-align:center; padding: 3rem;"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary)"></i><p>Sincronizzazione archivio...</p></div>`;
+
+      try {
+        const response = await fetch(`${MDBLIST_PROXY_URL}/?mode=whenondigital`);
+        if (!response.ok) throw new Error("Database non pronto.");
+
+        let movies = await response.json();
+
+        movies.forEach(movie => {
+          movie.cleanTitle = movie.name || movie.title;
+          const d = new Date(movie.releaseDate || movie.date);
+          movie.parsedTime = isNaN(d.getTime()) ? 0 : d.getTime();
+          movie.displayDate = isNaN(d.getTime())
+            ? 'Data da confermare'
+            : d.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+        });
+
+        movies.sort((a, b) => a.parsedTime - b.parsedTime);
+
+        allDigitalMovies = movies;
+        renderDigitalUI();
+      } catch (error) {
+        listContainer.innerHTML = `<p style="text-align:center; color:red;">${error.message}</p>`;
+      }
+    }
+
+    function renderDigitalUI() {
+      const listContainer = document.getElementById('digitalList');
+      if (!listContainer) return;
+
+      const filterToggle = document.getElementById('filterRatingsToggle');
+      const sortToggle = document.getElementById('sortRatingsToggle');
+      const onlyWithRatings = !!filterToggle?.checked;
+      const sortByRating = !!sortToggle?.checked;
+      const currentAddCategory = "watchlist";
+      const libraryIndex = buildDigitalLibraryIndex();
+
+      const getImdbScore = (movie) => {
+        if (movie.ratings && movie.ratings.imdb && movie.ratings.imdb !== "N/A") {
+          return parseFloat(movie.ratings.imdb);
+        }
+        return 0;
+      };
+
+      let filteredMovies = [...allDigitalMovies];
+      if (onlyWithRatings) {
+        filteredMovies = filteredMovies.filter(movie => getImdbScore(movie) > 0);
+      }
+
+      if (sortByRating) {
+        filteredMovies.sort((a, b) => getImdbScore(b) - getImdbScore(a));
+      } else {
+        filteredMovies.sort((a, b) => a.parsedTime - b.parsedTime);
+      }
+
+      if (filteredMovies.length === 0) {
+        renderDigitalEmptyState(listContainer, onlyWithRatings, sortByRating);
+        return;
+      }
+
+      if (sortByRating) {
+        listContainer.innerHTML = `
+          <section class="digital-group">
+            <div class="digital-group-header">
+              <span>Ordinate per voto IMDb</span>
+              <span class="digital-group-count">${filteredMovies.length} titoli</span>
+            </div>
+            <div class="digital-group-grid">
+              ${filteredMovies.map(movie => renderDigitalMovieCard(movie, getDigitalLibraryMeta(movie, libraryIndex, currentAddCategory))).join('')}
+            </div>
+          </section>`;
+        return;
+      }
+
+      const groupedMovies = filteredMovies.reduce((groups, movie) => {
+        const group = getDigitalDateGroup(movie);
+        if (!groups[group.key]) {
+          groups[group.key] = { label: group.label, items: [] };
+        }
+        groups[group.key].items.push(movie);
+        return groups;
+      }, {});
+
+      listContainer.innerHTML = Object.values(groupedMovies).map(group => `
+        <section class="digital-group">
+          <div class="digital-group-header">
+            <span>${group.label}</span>
+            <span class="digital-group-count">${group.items.length} titoli</span>
+          </div>
+          <div class="digital-group-grid">
+            ${group.items.map(movie => renderDigitalMovieCard(movie, getDigitalLibraryMeta(movie, libraryIndex, currentAddCategory))).join('')}
+          </div>
+        </section>
+      `).join('');
+    }
+
+    window.toggleDigitalFilter = function() {
+      persistDigitalFiltersPreference();
+      renderDigitalUI();
+    };
+
+    window.resetDigitalOnlyWithRatings = function() {
+      const filterToggle = document.getElementById('filterRatingsToggle');
+      if (filterToggle) filterToggle.checked = false;
+      persistDigitalFiltersPreference();
+      renderDigitalUI();
+    };
+
+    function toggleSideSearch(forceState) {
+      const overlay = document.getElementById('sideSearchOverlay');
+      if (!overlay || window.innerWidth <= 768) return;
+
+      const shouldShow = typeof forceState === 'boolean'
+        ? forceState
+        : overlay.style.display !== 'flex';
+
+      overlay.style.display = shouldShow ? 'flex' : 'none';
+
+      if (shouldShow) {
+        const input = document.getElementById('searchInputSide');
+        if (input) input.focus();
+      }
+    }
+
+    function setupSidebarCompact() {
+      if (window.innerWidth <= 768) return;
+
+      const sidebarActiveIds = ['sideSearchTrigger', 'sideDigitalBtn', 'sideStatsBtn', 'sideManagementBtn'];
+      const setSidebarActive = (activeId = null) => {
+        sidebarActiveIds.forEach((id) => {
+          document.getElementById(id)?.classList.toggle('active', id === activeId);
+        });
+        elements.notificationBellContainer?.classList.remove('active');
+      };
+
+      const categoryFilterSlot = document.getElementById('categoryFilterSlot');
+      const sortFilterSlot = document.getElementById('sortFilterSlot');
+      const categoryFilterWrapper = document.getElementById('categoryFilter')?.parentElement;
+      const sortFilterWrapper = document.getElementById('sortFilter')?.parentElement;
+
+      if (categoryFilterSlot && categoryFilterWrapper) {
+        categoryFilterSlot.appendChild(categoryFilterWrapper);
+      }
+
+      if (sortFilterSlot && sortFilterWrapper) {
+        sortFilterSlot.appendChild(sortFilterWrapper);
+      }
+
+      const trigger = document.getElementById('sideSearchTrigger');
+      const overlay = document.getElementById('sideSearchOverlay');
+      const inputSide = document.getElementById('searchInputSide');
+      const inputMain = document.getElementById('searchInput');
+
+      if (trigger && overlay && inputSide && inputMain) {
+        trigger.onclick = (e) => {
+          e.stopPropagation();
+          toggleSideSearch();
+          if (overlay.style.display === 'flex') setSidebarActive('sideSearchTrigger');
+          else setSidebarActive(null);
+        };
+
+        overlay.addEventListener('click', (e) => e.stopPropagation());
+
+        inputSide.oninput = (e) => {
+          inputMain.value = e.target.value;
+          inputMain.dispatchEvent(new Event('input'));
+        };
+
+        inputMain.addEventListener('input', () => {
+          if (document.activeElement !== inputSide) {
+            inputSide.value = inputMain.value;
+          }
+        });
+      }
+
+      document.getElementById('sideDigitalBtn').onclick = () => {
+        setSidebarActive('sideDigitalBtn');
+        elements.digitalBtn.click();
+      };
+      document.getElementById('sideSettingsBtn').onclick = () => elements.settingsBtn.click();
+      document.getElementById('sideManagementBtn').onclick = () => {
+        setSidebarActive('sideManagementBtn');
+        elements.mediaManagementBtn.click();
+      };
+      document.getElementById('sideStatsBtn').onclick = () => {
+        setSidebarActive('sideStatsBtn');
+        openModal(elements.advancedStatsModal);
+        renderAdvancedStats();
+      };
+      elements.notificationBellContainer.onclick = (e) => {
+        if (e.target.closest('#notificationDropdown')) return;
+        if (e.target.closest('#bellIcon')) return;
+        toggleNotificationDropdown(e);
+      };
+      document.getElementById('sideAuthBtn').onclick = () => {
+        if (currentUser) requestLogout();
+        else elements.authToggle.click();
+      };
+
+      document.addEventListener('click', () => {
+        toggleSideSearch(false);
+        if (!elements.notificationDropdown.classList.contains('visible')) {
+          setSidebarActive(null);
+        }
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          toggleSideSearch(false);
+          hideNotificationDropdown();
+          setSidebarActive(null);
+        }
+      });
+    }
+
+    window.toggleSideSearch = toggleSideSearch;
+    window.addEventListener('load', setupSidebarCompact);
